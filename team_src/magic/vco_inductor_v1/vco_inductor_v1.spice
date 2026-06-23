@@ -1,0 +1,13 @@
+* SPICE3 file created from vco_inductor_v1.ext - technology: gf180mcuD
+
+.option scale=5n
+
+X0 PORT1 PORT2 tm11k r_width=2000 r_length=24800
+C0 PORT2 m5_n26400_n5600# 5.743f
+C1 PORT2 PORT1 11.8982f
+C2 PORT1 VSUBS 14.2365f
+C3 PORT2 VSUBS 89.7625f
+C4 m5_n26400_n5600# VSUBS 12.1275f
+
+* --- MANUALLY ADDED MAGNETIC TANK VALUE ---
+L0 PORT1 PORT2 1.42n
