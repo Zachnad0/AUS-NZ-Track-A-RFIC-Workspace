@@ -1,6 +1,9 @@
 * GF180MCU-D dual square spiral inductor v2 (1.2 nH total)
 * Parameters: D_in=20, D_out=76, N=3, W=8, S=2, Gap=30
 
+.include /foss/pdks/gf180mcuD/libs.tech/ngspice/design.ngspice
+.lib /foss/pdks/gf180mcuD/libs.tech/ngspice/sm141064.ngspice res_typical
+
 .SUBCKT vco_inductor_v2 PORT1 PORT2 GND
 .option scale=5n
 
