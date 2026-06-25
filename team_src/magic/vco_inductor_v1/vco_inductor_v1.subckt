@@ -1,0 +1,17 @@
+* GF180MCU_D 5-turn square-spiral inductor v1 (pi-model)
+
+.SUBCKT vco_inductor PORT1 PORT2 GND
+.option scale=5n
+
+* Series L, R, and parallel C
+L0 PORT1 INT_LR 1.42n
+X0 INT_LR PORT2 tm11k r_width=2000 r_length=24800
+C0 PORT2 PORT1 11.8982f
+
+* PORT1-side shunt C
+C1 PORT1 GND 14.2365f
+
+* PORT2-side shunt C (merged)
+C2 PORT2 GND 93.6598f
+
+.ENDS
