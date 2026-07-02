@@ -13,8 +13,8 @@ ypos2=2
 divy=5
 subdivy=1
 unity=1
-x1=0
-x2=1
+x1=-0.05
+x2=0.95
 divx=5
 subdivx=4
 xlabmag=1.0
@@ -47,12 +47,12 @@ value="
 * .lib $::180MCU_MODELS/sm141064.ngspice res_statistical
 "}
 C {title.sym} 160 -40 0 0 {name=l1 author="Team A1 AUS/NZ Track A RFIC"}
-C {symbols/cap_nmos_03v3_b.sym} 430 -370 2 1 {name=C1
-W=30u
-L=1.3u
+C {symbols/cap_nmos_03v3_b.sym} 430 -370 0 1 {name=C1
+W=5u
+L=5u
 model=cap_nmos_03v3_b
 spiceprefix=X
-m=10}
+m=20}
 C {gnd.sym} 430 -310 0 0 {name=l2 lab=GND}
 C {lab_wire.sym} 380 -420 0 0 {name=p1 sig_type=std_logic lab=cap_v}
 C {code_shown.sym} 860 -950 0 0 {name=NGSPICE only_toplevel=true
@@ -68,8 +68,8 @@ value="
 
 .control
   save all
-  let v_start = 0
-  let v_stop = 3.3
+  let v_start = -5
+  let v_stop = 5
   let v_n = 100
   let v_act = v_start
 
@@ -79,7 +79,7 @@ value="
 
   while v_act <= v_stop
     alter V1 = v_act
-    AC lin 1 10Meg 10Meg
+    AC lin 1 5G 5G
 
     let cap_step = imag(-i(V1)) / (2 * pi * frequency) * 1e15
 *    print v_act cap_step
@@ -99,4 +99,4 @@ C {launcher.sym} 70 -520 0 0 {name=h5
 descr="load waves"
 tclcommand="xschem raw_read $netlist_dir/vco_varactor_tb.raw ac"
 }
-C {vsource.sym} 280 -370 0 0 {name=V1 value="1.5 AC 1" savecurrent=true}
+C {vsource.sym} 280 -370 0 0 {name=V1 value="0 AC 1" savecurrent=true}

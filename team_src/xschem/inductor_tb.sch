@@ -87,3 +87,7 @@ L=10u
 model=ppolyf_u_2k
 spiceprefix=X
 m=1}
+C {netlist.sym} 690 -50 0 0 {name=s1 value="
+.include /foss/pdks/gf180mcuD/libs.tech/ngspice/design.ngspice
+.lib /foss/pdks/gf180mcuD/libs.tech/ngspice/sm141064.ngspice res_typical
+"}
