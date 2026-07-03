@@ -13,7 +13,7 @@ ypos2=2
 divy=5
 subdivy=1
 unity=1
-x1=4.0005074e-08
+x1=4.0005223e-08
 x2=1e-07
 divx=5
 subdivx=1
@@ -28,14 +28,14 @@ logx=0
 logy=0
 }
 B 2 0 -1580 800 -1180 {flags=graph
-y1=2.0711775
-y2=2.7878136
+y1=-0.86527627
+y2=4.0649703
 ypos1=0
 ypos2=2
 divy=5
 subdivy=1
 unity=1
-x1=4.0005074e-08
+x1=4.0005223e-08
 x2=1e-07
 divx=5
 subdivx=1
@@ -56,7 +56,7 @@ ypos2=2
 divy=5
 subdivy=1
 unity=1
-x1=4.0005074e-08
+x1=4.0005223e-08
 x2=1e-07
 divx=5
 subdivx=1
@@ -78,7 +78,7 @@ ypos2=2
 divy=5
 subdivy=1
 unity=1
-x1=4.0005074e-08
+x1=4.0005223e-08
 x2=1e-07
 divx=5
 subdivx=1
@@ -130,7 +130,7 @@ N 470 -230 470 -220 {lab=#net2}
 C {title.sym} 160 -40 0 0 {name=l1 author="Team A1 AUS/NZ Track A RFIC"}
 C {gnd.sym} 260 -330 0 0 {name=l2 lab=GND}
 C {res.sym} 600 -430 0 0 {name=R1
-value=100k
+value=10k
 footprint=1206
 device=resistor
 m=1}
@@ -148,7 +148,7 @@ value="
   save all
   op
   let bias = v(x1.cap_bias) - v(out_p)
-  print out_p bias x1.n_sources
+  print out_p bias vss
 
   echo \\"===============================================================\\"
   tran 5p 100n 40n 10p

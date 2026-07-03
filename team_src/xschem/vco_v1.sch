@@ -59,6 +59,10 @@ N 350 -500 350 -490 {lab=cap_bias}
 N 440 -420 460 -420 {lab=TUNE}
 N 460 -430 460 -420 {lab=TUNE}
 N 460 -220 460 -160 {lab=ISS}
+N 430 -420 440 -420 {lab=TUNE}
+N 240 -600 470 -600 {lab=GND}
+N 280 -460 440 -460 {lab=GND}
+N 280 -600 280 -460 {lab=GND}
 C {title.sym} 160 -40 0 0 {name=l1 author="Team A1 AUS/NZ Track A RFIC"}
 C {symbols/nfet_03v3.sym} 590 -320 0 0 {name=M1
 L=0.28u
@@ -92,8 +96,8 @@ C {vco_inductor_v2.sym} 350 -690 0 0 {name=X1
 }
 C {iopin.sym} 300 -870 2 0 {name=p1 lab=VDD}
 C {iopin.sym} 440 -160 2 0 {name=p2 lab=ISS}
-C {iopin.sym} 470 -600 2 0 {name=p3 lab=GND}
-C {ipin.sym} 440 -420 0 0 {name=p4 lab=TUNE}
+C {iopin.sym} 240 -600 2 0 {name=p3 lab=GND}
+C {ipin.sym} 430 -420 0 0 {name=p4 lab=TUNE}
 C {opin.sym} 650 -750 0 0 {name=p5 lab=OUT_p}
 C {opin.sym} 280 -750 2 0 {name=p6 lab=OUT_n}
 C {symbols/pfet_03v3.sym} 340 -800 0 1 {name=M3
@@ -124,11 +128,6 @@ sa=0 sb=0 sd=0
 model=nfet_03v3
 spiceprefix=X
 }
-C {res.sym} 460 -460 0 0 {name=R1
-value=1k
-footprint=1206
-device=resistor
-m=1}
 C {capa.sym} 110 -490 0 0 {name=C2
 m=1
 value=1.7p
@@ -146,11 +145,17 @@ W=5u
 L=5u
 model=cap_nmos_03v3_b
 spiceprefix=X
-m=20}
+m=21}
 C {symbols/cap_nmos_03v3_b.sym} 580 -530 2 0 {name=C4
 W=5u
 L=5u
 model=cap_nmos_03v3_b
 spiceprefix=X
-m=20}
+m=21}
 C {lab_wire.sym} 420 -490 0 0 {name=p8 sig_type=std_logic lab=cap_bias}
+C {symbols/ppolyf_u_3k.sym} 460 -460 0 0 {name=R2
+W=1u
+L=5u
+model=ppolyf_u_3k
+spiceprefix=X
+m=1}
