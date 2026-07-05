@@ -11,6 +11,12 @@ N 410 -330 440 -330 {lab=A}
 N 440 -330 440 -250 {lab=A}
 N 480 -290 560 -290 {lab=Y}
 N 480 -220 480 -200 {lab=VSS}
+N 480 -330 490 -330 {lab=VDD}
+N 490 -360 490 -330 {lab=VDD}
+N 480 -360 490 -360 {lab=VDD}
+N 480 -250 490 -250 {lab=VSS}
+N 490 -250 490 -220 {lab=VSS}
+N 480 -220 490 -220 {lab=VSS}
 C {title.sym} 170 -40 0 0 {name=l1 author="Team A1 AUS/NZ Track A RFIC"}
 C {symbols/nfet_03v3.sym} 460 -250 0 0 {name=M2
 L=0.28u
