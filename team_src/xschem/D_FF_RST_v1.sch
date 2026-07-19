@@ -6,7 +6,7 @@ S {}
 F {}
 E {}
 T {Edge Detector} 180 -540 0 0 0.4 0.4 {}
-T {NOTE: CLK is positive edge triggered, RST is active high} 160 -180 0 0 0.4 0.4 {}
+T {NOTE: CLK is positive edge triggered, RST is active high} 430 0 0 0 0.4 0.4 {}
 N 1070 -530 1100 -530 {lab=Q}
 N 620 -610 690 -610 {lab=VDD}
 N 690 -610 900 -610 {lab=VDD}
@@ -26,7 +26,6 @@ N 410 -250 560 -250 {lab=VSS}
 N 500 -440 630 -440 {lab=#net2}
 N 450 -390 450 -250 {lab=VSS}
 N 400 -440 420 -440 {lab=#net3}
-N 280 -420 310 -420 {lab=#net4}
 N 230 -370 450 -370 {lab=VSS}
 N 350 -380 350 -370 {lab=VSS}
 N 230 -510 450 -510 {lab=VDD}
@@ -46,13 +45,13 @@ N 1080 -420 1080 -350 {lab=!Q}
 N 1070 -350 1080 -350 {lab=!Q}
 N 1080 -350 1100 -350 {lab=!Q}
 N 980 -510 980 -470 {lab=!Q}
-N 950 -550 950 -530 {lab=#net5}
-N 950 -550 980 -550 {lab=#net5}
-N 740 -350 740 -310 {lab=#net6}
-N 740 -350 980 -350 {lab=#net6}
+N 950 -550 950 -530 {lab=#net4}
+N 950 -550 980 -550 {lab=#net4}
+N 740 -350 740 -310 {lab=#net5}
+N 740 -350 980 -350 {lab=#net5}
 N 960 -330 980 -330 {lab=RST}
-N 740 -550 760 -550 {lab=#net7}
-N 840 -550 860 -550 {lab=#net8}
+N 740 -550 760 -550 {lab=#net6}
+N 840 -550 860 -550 {lab=#net7}
 N 840 -330 860 -330 {lab=RST}
 N 860 -510 860 -330 {lab=RST}
 N 860 -330 960 -330 {lab=RST}
@@ -71,6 +70,11 @@ N 690 -490 690 -460 {lab=VSS}
 N 790 -500 790 -460 {lab=VSS}
 N 900 -470 900 -460 {lab=VSS}
 N 760 -460 760 -250 {lab=VSS}
+N 410 -860 450 -860 {lab=#net8}
+N 530 -860 570 -860 {lab=#net9}
+N 650 -860 690 -860 {lab=#net10}
+N 770 -860 810 -860 {lab=#net11}
+N 890 -860 930 -860 {lab=#net12}
 C {ipin.sym} 180 -490 0 0 {name=p1 lab=CLK}
 C {ipin.sym} 400 -570 0 0 {name=p2 lab=D}
 C {iopin.sym} 400 -610 2 0 {name=p3 lab=VDD}
@@ -89,3 +93,25 @@ C {ipin.sym} 840 -330 0 0 {name=p7 lab=RST}
 C {NAND3_v1.sym} 1000 -350 0 0 {name=x2}
 C {NOT_v1.sym} 780 -520 0 0 {name=x9}
 C {NAND_v1.sym} 880 -450 0 0 {name=x10}
+C {NOT_v1.sym} 350 -830 0 0 {name=x11}
+C {NOT_v1.sym} 950 -830 0 0 {name=x12}
+C {lab_pin.sym} 280 -420 3 0 {name=p8 sig_type=std_logic lab=CLKB}
+C {lab_pin.sym} 330 -860 3 0 {name=p9 sig_type=std_logic lab=CLKB}
+C {lab_pin.sym} 1010 -860 3 0 {name=p10 sig_type=std_logic lab=CLKB_DLY}
+C {lab_pin.sym} 310 -420 3 0 {name=p11 sig_type=std_logic lab=CLKB_DLY}
+C {iopin.sym} 360 -910 2 0 {name=p12 lab=VDD}
+C {iopin.sym} 960 -910 2 0 {name=p13 lab=VDD}
+C {iopin.sym} 960 -810 2 0 {name=p14 lab=VSS}
+C {iopin.sym} 360 -810 0 0 {name=p15 lab=VSS}
+C {NOT_v1.sym} 470 -830 0 0 {name=x13}
+C {NOT_v1.sym} 590 -830 0 0 {name=x14}
+C {NOT_v1.sym} 710 -830 0 0 {name=x15}
+C {NOT_v1.sym} 830 -830 0 0 {name=x16}
+C {iopin.sym} 480 -910 2 0 {name=p16 lab=VDD}
+C {iopin.sym} 600 -910 2 0 {name=p17 lab=VDD}
+C {iopin.sym} 720 -910 2 0 {name=p18 lab=VDD}
+C {iopin.sym} 840 -910 2 0 {name=p19 lab=VDD}
+C {iopin.sym} 480 -810 0 0 {name=p20 lab=VSS}
+C {iopin.sym} 600 -810 0 0 {name=p21 lab=VSS}
+C {iopin.sym} 720 -810 0 0 {name=p22 lab=VSS}
+C {iopin.sym} 840 -810 0 0 {name=p23 lab=VSS}
