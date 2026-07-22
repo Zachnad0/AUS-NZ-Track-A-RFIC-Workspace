@@ -46,9 +46,16 @@ C {lab_pin.sym} 700 -190 0 0 {name=lp_vsss sig_type=std_logic lab=VSS}
 C {gnd.sym} 700 -130 0 0 {name=g_vss lab=0}
 * --- Simulation control ---
 C {code_shown.sym} 40 -120 0 0 {name=s1 only_toplevel=false value="
+.param fnoicor=0
+.param sw_stat_global=0
+.param sw_stat_mismatch=0
+.param sw_mc_global=0
+.param sw_mc_mismatch=0
 .lib /foss/pdks/gf180mcuD/libs.tech/ngspice/sm141064.ngspice typical
 .param I_CP=50u
+.options method=gear
 .control
+save all
 tran 10p 600n uic
 wrdata CP_tran.txt v(cp_out) i(v_sense) v(x1.up_b)
 .endc

@@ -24,8 +24,8 @@ E {}
 * ============================================================================
 * --- PMOS mirror: reference (diode) ---
 C {symbols/pfet_03v3.sym} 400 -560 0 0 {name=M_PREF
-L=1u
-W=10u
+L=2u
+W=50u
 nf=1
 m=1
 ad="'int((nf+1)/2) * W/nf * 0.18u'"
@@ -39,8 +39,8 @@ spiceprefix=X
 }
 * --- PMOS mirror: output source device ---
 C {symbols/pfet_03v3.sym} 700 -560 0 0 {name=M_PSRC
-L=1u
-W=10u
+L=2u
+W=50u
 nf=1
 m=1
 ad="'int((nf+1)/2) * W/nf * 0.18u'"
@@ -55,7 +55,7 @@ spiceprefix=X
 * --- PMOS drain switch (on when UP=1 -> UP_B=0) ---
 C {symbols/pfet_03v3.sym} 700 -460 0 0 {name=M_PSW
 L=0.3u
-W=10u
+W=50u
 nf=1
 m=1
 ad="'int((nf+1)/2) * W/nf * 0.18u'"
@@ -70,7 +70,7 @@ spiceprefix=X
 * --- NMOS drain switch (on when DOWN=1) ---
 C {symbols/nfet_03v3.sym} 700 -360 0 0 {name=M_NSW
 L=0.3u
-W=5u
+W=10u
 nf=1
 m=1
 ad="'int((nf+1)/2) * W/nf * 0.18u'"
@@ -84,8 +84,8 @@ spiceprefix=X
 }
 * --- NMOS mirror: output sink device ---
 C {symbols/nfet_03v3.sym} 700 -260 0 0 {name=M_NSNK
-L=1u
-W=5u
+L=2u
+W=10u
 nf=1
 m=1
 ad="'int((nf+1)/2) * W/nf * 0.18u'"
@@ -99,8 +99,8 @@ spiceprefix=X
 }
 * --- NMOS mirror: reference (diode) ---
 C {symbols/nfet_03v3.sym} 400 -260 0 0 {name=M_NREF
-L=1u
-W=5u
+L=2u
+W=10u
 nf=1
 m=1
 ad="'int((nf+1)/2) * W/nf * 0.18u'"
