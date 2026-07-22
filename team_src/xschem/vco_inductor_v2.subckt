@@ -1,20 +1,20 @@
 * GF180MCU-D dual square spiral inductor v2 (1.2 nH total)
 * Parameters: D_in=20, D_out=76, N=3, W=8, S=2, Gap=30
 
-.include /foss/pdks/gf180mcuD/libs.tech/ngspice/design.ngspice
-.lib /foss/pdks/gf180mcuD/libs.tech/ngspice/sm141064.ngspice res_typical
+*.include /foss/pdks/gf180mcuD/libs.tech/ngspice/design.ngspice
+*.lib /foss/pdks/gf180mcuD/libs.tech/ngspice/sm141064.ngspice res_typical
 
 .SUBCKT vco_inductor_v2 PORT1 PORT2 GND
-.option scale=5n
+*.option scale=5n
 
 * PORT1-bridge (R + L) || C
 L0 PORT1 INT_NODE1 0.60n
-X0 INT_NODE1 m4_bridge tm11k r_width=1600 r_length=15200
+X0 INT_NODE1 m4_bridge tm11k r_width=8u r_length=76u
 C0 PORT1 m4_bridge 7.46091f
 
 * PORT2-bridge (R + L) || C
 L1 PORT2 INT_NODE2 0.60n
-X1 INT_NODE2 m4_bridge tm11k r_width=1600 r_length=15200
+X1 INT_NODE2 m4_bridge tm11k r_width=8u r_length=76u
 C1 PORT2 m4_bridge 7.46091f
 
 * substrate-bridge/PORT1/PORT2 capacitances

@@ -54,10 +54,8 @@ N 70 -90 70 -80 {lab=GND}
 N 70 -80 360 -80 {lab=GND}
 N 360 -120 360 -80 {lab=GND}
 N 70 -180 70 -150 {lab=#net1}
-N 70 -180 110 -180 {lab=#net1}
-N 170 -180 210 -180 {lab=#net1}
+N 70 -180 210 -180 {lab=#net1}
 N 500 -180 540 -180 {lab=OUT}
-N 110 -180 170 -180 {lab=#net1}
 N 540 -180 540 -150 {lab=OUT}
 N 540 -90 540 -80 {lab=GND}
 N 360 -80 540 -80 {lab=GND}
@@ -89,3 +87,7 @@ L=10u
 model=ppolyf_u_2k
 spiceprefix=X
 m=1}
+C {netlist.sym} 690 -50 0 0 {name=s1 value="
+.include /foss/pdks/gf180mcuD/libs.tech/ngspice/design.ngspice
+.lib /foss/pdks/gf180mcuD/libs.tech/ngspice/sm141064.ngspice res_typical
+"}
