@@ -1,133 +1,87 @@
 # Pin / Pad Plan — AUS/NZ Track A RFIC
 
 **Team A01 · IEEE SSCS Chipathon 2026 · GF180MCU**
-Target slot: **`slot_0p5x0p5`** (per `librelane/slots/slot_0p5x0p5.yaml`).
-Last updated: 2026-07-30. Pin assignments are *(estimate)* pending final layout.
+Last updated: 2026-07-31. Pin assignments are *(estimate)*.
 
-> **Slot assumption:** this plan assumes Team A01 is assigned the `slot_0p5x0p5`
-> slot (die 1936×2531 µm, core 1052×1647 µm). The larger `slot_workshop` padring
-> (60 analog pads) is the tutorial/reference vehicle, not our slot. **Confirm the
-> assigned slot with the organizers.**
-
----
-
-## 1. The fixed padframe (`slot_0p5x0p5`)
-
-Pad **size, count, and location are FIXED** by the organizers; we choose only pad
-**types** at the configurable locations. From `slot_defines.svh` + the slot YAML:
-
-| Pad class | Count | Cell / kind | Where |
-|-----------|------:|-------------|-------|
-| Analog | **4** | analog signal pad | North edge only (`analog[0..3]`) |
-| Bidir | 38 | bidirectional I/O (`bidir[0..37]`) | S / E / N / W |
-| Dedicated input | 4 | input pad (`inputs[0..3]`) | West edge |
-| Clock input | 1 | `clk_pad` (stock single-instance input) | South |
-| Reset input | 1 | `rst_n_pad` (stock single-instance input) | South |
-| DVDD (power) | 4 | `dvdd_pads[0..3]` | S / E / N / W |
-| DVSS (ground) | 4 | `dvss_pads[0..3]` | S / E / N / W |
-| Corner | 4 | inserted by LibreLane | corners |
-
-**The 4 analog pads are the binding constraint for this RFIC.**
+> **Integration model (updated):** the design is delivered as a **block footprint
+> with specified pad types at fixed (organizer-scripted) placement**; the organizer
+> integrates blocks into the padframe. Our deliverable is the **8-signal block
+> interface** below, not a whole slot. The old `slot_0p5x0p5` mapping is retained
+> as a **superseded appendix** for reference only.
 
 ---
 
-## 2. On-chip / off-chip partition
+## 1. Block signal interface (primary)
 
-| Signal | On/off chip | Rationale |
-|--------|-------------|-----------|
-| Loop filter (R + C1‖C2) | **OFF-chip** | Removes large passives + closed-loop stability risk from silicon; tunable on the bench |
-| VCO, PFD, CP, divider | on-chip | Core design |
-| Reference | off-chip source → on-chip | Signal generator drives `REF_IN` |
-| Charge-pump bias | on-chip preferred | See §4 (IBIAS) |
+**8 signals + split supplies + common ground.**
 
-The off-chip loop filter costs **two** analog pads: `CP_OUT` (charge-pump output
-out to the filter) and `VTUNE` (filtered control voltage back to the VCO).
+| # | Signal | Dir | Pad type | Notes |
+|---|--------|-----|----------|-------|
+| 1 | **RF_OUTP** | out | analog | quadrature RF out, 2.4–3.2 GHz (VCO ÷2) |
+| 2 | **RF_OUTN** | out | analog | quadrature RF out (differential) |
+| 3 | **VTUNE** | in | analog | control voltage from off-chip loop filter |
+| 4 | **CP_OUT** | out | analog | charge-pump output to off-chip loop filter |
+| 5 | **REF_IN** | in | digital (input) | reference clock |
+| 6 | **RST_N** | in | digital (input) | active-low reset (divider/PFD) |
+| 7 | **MON_OUT** | out | digital (bidir→out) | divided-down VCO monitor |
+| 8 | **IBIAS_CP** | in | digital (input), DC | external charge-pump bias (DC voltage); tied off if on-chip bias |
 
----
+Supplies: **VDDA + VDDD** (split analog/digital, preferred). **Ground: chip-wide
+common** (single node, shared across all blocks).
 
-## 3. Analog pad assignment — ZERO MARGIN
-
-The default partition consumes **all 4** analog pads with **no spare**:
-
-| Analog pad | Signal | Direction | Measured / driven at this pad |
-|-----------|--------|-----------|-------------------------------|
-| `analog[0]` | **RF_OUTP** | out | Differential RF output → 50 Ω; power, harmonics, phase noise |
-| `analog[1]` | **RF_OUTN** | out | Differential RF output → 50 Ω |
-| `analog[2]` | **VTUNE** | in | DC control voltage; open-loop f–VTUNE sweep uses a bench DC source here |
-| `analog[3]` | **CP_OUT** | out | Charge-pump output to off-chip loop filter; observe pump up/down |
-
-> ⚠️ **ZERO ANALOG MARGIN.** All 4 analog pads are committed. Any **fifth**
-> true-analog (RF or high-impedance) signal is **infeasible on this frame** and
-> forces a scope or partition change — it must be escalated, not absorbed.
-
-**RF-pad caveat (test-approach / condition 7):** the analog pad cell carries ESD
-structures that add shunt capacitance. At 2.4–5.7 GHz this loads `RF_OUTP/RF_OUTN`;
-the output-buffer sizing and any matching must account for measured pad C. This is
-a verification item, tracked in `verification.md`.
+**Type tally:** analog **4** (RF_OUTP, RF_OUTN, VTUNE, CP_OUT) · digital **4**
+(REF_IN, RST_N, MON_OUT, IBIAS_CP) · power **2** (VDDA, VDDD) · ground **1** (common).
 
 ---
 
-## 4. Digital pads and the DC bias signal
+## 2. Per-analog-signal ESD (design consideration)
 
-Digital and DC-only auxiliary signals ride the dedicated inputs, `clk_pad`,
-`rst_n_pad`, and bidir pads — **never** the analog pads.
-
-| Pad | Signal | Direction | Notes |
-|-----|--------|-----------|-------|
-| `clk_pad` | **REF_IN** | digital in | Plain digital reference input — native fit for the stock input pad |
-| `rst_n_pad` | **RST_N** | digital in | Divider / PFD reset |
-| `bidir[0]` (→ output) | **MON_OUT** | digital out | Divided-down VCO copy for frequency observation (counter/scope) |
-| `inputs[0]` | **IBIAS_CP** | DC in | External charge-pump I_CP trim — see below |
-
-**IBIAS_CP — DC through a digital pad (per design ruling):** `CP_v1` currently
-uses two *ideal* 50 µA reference sources as placeholders. On silicon these become
-a real bias network. We **retain an external I_CP trim pin** (`inputs[0]`): with
-the loop filter off-chip, I_CP and the loop dynamics are coupled, so a benchtop
-trim of the charge-pump reference is cheap insurance for closing the loop. The pin
-therefore stays in the committed count (**Digital = 4**). If an on-chip bias
-network (constant-gm / resistor-set mirror) is added later, this pad is simply
-**tied off** — the count does not change, the trim capability is just unused.
-
-Delivery is a **DC voltage** (not a raw current), so a digital input pad suffices.
-
-> **Pad-cell DC check:** a digital **input** pad presents a high-impedance gate
-> (through ESD clamps) to the core — a DC **voltage** reference is sensed with
-> negligible current and is safe on `inputs[0]`. A raw DC **current** reference is
-> **not** appropriate for a digital I/O pad (no low-impedance DC path to an
-> internal mirror node); if external bias is unavoidable it must be a voltage.
-> This structural check must be confirmed against the `bi_24t` / input pad cell
-> once the container is available; until then IBIAS_CP is carried as provisional.
-
-IBIAS_CP is thus a **committed** pin (Digital = 4), not merely a reservation.
+Each analog pad carries **secondary ESD** structures that add shunt capacitance to
+the signal. **RF_OUTP/RF_OUTN operate at 2.4–3.2 GHz**, where this pad + ESD C
+directly loads the output — output-buffer sizing and any matching **must budget the
+measured pad/ESD capacitance**. VTUNE (DC) and CP_OUT (low-frequency) are
+insensitive. Tracked as a verification item (`verification.md`).
 
 ---
 
-## 5. Power / ground assignment (domain-split)
+## 3. Fit vs. pin-accounting interpretation (pending organizer confirmation)
 
-All 4 DVDD + 4 DVSS pads are used, split into analog and digital domains for
-isolation (analog domain nearest the VCO/analog pads on the North edge):
+Two open interpretations of what counts toward a block's **pin total**:
+**(i)** power (VDDA+VDDD) + common ground counted → block total **11**;
+**(ii)** signals only → block total **8**. The binding physical resource is
+**analog pads (4 needed)**; digital/power/ground are abundant in every config.
 
-| Domain | DVDD pads | DVSS pads |
-|--------|-----------|-----------|
-| **Analog** (VDDA / VSSA) | `dvdd_pads[2]` (N), `dvdd_pads[1]` (E) | `dvss_pads[2]` (N), `dvss_pads[1]` (E) |
-| **Digital** (VDDD / VSSD) | `dvdd_pads[0]` (S), `dvdd_pads[3]` (W) | `dvss_pads[0]` (S), `dvss_pads[3]` (W) |
+Configs A–E = the five padframe pad-budgets, by analog-pad count (from
+`slot_defines.svh`); **D = slot_0p5x0p5** (current fit), **B = the 6-analog request
+target**.
+
+| Config | Analog pads | Fits (need 4 analog)? | Analog spare | Block total (i)/(ii) | Risk |
+|--------|------------:|-----------------------|-------------:|----------------------|------|
+| A | 2  | ✗ **no** | −2 | 11 / 8 | analog-starved — infeasible |
+| **B** | 6  | ✓ | **+2** | 11 / 8 | comfortable — **request target** |
+| C | 4  | ✓ tight | 0 | 11 / 8 | zero analog margin |
+| **D** (0p5x0p5) | 4  | ✓ tight | 0 | 11 / 8 | zero analog margin — **current fit** |
+| E (workshop) | 60 | ✓ | +56 | 11 / 8 | tutorial vehicle, not our slot |
+
+- **Physical fit is interpretation-independent** — driven by the 4 analog pads.
+  Configs C and D fit with **zero analog margin**; B adds +2; A cannot fit; E is not
+  our slot.
+- **The interpretation shifts only the declared total** (11 vs 8 = the 2 power + 1
+  ground) and how the organizer tallies it — not which configs physically fit.
+
+> **PENDING organizer (Bailey) confirmation of pin accounting.** Once (i) vs (ii)
+> is fixed, one issue pin-line variant is posted (D-fit or B-request). Both drafts
+> are staged.
 
 ---
 
-## 6. Pin count summary *(estimate)*
+## Appendix (SUPERSEDED): slot_0p5x0p5 full-frame mapping
 
-Reported in the weekly-form format. **All four categories are on the fixed frame;
-counts are what the committed (Tier 1 + Tier 2) design uses.**
+*Retained for reference. The block-footprint model (§0) replaces per-slot pin
+assignment; the organizer places pads. Do not treat as the live plan.*
 
-```
-Pin count: Power 4  Ground 4  Digital 4  Analog 4
-```
-
-- **Power 4** — 4 DVDD (VDDA ×2, VDDD ×2)
-- **Ground 4** — 4 DVSS (VSSA ×2, VSSD ×2)
-- **Digital 4** — REF_IN (`clk_pad`), RST_N (`rst_n_pad`), MON_OUT (bidir),
-  IBIAS_CP (input, external DC I_CP trim; tied off if on-chip bias is added — count stays 4)
-- **Analog 4** — RF_OUTP, RF_OUTN, VTUNE, CP_OUT — **fully committed, zero margin**
-
-Spare on the frame after this plan: 37 bidir + 3 inputs + 0 analog. The analog
-zero-margin is the item to watch.
+`slot_0p5x0p5` frame: analog **4** (`analog[0..3]`, N edge), bidir 38, dedicated
+input 4, `clk_pad`, `rst_n_pad`, DVDD 4, DVSS 4, 4 corners. Default mapping:
+analog[0..3] → RF_OUTP/RF_OUTN/VTUNE/CP_OUT; `clk_pad`→REF_IN; `rst_n_pad`→RST_N;
+a bidir→MON_OUT; an input→IBIAS_CP; DVDD/DVSS domain-split VDDA/VDDD/VSSA/VSSD.
+Zero analog margin (4 of 4 used).

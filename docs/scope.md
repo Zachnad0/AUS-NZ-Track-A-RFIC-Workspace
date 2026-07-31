@@ -169,3 +169,20 @@ If schedule slips, scope collapses toward Tier 1 in this order:
 
 The off-chip loop filter is deliberate insurance: it removes the largest passive
 components and the closed-loop stability risk from the silicon critical path.
+
+---
+
+## 7. Partition & test approach (condition 7)
+
+- **Delivery model:** a **block footprint with specified pad types at fixed,
+  organizer-scripted placement** — the organizer integrates blocks into the
+  padframe. Our interface is the **8-signal block** in `pins.md` §1 (analog 4,
+  digital 4, VDDA+VDDD, common ground), not a whole slot.
+- **On/off-chip:** loop filter off-chip (`CP_OUT`, `VTUNE`); REF/RST/MON digital;
+  RF_OUTP/N differential analog out (2.4–3.2 GHz); IBIAS_CP DC on a digital pad.
+- **Bench test:** REF from a signal generator; VTUNE swept by DC source for
+  open-loop f–VTUNE; RF_OUTP/N into 50 Ω for spectrum/phase-noise; MON_OUT to a
+  counter; loop closed through the off-chip filter for lock tests.
+- **The `slot_0p5x0p5` full-frame plan is superseded** (see `pins.md` appendix);
+  the workshop-slot LibreLane flow is retained **only as toolchain / sample-GDS
+  proof**, not as our integration path.

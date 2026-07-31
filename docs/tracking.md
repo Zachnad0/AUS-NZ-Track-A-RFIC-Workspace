@@ -18,11 +18,11 @@ Owners: **Zach** (@Zachnad0, team lead — VCO, inductor), **Greg**
 | Date | Gate | What we deliver | Status | Owner |
 |------|------|-----------------|--------|-------|
 | **Jul 31** | Weekly form closes | Area Estimate + Pin count lines in issue #143; on-track claim for Aug 6 | 🟡 In progress (this update) | Greg |
-| **Aug 6** | DRC dry-run | Sample GDS exists and passes DRC (librelane workshop-slot flow) | ⬜ Not started | Greg |
+| **Aug 6** | DRC dry-run | Sample GDS + DRC — **toolchain/sample-GDS proof only** (workshop-slot LibreLane) | 🟢 Pipeline proven to floorplan @3.0.3 w/ `--scl` fix | Greg |
 | **Aug 7** | Sample layout review | Present sample-cell layout | ⬜ Not started | Greg |
 | **Aug 10** | Layout review docs due | Per-cell DRC/LVS table, PNGs, area vs estimate | ⬜ Not started | Greg |
 | **Aug 14** | Block layout reviews | Reviewed block layouts (digital chain + CP) | ⬜ Not started | Team |
-| **Aug 21** | Dry-run chip GDS | Top level in slot + padframe → channel partner | ⬜ Not started | Greg |
+| **Aug 21** | Dry-run block GDS | **Block-footprint GDS with specified pad types** (fixed placement; organizer-scripted padframe integration) → channel partner | ⬜ Not started | Greg |
 | **Aug 28** | Verification + final review | Full-chip DRC/LVS/antenna clean, final GDS | ⬜ Not started | Team |
 
 ---
