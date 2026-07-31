@@ -86,6 +86,24 @@ modulo port-list ordering/formatting. Any semantic delta → revert and stop.
 final evidence. Post-fix, re-run the original `PFD_tb` 1 MHz case as a regression
 against the UP=101 ns / ~1 ns-reset baseline.
 
+**RESOLVED (2026-07-31):** iopin→lab_pin conversion applied.
+
+| Cell | Change | Gate (a) warning cleared | Gate (b) device netlist diff |
+|------|--------|--------------------------|------------------------------|
+| `PFD_v1` | p15 (VDD), p16 (VSS) iopin→lab_pin; p3/p4 kept as ports | ✅ `6/8` error gone | ✅ x-instances **identical**; `*.iopin` 24→22 |
+| `D_FF_RST_v1` | 6×VDD + 6×VSS iopin→lab_pin; p3/p6 kept as ports | ✅ `7/19` error gone | ✅ x-instances **identical**; `*.iopin` 20→8 |
+
+`.subckt` port lists unchanged (`PFD_v1`: VDD UP REF VSS DOWN FB; `D_FF_RST_v1`:
+RST VDD D Q CLK !Q VSS). `PFD_tb` + all 3 drafted tbs now netlist with **0**
+pin-count errors. 1 MHz regression pending in §2.
+
+*Cosmetic note:* `PFD_v1` already had coincident `lab_pin` VDD/VSS at the converted
+iopin locations, so the conversion leaves duplicate (overlapping) lab_pins there —
+harmless (same net name), left as-is within the approved convert scope; can be
+de-duplicated later if desired. `D_FF_RST_v1` had no coincident labels, so the
+conversion was essential to preserve the net names (delete would have fragmented
+VDD/VSS).
+
 ---
 
 ## 2. PFD three-case verification (condition 4) — PENDING

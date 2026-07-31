@@ -99,19 +99,19 @@ C {lab_pin.sym} 280 -420 3 0 {name=p8 sig_type=std_logic lab=CLKB}
 C {lab_pin.sym} 330 -860 3 0 {name=p9 sig_type=std_logic lab=CLKB}
 C {lab_pin.sym} 1010 -860 3 0 {name=p10 sig_type=std_logic lab=CLKB_DLY}
 C {lab_pin.sym} 310 -420 3 0 {name=p11 sig_type=std_logic lab=CLKB_DLY}
-C {iopin.sym} 360 -910 2 0 {name=p12 lab=VDD}
-C {iopin.sym} 960 -910 2 0 {name=p13 lab=VDD}
-C {iopin.sym} 960 -810 2 0 {name=p14 lab=VSS}
-C {iopin.sym} 360 -810 0 0 {name=p15 lab=VSS}
+C {lab_pin.sym} 360 -910 2 0 {name=p12 lab=VDD}
+C {lab_pin.sym} 960 -910 2 0 {name=p13 lab=VDD}
+C {lab_pin.sym} 960 -810 2 0 {name=p14 lab=VSS}
+C {lab_pin.sym} 360 -810 0 0 {name=p15 lab=VSS}
 C {NOT_v1.sym} 470 -830 0 0 {name=x13}
 C {NOT_v1.sym} 590 -830 0 0 {name=x14}
 C {NOT_v1.sym} 710 -830 0 0 {name=x15}
 C {NOT_v1.sym} 830 -830 0 0 {name=x16}
-C {iopin.sym} 480 -910 2 0 {name=p16 lab=VDD}
-C {iopin.sym} 600 -910 2 0 {name=p17 lab=VDD}
-C {iopin.sym} 720 -910 2 0 {name=p18 lab=VDD}
-C {iopin.sym} 840 -910 2 0 {name=p19 lab=VDD}
-C {iopin.sym} 480 -810 0 0 {name=p20 lab=VSS}
-C {iopin.sym} 600 -810 0 0 {name=p21 lab=VSS}
-C {iopin.sym} 720 -810 0 0 {name=p22 lab=VSS}
-C {iopin.sym} 840 -810 0 0 {name=p23 lab=VSS}
+C {lab_pin.sym} 480 -910 2 0 {name=p16 lab=VDD}
+C {lab_pin.sym} 600 -910 2 0 {name=p17 lab=VDD}
+C {lab_pin.sym} 720 -910 2 0 {name=p18 lab=VDD}
+C {lab_pin.sym} 840 -910 2 0 {name=p19 lab=VDD}
+C {lab_pin.sym} 480 -810 0 0 {name=p20 lab=VSS}
+C {lab_pin.sym} 600 -810 0 0 {name=p21 lab=VSS}
+C {lab_pin.sym} 720 -810 0 0 {name=p22 lab=VSS}
+C {lab_pin.sym} 840 -810 0 0 {name=p23 lab=VSS}
