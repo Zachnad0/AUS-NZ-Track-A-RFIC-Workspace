@@ -243,8 +243,27 @@ reset to break latch symmetry, CLK swept. TT, 27 °C, 3.3 V.
   TSPC (dynamic, single clock) is lighter but marginal at 6.37 GHz in 180 nm. Static
   CMOS (`D_FF_v1`-style) is viable only for later ÷2 stages once ≤ ~1 GHz.
 
-**Decision pending (Greg):** CML vs TSPC for the high-speed first ÷2. `DIV2_QUAD_v1`
-authoring is on hold until the topology is chosen.
+**Decision: CML** (Greg). Single CML ÷2 = two NMOS CML D-latches in a master-slave
+ring, master clocked by VCO `out_p`/`out_n`, slave on the complement; one loop
+inversion (slave outputs cross-fed to master inputs) → ÷2 with **quadrature I/Q**
+at VCO/2 (2.06–3.18 GHz). Device-level (per latch): track pair + cross-coupled
+latch pair + clock-steering pair (6× nfet_03v3, W≈10 µm/L=0.3 µm), 2× load R
+(≈2 kΩ for ~400 mV single-ended swing at 200 µA tail), tail current source.
+Two latches + a CMOS-level output buffer (CML ~400 mV → rail). Bias explicit:
+external `IBIAS_CP`-style reference sets the tail current (documented, `pins.md`).
+
+**Power cost (vs static-CMOS elimination above):** CML draws **continuous** bias —
+2 latches × 200 µA tail ≈ **0.4 mA → ~1.3 mW static** at 3.3 V (before the output
+buffer), against **~0 static** for the (unusable) static-CMOS divider. This is the
+price of reaching the 4.11–6.37 GHz band; it is the divider's dominant power term.
+
+**Checkpoint (parked):** CML architecture + device-level design + first-pass sizing
+locked (above). **Schematic authoring (`DIV2_QUAD_v1.sch/.sym`, new files, explicit
+labels, 3.3 V) + functional ÷2 + quadrature-accuracy + timing-margin sweep across
+4.11–6.37 GHz + CMOS output buffer are queued for the Run-A compute window**, with
+condition-5 VCO characterization and condition-6 inductor re-extraction.
+
+**Decision (Greg):** CML chosen.
 
 **Along the way:** `D_FF_v1` (no reset) can't self-start a toggle FF from the
 symmetric latch state (needs a symmetry-break); use `D_FF_RST_v1`. `D_FF_RST_v1`
