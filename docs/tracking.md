@@ -1,0 +1,70 @@
+# Tracking & Milestones — AUS/NZ Track A RFIC
+
+**Team A01 · IEEE SSCS Chipathon 2026 · GF180MCU**
+Last updated: 2026-07-30.
+
+Companion to the team **Progress Tracker** spreadsheet:
+<https://docs.google.com/spreadsheets/d/1ioGDfle-Np0gdS-PER5QJmRa5nnGZcALtzJDiHwNKBI/edit>
+This file is the git-tracked, dated view; the sheet is the live shared view.
+
+Owners: **Zach** (@Zachnad0, team lead — VCO, inductor), **Greg**
+(@gregorydaley1209 — PFD, CP, digital, divider, integration, layout, docs),
+**xyfy3** (member — support). "Team" = shared.
+
+---
+
+## 1. Schedule vs. organizer deadlines
+
+| Date | Gate | What we deliver | Status | Owner |
+|------|------|-----------------|--------|-------|
+| **Jul 31** | Weekly form closes | Area Estimate + Pin count lines in issue #143; on-track claim for Aug 6 | 🟡 In progress (this update) | Greg |
+| **Aug 6** | DRC dry-run | Sample GDS exists and passes DRC (librelane workshop-slot flow) | ⬜ Not started | Greg |
+| **Aug 7** | Sample layout review | Present sample-cell layout | ⬜ Not started | Greg |
+| **Aug 10** | Layout review docs due | Per-cell DRC/LVS table, PNGs, area vs estimate | ⬜ Not started | Greg |
+| **Aug 14** | Block layout reviews | Reviewed block layouts (digital chain + CP) | ⬜ Not started | Team |
+| **Aug 21** | Dry-run chip GDS | Top level in slot + padframe → channel partner | ⬜ Not started | Greg |
+| **Aug 28** | Verification + final review | Full-chip DRC/LVS/antenna clean, final GDS | ⬜ Not started | Team |
+
+---
+
+## 2. Reviewer conditions → status (schematic-review Conditional-Go)
+
+Addresses review condition 8 (milestones + fallback reflecting unstarted blocks).
+
+| # | Condition (Caglar) | Action | Status | Owner |
+|---|--------------------|--------|--------|-------|
+| 1 | Freeze reduced minimum scope | `scope.md` tiers frozen | 🟢 Done (this update) | Greg |
+| 2 | Consistent frequency plan + feasible divider | f–VTUNE sweep → pick plan A/B; assess ÷2 feasibility | 🟡 Sim queued | Zach/Greg |
+| 3 | PLL diagram must include CP + loop filter | Corrected chain in `scope.md` §2 | 🟢 Done | Greg |
+| 4 | Verify PFD for lead / lag / equal-freq | 3-case PFD sim; **resolve sym/sch pin mismatch first** | 🟡 Queued | Greg |
+| 5 | Full VCO characterization | f-Vtune, KVCO, power, swing, startup, corners → `verification.md` | 🟡 Queued | Zach |
+| 6 | Inductor model is preliminary | Re-extract L/Q/SRF vs `.subckt` | 🟡 Queued | Zach |
+| 7 | On/off-chip partition + test approach | `pins.md` partition + per-pad test notes | 🟢 Done (v1) | Greg |
+| 8 | Milestones + fallback scope | This file + `scope.md` §6 | 🟢 Done | Greg |
+
+---
+
+## 3. Near-term task backlog
+
+| Task | Blocks | Owner | Target |
+|------|--------|-------|--------|
+| Post area + pin data to issue #143 | Jul 31 form | Greg | Jul 31 |
+| VCO f–VTUNE sweep → finalize freq plan | cond. 2, `scope.md` §3 | Zach/Greg | pre-Aug 6 |
+| Resolve `PFD_v1` / `D_FF_RST_v1` / `NAND3_v1` symbol↔schematic pin mismatch | cond. 4 | Greg | pre-PFD sim |
+| Project rail decision (1.8 V tb sources vs 3.3 V cells vs CP at 3.3 V) | Phase-3 sims | Greg + team | pre-mass-sim |
+| PFD 3-case + PFD+CP integration sim | cond. 4 | Greg | pre-Aug 6 |
+| VCO characterization suite | cond. 5 | Zach | pre-Aug 6 |
+| Inductor re-extraction | cond. 6 | Zach | pre-Aug 6 |
+| librelane workshop-slot flow → sample GDS + DRC | Aug 6 gate | Greg | Aug 6 |
+| Cell layouts (NOT→NAND3→DFF→D_FF_RST→PFD→CP) | Aug 14 | Greg | Aug 7–14 |
+| VCO/tank layout around inductor | Aug 14 | Zach/Greg | Aug 14 |
+| Top-level place in slot + padframe → GDS | Aug 21 | Greg | Aug 21 |
+
+---
+
+## 4. Consolidation status (repo)
+
+- Working integration branch: `integration` = `reset-dff-wip` + `main` (VCO) +
+  `cp-wip` (CP), merged clean, all testbenches netlist. Not yet pushed to origin.
+- Docs live under `docs/` (`scope.md`, `pins.md`, `tracking.md`, and
+  `verification.md` once Phase-3 sims run).
