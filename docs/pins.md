@@ -3,85 +3,85 @@
 **Team A01 · IEEE SSCS Chipathon 2026 · GF180MCU**
 Last updated: 2026-07-31. Pin assignments are *(estimate)*.
 
-> **Integration model (updated):** the design is delivered as a **block footprint
-> with specified pad types at fixed (organizer-scripted) placement**; the organizer
-> integrates blocks into the padframe. Our deliverable is the **8-signal block
-> interface** below, not a whole slot. The old `slot_0p5x0p5` mapping is retained
-> as a **superseded appendix** for reference only.
+> **Integration model — organizer padframe proposal.** Projects share a die
+> (**2235 × 2235 µm project area, 88 pins total**). Each project is allocated a
+> **config** = a **die share + fixed pin total**; the project chooses its own pad
+> **types** within that total. **Power counts against a block's pin total; ground
+> is a single chip-wide common** (no block pin) — confirmed by organizer (Bailey).
+> The old wafer.space `slot_*` yamls / `slot_defines.svh` are **toolchain-only**
+> now (sample-GDS proof) — see SUPERSEDED appendix.
+
+Config totals (organizer proposal):
+
+| Config | Die share | Pin total |
+|--------|-----------|----------:|
+| A | 1/4  | 22 |
+| **B** | 1/8  | **16** |
+| C | 1/8  | 6 |
+| D | 1/16 | 10 |
+| E | 1/16 | 6 |
 
 ---
 
-## 1. Block signal interface (primary)
+## 1. Block signal interface (primary) — 12 pins
 
-**8 signals + split supplies + common ground.**
+Quadrature is padded to differential I/Q; **4 monitor-grade RF output buffers**
+(~2.4–3.2 GHz) drive `I_P/I_N/Q_P/Q_N` off-chip.
 
 | # | Signal | Dir | Pad type | Notes |
 |---|--------|-----|----------|-------|
-| 1 | **RF_OUTP** | out | analog | quadrature RF out, 2.4–3.2 GHz (VCO ÷2) |
-| 2 | **RF_OUTN** | out | analog | quadrature RF out (differential) |
-| 3 | **VTUNE** | in | analog | control voltage from off-chip loop filter |
-| 4 | **CP_OUT** | out | analog | charge-pump output to off-chip loop filter |
-| 5 | **REF_IN** | in | digital (input) | reference clock |
-| 6 | **RST_N** | in | digital (input) | active-low reset (divider/PFD) |
-| 7 | **MON_OUT** | out | digital (bidir→out) | divided-down VCO monitor |
-| 8 | **IBIAS_CP** | in | digital (input), DC | external charge-pump bias (DC voltage); tied off if on-chip bias |
+| 1 | **I_P** | out | analog | in-phase output + (2.4–3.2 GHz, buffered) |
+| 2 | **I_N** | out | analog | in-phase output − |
+| 3 | **Q_P** | out | analog | quadrature output + |
+| 4 | **Q_N** | out | analog | quadrature output − |
+| 5 | **VTUNE** | in | analog | control voltage from off-chip loop filter |
+| 6 | **CP_OUT** | out | analog | charge-pump output to off-chip loop filter |
+| 7 | **IBIAS_CP** | in | analog (DC) | charge-pump bias reference |
+| 8 | **REF_IN** | in | digital | reference clock |
+| 9 | **RST_N** | in | digital | active-low reset (divider active-low RST confirmed) |
+| 10 | **MON_OUT** | out | digital | divided-down VCO monitor |
+| 11 | **VDDA** | — | power | analog supply |
+| 12 | **VDDD** | — | power | digital supply |
 
-Supplies: **VDDA + VDDD** (split analog/digital, preferred). **Ground: chip-wide
-common** (single node, shared across all blocks).
-
-**Type tally:** analog **4** (RF_OUTP, RF_OUTN, VTUNE, CP_OUT) · digital **4**
-(REF_IN, RST_N, MON_OUT, IBIAS_CP) · power **2** (VDDA, VDDD) · ground **1** (common).
+**Tally:** analog **7** · digital **3** · power **2** · **ground 0** (chip-wide
+common). **Block pin total = 12.**
 
 ---
 
 ## 2. Per-analog-signal ESD (design consideration)
 
-Each analog pad carries **secondary ESD** structures that add shunt capacitance to
-the signal. **RF_OUTP/RF_OUTN operate at 2.4–3.2 GHz**, where this pad + ESD C
-directly loads the output — output-buffer sizing and any matching **must budget the
-measured pad/ESD capacitance**. VTUNE (DC) and CP_OUT (low-frequency) are
-insensitive. Tracked as a verification item (`verification.md`).
+Each analog pad carries **secondary ESD** structures adding shunt capacitance.
+**I_P/I_N/Q_P/Q_N operate at 2.4–3.2 GHz** (VCO ÷2), where pad + ESD C loads the
+output — the 4 output-buffer sizings **must budget the measured pad/ESD C**.
+VTUNE, CP_OUT, IBIAS_CP (DC / low-freq) are insensitive. Verification item.
 
 ---
 
-## 3. Fit vs. pin-accounting interpretation (pending organizer confirmation)
+## 3. Config fit (against the real proposal totals)
 
-Two open interpretations of what counts toward a block's **pin total**:
-**(i)** power (VDDA+VDDD) + common ground counted → block total **11**;
-**(ii)** signals only → block total **8**. The binding physical resource is
-**analog pads (4 needed)**; digital/power/ground are abundant in every config.
+Block needs **12 pins** (analog 7 + digital 3 + power 2; ground is common, 0). The
+binding constraints are **total pin count** and **per-block power** — *not* an
+analog-pad budget (each project picks its own pad types within its total).
 
-Configs A–E = the five padframe pad-budgets, by analog-pad count (from
-`slot_defines.svh`); **D = slot_0p5x0p5** (current fit), **B = the 6-analog request
-target**.
+| Config | Pin total | Fits (need 12)? | Spare | Verdict |
+|--------|----------:|-----------------|------:|---------|
+| A | 22 | ✓ | 10 | oversized for the block |
+| **B** | 16 | ✓ | **4** | **chosen fit** |
+| C | 6  | ✗ | −6 | too few pins |
+| D | 10 | ✗ (12 > 10) → ✓ reduced | 0 | **fallback** (see below) |
+| E | 6  | ✗ | −6 | too few pins |
 
-| Config | Analog pads | Fits (need 4 analog)? | Analog spare | Block total (i)/(ii) | Risk |
-|--------|------------:|-----------------------|-------------:|----------------------|------|
-| A | 2  | ✗ **no** | −2 | 11 / 8 | analog-starved — infeasible |
-| **B** | 6  | ✓ | **+2** | 11 / 8 | comfortable — **request target** |
-| C | 4  | ✓ tight | 0 | 11 / 8 | zero analog margin |
-| **D** (0p5x0p5) | 4  | ✓ tight | 0 | 11 / 8 | zero analog margin — **current fit** |
-| E (workshop) | 60 | ✓ | +56 | 11 / 8 | tutorial vehicle, not our slot |
-
-- **Physical fit is interpretation-independent** — driven by the 4 analog pads.
-  Configs C and D fit with **zero analog margin**; B adds +2; A cannot fit; E is not
-  our slot.
-- **The interpretation shifts only the declared total** (11 vs 8 = the 2 power + 1
-  ground) and how the organizer tallies it — not which configs physically fit.
-
-> **PENDING organizer (Bailey) confirmation of pin accounting.** Once (i) vs (ii)
-> is fixed, one issue pin-line variant is posted (D-fit or B-request). Both drafts
-> are staged.
+- **Primary: config B (16 pins) — fits the 12-pin block with 4 spare.** Our
+  350 × 300 µm footprint (`scope.md` §5) sits well inside B's 1/8 die share.
+- **Fallback: config D (10 pins)** if B is unavailable — drop to **single-ended
+  I_P/Q_P** (remove I_N/Q_N) and **merge VDDA+VDDD** → **10 pins exact**. Costs the
+  differential I/Q outputs (monitor becomes single-ended) and supply isolation.
 
 ---
 
-## Appendix (SUPERSEDED): slot_0p5x0p5 full-frame mapping
+## Appendix (SUPERSEDED): wafer.space slot frame
 
-*Retained for reference. The block-footprint model (§0) replaces per-slot pin
-assignment; the organizer places pads. Do not treat as the live plan.*
-
-`slot_0p5x0p5` frame: analog **4** (`analog[0..3]`, N edge), bidir 38, dedicated
-input 4, `clk_pad`, `rst_n_pad`, DVDD 4, DVSS 4, 4 corners. Default mapping:
-analog[0..3] → RF_OUTP/RF_OUTN/VTUNE/CP_OUT; `clk_pad`→REF_IN; `rst_n_pad`→RST_N;
-a bidir→MON_OUT; an input→IBIAS_CP; DVDD/DVSS domain-split VDDA/VDDD/VSSA/VSSD.
-Zero analog margin (4 of 4 used).
+*Retained for reference only. The organizer padframe-proposal model (above)
+replaces this; the `slot_*` yamls / `slot_defines.svh` are used only to drive the
+LibreLane toolchain / sample-GDS proof (`verification.md` §6), not for our pin
+allocation.* `slot_0p5x0p5`: analog 4, bidir 38, input 4, clk/rst, DVDD 4, DVSS 4.

@@ -34,12 +34,14 @@ loop filter, omitting the charge pump. The corrected chain is:
 
 ```
                        (off-chip loop filter)
-  REF_IN ─▶ PFD ─▶ CP ─▶ CP_OUT ─▶ [ R + C1 || C2 ] ─▶ VTUNE ─▶ VCO ─▶ RF_OUTP/RF_OUTN
+  REF_IN ─▶ PFD ─▶ CP ─▶ CP_OUT ─▶ [ R + C1 || C2 ] ─▶ VTUNE ─▶ VCO (4.11–6.37 GHz)
              ▲    UP/DN                                            │
              │                                                     ▼
-             └──────────────── ÷N divider ◀────────────── (÷2 / quadrature) ◀┘
-                                    │
-                                    └─▶ MON_OUT (divided-down monitor, digital)
+             │                                            CML ÷2 quadrature
+             │                                            │      │        │
+             └──────────── feedback ◀─────────────────────┘      │        └─▶ MON_OUT
+                                                                  ▼
+                                     4 buffers ─▶ I_P/I_N/Q_P/Q_N (2.4–3.2 GHz, off-chip)
 ```
 
 Key points:
@@ -108,7 +110,8 @@ are correct and are now unified by the measurement: VCO 4.11–6.37 GHz → ÷2 
 | Resettable DFF | `D_FF_RST_v1.sch/.sym` | ✅ | `D_FF_RST_v1_tb` | Edge-detector reset verified. **Symbol/schematic pin mismatch to resolve** | Greg |
 | NAND3 / NAND / NOT / DFF | `NAND3_v1`, `NAND_v1`, `NOT_v1`, `D_FF_v1` | ✅ | `NAND3_v1_tb` | Leaf cells | Zach/Greg |
 | Charge pump | `CP_v1.sch/.sym` | ✅ | `CP_dc_tb`, `CP_tran_tb` | DC + transient characterized; I_CP=50µA placeholder | Greg |
-| ÷2 / quadrature divider | `DIV2_QUAD_v1` (planned) | ⏳ green-lit, **Tier 1 required** | — | Verify across full native 4.11–6.37 GHz (free-run range) + quadrature accuracy + timing margin @ 6.37 GHz worst case; queued after librelane proof | Greg |
+| ÷2 quadrature divider (CML) | `DIV2_CML_probe` → `DIV2_QUAD_v1` | 🟡 CML ÷2 proven; clean to 5 GHz, band-top tuning WIP | `DIV2_CML_probe_tb` | Divides ÷2 (verification.md §7); reaching 6.37 GHz + quadrature accuracy WIP | Greg |
+| RF output buffers (×4) | (planned) | ⏳ not started | — | Monitor-grade buffers for I_P/I_N/Q_P/Q_N at 2.4–3.2 GHz; budget pad/ESD C | Greg |
 | Loop filter | off-chip | n/a | — | Passive, on test PCB | — |
 
 > **Known issue (carried):** headless netlisting reports symbol-vs-schematic pin
@@ -179,10 +182,12 @@ components and the closed-loop stability risk from the silicon critical path.
   padframe. Our interface is the **8-signal block** in `pins.md` §1 (analog 4,
   digital 4, VDDA+VDDD, common ground), not a whole slot.
 - **On/off-chip:** loop filter off-chip (`CP_OUT`, `VTUNE`); REF/RST/MON digital;
-  RF_OUTP/N differential analog out (2.4–3.2 GHz); IBIAS_CP DC on a digital pad.
+  **`I_P/I_N/Q_P/Q_N` differential quadrature analog out (2.4–3.2 GHz) via 4
+  monitor-grade output buffers**; `IBIAS_CP` analog DC bias.
 - **Bench test:** REF from a signal generator; VTUNE swept by DC source for
-  open-loop f–VTUNE; RF_OUTP/N into 50 Ω for spectrum/phase-noise; MON_OUT to a
-  counter; loop closed through the off-chip filter for lock tests.
+  open-loop f–VTUNE; **quadrature verified as the off-chip I/Q phase difference**
+  (I_P/I_N vs Q_P/Q_N into 50 Ω, target 90°) on a scope/VNA; MON_OUT to a counter;
+  loop closed through the off-chip filter for lock tests.
 - **The `slot_0p5x0p5` full-frame plan is superseded** (see `pins.md` appendix);
   the workshop-slot LibreLane flow is retained **only as toolchain / sample-GDS
   proof**, not as our integration path.

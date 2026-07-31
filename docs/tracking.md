@@ -34,7 +34,7 @@ Addresses review condition 8 (milestones + fallback reflecting unstarted blocks)
 | # | Condition (Caglar) | Action | Status | Owner |
 |---|--------------------|--------|--------|-------|
 | 1 | Freeze reduced minimum scope | `scope.md` tiers frozen | 🟢 Done (this update) | Greg |
-| 2 | Consistent frequency plan + feasible divider | f–VTUNE sweep → pick plan A/B; assess ÷2 feasibility | 🟡 Sim queued | Zach/Greg |
+| 2 | Consistent frequency plan + feasible divider | Plan B final (VCO 4.11–6.37 GHz ÷2); static CMOS eliminated, **CML ÷2 proven** (clean to 5 GHz), band-top + quadrature WIP; 4 I/Q buffers added | 🟡 In progress | Greg |
 | 3 | PLL diagram must include CP + loop filter | Corrected chain in `scope.md` §2 | 🟢 Done | Greg |
 | 4 | Verify PFD for lead / lag / equal-freq | 3-case PFD sim; **resolve sym/sch pin mismatch first** | 🟡 Queued | Greg |
 | 5 | Full VCO characterization | f-Vtune, KVCO, power, swing, startup, corners → `verification.md` | 🟡 Queued | Zach |
