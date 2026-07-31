@@ -38,5 +38,3 @@ C {lab_pin.sym} -50 -220 0 0 {name=p13 sig_type=std_logic lab=VDD}
 C {lab_pin.sym} -50 20 0 0 {name=p14 sig_type=std_logic lab=VDD}
 C {D_FF_RST_v1.sym} 20 -200 0 0 {name=x1}
 C {D_FF_RST_v1.sym} 20 40 0 0 {name=x2}
-C {lab_pin.sym} 20 -20 0 0 {name=p15 lab=VDD}
-C {lab_pin.sym} 20 100 0 0 {name=p16 lab=VSS}

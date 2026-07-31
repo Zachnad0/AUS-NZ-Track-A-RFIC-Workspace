@@ -126,7 +126,34 @@ All at 3.3 V, 1 MHz, 100 ns REF↔FB offset; widths measured in a settled cycle
 - **1 MHz regression (pin-fix):** original 1.8 V `PFD_tb` post-fix → UP = 101.0 ns,
   reset = 0.98 ns = baseline. Pin fix is behavior-neutral (§1.4).
 
-### 2.1 PFD + CP integration (static phase error → avg I_out; coincident UP+DOWN) — PENDING
+### 2.1 PFD + CP integration (static phase error → avg I_out; coincident UP+DOWN)
+
+`PFD_CP_tb.sch` (new): `PFD_v1` UP/DOWN → `CP_v1` UP/DOWN; CP_OUT held at 1.65 V
+(mid-compliance) by a sense source; i(V_meas) = CP output current. REF fixed at
+300 ns delay, FB delay swept (φ = fbdel − 300 ns); avg current over the 3–4 µs
+cycle, 3.3 V, 1 MHz.
+
+| φ (ns) | avg I_out (µA) | φ (ns) | avg I_out (µA) |
+|---:|---:|---:|---:|
+| −200 | −9.97 | +20 | +1.15 |
+| −100 | −4.93 | +50 | +2.66 |
+| −50 | −2.42 | +100 | +5.17 |
+| −20 | −0.91 | +200 | +10.19 |
+| **0** | **+0.105** | | |
+
+- **Linear transfer `I_avg = I_CP · φ/T`.** At φ = 200 ns: 50 µA × 200n/1µ = 10 µA
+  vs measured 10.19 µA → confirms **I_CP = 50 µA** and a monotonic characteristic
+  through zero. Detector gain ≈ 50 nA/ns.
+- **Coincident UP+DOWN (φ=0, lock):** residual +0.105 µA = **~105 fC/cycle**,
+  matching the known **+110 fC/cycle CP injection**. CP handles simultaneous
+  UP+DOWN with only this small net current (no latch-up).
+- **LOOP SIGN (KVCO < 0) — verified:** REF-lead (φ>0) → UP → CP **sources** →
+  VTUNE **rises**. With KVCO < 0, VTUNE↑ ⇒ freq↓, but a slow VCO (REF leading)
+  needs freq↑. So the direct UP→UP / DOWN→DOWN wiring drives **away** from lock —
+  **the UP/DOWN→CP sense must be inverted** (swap UP/DOWN into the CP, or invert
+  the VTUNE/loop-filter polarity). This empirically confirms the `scope.md` §2
+  loop-sign constraint. **Documented only — no cell rewiring** (per ruling); the
+  inversion is applied when the loop is closed.
 
 ## 3. VCO characterization (condition 5)
 
