@@ -203,3 +203,49 @@ Two items in Zach's never-edit cells, left untouched:
 2. **`vco_v1`** — hardcoded include `/foss/designs/xschem/vco_inductor_v2.subckt`
    (portability bug: breaks netlisting in any clone not at that exact path). Should
    be a relative include or resolved via `XSCHEM_LIBRARY_PATH`.
+
+## 6. LibreLane pipeline proof (Aug-6 sample-GDS backing) — PASS (to floorplan)
+
+Ran the workshop-slot flow to floorplan (`--to OpenROAD.Floorplan`) in the
+container (LibreLane **3.0.3**).
+
+- **First attempt failed at PDK config load:** `TclError: no files matched glob
+  "…/gf180mcuD/libs.ref/sg13g2_stdcell/techlef/*__nom.tlef"`. LibreLane 3.0.3
+  injects `sg13g2_stdcell` (an **IHP** SCL) as the default instead of honoring the
+  PDK's `STD_CELL_LIBRARY=gf180mcu_fd_sc_mcu7t5v0`. This is the 3.0.3-vs-pinned-
+  3.0.0 drift the repo docs warn about.
+- **Workaround (no pin, no install):** force `--scl gf180mcu_fd_sc_mcu7t5v0` on the
+  CLI. Config load then cleared.
+- **Result:** synthesis + floorplan complete, "Flow complete.", exit 0. Floorplan
+  die 2935×2935 µm, core 442…2493 (matches the workshop slot). Benign warnings
+  only. **The pipeline runs end-to-end at 3.0.3 with the `--scl` override.** Full
+  signoff (Run A) uses the same override.
+
+## 7. Divide-by-2 divider feasibility (DIV2, condition 1 minimum scope)
+
+**Static CMOS cannot divide the VCO — a high-speed first stage is mandatory.**
+
+Probe `DIV2_toggle_probe_tb.sch`: `D_FF_RST_v1` as a toggle FF (D tied to !Q),
+reset to break latch symmetry, CLK swept. TT, 27 °C, 3.3 V.
+
+| CLK | QOUT Vpp | ÷2? |
+|---:|---:|---|
+| 1.00 GHz | 3.68 V | ✅ clean (QOUT = 500 MHz) |
+| 2.00 GHz | 0.61 V | ✗ not reaching logic levels |
+| 3.00–6.37 GHz | < 2 mV | ✗ dead |
+
+- **Static-CMOS max clean ÷2 ≈ 1–1.5 GHz**, dead by 3 GHz.
+- **VCO native band is 4.11–6.37 GHz** (§3) — static CMOS can't handle even the
+  *slowest* VCO frequency, let alone the 6.37 GHz worst case.
+- **First divider stage must be CML or TSPC.** CML (differential current-steering)
+  takes the differential VCO clock directly, reaches 6.37 GHz easily in 180 nm, and
+  gives quadrature I/Q naturally — but burns static bias current and is larger.
+  TSPC (dynamic, single clock) is lighter but marginal at 6.37 GHz in 180 nm. Static
+  CMOS (`D_FF_v1`-style) is viable only for later ÷2 stages once ≤ ~1 GHz.
+
+**Decision pending (Greg):** CML vs TSPC for the high-speed first ÷2. `DIV2_QUAD_v1`
+authoring is on hold until the topology is chosen.
+
+**Along the way:** `D_FF_v1` (no reset) can't self-start a toggle FF from the
+symmetric latch state (needs a symmetry-break); use `D_FF_RST_v1`. `D_FF_RST_v1`
+**RST is active-low**.
