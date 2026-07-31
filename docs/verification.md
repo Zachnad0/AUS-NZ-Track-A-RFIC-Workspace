@@ -257,11 +257,28 @@ external `IBIAS_CP`-style reference sets the tail current (documented, `pins.md`
 buffer), against **~0 static** for the (unusable) static-CMOS divider. This is the
 price of reaching the 4.11–6.37 GHz band; it is the divider's dominant power term.
 
-**Checkpoint (parked):** CML architecture + device-level design + first-pass sizing
-locked (above). **Schematic authoring (`DIV2_QUAD_v1.sch/.sym`, new files, explicit
-labels, 3.3 V) + functional ÷2 + quadrature-accuracy + timing-margin sweep across
-4.11–6.37 GHz + CMOS output buffer are queued for the Run-A compute window**, with
-condition-5 VCO characterization and condition-6 inductor re-extraction.
+**Build + bring-up (in progress).** Flat probe `DIV2_CML_probe_tb.sch` (12×
+nfet_03v3 CML ÷2, ideal tails, R loads, differential clock) — generated
+programmatically, netlist-clean, zero auto-nets.
+
+| Sizing | 1 GHz | 3 GHz | 5 GHz | 6.37 GHz |
+|--------|-------|-------|-------|----------|
+| W=40µm, tail=400µA, R=2 kΩ | ✅ ÷2 (500 MHz, 1.6 V) | ✗ subharmonic | ✗ | ✗ |
+| W=40µm, tail=1.2 mA, R=500 Ω | — | — | ✅ **÷2 (2.5 GHz, 0.44 V)** | ✗ (~2 GHz) |
+
+- **Topology verified:** clean ÷2 with the differential clock; the low-sizing case
+  proves function at 1 GHz, the speed-optimized case **divides cleanly at 5 GHz —
+  covering the ISM operating point** (VCO 4.8–5.0 GHz → 2.4–2.5 GHz).
+- **Band top (5–6.37 GHz) not yet locked** — needs one more speed push (R↓ ~350 Ω,
+  tail↑), i.e. faster load RC while holding gm·R > 1.
+- **Power grows with speed:** at R=500 Ω/1.2 mA the two tails draw **2.4 mA ≈ 8 mW**
+  (vs the ~1.3 mW first estimate at 200 µA) — reaching 6.37 GHz costs current. This
+  is the key CML trade to log against the static-CMOS elimination.
+
+**Remaining (queued, Run-A window):** reach 6.37 GHz band-top; verify quadrature
+I/Q accuracy (90°) at the operating point; CMOS-level output buffer; package into
+`DIV2_QUAD_v1.sch/.sym` (cell + symbol). Bundled with condition-5 VCO
+characterization + condition-6 inductor re-extraction.
 
 **Decision (Greg):** CML chosen.
 
