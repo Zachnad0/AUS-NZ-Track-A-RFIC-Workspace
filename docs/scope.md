@@ -51,28 +51,50 @@ Key points:
 - The **divider** closes the loop back to the PFD and also drives `MON_OUT`, a
   divided-down copy of the VCO for frequency observation on a digital pad.
 
+**Loop sign (KVCO < 0).** The VCO tuning is inverted — KVCO ≈ −683 MHz/V (§3), so
+frequency *falls* as VTUNE *rises*. For the loop to lock, the UP/DOWN → charge-pump
+sense must be **inverted** relative to the textbook KVCO > 0 case: a phase-lead
+condition must move VTUNE in the direction that *lowers* VCO frequency toward lock.
+Concretely, the CP's pump-up/pump-down assignment (which of UP/DOWN sources vs
+sinks into the loop filter) is chosen so that the net correction drives VTUNE the
+right way for KVCO < 0. **This is verified empirically at tb level** in the PFD+CP
+integration sim (condition 4): the sign of average `I_out` vs static phase error
+must move VTUNE toward lock, not away. No cell rewiring is done for this now — it
+is a documented design constraint to be confirmed by simulation.
+
 ---
 
-## 3. Frequency plan — PENDING measured f–VTUNE sweep
+## 3. Frequency plan — FINAL (measured)
 
-The review flagged an inconsistency between the proposal (2.4–2.5 GHz) and the
-review discussion (4.5–5.7 GHz, ÷2). **We are not publishing a chosen band until
-we have a measured f–VTUNE sweep of `vco_v1`.** Two candidates remain open:
+**Operating spec: 2.4–2.5 GHz output, post-÷2.** The VCO runs at **4.8–5.0 GHz**
+(VTUNE ≈ 2.05–2.28 V) and the ÷2 divider brings it to the 2.4–2.5 GHz ISM band.
+Plan **B** is adopted; Plan A (native 2.4 GHz, no divider) is eliminated — the
+tank cannot reach 2.4 GHz.
 
-| Candidate | VCO native band | Divider in Tier 1? | ISM output |
-|-----------|-----------------|--------------------|------------|
-| **A** | 2.4–2.5 GHz native | **No** ÷2 needed for minimum scope | VCO directly in-band |
-| **B** | ~4.5–5.7 GHz native | **Yes**, ÷2 to reach band | VCO ÷2 → 2.4–2.5 GHz |
+Measured f–VTUNE of `vco_v1` (TT, 27 °C, VDD 3.3 V; full sweep in
+`verification.md` §3):
 
-The choice between A and B depends solely on the measured oscillation frequency of
-`vco_v1` at nominal VTUNE and across the tune range. The measurement (step 11 of
-the work plan) is queued; this section will be finalized with the measured band,
-KVCO, and the resulting divider decision. Candidate B also determines whether the
-high-speed ÷2 divider is feasible at the native rate (review condition 2).
+| | VTUNE ≈ 0 V | VTUNE ≈ 2.15 V (ISM) | VTUNE ≈ 3.3 V |
+|---|---|---|---|
+| **VCO** | 6.37 GHz | ~4.9 GHz | 4.11 GHz |
+| **÷2 output** | 3.18 GHz | ~2.45 GHz | 2.06 GHz |
 
-> **Status: OPEN.** No band is committed. The area estimate in Section 5 already
-> reserves room for the ÷2/quadrature divider, so it is valid under either
-> candidate.
+- **Native band 4.11–6.37 GHz** → ÷2 output **2.06–3.18 GHz**. The 2.4–2.5 GHz ISM
+  target sits mid-range with **tuning margin on both sides**.
+- **KVCO ≈ −683 MHz/V** average (up to −1.4 GHz/V mid-range, ≈ −790 MHz/V near the
+  ISM operating point). Tuning is **inverted** (freq falls as VTUNE rises — NMOS
+  varactor); see the loop-sign note in §2.
+- **Divider is REQUIRED** and stays in Tier 1 minimum scope.
+
+**Paper-trail resolved (condition 2):** the proposal's 2.4–2.5 GHz was always the
+**post-divider output**; the review's 4.5–5.7 GHz was the **native VCO band**. Both
+are correct and are now unified by the measurement: VCO 4.11–6.37 GHz → ÷2 →
+2.06–3.18 GHz, ISM at mid-tune.
+
+> **Caveats:** single corner (TT, 27 °C) only; the swing figures are the *buffered*
+> differential output into 50 Ω, not the tank swing; full VCO characterization
+> (corners, current/power, startup, phase noise, tank swing) is **condition 5,
+> still pending** (`verification.md` §3).
 
 ---
 
@@ -80,13 +102,13 @@ high-speed ÷2 divider is feasible at the native rate (review condition 2).
 
 | Block | File(s) | Schematic | Testbench | Sim status | Owner |
 |-------|---------|-----------|-----------|------------|-------|
-| VCO core + tank | `vco_v1.sch/.sym` | ✅ | `vco_tb`, `vco_tank_tb`, `vco_varactor_tb` | Baseline oscillation confirmed; full char pending (cond. 5) | Zach |
+| VCO core + tank | `vco_v1.sch/.sym` | ✅ | `vco_tb`, `vco_tank_tb`, `vco_varactor_tb` | f–VTUNE measured 4.11–6.37 GHz (§3); full char pending (cond. 5) | Zach |
 | Custom inductor | `magic/vco_inductor_v2` | ✅ (layout + `.subckt`) | `inductor_tb` | Preliminary model; re-extraction pending (cond. 6) | Zach |
 | PFD | `PFD_v1.sch/.sym` | ✅ | `PFD_tb` | Verified 1 MHz; 3-case re-run pending (cond. 4). **Symbol/schematic pin mismatch to resolve** | Greg |
 | Resettable DFF | `D_FF_RST_v1.sch/.sym` | ✅ | `D_FF_RST_v1_tb` | Edge-detector reset verified. **Symbol/schematic pin mismatch to resolve** | Greg |
 | NAND3 / NAND / NOT / DFF | `NAND3_v1`, `NAND_v1`, `NOT_v1`, `D_FF_v1` | ✅ | `NAND3_v1_tb` | Leaf cells | Zach/Greg |
 | Charge pump | `CP_v1.sch/.sym` | ✅ | `CP_dc_tb`, `CP_tran_tb` | DC + transient characterized; I_CP=50µA placeholder | Greg |
-| ÷2 / quadrature divider | — | ⏳ not started | — | Conditional on freq plan (cond. 2) | Greg |
+| ÷2 / quadrature divider | `DIV2_QUAD_v1` (planned) | ⏳ green-lit, **Tier 1 required** | — | Verify across full native 4.11–6.37 GHz (free-run range) + quadrature accuracy + timing margin @ 6.37 GHz worst case; queued after librelane proof | Greg |
 | Loop filter | off-chip | n/a | — | Passive, on test PCB | — |
 
 > **Known issue (carried):** headless netlisting reports symbol-vs-schematic pin
