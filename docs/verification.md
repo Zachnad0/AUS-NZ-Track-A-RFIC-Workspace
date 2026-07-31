@@ -51,9 +51,40 @@ VDD = 3.3 V — both consistent with the decision.
 - **Not edited yet** — deferred until after the issue-#143 edit verification, per
   instruction. Amplitudes will be changed only then, and never silently.
 
-> Reminder (carried from consolidation): `PFD_v1`, `D_FF_RST_v1`, and `NAND3_v1`
-> have symbol↔schematic pin-count mismatches that must be resolved before the
-> condition-4 PFD three-case runs (§2, pending).
+### 1.4 Symbol ↔ schematic pin mismatch (diagnosed; fix approved, pending container)
+
+Detected via `xschem -n` (`Error: Symbol <cell>.sym has N pins, its schematic has
+M pins`) and confirmed by direct port extraction (symbol `B …{name=…dir=…}` vs
+schematic `ipin/opin/iopin` instances).
+
+| Cell | Symbol pins | Schematic port instances | Redundant | Owner | Action |
+|------|-------------|--------------------------|-----------|-------|--------|
+| `PFD_v1` | 6 (VDD VSS REF FB UP DOWN) | 8 (VDD×2, VSS×2) | 1×VDD + 1×VSS | Greg | fix |
+| `D_FF_RST_v1` | 7 (RST VDD D Q CLK **!Q** VSS) | 19 (VDD×7, VSS×7) | 6×VDD + 6×VSS | Greg | fix |
+| `D_FF_v1` | 5 | 6 (1 dup power) | 1 dup power | Zach | **not touched** — flagged to Zach; not in PFD hierarchy |
+| `NAND3_v1`, `NAND_v1`, `NOT_v1` | 6/5/4 | 6/5/4 | none | Zach | clean, no action |
+
+**Root cause:** duplicate `VDD`/`VSS` `iopin` instances (one dropped per sub-cell).
+All port **names are correct and complete** (incl. `!Q`); only power ports repeat.
+
+**Severity:** non-fatal warning — netlists generate and `PFD_v1` verified at 1 MHz,
+so xschem de-duplicates same-named power iopins when building the `.subckt`
+pinlist. Sims tolerate it; the real risk is **Phase-4 LVS** (duplicate/ordered
+ports trip `netgen` port-matching). This is a **clean-before-layout** item.
+
+**Approved fix (`PFD_v1`, `D_FF_RST_v1` only):** convert each redundant power
+`iopin` → `lab_pin` (same `lab=`), leaving exactly one `VDD` and one `VSS` `iopin`
+per schematic. `lab_pin` keeps the net name at every stub, so VDD/VSS stay unified
+by name — no fragmentation risk. No symbol edits, no other cells.
+
+**Verification gate (per cell, when container returns):** after each edit,
+re-netlist headlessly and (a) confirm the pin-count warning cleared; (b) diff the
+generated netlist pre- vs post-edit — devices + connectivity must be identical
+modulo port-list ordering/formatting. Any semantic delta → revert and stop.
+
+**Sequencing:** fix lands + verifies **before** condition-4 results are recorded as
+final evidence. Post-fix, re-run the original `PFD_tb` 1 MHz case as a regression
+against the UP=101 ns / ~1 ns-reset baseline.
 
 ---
 

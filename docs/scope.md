@@ -90,9 +90,12 @@ high-speed ÷2 divider is feasible at the native rate (review condition 2).
 | Loop filter | off-chip | n/a | — | Passive, on test PCB | — |
 
 > **Known issue (carried):** headless netlisting reports symbol-vs-schematic pin
-> count mismatches on `PFD_v1` (sym 6 / sch 8), `D_FF_RST_v1` (sym 7 / sch 19),
-> and `NAND3_v1`. These pre-date branch consolidation and must be resolved before
-> the condition-4 PFD re-verification.
+> count warnings on `PFD_v1` (sym 6 / sch 8) and `D_FF_RST_v1` (sym 7 / sch 19),
+> caused by duplicate `VDD`/`VSS` `iopin` instances (all port names correct).
+> Non-fatal — sims run (PFD verified at 1 MHz); the risk is Phase-4 LVS. Fix
+> approved (iopin→lab_pin, one power port each), lands + verifies before condition-4
+> evidence is finalized. See `verification.md` §1.4. (`D_FF_v1`, Zach's, has the
+> same issue but is not in the PFD hierarchy — flagged to Zach, untouched.)
 
 ---
 
