@@ -65,22 +65,22 @@ C {lab_pin.sym} 1280 500 0 0 {name=lp45 lab=CK}
 C {lab_pin.sym} 1320 470 0 0 {name=lp46 lab=nLB}
 C {lab_pin.sym} 1320 530 0 0 {name=lp47 lab=TAILB}
 C {lab_pin.sym} 1320 500 0 0 {name=lp48 lab=0}
-C {res.sym} 0 -400 0 0 {name=RA1 value=500 footprint=1206 device=resistor m=1}
+C {res.sym} 0 -400 0 0 {name=RA1 value=300 footprint=1206 device=resistor m=1}
 C {lab_pin.sym} 0 -430 0 0 {name=lp49 lab=VDD}
 C {lab_pin.sym} 0 -370 0 0 {name=lp50 lab=OIB}
-C {res.sym} 260 -400 0 0 {name=RA2 value=500 footprint=1206 device=resistor m=1}
+C {res.sym} 260 -400 0 0 {name=RA2 value=300 footprint=1206 device=resistor m=1}
 C {lab_pin.sym} 260 -430 0 0 {name=lp51 lab=VDD}
 C {lab_pin.sym} 260 -370 0 0 {name=lp52 lab=OI}
-C {res.sym} 520 -400 0 0 {name=RB1 value=500 footprint=1206 device=resistor m=1}
+C {res.sym} 520 -400 0 0 {name=RB1 value=300 footprint=1206 device=resistor m=1}
 C {lab_pin.sym} 520 -430 0 0 {name=lp53 lab=VDD}
 C {lab_pin.sym} 520 -370 0 0 {name=lp54 lab=OQB}
-C {res.sym} 780 -400 0 0 {name=RB2 value=500 footprint=1206 device=resistor m=1}
+C {res.sym} 780 -400 0 0 {name=RB2 value=300 footprint=1206 device=resistor m=1}
 C {lab_pin.sym} 780 -430 0 0 {name=lp55 lab=VDD}
 C {lab_pin.sym} 780 -370 0 0 {name=lp56 lab=OQ}
-C {isource.sym} 1400 0 0 0 {name=IA value=1.2m}
+C {isource.sym} 1400 0 0 0 {name=IA value=2.4m}
 C {lab_pin.sym} 1400 -30 0 0 {name=lp57 lab=TAILA}
 C {lab_pin.sym} 1400 30 0 0 {name=lp58 lab=0}
-C {isource.sym} 1400 500 0 0 {name=IB value=1.2m}
+C {isource.sym} 1400 500 0 0 {name=IB value=2.4m}
 C {lab_pin.sym} 1400 470 0 0 {name=lp59 lab=TAILB}
 C {lab_pin.sym} 1400 530 0 0 {name=lp60 lab=0}
 C {vsource.sym} 1700 -400 0 0 {name=V_VDD value="3.3" savecurrent=false}

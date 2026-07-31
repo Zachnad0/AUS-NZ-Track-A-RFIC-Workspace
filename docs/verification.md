@@ -261,24 +261,33 @@ price of reaching the 4.11–6.37 GHz band; it is the divider's dominant power t
 nfet_03v3 CML ÷2, ideal tails, R loads, differential clock) — generated
 programmatically, netlist-clean, zero auto-nets.
 
-| Sizing | 1 GHz | 3 GHz | 5 GHz | 6.37 GHz |
-|--------|-------|-------|-------|----------|
-| W=40µm, tail=400µA, R=2 kΩ | ✅ ÷2 (500 MHz, 1.6 V) | ✗ subharmonic | ✗ | ✗ |
-| W=40µm, tail=1.2 mA, R=500 Ω | — | — | ✅ **÷2 (2.5 GHz, 0.44 V)** | ✗ (~2 GHz) |
+Sizing progression (W=40 µm nfet_03v3, differential clock, ideal tails):
 
-- **Topology verified:** clean ÷2 with the differential clock; the low-sizing case
-  proves function at 1 GHz, the speed-optimized case **divides cleanly at 5 GHz —
-  covering the ISM operating point** (VCO 4.8–5.0 GHz → 2.4–2.5 GHz).
-- **Band top (5–6.37 GHz) not yet locked** — needs one more speed push (R↓ ~350 Ω,
-  tail↑), i.e. faster load RC while holding gm·R > 1.
-- **Power grows with speed:** at R=500 Ω/1.2 mA the two tails draw **2.4 mA ≈ 8 mW**
-  (vs the ~1.3 mW first estimate at 200 µA) — reaching 6.37 GHz costs current. This
-  is the key CML trade to log against the static-CMOS elimination.
+| tail / R | 1 GHz | 3 GHz | 5 GHz | 6.37 GHz | swing |
+|----------|-------|-------|-------|----------|-------|
+| 400 µA / 2 kΩ | ✅ ÷2 | ✗ | ✗ | ✗ | 1.6 V |
+| 1.2 mA / 500 Ω | — | — | ✅ ÷2 | ✗ (~2 GHz) | 0.44 V |
+| **2.4 mA / 300 Ω** | — | — | ✅ ÷2 | ✅ **÷2** | 0.83–1.4 V |
 
-**Remaining (queued, Run-A window):** reach 6.37 GHz band-top; verify quadrature
-I/Q accuracy (90°) at the operating point; CMOS-level output buffer; package into
-`DIV2_QUAD_v1.sch/.sym` (cell + symbol). Bundled with condition-5 VCO
-characterization + condition-6 inductor re-extraction.
+**Full-band ÷2 + quadrature CONFIRMED** (final sizing, tail 2.4 mA / R 300 Ω):
+
+| VCO in | ÷2 out (meas) | quadrature phase(I→Q) |
+|-------:|--------------:|----------------------:|
+| 4.11 GHz | 2.058 GHz | −90.4° |
+| 5.00 GHz | 2.500 GHz | −90.0° |
+| 6.37 GHz | 3.185 GHz | −90.0° |
+
+- Clean ÷2 across the **entire 4.11–6.37 GHz native band**; consistent **−90°
+  quadrature** (Q leads I) at all three points. Differential swing 0.83–1.4 V.
+- **Final power (honest):** two tails × 2.4 mA = **4.8 mA → ~16 mW static** at 3.3 V
+  (before output buffers), vs ~8 mW at the 5 GHz-only checkpoint and ~0 for the
+  eliminated static-CMOS divider. **Reaching the 6.37 GHz band top doubled the
+  current** — the dominant divider power term and the price of the CML choice.
+
+**Remaining:** CMOS-level output buffers (4×, for I_P/I_N/Q_P/Q_N); replace ideal
+tails with a real bias mirror (`IBIAS`); package into `DIV2_QUAD_v1.sch/.sym`
+(cell + symbol). Can wait for the next session / Run-A window (with condition-5 VCO
+characterization + condition-6 inductor re-extraction).
 
 **Decision (Greg):** CML chosen.
 
