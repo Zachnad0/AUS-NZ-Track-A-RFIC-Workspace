@@ -37,10 +37,10 @@ device=resistor
 m=1}
 C {lab_pin.sym} 240 70 2 0 {name=p9 sig_type=std_logic lab=VSS}
 C {code_shown.sym} -90 100 0 0 {name=s1 only_toplevel=false value="
-VDD VDD 0 1.8
+VDD VDD 0 3.3
 VSS VSS 0 0
-VCLK CLK 0 PULSE(0 1.8 0 1n 1n 500n 1u)
-VRST RST 0 PULSE(0 1.8 200n 1n 1n 10 20)
+VCLK CLK 0 PULSE(0 3.3 0 1n 1n 500n 1u)
+VRST RST 0 PULSE(0 3.3 200n 1n 1n 10 20)
 
 .control
   tran 10p 5u

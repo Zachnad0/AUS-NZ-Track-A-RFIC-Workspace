@@ -106,11 +106,27 @@ VDD/VSS).
 
 ---
 
-## 2. PFD three-case verification (condition 4) — PENDING
+## 2. PFD three-case verification (condition 4)
 
-Testbenches drafted (`PFD_tb_lead`, `PFD_tb_lag`, `PFD_tb_eqfreq`) at 3.3 V with
-≥50 ns arming delays; netlist + run queued for container availability. Baseline to
-reproduce: UP = 101 ns at a 100 ns REF-vs-FB offset, ~1 ns reset pulse, 1 MHz.
+All at 3.3 V, 1 MHz, 100 ns REF↔FB offset; widths measured in a settled cycle
+(TD = 2 µs) at the 1.65 V threshold. Post pin-fix (§1.4) and rail correction
+(§1.3).
+
+| Case | Phase | UP width | DOWN width | Interpretation |
+|------|-------|---------:|-----------:|----------------|
+| `PFD_tb` (corrected) | REF leads 100 ns | **100.5 ns** | 0.48 ns | net UP → pump up |
+| `PFD_tb_lead` | REF leads 100 ns | **100.5 ns** | 0.48 ns | matches `PFD_tb` (cross-check) |
+| `PFD_tb_lag` | FB leads 100 ns | 0.48 ns | **100.5 ns** | net DOWN → pump down |
+| `PFD_tb_eqfreq` | aligned (0°) | 0.50 ns | 0.50 ns | UP = DOWN reset → locked, net-zero |
+
+- **Phase-lead → wide UP, narrow DOWN; phase-lag → the mirror; equal-freq → equal
+  narrow reset pulses.** Correct three-region PFD characteristic.
+- The reset pulse is **~0.48–0.50 ns at 3.3 V** (vs ~0.98 ns at 1.8 V — faster
+  logic at the higher rail), consistent across all cases.
+- **1 MHz regression (pin-fix):** original 1.8 V `PFD_tb` post-fix → UP = 101.0 ns,
+  reset = 0.98 ns = baseline. Pin fix is behavior-neutral (§1.4).
+
+### 2.1 PFD + CP integration (static phase error → avg I_out; coincident UP+DOWN) — PENDING
 
 ## 3. VCO characterization (condition 5)
 

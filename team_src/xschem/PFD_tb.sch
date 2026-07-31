@@ -37,9 +37,9 @@ N -320 -110 -160 -40 {lab=#net1}
 N -320 -0 -160 -20 {lab=#net2}
 N 140 -40 210 -40 {lab=#net3}
 C {PFD_v1.sym} -10 -10 0 0 {name=x1}
-C {vsource.sym} -320 -80 0 0 {name=V1 value="PULSE(0 1.8 50n 100p 100p 500n 1u)" savecurrent=false}
-C {vsource.sym} -320 30 0 0 {name=V2 value="PULSE(0 1.8 150n 100p 100p 500n 1u)" savecurrent=false}
-C {vsource.sym} 210 -10 0 0 {name=V3 value=1.8 savecurrent=false}
+C {vsource.sym} -320 -80 0 0 {name=V1 value="PULSE(0 3.3 50n 100p 100p 500n 1u)" savecurrent=false}
+C {vsource.sym} -320 30 0 0 {name=V2 value="PULSE(0 3.3 150n 100p 100p 500n 1u)" savecurrent=false}
+C {vsource.sym} 210 -10 0 0 {name=V3 value=3.3 savecurrent=false}
 C {gnd.sym} -320 -50 0 0 {name=l1 lab=0}
 C {gnd.sym} -320 60 0 0 {name=l2 lab=0}
 C {gnd.sym} 210 20 0 0 {name=l3 lab=0}
@@ -55,7 +55,7 @@ C {code_shown.sym} -70 150 0 0 {name=s1 only_toplevel=false value="
 tran 100p 5u uic
 write PFD_tb.raw
 .endc
-.ic v(net1)=1.8
+.ic v(net1)=3.3
 "}
 C {lab_pin.sym} 140 -20 2 0 {name=p1 sig_type=std_logic lab=UP}
 C {lab_pin.sym} 140 20 2 0 {name=p2 sig_type=std_logic lab=DOWN}
