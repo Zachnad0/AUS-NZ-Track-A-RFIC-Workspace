@@ -1,0 +1,19 @@
+# ----- ------ ----- ----- ------ ----- ----- ------ -----
+# Chipathon 2026: Project configuration
+# LICENSE: Apache License Version 2.0
+# http://www.apache.org/licenses/
+# ----- ------ ----- ----- ------ ----- ----- ------ -----
+
+# data will be pulled from main branch of the repo.
+# please be sure that the main branch contains the data you want to submit.
+# This file will be updated with more information later
+
+# ======================================================
+# Project metadata (used for documentation / review)
+# ======================================================
+project:
+  title: "GF180MCU integer-N PLL RFIC (2.4-2.5 GHz)"
+  team: "A01"
+  discord: ""
+  description: "PLL building blocks in GF180MCU: LC-VCO (4.11-6.37 GHz), CML divide-by-2 quadrature divider, PFD and charge pump; 2.4-2.5 GHz ISM quadrature output with off-chip loop filter."
+  lvs_config: "lvs/lvs_config.json"
