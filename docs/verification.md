@@ -61,7 +61,7 @@ schematic `ipin/opin/iopin` instances).
 |------|-------------|--------------------------|-----------|-------|--------|
 | `PFD_v1` | 6 (VDD VSS REF FB UP DOWN) | 8 (VDD×2, VSS×2) | 1×VDD + 1×VSS | Greg | fix |
 | `D_FF_RST_v1` | 7 (RST VDD D Q CLK **!Q** VSS) | 19 (VDD×7, VSS×7) | 6×VDD + 6×VSS | Greg | fix |
-| `D_FF_v1` | 5 | 6 (1 dup power) | 1 dup power | Zach | **not touched** — flagged to Zach; not in PFD hierarchy |
+| `D_FF_v1` | ~~5~~ **6** | ~~6 (1 dup power)~~ **6** | ~~1 dup power~~ **NONE** | Zach | **CLAIM DISPROVEN 2026-08-05** — see note below |
 | `NAND3_v1`, `NAND_v1`, `NOT_v1` | 6/5/4 | 6/5/4 | none | Zach | clean, no action |
 
 **Root cause:** duplicate `VDD`/`VSS` `iopin` instances (one dropped per sub-cell).
@@ -196,10 +196,23 @@ H3 −18.4 dBc.
 ## 5. Notes — "For Zach" (Greg to relay; not edited here)
 
 Two items in Zach's never-edit cells, left untouched:
-1. **`D_FF_v1`** — duplicate power `iopin` (symbol 5 pins / schematic 6): one extra
-   VDD or VSS `iopin`. Same class as the PFD_v1/D_FF_RST_v1 issue (§1.4) but
-   `D_FF_v1` is **not in the PFD hierarchy**, so it does not affect condition 4.
-   Should be cleaned before any layout that uses `D_FF_v1`.
+1. **`D_FF_v1` — DUPLICATE-IOPIN CLAIM DISPROVEN (2026-08-05).** Zach asked us to
+   delete the duplicate VDD/VSS iopins; on investigation **there are none.** The
+   earlier "symbol 5 pins / schematic 6, 1 dup power" note was **incorrect** (likely
+   confused with `D_FF_RST_v1`, which genuinely had 12 duplicate power iopins, since
+   fixed §1.4). Verified on disk:
+   - `D_FF_v1.sch` has **exactly one** `iopin lab=VDD` (p3) and **one** `iopin
+     lab=VSS` (p6) — 6 ports total (CLK, D, VDD, Q, !Q, VSS). (The many `N …
+     {lab=VDD/VSS}` lines are wire segments, not ports.)
+   - `D_FF_v1.sym` has **6 pins** (VDD, D, Q, CLK, !Q, VSS) — matches the 6 schematic
+     ports. Netlisting emits **no** symbol-vs-schematic pin-mismatch warning.
+   - Identical across **all four origin branches** (main, integration, cp-wip,
+     reset-dff-wip); the `.sch`/`.sym` were never modified since creation (`413a1db`).
+   - `D_FF_v1` is **not instantiated by any cell** in the repo (PFD uses
+     `D_FF_RST_v1`), so it affects no netlist/LVS regardless.
+   **Do not "fix" this — deleting a VDD or VSS iopin would remove a required port.**
+   If Zach still sees a duplicate, he is looking at a different/local copy; confirm
+   which before any edit.
 2. **`vco_v1`** — hardcoded include `/foss/designs/xschem/vco_inductor_v2.subckt`
    (portability bug: breaks netlisting in any clone not at that exact path). Should
    be a relative include or resolved via `XSCHEM_LIBRARY_PATH`.
