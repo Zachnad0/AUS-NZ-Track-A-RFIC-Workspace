@@ -34,7 +34,7 @@ Addresses review condition 8 (milestones + fallback reflecting unstarted blocks)
 | # | Condition (Caglar) | Action | Status | Owner |
 |---|--------------------|--------|--------|-------|
 | 1 | Freeze reduced minimum scope | `scope.md` tiers frozen | 🟢 Done (this update) | Greg |
-| 2 | Consistent frequency plan + feasible divider | Plan B final (VCO 4.11–6.37 GHz ÷2); static CMOS eliminated, **CML ÷2 proven** (clean to 5 GHz), band-top + quadrature WIP; 4 I/Q buffers added | 🟡 In progress | Greg |
+| 2 | Consistent frequency plan + feasible divider | Plan B final (VCO 4.11–6.37 GHz ÷2); static CMOS eliminated, **CML ÷2 proven** (clean to 5 GHz), band-top + quadrature WIP; 4 I/Q buffers added. **`DIV2_QUAD_v1` (core+mirror+buffers packaged) is built + netlist-clean but does NOT divide in sim yet — WIP, see `docs/div2-debug.md`** | 🟡 In progress | Greg |
 | 3 | PLL diagram must include CP + loop filter | Corrected chain in `scope.md` §2 | 🟢 Done | Greg |
 | 4 | Verify PFD for lead / lag / equal-freq | 3-case PFD sim; **resolve sym/sch pin mismatch first** | 🟡 Queued | Greg |
 | 5 | Full VCO characterization | f-Vtune, KVCO, power, swing, startup, corners → `verification.md` | 🟡 Queued | Zach |
@@ -64,6 +64,9 @@ Addresses review condition 8 (milestones + fallback reflecting unstarted blocks)
 
 ## 4. Consolidation status (repo)
 
+- **`lvs/lvs_config.json` `TOP_SOURCE = chip_top` is an Aug-6 dry-run placeholder**
+  (workshop-slot sample GDS, the only cell with a real layout). **Must be repointed
+  at the integrated RFIC top before the Aug 21 block GDS.**
 - Working integration branch: `integration` = `reset-dff-wip` + `main` (VCO) +
   `cp-wip` (CP), merged clean, all testbenches netlist. Not yet pushed to origin.
 - Docs live under `docs/` (`scope.md`, `pins.md`, `tracking.md`, and

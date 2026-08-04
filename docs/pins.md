@@ -36,7 +36,7 @@ Quadrature is padded to differential I/Q; **4 monitor-grade RF output buffers**
 | 4 | **Q_N** | out | analog | quadrature output − |
 | 5 | **VTUNE** | in | analog | control voltage from off-chip loop filter |
 | 6 | **CP_OUT** | out | analog | charge-pump output to off-chip loop filter |
-| 7 | **IBIAS_CP** | in | analog (DC) | charge-pump bias reference |
+| 7 | **IBIAS** | in | analog (DC) | chip-level bias reference (external 240 µA); on-chip bias generator fans out to CP (~50 µA) and DIV2 tails (2.4 mA/tail). Was `IBIAS_CP`; renamed 2026-08-04 — **still one pad, pin total unchanged (12)** |
 | 8 | **REF_IN** | in | digital | reference clock |
 | 9 | **RST_N** | in | digital | active-low reset (divider active-low RST confirmed) |
 | 10 | **MON_OUT** | out | digital | divided-down VCO monitor |
@@ -53,7 +53,14 @@ common). **Block pin total = 12.**
 Each analog pad carries **secondary ESD** structures adding shunt capacitance.
 **I_P/I_N/Q_P/Q_N operate at 2.4–3.2 GHz** (VCO ÷2), where pad + ESD C loads the
 output — the 4 output-buffer sizings **must budget the measured pad/ESD C**.
-VTUNE, CP_OUT, IBIAS_CP (DC / low-freq) are insensitive. Verification item.
+VTUNE, CP_OUT, IBIAS (DC / low-freq) are insensitive. Verification item.
+
+> **Bias-pad rename (2026-08-04):** `IBIAS_CP` → **`IBIAS`**, a chip-level bias
+> reference. One external 240 µA feeds an on-chip bias generator that fans out to
+> both the charge pump (~50 µA) and the DIV2 CML tails (2.4 mA each). This matches
+> `CP_v1`'s stated end-state (mirrored bias from the PLL bias generator). **Pin
+> count is unchanged (still one analog-DC pad → block total 12.)** Issue #143's
+> pin-line wording may need to follow this rename (Greg to update — external).
 
 ---
 

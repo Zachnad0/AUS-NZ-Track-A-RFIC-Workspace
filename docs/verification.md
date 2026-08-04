@@ -289,6 +289,16 @@ tails with a real bias mirror (`IBIAS`); package into `DIV2_QUAD_v1.sch/.sym`
 (cell + symbol). Can wait for the next session / Run-A window (with condition-5 VCO
 characterization + condition-6 inductor re-extraction).
 
+**Bias mirror sizing (decided 2026-08-04):** external reference **240 µA** into a
+diode-connected NMOS at the bias pad sets `VBIAS`; each tail device mirrors **10:1**
+→ **2.4 mA per tail**. Two tails → **4.8 mA total CML core current** (240 µA × 10 ×
+2 = 4.8 mA). This replaces the two ideal 2.4 mA sources in `DIV2_CML_probe_tb`.
+Output-buffer topology: CML→CMOS rail-to-rail (PMOS-input diff converter, since the
+CML common mode sits near VDD, + CMOS inverter). **Buffer supply current vs the
+off-chip 50 Ω load is under review — see the load-model note; a rail-to-rail buffer
+into a DC/AC-coupled 50 Ω exceeds a single VDDA pad's ~50 mA budget, so the output
+stage is not finalized.**
+
 **Decision (Greg):** CML chosen.
 
 **Along the way:** `D_FF_v1` (no reset) can't self-start a toggle FF from the
