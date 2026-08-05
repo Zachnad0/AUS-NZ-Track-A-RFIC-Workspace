@@ -87,3 +87,44 @@ silicon starts on mismatch/noise; the cell still needs a defined startup story
 Do not re-verify ÷2 / quadrature at 4.11/5.0/6.37 GHz until step 1's tail-current
 number is right — the loading claim in `verification.md` §7 (ideal tails) will not
 hold until the real mirror delivers the current.
+
+---
+
+## PARKED 2026-08-05 — root cause NARROWED to the output buffer (supersedes the above)
+
+The tail-current suspicion above was **wrong**. Measured directly (via the 300 Ω
+loads, since `nfet_03v3` is a subckt wrapper — `@m.x1.xm_taila[id]` is invalid):
+
+| Quantity | Measured | Verdict |
+|---|---|---|
+| Tail A / Tail B current | **2.428 / 2.427 mA** | ✅ on target (2.4 mA design) |
+| CML idiff, settled, **buffers in cutoff** | **±0.57 V symmetric** | ✅ CML core divides fine |
+| Total supply | 8.7 mA | biased, not starved |
+
+The earlier "±2.9 V asymmetric idiff" and "~2.8 mA supply" were **measurement
+artifacts** (t=0 startup transient / wrong probe). **Mirror and CML core are GOOD.**
+The whole problem is the 4 output CML→CMOS converters.
+
+**Change already made (2026-08-05):** swapped the converters PMOS-input → **NMOS-input
+diff pair + PMOS current-mirror load, NMOS tail off IBIAS** (`gen_div2_quad.py`,
+regenerated). Necessary — the PMOS pair was in cutoff (CML CM 2.93 V too near VDD).
+But **still does not switch.** Two coupled faults remain, both measured:
+
+1. **OC never crosses the inverter trip.** Inverter trip = **1.515 V** (standalone DC
+   sweep, M_IP 8u / M_IN 4u). OC operating point = **1.87 V**, swing **1.79–2.07 V** —
+   min stays above the trip, inverter pinned low.
+2. **Converter loads the CML.** With the NMOS pair conducting, idiff collapsed
+   **0.57 V → 0.13–0.20 V** (hypothesis: 16 µm input devices' Miller-multiplied gate
+   cap attenuating the 5 GHz CML swing).
+
+### RESUME HYPOTHESIS (Greg, 2026-08-05) — treat as SIZING, not architecture. DO NOT implement yet.
+1. **Skew the inverter UP to OC's ~1.87 V center** (widen M_IP / narrow M_IN so the
+   trip rises from 1.515 V toward 1.87 V) — rather than trying to drag OC down to
+   1.515 V.
+2. **Shrink the 16 µm NMOS input devices** to cut the Miller loading that collapsed
+   idiff from 0.57 to 0.13–0.20 V.
+3. Even with the trip centered, a **280 mV OC swing gives poor edges** — converter
+   **gain likely needs raising too** (load/tail sizing).
+
+Cell + generator are in place (`DIV2_QUAD_v1.sch/.sym`, `_cp_work/gen_div2_quad.py`).
+DIV2 is **CUT from the Aug-14 layout scope** (see `tracking.md`); revisit for Aug 21.
