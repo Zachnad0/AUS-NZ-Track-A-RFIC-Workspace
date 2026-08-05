@@ -1,0 +1,15 @@
+* PFD_lib -- LVS golden netlist for the library-cell PFD (Aug-14 layout)
+* Topology = our PFD_v1 (2 reset-DFFs + coincidence NAND), leaves = gf180 std cells.
+* Reset path has 2x inv_1 delay (RSTN) to restore min pulse to 0.50 ns (verification 2.2).
+* Layout must LVS uniquely against this subckt.
+.subckt PFD_lib REF FB UP DOWN VDD VSS
+* DFFs: D tied high, clocked by REF/FB, async active-low reset RN=RSTN
+*   dffrnq_1 ports: D RN CLK Q VDD VNW VPW VSS  (VNW=VDD, VPW=VSS)
+X1 VDD RSTN REF  UP   VDD VDD VSS VSS gf180mcu_fd_sc_mcu7t5v0__dffrnq_1
+X2 VDD RSTN FB   DOWN VDD VDD VSS VSS gf180mcu_fd_sc_mcu7t5v0__dffrnq_1
+* coincidence: nand2_1 ports A1 A2 ZN VDD VNW VPW VSS
+XN UP DOWN NANDO VDD VDD VSS VSS gf180mcu_fd_sc_mcu7t5v0__nand2_1
+* reset delay: 2x inv_1 (ports I ZN VDD VNW VPW VSS), polarity preserved
+XI1 NANDO NDLY VDD VDD VSS VSS gf180mcu_fd_sc_mcu7t5v0__inv_1
+XI2 NDLY  RSTN VDD VDD VSS VSS gf180mcu_fd_sc_mcu7t5v0__inv_1
+.ends PFD_lib

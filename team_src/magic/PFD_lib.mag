@@ -1,0 +1,20 @@
+magic
+tech gf180mcuD
+magscale 1 10
+timestamp 0
+use gf180mcu_fd_sc_mcu7t5v0__dffrnq_1 X1
+transform 1 0 0 0 1 0
+box 0 0 3808 784
+use gf180mcu_fd_sc_mcu7t5v0__dffrnq_1 X2
+transform 1 0 3808 0 1 0
+box 3808 0 7616 784
+use gf180mcu_fd_sc_mcu7t5v0__nand2_1 XN
+transform 1 0 7616 0 1 0
+box 7616 0 8176 784
+use gf180mcu_fd_sc_mcu7t5v0__inv_1 XI1
+transform 1 0 8176 0 1 0
+box 8176 0 8624 784
+use gf180mcu_fd_sc_mcu7t5v0__inv_1 XI2
+transform 1 0 8624 0 1 0
+box 8624 0 9072 784
+<< end >>
