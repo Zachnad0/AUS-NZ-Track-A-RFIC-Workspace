@@ -124,6 +124,46 @@ are correct and are now unified by the measurement: VCO 4.11–6.37 GHz → ÷2 
 
 ---
 
+## 4.1 Device flavor — mixed 5 V digital / 3.3 V analog (decided 2026-08-05)
+
+**The digital chain (PFD + its cells) uses the `gf180mcu_fd_sc_mcu7t5v0` standard-cell
+library, which is built from 5 V (`*_05v0`) devices. The analog blocks (VCO, CP, and
+the divider) stay full-custom `*_03v3` (3.3 V).** Both run on the single 3.3 V rail.
+
+**Why:** with Zach out ~2 weeks and one person on layout, hand-drawing the custom
+digital cells (`D_FF_RST_v1`, `NAND3_v1`, …) by Aug 14 is not feasible. The library
+has the exact cells our PFD needs — `dffrnq_1` (async active-low-reset DFF) and
+`nand2_1` — which are pre-drawn and DRC-clean, so the PFD is assembled from them in
+our own topology and **re-verified** (lead/lag/equal + dead-zone + corners, see
+`verification.md §2.2`, gate passed). This supersedes the earlier "all cells 03v3"
+uniformity (`verification.md §1`) **for the digital chain only**.
+
+**Consequences accepted:** (1) the digital chain tapes out library std cells, not our
+characterized custom cells; (2) 5 V devices at 3.3 V are slower — irrelevant at the
+PFD's MHz reference rate; (3) the reset path needed 2× `inv_1` of added delay to
+restore the minimum pulse to 0.50 ns. See §4.2 for the layout-adjacency implications.
+
+## 4.2 Layout implication — 5 V std cells next to 03v3 analog
+
+Placing 5 V (`05v0`) std cells next to 3.3 V (`03v3`) analog in the same die has real
+DRC consequences, all handled by keeping the digital as a **self-contained block**,
+not by interleaving device flavors:
+
+- **DUALGATE boundary.** gf180 marks 5 V devices with the `DUALGATE` layer. The std
+  cells carry DUALGATE over their transistors; the 3.3 V analog does not. DUALGATE has
+  its own enclosure/spacing rules, so the digital block needs a **DUALGATE keep-out /
+  spacing to the nearest 03v3 device** at its boundary. (This is the same class of
+  issue the `chip_top` flow config flags: "DUALGATE drawn into high-level cells.")
+- **Well / implant spacing.** 5 V cells use their own well/implant; inter-flavor well
+  and nplus/pplus spacing rules apply at the block edge → budget a **guard-ring +
+  spacing margin** between the digital block and any analog block.
+- **Mitigation (already our partition):** PFD and CP are **separate blocks** with pad
+  interfaces (`pins.md`), so the flavor boundary lands at the inter-block gap, where a
+  guard ring + spacing absorbs it — no device-level interleaving. Do **not** place
+  individual 5 V std cells inside a 3.3 V analog block.
+- **LVS/DRC decks** cover both flavors (single gf180mcuD deck / netgen setup), so no
+  tooling change — only the physical spacing/guard-ring discipline at the boundary.
+
 ## 5. Physical area estimate *(estimate)*
 
 **Area Estimate: 350 µm × 300 µm** *(pre-layout estimate — Tier 1 + Tier 2 blocks)*

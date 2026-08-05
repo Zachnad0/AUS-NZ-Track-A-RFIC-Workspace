@@ -155,6 +155,30 @@ cycle, 3.3 V, 1 MHz.
   loop-sign constraint. **Documented only — no cell rewiring** (per ruling); the
   inversion is applied when the loop is closed.
 
+### 2.2 Library-cell PFD (Aug-14 layout path, decided 2026-08-05)
+
+For the Aug-14 layout the **digital chain moves to `gf180mcu_fd_sc_mcu7t5v0` std
+cells** (see scope.md device-flavor note): 2× `dffrnq_1` (async active-low-reset DFF)
++ `nand2_1` coincidence, **same PFD topology as `PFD_v1`** (D tied high, reset =
+NAND(UP,DOWN) → active-low RN). Re-sim at typical, 3.3 V, 2 MHz:
+
+| Case | Library UP | Library DOWN | Custom PFD_v1 |
+|------|-----------:|-------------:|---------------|
+| REF leads | 100.5 ns | 0.49 ns | 100.5 / 0.48 |
+| FB leads | 0.48 ns | 100.5 ns | 0.48 / 100.5 |
+| Equal (raw) | 0.37 ns | 0.38 ns | 0.50 / 0.50 |
+
+- **Async reset confirmed genuine** (`RN` gates latch transistors directly, not
+  clocked); **D-high works** (Q→1 on clock, cleared by reset).
+- Raw min pulse **0.37 ns** was **narrower** than custom (worse dead-zone floor) →
+  **widened with 2× `inv_1` in the RSTN path → min pulse 0.50 ns** (matches/beats
+  custom). Three regions re-confirmed with the delay.
+- **Corner dead-zone margin:** min reset pulse at **fast digital (ff) = 0.39 ns**;
+  CP steering at **slow analog (ss) ≈ 0.02 ns** (switch-close, clamped output; ≤0.155
+  ns by the 10 pF-loaded metric). **min-pulse(ff) ≫ CP-steering(ss)** → no dead zone
+  at the worst corner split. Corner runs supported (`ff`/`ss`/`fs`/`sf`).
+- Decks: `_cp_work/pfd_lib_*.spice`. **Gate PASSED (Greg, 2026-08-05).**
+
 ## 3. VCO characterization (condition 5)
 
 ### 3.1 f–VTUNE sweep (measured) — establishes the frequency plan
