@@ -174,9 +174,18 @@ NAND(UP,DOWN) → active-low RN). Re-sim at typical, 3.3 V, 2 MHz:
   **widened with 2× `inv_1` in the RSTN path → min pulse 0.50 ns** (matches/beats
   custom). Three regions re-confirmed with the delay.
 - **Corner dead-zone margin:** min reset pulse at **fast digital (ff) = 0.39 ns**;
-  CP steering at **slow analog (ss) ≈ 0.02 ns** (switch-close, clamped output; ≤0.155
-  ns by the 10 pF-loaded metric). **min-pulse(ff) ≫ CP-steering(ss)** → no dead zone
-  at the worst corner split. Corner runs supported (`ff`/`ss`/`fs`/`sf`).
+  CP switch-close at **slow analog (ss) ≈ 0.02 ns** (clamped output). min-pulse(ff) ≫
+  CP-engagement → no dead zone at the worst corner split. Corner runs supported
+  (`ff`/`ss`/`fs`/`sf`).
+  - **CAVEAT — do not read 0.39 vs 0.02 as the true margin.** The CP "steering time"
+    is methodology-dependent and the numbers are NOT the same measurement: **0.155 ns**
+    (verification §2.1) is **typical corner, 10 pF-loaded**; **0.019 ns** is **ss
+    corner, voltage-clamped switch-close** (pure device speed, no load). The
+    **loaded** CP steering at the **ss** corner — the number that would pair
+    apples-to-apples with min-pulse(ff) — was **never measured**. The qualitative
+    conclusion (CP engages in tens of ps ≪ 0.39 ns pulse, and §2.1 shows linear-
+    through-zero transfer) holds, but a rigorous loaded-ss steering figure is
+    outstanding if tighter margin accounting is needed.
 - Decks: `_cp_work/pfd_lib_*.spice`. **Gate PASSED (Greg, 2026-08-05).**
 
 ## 3. VCO characterization (condition 5)
