@@ -18,7 +18,10 @@
 		""
 	],
 	"LVS_IGNORE": [
-		""
+		"gf180mcu_fd_sc_mcu7t5v0__fill_*",
+		"gf180mcu_fd_sc_mcu7t5v0__fillcap_*",
+		"gf180mcu_fd_sc_mcu7t5v0__decap_*",
+		"gf180mcu_fd_sc_mcu7t5v0__antenna"
 	],
 	"LVS_SPICE_FILES": [
 		""
