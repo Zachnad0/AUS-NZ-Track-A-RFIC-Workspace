@@ -188,6 +188,39 @@ NAND(UP,DOWN) → active-low RN). Re-sim at typical, 3.3 V, 2 MHz:
     outstanding if tighter margin accounting is needed.
 - Decks: `_cp_work/pfd_lib_*.spice`. **Gate PASSED (Greg, 2026-08-05).**
 
+### 2.3 PFD_lib LAYOUT COMPLETE (LibreLane, 2026-08-05) — DRC + LVS clean
+
+Library-cell PFD placed+routed by LibreLane (Classic flow); passes all four sign-off
+gates. GDS: `librelane_pfd/runs/RUN_2026-08-05_23-52-38/final/gds/PFD_lib.gds`
+(regenerable from `librelane_pfd/config.json` + `src/PFD_lib.v` + the golden).
+
+| Gate | Result |
+|------|--------|
+| DRC | **Magic 0, KLayout 0** |
+| Reset inverters | **2× inv_1 in series on RSTN** (`NANDO→XI1→NDLY→XI2→RSTN`), preserved through full P&R |
+| REF vs FB insertion delay | **REF ≈ 48 fs, FB ≈ 12 fs** (wire RC, both UNBUFFERED); ~36 fs mismatch — negligible vs the 0.5 ns pulse |
+| netgen LVS vs golden | **Circuits match uniquely** (7 devices / 11 nets) |
+
+Cell inventory = golden exactly: 2 dffrnq_1 + 1 nand2_1 + 2 inv_1 + 2 tieh; the rest
+(endcap/fill/fillcap/filltie) is physical-only (LVS_IGNORE).
+
+**FIRST-RUN TRAP — read this before repeating.** The FIRST LibreLane run silently
+INSERTED 3× `dlyb_1` delay buffers: one on **FB→CLK (but NOT on REF)**, and two on the
+UP/DOWN outputs. The FB-only buffer made the REF/FB insertion delay **asymmetric = a
+static phase offset the locked PLL reads as real phase error.** A silent design change
+that would have shipped a broken PFD. `--skip OpenROAD.CTS` alone did NOT prevent it.
+
+**Config keys that fixed it** (`librelane_pfd/config.json`):
+- `CLOCK_PORT: null` — no clock, so the resizer can't treat REF/FB asymmetrically
+- `DESIGN_REPAIR_BUFFER_INPUT_PORTS` / `_OUTPUT_PORTS`: `false`
+- `PL_RESIZER_BUFFER_INPUT_PORTS` / `_OUTPUT_PORTS`: `false` (deprecated aliases — set both)
+- `RSZ_DONT_TOUCH_RX: "REF|FB"` — second-line defense
+- `DESIGN_REPAIR_REMOVE_BUFFERS: false` — MUST stay false or it strips the reset inverters
+
+**REJECT-THE-RUN RULE:** any future PFD_lib LibreLane run MUST be rejected unless
+`final/nl/PFD_lib.nl.v` shows exactly **2× inv_1 in series on RSTN** and **no dlyb/buffer
+on REF or FB**. Grep the netlist before trusting the GDS.
+
 ## 3. VCO characterization (condition 5)
 
 ### 3.1 f–VTUNE sweep (measured) — establishes the frequency plan

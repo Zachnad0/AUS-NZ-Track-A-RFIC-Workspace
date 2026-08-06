@@ -80,14 +80,14 @@ Addresses review condition 8 (milestones + fallback reflecting unstarted blocks)
 One person (Greg) doing the layout. Deliberate choice: **two blocks fully DRC+LVS
 clean and documented beats four half-done** (`scope.md §6` fallback ladder).
 
-**Layout flow:** **manual Magic + netgen LVS** against the transistor schematics we
-characterized (not LibreLane std-cell — our cells are custom, and CP/VCO need the
-manual flow anyway).
+**Layout flow (split, decided 2026-08-05):** **PFD = library std cells via LibreLane**
+(5 gf180 cells, our topology, re-verified `verification.md §2.2`); **CP_v1 = manual
+Magic + netgen LVS** (full-custom analog). VCO/CP need the manual flow regardless.
 
-| Block | Aug 14 | Reason |
+| Block | Aug 14 | Status |
 |-------|--------|--------|
-| **CP_v1** | ✅ **TARGET** | Self-contained analog; sizing frozen; ~2 d |
-| **PFD digital chain** (NOT/NAND/NAND3/DFF/D_FF_RST → PFD_v1) | ✅ **TARGET** | Verified, frozen; ~3–4 d; leaf cells are clean standalone deliverables if PFD assembly slips |
+| **PFD (`PFD_lib`)** | ✅ **DONE** | **LibreLane layout DRC+LVS clean, all 4 gates passed** (`verification.md §2.3`): Magic/KLayout DRC 0, 2× inv_1 reset delay preserved, REF/FB symmetric (~36 fs), LVS matches golden. GDS in `librelane_pfd/runs/…/final/gds/` |
+| **CP_v1** | 🟡 **TARGET (next)** | Self-contained analog; sizing frozen; ~2 d manual Magic. Analysis + golden + floorplan headless; Greg draws (matching/guard-ring) |
 | **VCO core** | ❌ **CUT** | Full-custom RF, high effort; **Zach out** — cannot be drawn by Aug 14 |
 | **DIV2 (`DIV2_QUAD_v1`)** | ❌ **CUT** | Schematic **not frozen** — output buffer doesn't switch (`div2-debug.md`); laying out a broken cell is wasted work. Revisit for Aug 21 |
 
