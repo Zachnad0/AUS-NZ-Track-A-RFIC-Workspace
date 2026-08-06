@@ -169,10 +169,14 @@ not by interleaving device flavors:
 > *legal*. It does **nothing** for noise. PFD is a hard-switching block and **CP_OUT is
 > high-impedance into the off-chip loop filter**, so substrate/capacitive coupling there
 > becomes **reference spurs on VTUNE**. The **real CP↔PFD separation is noise-driven:
-> ≥ 20 µm (30–50 µm is cheap — area isn't the constraint), double guard rings on separate
-> VSSA/VSSD returns (deep-nwell barrier if adopted), CP on VDDA / PFD on VDDD, and CP_OUT
-> shielded along its route to the pad.** Full spec in `docs/cp-layout-packet.md §3b`.
-> Do not let a future reader treat 0.48 µm as the gap.
+> ≥ 20 µm (30–50 µm is cheap — area isn't the constraint), double guard rings, CP on VDDA /
+> PFD on VDDD, and CP_OUT shielded along its route to the pad.** Full spec in
+> `docs/cp-layout-packet.md §3b`. Do not let a future reader treat 0.48 µm as the gap.
+> **Two clarifications:** (1) the guard-ring **VSSA/VSSD are on-chip labels only — NOT
+> separate ground pins**; the padframe gives one chip-wide common ground (#143), so the two
+> returns are routed separately and **star-connected to the single common-ground point**.
+> (2) **Deep nwell is NOT adopted for Aug 14** (new layer + new DRC rules, wrong week) —
+> it's a later-revision isolation option if measured spurs demand it.
 
 ## 5. Physical area estimate *(estimate)*
 

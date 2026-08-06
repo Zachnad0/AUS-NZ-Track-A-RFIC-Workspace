@@ -62,13 +62,18 @@ conservative guidance, not a hard number.)*
 
 - **Separation: ≥ 20 µm** (30–50 µm is cheap here) between PFD active and CP's mirrors /
   CP_OUT — ~40× the DRC floor. Put PFD and CP on **opposite sides** of the block.
-- **Double guard ring between them:** CP ringed by a **p+ substrate ring on quiet VSSA**;
-  PFD ringed by its own **p+ ring on VSSD** (catch PFD's injected noise at the source).
-  Route the two rings' ground returns **separately** (star to a quiet point) even though
-  chip ground is common (#143). If we adopt **deep nwell** (gf180 supports it), a **DNWELL
-  barrier/wall between the blocks** raises substrate-coupling impedance substantially —
-  strongest isolation, recommended if schedule allows.
-- **Supplies:** CP on **VDDA**, PFD on **VDDD** (already split in `pins.md`) — do not share.
+- **Double guard ring between them:** CP ringed by a **p+ substrate ring (VSSA)**; PFD
+  ringed by its own **p+ ring (VSSD)** (catch PFD's injected noise at the source).
+  **VSSA/VSSD are ON-CHIP labels only — NOT separate ground pins.** The padframe provides
+  **one chip-wide common ground** (#143: ground = 0 pins, common). Route the two rings as
+  **two separate on-chip return traces star-connected to the single common-ground point**
+  — they merge to one net there. No off-chip separate return exists; no doc should imply one.
+- **Deep nwell: NOT adopted for Aug 14.** A DNWELL barrier between the blocks would give the
+  strongest substrate isolation, but it is a **new layer with its own DRC rules — wrong week
+  to introduce it.** Rely on separation + guard rings for Aug 14; **record DNWELL as a
+  later-revision option** if measured spurs demand it.
+- **Supplies:** CP on **VDDA**, PFD on **VDDD** — these **are** separate pins (`pins.md`:
+  power 2 = VDDA + VDDD). Ground is the exception: chip-wide common, not split.
 - **CP_OUT shielding along the route to the pad:** CP_OUT is the single most sensitive net.
   Route it on Metal2/3 with **grounded (VSSA) coplanar shields on both sides + a ground
   plane beneath**; keep it **short** and **away from / never parallel to** any PFD, REF_IN,
