@@ -1,9 +1,10 @@
 * CP_v1 -- LVS golden netlist for the charge-pump layout (Aug-14, full-custom analog)
-* 8 transistors. The schematic's ideal I_CP=50uA sources (I_PREF/I_NREF) are NOT
-* layout devices -- in silicon the bias comes from the chip IBIAS generator. So the
-* bias reference nodes VGP (pmos) / VGN (nmos) are exposed as PORTS here; the external
-* bias branch that forces 50uA into each diode ref (M_PREF/M_NREF) is a PARTITION
-* DECISION for Greg (see notes). Match the layout to whatever partition is chosen.
+* 8 transistors. PARTITION DECIDED (Greg, 2026-08-05): TWO CURRENT PORTS into the
+* block -- VGP feeds diode ref M_PREF, VGN feeds diode ref M_NREF -- both driven by
+* the chip-level IBIAS generator (block ports, NOT pads; pin count unaffected). The
+* schematic's ideal I_CP=50uA sources (I_PREF/I_NREF) are NOT laid out; the IBIAS
+* generator sinks I_CP from VGP and sources I_CP into VGN externally. Devices are
+* UNCHANGED from the characterized CP_v1; only the port list differs (VGP/VGN exposed).
 .subckt CP_v1 UP DOWN CP_OUT VDD VSS VGP VGN
 * --- PMOS current mirror (sources I_CP when UP) --- MATCH M_PREF <-> M_PSRC
 XM_PREF VGP  VGP  VDD VDD pfet_03v3 L=2u   W=50u  nf=1  m=1
