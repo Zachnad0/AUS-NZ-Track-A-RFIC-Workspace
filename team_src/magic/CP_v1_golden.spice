@@ -1,0 +1,19 @@
+* CP_v1 -- LVS golden netlist for the charge-pump layout (Aug-14, full-custom analog)
+* 8 transistors. The schematic's ideal I_CP=50uA sources (I_PREF/I_NREF) are NOT
+* layout devices -- in silicon the bias comes from the chip IBIAS generator. So the
+* bias reference nodes VGP (pmos) / VGN (nmos) are exposed as PORTS here; the external
+* bias branch that forces 50uA into each diode ref (M_PREF/M_NREF) is a PARTITION
+* DECISION for Greg (see notes). Match the layout to whatever partition is chosen.
+.subckt CP_v1 UP DOWN CP_OUT VDD VSS VGP VGN
+* --- PMOS current mirror (sources I_CP when UP) --- MATCH M_PREF <-> M_PSRC
+XM_PREF VGP  VGP  VDD VDD pfet_03v3 L=2u   W=50u  nf=1  m=1
+XM_PSRC PMID VGP  VDD VDD pfet_03v3 L=2u   W=50u  nf=1  m=1
+XM_PSW  CP_OUT UP_B PMID VDD pfet_03v3 L=0.3u W=50u nf=1 m=1
+* --- NMOS current mirror (sinks I_CP when DOWN) --- MATCH M_NREF <-> M_NSNK
+XM_NREF VGN  VGN  VSS VSS nfet_03v3 L=2u   W=10u  nf=1  m=1
+XM_NSNK NMID VGN  VSS VSS nfet_03v3 L=2u   W=10u  nf=1  m=1
+XM_NSW  CP_OUT DOWN NMID VSS nfet_03v3 L=0.3u W=10u nf=1 m=1
+* --- UP inverter (UP -> UP_B for the pmos switch) ---
+XM_INVP UP_B UP VDD VDD pfet_03v3 L=0.3u W=2u nf=1 m=1
+XM_INVN UP_B UP VSS VSS nfet_03v3 L=0.3u W=1u nf=1 m=1
+.ends CP_v1
