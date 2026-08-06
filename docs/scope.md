@@ -164,6 +164,16 @@ not by interleaving device flavors:
 - **LVS/DRC decks** cover both flavors (single gf180mcuD deck / netgen setup), so no
   tooling change — only the physical spacing/guard-ring discipline at the boundary.
 
+> **The DUALGATE spacing is a DRC floor, NOT the intended block gap.** DV.3 (0.24 µm
+> DUALGATE-to-COMP) → ~0.48 µm PFD-active-to-CP-active is only what keeps the oxide/well
+> *legal*. It does **nothing** for noise. PFD is a hard-switching block and **CP_OUT is
+> high-impedance into the off-chip loop filter**, so substrate/capacitive coupling there
+> becomes **reference spurs on VTUNE**. The **real CP↔PFD separation is noise-driven:
+> ≥ 20 µm (30–50 µm is cheap — area isn't the constraint), double guard rings on separate
+> VSSA/VSSD returns (deep-nwell barrier if adopted), CP on VDDA / PFD on VDDD, and CP_OUT
+> shielded along its route to the pad.** Full spec in `docs/cp-layout-packet.md §3b`.
+> Do not let a future reader treat 0.48 µm as the gap.
+
 ## 5. Physical area estimate *(estimate)*
 
 **Area Estimate: 350 µm × 300 µm** *(pre-layout estimate — Tier 1 + Tier 2 blocks)*

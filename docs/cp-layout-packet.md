@@ -47,9 +47,36 @@ from `…/klayout/tech/drc/rule_decks/dualgate.drc`:
   past its active).
 - Net effect from PFD active edge to CP active: 0.24 (DV.6) + 0.24 (DV.3) = **0.48 µm min**.
 
-**Do → leave a ≥ 0.5 µm block-boundary gap** between CP's outer (VSS p+) guard ring and the
-PFD block edge — comfortably clears DV.3. Do **not** abut CP to PFD. Treat them as separate
-blocks with a spacing channel (`scope.md §4.2`).
+The 0.48 µm is the **DRC floor only** (oxide/well) — **NOT** the block gap. See §3b.
+
+## 3b. Noise isolation — the ACTUAL CP↔PFD gap (DRC floor is not it)
+
+The 0.24/0.48 µm DUALGATE numbers keep the oxide/well legal; they do **nothing** for
+noise. The real risk: **PFD is a hard-switching digital block; CP_OUT is high-impedance
+into the off-chip loop filter.** Substrate/capacitive coupling from PFD edges onto CP_OUT
+(or the VGP/VGN bias) shows up as **reference spurs on VTUNE** (at the comparison rate and
+harmonics) — degrading PLL phase noise. Area is not the constraint (~1200 µm² CP inside
+the 350×300 µm block), so isolate generously. *(These are design-practice values — we have
+no substrate/PEX noise sim in the container to derive a simulated minimum; treat as
+conservative guidance, not a hard number.)*
+
+- **Separation: ≥ 20 µm** (30–50 µm is cheap here) between PFD active and CP's mirrors /
+  CP_OUT — ~40× the DRC floor. Put PFD and CP on **opposite sides** of the block.
+- **Double guard ring between them:** CP ringed by a **p+ substrate ring on quiet VSSA**;
+  PFD ringed by its own **p+ ring on VSSD** (catch PFD's injected noise at the source).
+  Route the two rings' ground returns **separately** (star to a quiet point) even though
+  chip ground is common (#143). If we adopt **deep nwell** (gf180 supports it), a **DNWELL
+  barrier/wall between the blocks** raises substrate-coupling impedance substantially —
+  strongest isolation, recommended if schedule allows.
+- **Supplies:** CP on **VDDA**, PFD on **VDDD** (already split in `pins.md`) — do not share.
+- **CP_OUT shielding along the route to the pad:** CP_OUT is the single most sensitive net.
+  Route it on Metal2/3 with **grounded (VSSA) coplanar shields on both sides + a ground
+  plane beneath**; keep it **short** and **away from / never parallel to** any PFD, REF_IN,
+  MON_OUT, UP/DOWN net; cross digital nets only at 90° with ground between. VGP/VGN bias
+  rails get the same "keep away from switching" treatment.
+
+Do **not** abut CP to PFD; the ≥ 0.5 µm figure from §3 is only the DRC minimum, superseded
+here by the ≥ 20 µm noise gap.
 
 ## 4. Suggested floorplan (two bands)
 
