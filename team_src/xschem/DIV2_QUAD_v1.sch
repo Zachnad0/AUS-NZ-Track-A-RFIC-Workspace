@@ -97,12 +97,12 @@ C {lab_pin.sym} -120 1600 0 0 {name=lp69 lab=IBIAS}
 C {lab_pin.sym} -80 1570 0 0 {name=lp70 lab=NS_IP}
 C {lab_pin.sym} -80 1630 0 0 {name=lp71 lab=VSS}
 C {lab_pin.sym} -80 1600 0 0 {name=lp72 lab=VSS}
-C {symbols/nfet_03v3.sym} 160 1600 0 0 {name=M_BN1_IP L=0.3u W=16u nf=1 model=nfet_03v3 spiceprefix=X}
+C {symbols/nfet_03v3.sym} 160 1600 0 0 {name=M_BN1_IP L=0.3u W=8u nf=1 model=nfet_03v3 spiceprefix=X}
 C {lab_pin.sym} 140 1600 0 0 {name=lp73 lab=OIB}
 C {lab_pin.sym} 180 1570 0 0 {name=lp74 lab=DN1_IP}
 C {lab_pin.sym} 180 1630 0 0 {name=lp75 lab=NS_IP}
 C {lab_pin.sym} 180 1600 0 0 {name=lp76 lab=VSS}
-C {symbols/nfet_03v3.sym} 420 1600 0 0 {name=M_BN2_IP L=0.3u W=16u nf=1 model=nfet_03v3 spiceprefix=X}
+C {symbols/nfet_03v3.sym} 420 1600 0 0 {name=M_BN2_IP L=0.3u W=8u nf=1 model=nfet_03v3 spiceprefix=X}
 C {lab_pin.sym} 400 1600 0 0 {name=lp77 lab=OI}
 C {lab_pin.sym} 440 1570 0 0 {name=lp78 lab=OC_IP}
 C {lab_pin.sym} 440 1630 0 0 {name=lp79 lab=NS_IP}
@@ -135,12 +135,12 @@ C {lab_pin.sym} 1380 1600 0 0 {name=lp99 lab=IBIAS}
 C {lab_pin.sym} 1420 1570 0 0 {name=lp100 lab=NS_IN}
 C {lab_pin.sym} 1420 1630 0 0 {name=lp101 lab=VSS}
 C {lab_pin.sym} 1420 1600 0 0 {name=lp102 lab=VSS}
-C {symbols/nfet_03v3.sym} 1660 1600 0 0 {name=M_BN1_IN L=0.3u W=16u nf=1 model=nfet_03v3 spiceprefix=X}
+C {symbols/nfet_03v3.sym} 1660 1600 0 0 {name=M_BN1_IN L=0.3u W=8u nf=1 model=nfet_03v3 spiceprefix=X}
 C {lab_pin.sym} 1640 1600 0 0 {name=lp103 lab=OI}
 C {lab_pin.sym} 1680 1570 0 0 {name=lp104 lab=DN1_IN}
 C {lab_pin.sym} 1680 1630 0 0 {name=lp105 lab=NS_IN}
 C {lab_pin.sym} 1680 1600 0 0 {name=lp106 lab=VSS}
-C {symbols/nfet_03v3.sym} 1920 1600 0 0 {name=M_BN2_IN L=0.3u W=16u nf=1 model=nfet_03v3 spiceprefix=X}
+C {symbols/nfet_03v3.sym} 1920 1600 0 0 {name=M_BN2_IN L=0.3u W=8u nf=1 model=nfet_03v3 spiceprefix=X}
 C {lab_pin.sym} 1900 1600 0 0 {name=lp107 lab=OIB}
 C {lab_pin.sym} 1940 1570 0 0 {name=lp108 lab=OC_IN}
 C {lab_pin.sym} 1940 1630 0 0 {name=lp109 lab=NS_IN}
@@ -173,12 +173,12 @@ C {lab_pin.sym} 2880 1600 0 0 {name=lp129 lab=IBIAS}
 C {lab_pin.sym} 2920 1570 0 0 {name=lp130 lab=NS_QP}
 C {lab_pin.sym} 2920 1630 0 0 {name=lp131 lab=VSS}
 C {lab_pin.sym} 2920 1600 0 0 {name=lp132 lab=VSS}
-C {symbols/nfet_03v3.sym} 3160 1600 0 0 {name=M_BN1_QP L=0.3u W=16u nf=1 model=nfet_03v3 spiceprefix=X}
+C {symbols/nfet_03v3.sym} 3160 1600 0 0 {name=M_BN1_QP L=0.3u W=8u nf=1 model=nfet_03v3 spiceprefix=X}
 C {lab_pin.sym} 3140 1600 0 0 {name=lp133 lab=OQB}
 C {lab_pin.sym} 3180 1570 0 0 {name=lp134 lab=DN1_QP}
 C {lab_pin.sym} 3180 1630 0 0 {name=lp135 lab=NS_QP}
 C {lab_pin.sym} 3180 1600 0 0 {name=lp136 lab=VSS}
-C {symbols/nfet_03v3.sym} 3420 1600 0 0 {name=M_BN2_QP L=0.3u W=16u nf=1 model=nfet_03v3 spiceprefix=X}
+C {symbols/nfet_03v3.sym} 3420 1600 0 0 {name=M_BN2_QP L=0.3u W=8u nf=1 model=nfet_03v3 spiceprefix=X}
 C {lab_pin.sym} 3400 1600 0 0 {name=lp137 lab=OQ}
 C {lab_pin.sym} 3440 1570 0 0 {name=lp138 lab=OC_QP}
 C {lab_pin.sym} 3440 1630 0 0 {name=lp139 lab=NS_QP}
@@ -211,12 +211,12 @@ C {lab_pin.sym} 4380 1600 0 0 {name=lp159 lab=IBIAS}
 C {lab_pin.sym} 4420 1570 0 0 {name=lp160 lab=NS_QN}
 C {lab_pin.sym} 4420 1630 0 0 {name=lp161 lab=VSS}
 C {lab_pin.sym} 4420 1600 0 0 {name=lp162 lab=VSS}
-C {symbols/nfet_03v3.sym} 4660 1600 0 0 {name=M_BN1_QN L=0.3u W=16u nf=1 model=nfet_03v3 spiceprefix=X}
+C {symbols/nfet_03v3.sym} 4660 1600 0 0 {name=M_BN1_QN L=0.3u W=8u nf=1 model=nfet_03v3 spiceprefix=X}
 C {lab_pin.sym} 4640 1600 0 0 {name=lp163 lab=OQ}
 C {lab_pin.sym} 4680 1570 0 0 {name=lp164 lab=DN1_QN}
 C {lab_pin.sym} 4680 1630 0 0 {name=lp165 lab=NS_QN}
 C {lab_pin.sym} 4680 1600 0 0 {name=lp166 lab=VSS}
-C {symbols/nfet_03v3.sym} 4920 1600 0 0 {name=M_BN2_QN L=0.3u W=16u nf=1 model=nfet_03v3 spiceprefix=X}
+C {symbols/nfet_03v3.sym} 4920 1600 0 0 {name=M_BN2_QN L=0.3u W=8u nf=1 model=nfet_03v3 spiceprefix=X}
 C {lab_pin.sym} 4900 1600 0 0 {name=lp167 lab=OQB}
 C {lab_pin.sym} 4940 1570 0 0 {name=lp168 lab=OC_QN}
 C {lab_pin.sym} 4940 1630 0 0 {name=lp169 lab=NS_QN}
