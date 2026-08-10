@@ -94,3 +94,29 @@ Magic + netgen LVS** (full-custom analog). VCO/CP need the manual flow regardles
 Rubric caveat: the authoritative layout-review requirements land at the **Aug 7
 session** (not yet held); the CP/PFD content stays valid but extra artifacts
 (PEX/ESD numbers, specific doc format) may be added once the rubric is known.
+
+---
+
+## 6. Aug-10/14 layout-review rubric status (2026-08-05)
+
+Full evidence in `docs/layout-review-aug14.md` (all numbers file-read from run
+`librelane_pfd/runs/RUN_2026-08-05_23-52-38`).
+
+| Rubric row | Score | Status |
+|---|---|---|
+| 1 DRC/LVS correctness | **3/3** | PFD_lib: Magic 0, KLayout 0, route 0, netgen LVS match uniquely |
+| 2 Power / ground / current | **3/3** | PDN M1 rail + M4/M5 straps; IR drop VDD 9.6 µV / VSS 18.2 µV, 0 PG violations |
+| 3 Analog matching / isolation | **N/A (PFD) · NOT YET (CP)** | PFD under no-analog clause; **CP_v1 layout not drawn** ← the gap |
+| 4 Reliability | **2/3** | antenna 0, latch-up DRC-clean (tap-dist setting caveat); EM/ESD/PEX NOT DONE |
+| 5 Top-level integration | **2/3** | names match, lvs_config repointed to PFD_lib; block ≠ integrated top |
+
+- **Aug 10 (layout reviews due):** PFD_lib fully closes rows 1, 2, 5 with file-read
+  evidence + a rendered image; the review doc is written.
+- **Aug 14 (block layout reviews):** PFD_lib **DONE**; **CP_v1 is the open block** —
+  golden + drawing packet ready, layout awaiting the GUI draw (`docs/cp-layout-packet.md`).
+- **CAT 3 gap (explicit):** the analog block CP_v1 has **no drawn layout**, so no
+  matching/symmetry/guard-ring/noise-isolation evidence exists yet. This is the single
+  largest remaining Aug-14 item.
+- Submission repointing: `lvs/lvs_config.json` `TOP_SOURCE` = `PFD_lib`; GDS committed at
+  `gds/PFD_lib.gds`, netlist at `lvs/PFD_lib.nl.v` (supersedes the chip_top placeholder for
+  the layout review; the integrated RFIC top still governs before Aug 21).
