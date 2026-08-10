@@ -10,3 +10,5 @@ img/
 
 # Magic extraction output (regenerable build artifacts)
 team_src/magic/*.ext
+team_src/magic/pex_work/
+team_src/magic/verify_work/
