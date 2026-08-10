@@ -128,3 +128,86 @@ Not verified: this is a **single block**, not the integrated RFIC top (which doe
 yet). Top-level padframe integration, inter-block routing, and the CP/VCO/DIV2 blocks are not
 part of this GDS. `lvs_config` TOP must be repointed at the integrated top before the Aug-21
 GDS (`tracking.md §4`).
+
+---
+
+# CP_v1 — charge pump (full-custom analog) — LAYOUT NOT DRAWN
+
+**`CP_v1.mag` does not exist yet.** This section reviews the block against the five rubric
+rows from its schematic golden (`team_src/magic/CP_v1_golden.spice`) and drawing packet
+(`docs/cp-layout-packet.md`). **Every *measured layout* number below is an explicit `[TODO]`
+placeholder** that stays open until `CP_v1.mag` exists **and** `team_src/magic/verify_cp.sh`
+has been run on it. Schematic/golden/packet facts are stated as such.
+
+**Device table** (golden, 8 transistors; ports `UP DOWN CP_OUT VDD VSS VGP VGN`):
+
+| Device | Type | W / L | Role |
+|--------|------|-------|------|
+| M_PREF | pfet_03v3 | 50u / 2u | PMOS mirror **ref** — matched pair ↔ M_PSRC |
+| M_PSRC | pfet_03v3 | 50u / 2u | PMOS mirror **source** — matched pair ↔ M_PREF |
+| M_PSW  | pfet_03v3 | 50u / 0.3u | UP switch (gated by UP_B) |
+| M_NREF | nfet_03v3 | 10u / 2u | NMOS mirror **ref** — matched pair ↔ M_NSNK |
+| M_NSNK | nfet_03v3 | 10u / 2u | NMOS mirror **sink** — matched pair ↔ M_NREF |
+| M_NSW  | nfet_03v3 | 10u / 0.3u | DOWN switch |
+| M_INVP | pfet_03v3 | 2u / 0.3u | UP inverter (UP → UP_B) |
+| M_INVN | nfet_03v3 | 1u / 0.3u | UP inverter |
+
+## CP.1 — DRC and LVS correctness
+- **LVS target:** `CP_v1_golden.spice` — 8 transistor-level devices, 7 ports, `*_03v3` primitives.
+- **DRC:** `[TODO]` (expect 0) — after `CP_v1.mag` is drawn and `verify_cp.sh CP_v1` runs.
+- **LVS:** `[TODO]` (expect "circuits match uniquely", 8 devices) — same gate.
+- **Known LVS gotcha to handle first (not a defect, a flow note):** `nfet_03v3`/`pfet_03v3`
+  are **PDK wrapper subcircuits** around the primitive. Extracting `CP_v1.mag` yields **raw
+  devices** while the golden instantiates the wrappers → the identical **def-vs-blackbox
+  mismatch** seen on PFD_lib's std cells. Fix by **resolving the PDK primitive spice on the
+  golden side (or flattening both)** — *not* by loosening the netgen setup. `verify_cp.sh`
+  will need the analogous primitive-wrapper handling before CP_v1 LVS will pass.
+
+## CP.2 — Power, ground, current paths
+- **Chip-wide COMMON ground.** `VSSA`/`VSSD` are **on-chip labels only — NOT separate ground
+  pins**; the padframe provides one chip-wide common ground (#143). The two guard-ring
+  returns route separately and **star-connect to the single common-ground point**. No
+  separate off-chip ground return exists; no claim of one should appear.
+- **VGP/VGN are current PORTS off the chip-level IBIAS generator — NOT pads.** VGP feeds the
+  diode ref M_PREF (external IBIAS_P **sinks** I_CP from VGP); VGN feeds M_NREF (external
+  IBIAS_N **sources** I_CP into VGN). Block ports only — pin count unaffected. The schematic's
+  ideal 50 µA `I_PREF`/`I_NREF` sources are **not laid out**.
+- **Supplies split (these ARE pins):** CP on **VDDA**, PFD on **VDDD** (`pins.md` power 2).
+  Ground is the exception — common, not split.
+- **Current path:** PMOS mirror sources I_CP when UP; NMOS mirror sinks when DOWN;
+  `CP_OUT = M_PSW drain = M_NSW drain`, high-impedance into the off-chip loop filter.
+- **IR drop / rail current density:** `[TODO]` — after layout + PEX.
+
+## CP.3 — Analog matching, symmetry, noise isolation
+- **Matching is the CP's spec** (UP/DOWN current match 0.001 % @ 1.5 V in *schematic* sim).
+  Mirror pairs **M_PREF↔M_PSRC** and **M_NREF↔M_NSNK**: common-centroid interdigitation,
+  identical finger orientation, **1 dummy finger each array end**, L = 2 µm aids matching,
+  both devices of a pair in the same nwell/psub region at the same y (packet §1).
+- **+110 fC injection is a known SCHEMATIC-LEVEL flaw** (charge injection at the switches),
+  documented at the schematic; it is **not** a layout defect and layout does not fix it —
+  recorded so the review doesn't attribute it to the drawing.
+- **Noise isolation:** n+ guard ring (VDD) around the PMOS group, p+ ring (VSS) around the
+  NMOS group; ring the mirror pairs first (substrate noise on VGP/VGN modulates I_CP → loop
+  jitter). **CP↔PFD gap ≥ 20 µm (30–50 µm is cheap), NOT the 0.48 µm DRC floor**; double
+  guard ring (CP p+ VSSA, PFD p+ VSSD); CP_OUT shielded (coplanar VSSA shields + ground
+  plane, kept short, never parallel to any switching net).
+- **Deep nwell deliberately NOT adopted this cycle** (new layer + new DRC rules, wrong week);
+  recorded as a later-revision isolation option if measured spurs demand it.
+- **Extracted matching / achieved gap:** `[TODO]` — after `CP_v1.mag` + PEX.
+
+## CP.4 — Reliability and physical-design risks
+- **ESD:** block has **no pads**; secondary ESD sits with the organizer padframe. **ESD
+  quantification NOT DONE.**
+- **Electromigration / current density: NOT DONE** — no EM check exists in the flow; `[TODO]`
+  until PEX on the drawn layout.
+- **DUALGATE keep-out to PFD_lib:** DV.6 (0.24 µm) + DV.3 (0.24 µm) = **0.48 µm is the DRC
+  floor only** (oxide/well legality). The real CP-to-PFD gap target is the **20–50 µm
+  noise-driven separation** (CP.3), not 0.48 µm.
+- **Antenna / latch-up (DRC):** `[TODO]` — after layout.
+
+## CP.5 — Top-level integration and name correspondence
+- **Name correspondence:** golden is `.subckt CP_v1`; `[TODO]` GDS top cell / `.mag` cell name
+  = `CP_v1` (after drawing). Ports `UP DOWN CP_OUT VDD VSS VGP VGN` match the golden.
+- **VGP/VGN are block current ports** off the chip-level IBIAS generator (CP.2), not pads.
+- **Block ≠ integrated top** (as with PFD_lib); `lvs_config` repoint to the integrated top is
+  an Aug-21 item.
