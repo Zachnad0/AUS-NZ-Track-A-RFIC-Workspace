@@ -204,6 +204,60 @@ gates. GDS: `librelane_pfd/runs/RUN_2026-08-05_23-52-38/final/gds/PFD_lib.gds`
 Cell inventory = golden exactly: 2 dffrnq_1 + 1 nand2_1 + 2 inv_1 + 2 tieh; the rest
 (endcap/fill/fillcap/filltie) is physical-only (LVS_IGNORE).
 
+**LVS-relevant device count is 7 / 11 nets.** A flattened parasitic extraction reports
+**190 transistors** — that is the fill-inflated count (every placer `fillcap`/`fill`/
+`endcap`/`filltie` cell counted at device level). Do not quote 190 as a device count; it
+reads as a 27× discrepancy against the golden.
+
+#### 2.3.1 Independent DRC/LVS re-confirmation (`team_src/magic/verify_cp.sh`, 2026-08-10)
+A standalone headless script (Magic DRC → LVS-netlist extract → netgen LVS vs
+`PFD_lib_golden.spice`) reproduces sign-off on the committed `gds/PFD_lib.gds`:
+**DRC 0, 7 devices / 6 ports / 11 nets, circuits match uniquely.** Two documented,
+justified LVS waivers (rubric row 1 = "passes DRC+LVS with any waivers documented and
+justified"):
+- **Waiver 1 — fillcap decaps ignored** (18 instances: `fillcap_16`×6, `_32`×3, `_4`×5,
+  `_8`×4 — matches the on-record inventory exactly). This is the **same waiver LibreLane's
+  own proven run already applied via `LVS_IGNORE`**; the local netgen wrapper adds *only*
+  the PDK-provided (but commented) fillcap `ignore class` and nothing else. `endcap`/`fill`/
+  `filltie` are empty/tap-only and emit zero devices, so they need no ignore.
+- **Waiver 2 — comparison method, not a violation.** The golden's std cells are resolved
+  against the PDK `mcu7t5v0` spice so both circuits carry full definitions (a placed
+  digital block otherwise LVSes def-vs-blackbox against a schematic golden). CP_v1's
+  transistor-level golden will not need this path.
+
+#### 2.3.2 Tapcell spacing corrected 20 → 15 µm (2026-08-10)
+`librelane_pfd/config.json` carried no explicit `FP_TAPCELL_DIST`, so it inherited the
+LibreLane default **20 µm** (confirmed in `resolved.json`). PFD_lib is 5 V/MV std cells;
+GF180 **DF.13_MV/DF.14_MV cap tap-to-device at 15 µm** on `.overlapping(dualgate)` (20 µm
+is the LV/3.3 V limit, which passed only incidentally on a small block). Set to an explicit
+**15 µm** (commit `e3b6cae`). **No LibreLane re-run** — config-only correction for the next build.
+
+#### 2.3.3 REF/FB parasitic symmetry (PEX, 2026-08-10) — layout-symmetry observation, no fix
+Magic PEX on `gds/PFD_lib.gds` (`cthresh 0 rthresh 0`, all coupling caps retained):
+
+| net | rail load | signal coupling | **total cap** |
+|---|---|---|---|
+| REF | 1.966 fF | 1.601 fF | **3.567 fF** |
+| FB  | 1.303 fF | 1.074 fF | **2.377 fF** |
+| RSTN (`X2.RN`) | 4.529 fF | 3.242 fF | **7.771 fF** |
+
+REF carries **+1.190 fF (33%) more than FB**, consistent across both rail loading and
+signal coupling. The one genuinely interesting line is **REF↔`X1_1.Z` = 0.360 fF —
+logic-net crosstalk onto a clock input**, not just rail loading.
+
+**Framed as fraction of the reference period, this is negligible.** At the 1 MHz reference
+even a pessimistic ~5 ps skew from 1.2 fF is 5×10⁻⁶ of a cycle ≈ **0.002° static phase
+offset** (~1% of the 0.5 ns minimum reset pulse). **And the driver impedances dominate
+anyway:** REF is driven by a pad and FB by the CML divider, so their source-impedance
+mismatch swamps a 1.2 fF load mismatch outright. This is **not** the `dlyb` trap (that was
+hundreds of ps of inserted buffer delay); it is a layout-symmetry observation, no fix.
+
+**Reconciliation with the STA number above.** The §2.3 table lists REF ≈ 48 fs / FB ≈ 12 fs
+insertion delay — ~2 orders of magnitude smaller than the fF-implied skew. **Hypothesis
+(not yet a finding):** the STA figure is **wire-RC only and excludes pin capacitance**,
+whereas PEX includes the full node cap. The two are not directly comparable until pin cap
+is added to the STA path; recorded here so a future reader does not treat them as contradictory.
+
 **FIRST-RUN TRAP — read this before repeating.** The FIRST LibreLane run silently
 INSERTED 3× `dlyb_1` delay buffers: one on **FB→CLK (but NOT on REF)**, and two on the
 UP/DOWN outputs. The FB-only buffer made the REF/FB insertion delay **asymmetric = a
@@ -383,3 +437,31 @@ stage is not finalized.**
 **Along the way:** `D_FF_v1` (no reset) can't self-start a toggle FF from the
 symmetric latch state (needs a symmetry-break); use `D_FF_RST_v1`. `D_FF_RST_v1`
 **RST is active-low**.
+
+### 7.1 Output converter — reworked to 3 stages, STILL NON-WORKING (2026-08-10)
+
+Full analysis in `docs/div2-debug.md` (2026-08-10 section). Summary:
+
+- **CML core is unaffected and still divides** — OI−OIB = **±0.557 V steady** at 16–20 ns.
+  The `move-b` fix (CML-input pair 16 µm → 8 µm) recovered the differential from the
+  Miller-collapsed ±0.13–0.20 V to full ±0.557 V, and it **holds in steady state**.
+- **The CML→CMOS output converter still does not work.** Rebuilt as a 3-stage chain
+  (skewed trip-setter → restoring inverter → driver). At 6–10 ns it looked rail-to-rail
+  (I_P 142 mVpp); measured to **16–20 ns it collapses to 21 mVpp** — the earlier result
+  was a decaying transient during bias settling.
+- **Root cause is a class:** every converter fault so far is an *absolute threshold match
+  between two independently-moving nodes* (PMOS input vs |Vth|; inverter trip vs OC;
+  stage-1 midpoint vs stage-2 trip). Resizing fixes one instance and exposes the next.
+  **Aug-21 rework removes threshold matching by construction** (self-biased inverter with
+  AC-coupled input, or a differential OC/OCB converter), rather than chasing another trip.
+- **Output monitor load relocked 450 Ω → 1 kΩ series isolation R** (supersedes the
+  "under review" note above and the old 450 Ω ruling). 1 kΩ gives ~124–157 mVpp (−12 dBm)
+  at the 50 Ω instrument — ample for a monitor pad — with a moderate 3-stage driver at
+  **~12.6 mA peak / ~6.3 mA avg per** the four buffers, comfortably inside the ~50 mA VDDA
+  budget (core ~8.7 mA). This **subsumes the earlier output-buffer supply concern**.
+- **Toolchain note (portable):** under `uic`, bias nodes start at 0 and a chain with a DC
+  operating point needs **>10 ns to settle** — run 20 ns, measure 16–20 ns. The old
+  "settles by 2–6 ns" applies to the CML core only. `min/max/avg` hid this collapse; it was
+  caught only by dumping the waveform.
+
+DIV2 remains **CUT from the Aug-14 scope**; this is an Aug-21 item.

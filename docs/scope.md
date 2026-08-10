@@ -111,8 +111,18 @@ are correct and are now unified by the measurement: VCO 4.11–6.37 GHz → ÷2 
 | NAND3 / NAND / NOT / DFF | `NAND3_v1`, `NAND_v1`, `NOT_v1`, `D_FF_v1` | ✅ | `NAND3_v1_tb` | Leaf cells | Zach/Greg |
 | Charge pump | `CP_v1.sch/.sym` | ✅ | `CP_dc_tb`, `CP_tran_tb` | DC + transient characterized; I_CP=50µA placeholder | Greg |
 | ÷2 quadrature divider (CML) | `DIV2_CML_probe` → `DIV2_QUAD_v1` | 🟡 CML ÷2 proven; clean to 5 GHz, band-top tuning WIP | `DIV2_CML_probe_tb` | Divides ÷2 (verification.md §7); reaching 6.37 GHz + quadrature accuracy WIP | Greg |
-| RF output buffers (×4) | (planned) | ⏳ not started | — | Monitor-grade buffers for I_P/I_N/Q_P/Q_N at 2.4–3.2 GHz; budget pad/ESD C | Greg |
+| RF output buffers (×4) | `DIV2_QUAD_v1` (converter) | 🟡 3-stage converter built, **non-working in steady state** | — | CML→CMOS converter → **1 kΩ** series isolation R → pad; monitor-grade I_P/I_N/Q_P/Q_N at 2.4–3.2 GHz. Aug-21 rework (see `div2-debug.md`) | Greg |
 | Loop filter | off-chip | n/a | — | Passive, on test PCB | — |
+
+> **Output-buffer load ruling (updated 2026-08-10): series isolation R = 1 kΩ, not 450 Ω.**
+> The pad is a monitor into the instrument 50 Ω; scope amplitude = 3.3·50/(R_SER+50), and
+> the load at the driver ≈ R_SER + 45 Ω (pad 300 fF ∥ 50 Ω at 5 GHz). 450 Ω (0.33 Vpp) was
+> locked assuming a free rail-to-rail driver; costed out that driver is ~140 µm pfet/device
+> ×4 + a 4th taper stage (~26 mA). **1 kΩ gives ~124–157 mVpp (−12 dBm)** — ample to confirm
+> ÷2 ratio and I/Q phase — with a moderate 3-stage driver at ~12.6 mA peak / ~6.3 mA avg over
+> the four buffers. Rationale + arithmetic in `div2-debug.md`.
+> **OPEN (Aug-21):** the four on-chip 1 kΩ resistors need a **flavor + area check against the
+> PDK** (which gf180 resistor layer, sheet ρ, and the resulting area ×4).
 
 > **Known issue (carried):** headless netlisting reports symbol-vs-schematic pin
 > count warnings on `PFD_v1` (sym 6 / sch 8) and `D_FF_RST_v1` (sym 7 / sch 19),

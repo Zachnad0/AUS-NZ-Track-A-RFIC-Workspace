@@ -7,11 +7,15 @@ verified.
 
 ## What it is
 CML ÷2 quadrature divider packaged as a subcircuit: 12-nfet CML core (2 master-slave
-D-latches) + NMOS 10:1 bias mirror off `IBIAS` + 4× PMOS-input CML→CMOS rail-to-rail
-output buffers (diff converter + inverter + 450 Ω on-chip series R) → I_P/I_N/Q_P/Q_N.
+D-latches) + NMOS 10:1 bias mirror off `IBIAS` + 4× NMOS-input CML→CMOS output converters
+→ **1 kΩ** on-chip series R → I_P/I_N/Q_P/Q_N.
 Design decisions (Greg, 2026-08-04): IBIAS = chip-level bias, external **240 µA**,
-mirror **10:1** → **2.4 mA/tail** (4.8 mA core total); buffers CML→CMOS rail-to-rail
-with **450 Ω** series isolation. See `pins.md`, `verification.md` §7.
+mirror **10:1** → **2.4 mA/tail** (4.8 mA core total). Series isolation R relocked
+450 Ω → **1 kΩ** on 2026-08-10 (see the 2026-08-10 section). See `pins.md`,
+`verification.md` §7.
+> The converter description below (single "diff converter + inverter") is the
+> 2026-08-04/05 version; it was rebuilt as a 3-stage chain on 2026-08-10 (still
+> non-working — see that section). Front matter kept for continuity.
 
 ## Files
 - Cell:   `team_src/xschem/DIV2_QUAD_v1.sch` (45 FET + 8 R), symbol `DIV2_QUAD_v1.sym`
@@ -128,3 +132,84 @@ But **still does not switch.** Two coupled faults remain, both measured:
 
 Cell + generator are in place (`DIV2_QUAD_v1.sch/.sym`, `_cp_work/gen_div2_quad.py`).
 DIV2 is **CUT from the Aug-14 layout scope** (see `tracking.md`); revisit for Aug 21.
+
+---
+
+## 2026-08-10 — output converter reworked to 3 stages; STILL NON-WORKING (steady-state collapse)
+
+Worked the three sizing moves from the Aug-05 hypothesis, then split the output
+into a 3-stage chain. Each individual move measured as intended, but the assembled
+chain **collapses in steady state**. Root cause is now understood as a *class* of
+fault, not a sizing miss. Commit `92e59ce` carries the non-working `.sch`; the
+pinned Ron and stage-3 sizing are the Aug-21 starting point.
+
+### What was measured (all numbers file-read, not estimated)
+| Step | Change | Result |
+|---|---|---|
+| move-a | inv trip skew, M_IP 8u→26u (standalone DC sweep) | trip 1.521 → 1.876 V |
+| move-b | CML-input pair M_BN1/2 16u→8u | **idiff recovered to ±0.557 V** (from ±0.13–0.20); OC swing 280→495 mV |
+| Ron pin | triode Ron·W (Vgs=3.3, L=0.3u) | **nfet 1707 Ω·µm, pfet 4833 Ω·µm** (ratio 2.83) |
+| move-c | 3-stage: st1 26/4 skew → st2 38/4 restore → st3 44/16 driver, R_SER 1k | see below |
+
+move-b's idiff recovery is the one durable win here — it holds in steady state
+(OI−OIB = ±0.557 V at 16–20 ns). The CML core is unaffected and still divides.
+
+### The move-c 3-stage chain and why it fails
+Structure: split the single skewed inverter into **threshold / restoration / drive**:
+- **stage 1** — 26u/4u skewed inverter, trip 1.876 V, drives only stage-2 gate.
+- **stage 2** — 38u/4u, trip pinned to stage-1's *6–10 ns* output midpoint (1.98 V).
+- **stage 3** — 44u/16u driver (Ron ≈ 110 Ω off the pinned Ron·W) into R_SER 1k + pad.
+
+At **6–10 ns** it looked solved: INVO3 rail-to-rail, I_P **142 mVpp**, supply 19.7 mA
+avg. **This was a decaying transient.** Measured to **16–20 ns** (true settled bias):
+I_P collapses to **21 mVpp**, INVO3 rides 2.50–2.97 V (stuck high).
+
+Front-end is innocent: **OC is stable** early vs late (swings 1.62–2.13 V, avg 1.87 V,
+still crosses its trip). The collapse is inside the chain — **stage-1 output INVO1
+rides up to a 2.18 V settled midpoint** (its 26u/4u skew = fast pull-up, slow pull-down
+→ spends more time high), which is now **above stage-2's 1.98 V trip**, so stage 2
+de-saturates (2.97 → 1.04 Vpp) and the output dies. The stage-2 trip had been pinned
+to the *transient* 1.98 V midpoint; the *settled* midpoint is 2.18 V.
+
+### Option-1 (trip-chase) — TRIED, FAILS THIS WAY. Do not reopen.
+Pushed stage-2 trip to ~2.16 V (pfet 85u) to match the settled midpoint. The healthy
+window did not get fixed — it **moved in time**: I_P at 16–20 ns recovered to 124 mVpp
+but the 6–10 ns window went **dead (1.9 mVpp)**, and stage 2 still didn't saturate
+(1.25 Vpp). No single trip works across all time (the midpoint drifts as bias settles),
+let alone across PVT. Chasing the trip **relocates** the failure; it does not remove it.
+
+### Root cause is a CLASS, not an instance
+All three converter faults to date are the same thing — an **absolute threshold match
+between two nodes whose levels move independently** with sizing, loading, bias settling,
+and PVT:
+1. (Aug-04) PMOS input pair in cutoff vs |Vth| — CML common mode too near VDD.
+2. (Aug-05) inverter trip 1.515 V vs OC operating point 1.87 V.
+3. (Aug-10) stage-1 midpoint 2.18 V vs stage-2 trip 1.98 V.
+Resizing fixes an instance and exposes the next one. This is the third instance.
+
+### Aug-21 rework — REMOVE threshold matching by construction (evaluate both, size neither yet)
+- **Self-biased inverter**: feedback R from output to input holds the stage at its own
+  switching threshold automatically across PVT; AC-couple the input through a cap.
+  No absolute level to match, by construction.
+- **Differential-input converter** using both OC and OCB: self-referencing, and it stops
+  discarding the differential nature of the CML signal (the current single-ended design
+  throws that away for no benefit).
+Keep from move-c: the pinned Ron·W and the stage-3 44u/16u driver sizing (real, reusable).
+
+### Toolchain notes (apply to any block with a DC operating point, not just DIV2)
+- **`uic` bias settling is slow.** Under `uic`, bias nodes start from 0 and the converter
+  chain needs **>10 ns** to settle. The old "startup settles by 2–6 ns" note applies to the
+  **CML core only**. For anything with a DC operating point: **run 20 ns, measure 16–20 ns.**
+  Measuring the 6–10 ns window is measuring a transient and will read false-positive.
+- **min/max/avg hid this collapse completely** (OC's min/max/avg were identical early vs
+  late while the output died). It was only caught by **dumping the waveform** and reading
+  cycle-to-cycle. For settling/steady-state questions, dump and inspect — don't trust `meas`
+  envelope stats alone.
+
+### R_SER relock 450 Ω → 1 kΩ (see `scope.md`)
+450 Ω was locked assuming a free rail-to-rail driver. Costed out, that driver is ~140 µm
+pfet/device ×4 + a 4th taper stage (~26 mA). 1 kΩ delivers **157 mVpp (−12 dBm) unloaded /
+~124 mVpp built** at the 50 Ω instrument — ample for a monitor pad confirming ÷2 ratio and
+I/Q phase — with a moderate driver in **3 stages** and ~12.6 mA peak / ~6.3 mA avg. Amplitude
+arithmetic: V_scope = 3.3·50/(R_SER+50); load at INVO ≈ R_SER + 45 Ω (pad 300 fF ∥ 50 Ω at
+5 GHz). This **subsumes the old T6 output-load task** (the 450 Ω isolation-R ruling).
