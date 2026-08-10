@@ -122,6 +122,12 @@ Full evidence in `docs/layout-review-aug14.md` (all numbers file-read from run
 - **CAT 3 gap (explicit):** the analog block CP_v1 has **no drawn layout**, so no
   matching/symmetry/guard-ring/noise-isolation evidence exists yet. This is the single
   largest remaining Aug-14 item.
+- **⚠ DO NOT fast-forward `main` yet. `main` stays at `20dd3b4` until CP_v1 is drawn AND
+  `verify_cp.sh CP_v1` passes.** `docs/layout-review-aug14.md` now carries a CP_v1 section
+  that is entirely `[TODO]` placeholders, and #143's body links track `blob/main` — if `main`
+  advances to include it before CP_v1 is real, reviewers following those links open a document
+  full of TODOs. Advance `main` only once the CP_v1 section has real, file-read numbers.
+  (`origin/integration` may carry the work-in-progress commits; `main` must not.)
 - Submission repointing: `lvs/lvs_config.json` `TOP_SOURCE` = `PFD_lib`; GDS committed at
   `gds/PFD_lib.gds`, netlist at `lvs/PFD_lib.nl.v` (supersedes the chip_top placeholder for
   the layout review; the integrated RFIC top still governs before Aug 21).

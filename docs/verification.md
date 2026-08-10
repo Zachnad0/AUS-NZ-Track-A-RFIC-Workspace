@@ -254,9 +254,10 @@ hundreds of ps of inserted buffer delay); it is a layout-symmetry observation, n
 
 **Reconciliation with the STA number above.** The §2.3 table lists REF ≈ 48 fs / FB ≈ 12 fs
 insertion delay — ~2 orders of magnitude smaller than the fF-implied skew. **Hypothesis
-(not yet a finding):** the STA figure is **wire-RC only and excludes pin capacitance**,
-whereas PEX includes the full node cap. The two are not directly comparable until pin cap
-is added to the STA path; recorded here so a future reader does not treat them as contradictory.
+(not yet a finding):** the STA figure is **likely wire-RC only and excludes pin capacitance**,
+whereas PEX includes the full node cap. **This explanation has not been tested** — we have no
+STA run that adds pin cap to the path — so the two numbers are not yet reconciled, only plausibly
+explained. Recorded here so a future reader does not treat them as a contradiction or as settled.
 
 **FIRST-RUN TRAP — read this before repeating.** The FIRST LibreLane run silently
 INSERTED 3× `dlyb_1` delay buffers: one on **FB→CLK (but NOT on REF)**, and two on the
