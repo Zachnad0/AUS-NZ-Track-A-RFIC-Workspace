@@ -1,0 +1,5 @@
+# Shell and Tcl decks run inside the Linux EDA container via the bind mount.
+# Force LF so a Windows checkout (autocrlf) can't hand bash/magic a CRLF file
+# that fails in-container.
+*.sh  text eol=lf
+*.tcl text eol=lf
