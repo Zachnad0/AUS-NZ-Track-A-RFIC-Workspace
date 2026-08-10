@@ -120,3 +120,13 @@ Full evidence in `docs/layout-review-aug14.md` (all numbers file-read from run
 - Submission repointing: `lvs/lvs_config.json` `TOP_SOURCE` = `PFD_lib`; GDS committed at
   `gds/PFD_lib.gds`, netlist at `lvs/PFD_lib.nl.v` (supersedes the chip_top placeholder for
   the layout review; the integrated RFIC top still governs before Aug 21).
+
+### Aug-10 submission status (2026-08-05)
+- **Pushed:** `origin/integration` = `origin/main` = **`a471788`** (main fast-forwarded from
+  `6e0f01d`, carrying the CP golden/drawing-packet docs + the PFD_lib review; clean FF).
+- **Review doc (verified-resolving permalink):**
+  `https://github.com/Zachnad0/AUS-NZ-Track-A-RFIC-Workspace/blob/a4717886eb510d2d1def592887ec62608c509058/docs/layout-review-aug14.md`
+- **#143 comment: DRAFTED, NOT YET POSTED** — no GitHub-write path from this environment
+  (`gh` absent); Greg pastes the drafted comment (`scratchpad/issue143_aug14_review_draft.md`).
+- Weekly-form checkboxes: info.yaml ✅; lvs_config.json + relative path ✅; layout-review docs
+  written + linked ✅ **once the #143 comment is posted** (doc itself is on main and resolves).
