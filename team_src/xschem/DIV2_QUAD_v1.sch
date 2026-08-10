@@ -117,7 +117,7 @@ C {lab_pin.sym} 400 1200 0 0 {name=lp85 lab=DN1_IP}
 C {lab_pin.sym} 440 1230 0 0 {name=lp86 lab=OC_IP}
 C {lab_pin.sym} 440 1170 0 0 {name=lp87 lab=VDD}
 C {lab_pin.sym} 440 1200 0 0 {name=lp88 lab=VDD}
-C {symbols/pfet_03v3.sym} 680 1600 0 0 {name=M_IP_IP L=0.3u W=8u nf=1 model=pfet_03v3 spiceprefix=X}
+C {symbols/pfet_03v3.sym} 680 1600 0 0 {name=M_IP_IP L=0.3u W=26u nf=1 model=pfet_03v3 spiceprefix=X}
 C {lab_pin.sym} 660 1600 0 0 {name=lp89 lab=OC_IP}
 C {lab_pin.sym} 700 1630 0 0 {name=lp90 lab=INVO_IP}
 C {lab_pin.sym} 700 1570 0 0 {name=lp91 lab=VDD}
@@ -155,7 +155,7 @@ C {lab_pin.sym} 1900 1200 0 0 {name=lp115 lab=DN1_IN}
 C {lab_pin.sym} 1940 1230 0 0 {name=lp116 lab=OC_IN}
 C {lab_pin.sym} 1940 1170 0 0 {name=lp117 lab=VDD}
 C {lab_pin.sym} 1940 1200 0 0 {name=lp118 lab=VDD}
-C {symbols/pfet_03v3.sym} 2180 1600 0 0 {name=M_IP_IN L=0.3u W=8u nf=1 model=pfet_03v3 spiceprefix=X}
+C {symbols/pfet_03v3.sym} 2180 1600 0 0 {name=M_IP_IN L=0.3u W=26u nf=1 model=pfet_03v3 spiceprefix=X}
 C {lab_pin.sym} 2160 1600 0 0 {name=lp119 lab=OC_IN}
 C {lab_pin.sym} 2200 1630 0 0 {name=lp120 lab=INVO_IN}
 C {lab_pin.sym} 2200 1570 0 0 {name=lp121 lab=VDD}
@@ -193,7 +193,7 @@ C {lab_pin.sym} 3400 1200 0 0 {name=lp145 lab=DN1_QP}
 C {lab_pin.sym} 3440 1230 0 0 {name=lp146 lab=OC_QP}
 C {lab_pin.sym} 3440 1170 0 0 {name=lp147 lab=VDD}
 C {lab_pin.sym} 3440 1200 0 0 {name=lp148 lab=VDD}
-C {symbols/pfet_03v3.sym} 3680 1600 0 0 {name=M_IP_QP L=0.3u W=8u nf=1 model=pfet_03v3 spiceprefix=X}
+C {symbols/pfet_03v3.sym} 3680 1600 0 0 {name=M_IP_QP L=0.3u W=26u nf=1 model=pfet_03v3 spiceprefix=X}
 C {lab_pin.sym} 3660 1600 0 0 {name=lp149 lab=OC_QP}
 C {lab_pin.sym} 3700 1630 0 0 {name=lp150 lab=INVO_QP}
 C {lab_pin.sym} 3700 1570 0 0 {name=lp151 lab=VDD}
@@ -231,7 +231,7 @@ C {lab_pin.sym} 4900 1200 0 0 {name=lp175 lab=DN1_QN}
 C {lab_pin.sym} 4940 1230 0 0 {name=lp176 lab=OC_QN}
 C {lab_pin.sym} 4940 1170 0 0 {name=lp177 lab=VDD}
 C {lab_pin.sym} 4940 1200 0 0 {name=lp178 lab=VDD}
-C {symbols/pfet_03v3.sym} 5180 1600 0 0 {name=M_IP_QN L=0.3u W=8u nf=1 model=pfet_03v3 spiceprefix=X}
+C {symbols/pfet_03v3.sym} 5180 1600 0 0 {name=M_IP_QN L=0.3u W=26u nf=1 model=pfet_03v3 spiceprefix=X}
 C {lab_pin.sym} 5160 1600 0 0 {name=lp179 lab=OC_QN}
 C {lab_pin.sym} 5200 1630 0 0 {name=lp180 lab=INVO_QN}
 C {lab_pin.sym} 5200 1570 0 0 {name=lp181 lab=VDD}
