@@ -12,7 +12,7 @@ ground pins**. `VDDA`/`VDDD` are the two real power pins.
 
 ---
 
-## 1. DRC and LVS correctness — **claimed 3/3**
+## 1. DRC and LVS correctness
 
 Evidence (file-read):
 - **Magic DRC = 0** — `…/63-magic-drc/reports/drc.magic.rpt` ("COUNT: 0"); `final/metrics.json`
@@ -35,7 +35,7 @@ Not verified: nothing outstanding for this row.
 
 ---
 
-## 2. Power, ground, current paths — **claimed 3/3**
+## 2. Power, ground, current paths
 
 Evidence (`resolved.json` + reports):
 - **PDN layers:** rail = **Metal1** (`PDN_RAIL_WIDTH` 0.6 µm); vertical straps **Metal4**,
@@ -57,7 +57,7 @@ metrics (only total route/global-route vias reported).
 
 ---
 
-## 3. Analog matching, symmetry, noise isolation — **PFD_lib N/A (no-analog clause); CP_v1 NOT YET**
+## 3. Analog matching, symmetry, noise isolation
 
 - **PFD_lib** is all-digital std cells; it qualifies under the rubric's **"no analog
   circuitry" clause** — matching/symmetry/noise-isolation do not apply to this block.
@@ -73,7 +73,7 @@ separation, CP_OUT shielding — all pending the GUI draw.
 
 ---
 
-## 4. Reliability and physical-design risks — **claimed 2/3**
+## 4. Reliability and physical-design risks
 
 Evidence (file-read):
 - **Antenna: 0 violations, 0 diodes** — `final/metrics.json` `"antenna__violating__nets": 0`,
@@ -98,7 +98,7 @@ LibreLane Classic flow does not run it); **ESD quantification**; **PEX** (parasi
 
 ---
 
-## 5. Top-level integration and connectivity — **claimed 2/3**
+## 5. Top-level integration and connectivity
 
 Evidence (file-read):
 - **Name correspondence — all match `PFD_lib`:** GDS top cell (`final/gds/PFD_lib.gds`),
@@ -112,14 +112,3 @@ Not verified: this is a **single block**, not the integrated RFIC top (which doe
 yet). Top-level padframe integration, inter-block routing, and the CP/VCO/DIV2 blocks are not
 part of this GDS. `lvs_config` TOP must be repointed at the integrated top before the Aug-21
 GDS (`tracking.md §4`).
-
----
-
-### Score summary (self-assessed, conservative)
-| Rubric row | Score | Basis |
-|---|---|---|
-| 1 DRC/LVS correctness | **3/3** | Magic 0, KLayout 0, route 0, LVS match uniquely — all file-read |
-| 2 Power/ground/current | **3/3** | PDN + IR drop 9.6/18.2 µV, 0 PG violations |
-| 3 Analog matching/isolation | **N/A (PFD) / NOT YET (CP)** | PFD no-analog clause; CP layout not drawn |
-| 4 Reliability | **2/3** | antenna 0, latch-up DRC-clean (tap-dist caveat); EM/ESD/PEX NOT DONE |
-| 5 Top-level integration | **2/3** | names match, pointer repointed; block ≠ integrated top |
