@@ -1,0 +1,3 @@
+.subckt t D G S B
+XM D G S B nfet_03v3 L=2u W=20u
+.ends

@@ -1,0 +1,11 @@
+magic
+tech gf180mcuD
+magscale 1 5
+timestamp 1786578778
+<< checkpaint >>
+rect -1030 -1030 3688 1680
+use nfet_03v3_Z65AP6  MN
+timestamp 0
+transform 1 0 1329 0 1 325
+box -1359 -355 1359 355
+<< end >>

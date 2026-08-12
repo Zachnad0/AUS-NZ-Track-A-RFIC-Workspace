@@ -1,0 +1,15 @@
+* NGSPICE file created from nf10_w50.ext - technology: gf180mcuD
+
+.subckt nf10_w50
+X0 a_2606_150# a_2206_58# a_2102_150# a_n36_n36# nfet_03v3 ad=13p pd=50.52u as=13p ps=50.52u w=50u l=2u
+X1 a_2102_150# a_1702_58# a_1598_150# a_n36_n36# nfet_03v3 ad=13p pd=50.52u as=13p ps=50.52u w=50u l=2u
+X2 a_590_150# a_190_58# a_102_150# a_n36_n36# nfet_03v3 ad=13p pd=50.52u as=22p ps=0.10088m w=50u l=2u
+X3 a_3614_150# a_3214_58# a_3110_150# a_n36_n36# nfet_03v3 ad=13p pd=50.52u as=13p ps=50.52u w=50u l=2u
+X4 a_3110_150# a_2710_58# a_2606_150# a_n36_n36# nfet_03v3 ad=13p pd=50.52u as=13p ps=50.52u w=50u l=2u
+X5 a_1094_150# a_694_58# a_590_150# a_n36_n36# nfet_03v3 ad=13p pd=50.52u as=13p ps=50.52u w=50u l=2u
+X6 a_4622_150# a_4222_58# a_4118_150# a_n36_n36# nfet_03v3 ad=13p pd=50.52u as=13p ps=50.52u w=50u l=2u
+X7 a_4118_150# a_3718_58# a_3614_150# a_n36_n36# nfet_03v3 ad=13p pd=50.52u as=13p ps=50.52u w=50u l=2u
+X8 a_5126_150# a_4726_58# a_4622_150# a_n36_n36# nfet_03v3 ad=22p pd=0.10088m as=13p ps=50.52u w=50u l=2u
+X9 a_1598_150# a_1198_58# a_1094_150# a_n36_n36# nfet_03v3 ad=13p pd=50.52u as=13p ps=50.52u w=50u l=2u
+.ends
+

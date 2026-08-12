@@ -1,0 +1,12 @@
+.subckt t D G S B
+X1 D G S B nfet_03v3 w=5u l=2u
+X2 D G S B nfet_03v3 w=5u l=2u
+X3 D G S B nfet_03v3 w=5u l=2u
+X4 D G S B nfet_03v3 w=5u l=2u
+X5 D G S B nfet_03v3 w=5u l=2u
+X6 D G S B nfet_03v3 w=5u l=2u
+X7 D G S B nfet_03v3 w=5u l=2u
+X8 D G S B nfet_03v3 w=5u l=2u
+X9 D G S B nfet_03v3 w=5u l=2u
+X10 D G S B nfet_03v3 w=5u l=2u
+.ends

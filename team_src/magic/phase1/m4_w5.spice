@@ -1,0 +1,9 @@
+* NGSPICE file created from m4_w5.ext - technology: gf180mcuD
+
+.subckt m4_w5
+X0 a_590_150# a_190_58# a_102_150# a_n36_n36# nfet_03v3 ad=2.2p pd=10.88u as=2.2p ps=10.88u w=5u l=2u
+X1 a_590_2614# a_190_2522# a_102_2614# a_n36_n36# nfet_03v3 ad=2.2p pd=10.88u as=2.2p ps=10.88u w=5u l=2u
+X2 a_590_3846# a_190_3754# a_102_3846# a_n36_n36# nfet_03v3 ad=2.2p pd=10.88u as=2.2p ps=10.88u w=5u l=2u
+X3 a_590_1382# a_190_1290# a_102_1382# a_n36_n36# nfet_03v3 ad=2.2p pd=10.88u as=2.2p ps=10.88u w=5u l=2u
+.ends
+

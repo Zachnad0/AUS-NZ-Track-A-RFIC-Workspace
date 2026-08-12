@@ -30,6 +30,16 @@ All results are file-read from real Magic extraction + netgen runs in the
    "Number of devices: 1|1" (`m_f1.out`, `m_f2.out`). So the ibias golden may use
    either representation; the layout must present the `m` units and strap them.
 
+5. **`w` is per-finger; netgen sums combined widths.** `nf=10 w=5` extracts as 10
+   discrete `w=5u` fingers (shared-diffusion chain); `nf=10 w=50` → 10x `w=50u`
+   (=500um) — so `w` is per-finger, not total (`nf10_w5.spice`, `nf10_w50.spice`).
+   When the fingers are strapped in parallel netgen SUMS widths: 10x w=5 matches a
+   single `W=50u` golden with NO property error, but a `W=5u` golden property-errors
+   (`strap10.spice` vs `g_w50/g_w5`). Same for `m`: 4x w=5 matches `W=20u`, errors
+   vs `W=5u`. => CP_v1's `nf=10 @ 5um` layout matches `CP_v1_golden.spice`'s `W=50u`
+   cleanly; the hardened gate does not false-fail. REQUIRES correct strapping
+   (gates common, alternating S/D common) for the combine to fire.
+
 ## Files
 - `p1_probe.tcl/.spice` — single-device probe: shows the auto-named wrapper subckt.
 - `p1_pair.tcl/.mag/.spice` + `p1_pair_golden.spice` + `p1_pair.comp.out` —
