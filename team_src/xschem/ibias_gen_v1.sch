@@ -15,7 +15,7 @@ C {lab_pin.sym} 180 0 0 0 {name=lp5 lab=IBIAS}
 C {lab_pin.sym} 220 -30 0 0 {name=lp6 lab=IBIAS}
 C {lab_pin.sym} 220 30 0 0 {name=lp7 lab=NB}
 C {lab_pin.sym} 220 0 0 0 {name=lp8 lab=VSS}
-C {symbols/nfet_03v3.sym} 400 0 0 0 {name=MN1 L=4u W=4u nf=1 m=10 model=nfet_03v3 spiceprefix=X}
+C {symbols/nfet_03v3.sym} 400 0 0 0 {name=MN1 L=2u W=4u nf=1 m=5 model=nfet_03v3 spiceprefix=X}
 C {lab_pin.sym} 380 0 0 0 {name=lp9 lab=NB}
 C {lab_pin.sym} 420 -30 0 0 {name=lp10 lab=n1}
 C {lab_pin.sym} 420 30 0 0 {name=lp11 lab=VSS}
@@ -50,7 +50,7 @@ C {lab_pin.sym} 1580 0 0 0 {name=lp33 lab=PA}
 C {lab_pin.sym} 1620 30 0 0 {name=lp34 lab=PA}
 C {lab_pin.sym} 1620 -30 0 0 {name=lp35 lab=PB}
 C {lab_pin.sym} 1620 0 0 0 {name=lp36 lab=VDD}
-C {symbols/pfet_03v3.sym} 1800 0 0 0 {name=MP1 L=4u W=16u nf=1 m=10 model=pfet_03v3 spiceprefix=X}
+C {symbols/pfet_03v3.sym} 1800 0 0 0 {name=MP1 L=2u W=16u nf=1 m=5 model=pfet_03v3 spiceprefix=X}
 C {lab_pin.sym} 1780 0 0 0 {name=lp37 lab=PB}
 C {lab_pin.sym} 1820 30 0 0 {name=lp38 lab=p1}
 C {lab_pin.sym} 1820 -30 0 0 {name=lp39 lab=VDD}
