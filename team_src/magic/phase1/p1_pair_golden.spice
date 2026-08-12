@@ -1,0 +1,7 @@
+* p1_pair golden -- 2 isolated devices in the real CP-golden instantiation style
+* (uppercase L/W, explicit nf/m), to test match against Magic's flat extraction
+* which emits lowercase w/l + ad/pd/as/ps and no nf/m.
+.subckt p1_pair
+XMP DP GP SP BP pfet_03v3 L=2u W=10u nf=1 m=1
+XMN DN GN SN BN nfet_03v3 L=2u W=10u nf=1 m=1
+.ends p1_pair

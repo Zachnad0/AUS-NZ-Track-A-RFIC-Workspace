@@ -1,0 +1,15 @@
+* NGSPICE file created from p1_probe.ext - technology: gf180mcuD
+
+.subckt nfet_03v3_W9A2MV a_n200_n1092# a_n426_n1186#
+X0 a_200_n1000# a_n200_n1092# a_n288_n1000# a_n426_n1186# nfet_03v3 ad=4.4p pd=20.88u as=4.4p ps=20.88u w=10u l=2u
+.ends
+
+.subckt pfet_03v3_4SP6CQ a_n200_n1092# w_n450_n1210#
+X0 a_200_n1000# a_n200_n1092# a_n288_n1000# w_n450_n1210# pfet_03v3 ad=4.4p pd=20.88u as=4.4p ps=20.88u w=10u l=2u
+.ends
+
+.subckt p1_probe
+XMN VSUBS VSUBS nfet_03v3_W9A2MV
+XMP VSUBS VSUBS pfet_03v3_4SP6CQ
+.ends
+

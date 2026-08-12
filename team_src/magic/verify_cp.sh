@@ -111,8 +111,18 @@ printf '.include %s\n' "$GOLDEN" >> "$GOLD_RES"
 # --- netgen LVS ---
 netgen -batch lvs "$LVS_SPICE $CELL" "$GOLD_RES $CELL" "$LOCAL_SETUP" "$COMP_OUT" > "$LVS_LOG" 2>&1
 
-if   grep -q "Circuits match uniquely" "$COMP_OUT"; then VERDICT="match uniquely"; LVS_OK=1
-elif grep -q "Circuits match with" "$COMP_OUT";     then VERDICT="$(grep -m1 'Circuits match with' "$COMP_OUT")"; LVS_OK=0
+# Property errors: netgen still declares "Circuits match uniquely" when device
+# W/L differ beyond its 1% cutoff -- it reports them separately as property
+# errors (Phase 1 finding, gf180 nfet/pfet_03v3 are pin-only black boxes so
+# topology can match uniquely while sizes are wrong). A wrongly-sized layout
+# must NOT pass, so treat any property error as a hard LVS failure.
+if grep -qiE "property error|with property errors" "$COMP_OUT"; then PROP_ERR=1; else PROP_ERR=0; fi
+
+if   grep -q "Circuits match uniquely" "$COMP_OUT" && [ "$PROP_ERR" -eq 0 ]; then
+    VERDICT="match uniquely"; LVS_OK=1
+elif grep -q "Circuits match uniquely" "$COMP_OUT" && [ "$PROP_ERR" -eq 1 ]; then
+    VERDICT="topology matches uniquely BUT device property errors (W/L mismatch)"; LVS_OK=0
+elif grep -q "Circuits match with" "$COMP_OUT"; then VERDICT="$(grep -m1 'Circuits match with' "$COMP_OUT")"; LVS_OK=0
 elif grep -qi "do not match" "$COMP_OUT";           then VERDICT="DO NOT MATCH"; LVS_OK=0
 else VERDICT="INDETERMINATE (see $COMP_OUT)"; LVS_OK=0
 fi
@@ -123,10 +133,15 @@ echo "devices (LVS)     : ${DEV}    (+${FILL} fill/decap ignored)"
 echo "ports             : ${PORTS}"
 echo "nets              : ${NETS}"
 echo "LVS verdict       : ${VERDICT}"
+if [ "$PROP_ERR" -eq 1 ]; then
+    echo "property errors   :"
+    # print netgen's per-device W/L delta lines (device-vs-device + delta=/cutoff=)
+    grep -E 'vs\.|delta=|cutoff=' "$COMP_OUT" | sed 's/^/   /' | head -20
+fi
 echo "logs              : $DRC_LOG | $COMP_OUT"
 
 RC=0
 if [ "${DRC}" -ne 0 ]; then echo "GATE FAIL: DRC = ${DRC} (> 0)"; RC=1; fi
-if [ "${LVS_OK}" -ne 1 ]; then echo "GATE FAIL: LVS not a unique match"; RC=1; fi
+if [ "${LVS_OK}" -ne 1 ]; then echo "GATE FAIL: LVS not a clean unique match"; RC=1; fi
 if [ "$RC" -eq 0 ]; then echo "RESULT: PASS"; else echo "RESULT: FAIL"; fi
 exit "$RC"

@@ -1,0 +1,6 @@
+.subckt mtest D G S B
+X0 D G S B nfet_03v3 w=4u l=2u
+X1 D G S B nfet_03v3 w=4u l=2u
+X2 D G S B nfet_03v3 w=4u l=2u
+X3 D G S B nfet_03v3 w=4u l=2u
+.ends

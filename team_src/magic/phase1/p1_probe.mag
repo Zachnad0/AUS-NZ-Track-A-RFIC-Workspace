@@ -1,0 +1,14 @@
+magic
+tech gf180mcuD
+timestamp 1786577505
+<< checkpaint >>
+rect -206 -206 324 436
+use nfet_03v3_W9A2MV  MN
+timestamp 0
+transform 1 0 39 0 1 115
+box -45 -121 45 121
+use pfet_03v3_4SP6CQ  MP
+timestamp 0
+transform 1 0 79 0 1 115
+box -45 -121 45 121
+<< end >>
