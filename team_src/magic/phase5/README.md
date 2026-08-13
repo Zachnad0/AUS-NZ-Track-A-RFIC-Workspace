@@ -72,10 +72,16 @@ risers from S/D/gate tabs → stacked metal2 rails (source/drain/gate) via `m2co
   strap metal1 or via pad added there breaks the 46 u rule. **guard=1 does NOT help** (also
   extracts 10 unstrapped fingers — the generator never straps S/D). So this congestion is
   universal to every nf device.
-- **To clear it:** contact S/D and gates from OPPOSITE sides with via-at-tab + route all
-  risers on metal2/metal3 (multi-layer), keeping metal1 minimal. That is dense custom
-  routing best done with a canvas — **QUEUED for interactive layout**; the proc + coords are
-  the starting point. This is the load-bearing wall for 5.1(e–g) and all of 5.2–5.4.
+- **Refined solution (specified, needs interactive execution):** opposite-side contacting
+  alone is insufficient — the BARE S/D top tabs sit ~7 u from gate top vias. The clean recipe:
+  (1) **gate = polysilicon rail** connecting the gate poly fingers directly (all one net VGP;
+  poly R is fine for a gate), with ONE polycontact→metal via at a clear spot — no metal1 vias
+  in the congested band; (2) **S/D multi-layer from the bottom**: source via1→metal2 rail
+  (y −720), drain via1+via2→metal3 rail (y −900), so the two interleaved S/D nets ride
+  different layers and don't collide. This is dense custom routing best done with a canvas —
+  **QUEUED for interactive layout**; `strap.tcl` (electrical strap proven) + the column coords
+  are the starting point. This is the load-bearing wall for 5.1(e–g) and all of 5.2–5.4, and
+  is why the full routed GDS is an interactive multi-session effort, not a headless one.
 
 ## Build stages (per packet, DRC=0 at each; render with lay2img.py)
 (a) one device → (b) matched pair → (c) interdigitated array + dummies → (d) guard rings →
