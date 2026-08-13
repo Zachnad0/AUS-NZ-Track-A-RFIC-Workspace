@@ -86,7 +86,26 @@ floorplan (flatten-into-CP with tracked offset OR port-make + instance), inter-d
 (PMID→M_PSW.src, CP_OUT, UP_B, VGN, NMID, VDD/VSS rails), group guard rings (= bulk ties), 7 ports
 (`port make`), `verify_cp.sh` exit 0. Mechanical assembly on the proven methods.
 
-## Remaining CP build (now unblocked — the tractable next chunk, same proven method)
+## Assembly progress (2026-08-13, `cp_full.tcl`) — 6/8 devices DRC 0 in the floorplan
+Placement math: device at `box(FX-hw, FY-hh)` + gencell then flatten => geometry at `CP=local+(FX,FY)`;
+strap at CP coords (NMOS band `yn` helper adds YN=-3600). Done, DRC 0:
+- **PMOS mirror** nf=20 @ (0,0), **NMOS mirror** nf=4 @ (0,-3600) — both split-drain strapped.
+- **M_PSW** @ (7000,0): source->PMID, drain->CP_OUT, gate->UP_B. **M_NSW** @ (7000,-3600):
+  source->NMID, drain->CP_OUT, gate->DOWN. **CPFULL_DRC=0.**
+DRC traps paid: gate_polyrail contact `cx` must be LEFT of `px2` (else the M2 rail runs backwards);
+single-column rails need >= M2.3 min area (extend them); gate contact >=46u clear of nearest S/D col.
+
+**Inverters (M_INVP 2u, M_INVN 1u) need a tiny-device gate strap — NOT the poly rail.** Their
+W is too small: a poly rail within the well trips PL.5a (poly-to-diffusion <20) and CO.7, and the
+W=1u INVN well can't fit a 74u-tall poly-contact rail at all. Approach: extend the gate poly as a
+**vertical stub UP past the well** to a widened polycontact in clear field, then via1->metal2 to UP.
+S/D straps (strap_col at cols ±82) are fine — vias land at the far rail, clear of the gate.
+
+## Remaining to the gate (mechanical): inverters (stub strap) + 4 dummies (tied-off, add to golden) +
+## inter-device routing (PMID mirror<->PSW, CP_OUT PSW<->NSW, NMID mirror<->NSW, UP_B inv<->PSW,
+## VDD/VSS unify) + group guard rings (=bulk ties) + 7 ports (`port make`) + verify_cp.sh exit 0.
+
+## Remaining CP build (superseded by the progress above)
 (c) **Interleaved mirror pair**: one `pfet nf=20` (topc=0), gate poly-rail→VGP, source→VDD,
     **split the 10 drain columns**: 5→VGP (= gate net, M_PREF) / 5→PMID (M_PSRC), common-centroid.
     Two drain rails interleaved ⇒ multi-layer: VGP-drains on metal2, PMID-drains on **metal3**
