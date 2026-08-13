@@ -4,6 +4,13 @@ Netlist-level validation of the reworked CML→CMOS output converter. Results in
 `docs/div2-debug.md` (2026-08-12 section). Run in `iic-osic-tools_xvnc` after
 `sak-pdk gf180mcuD`.
 
+> **Canonical schematic:** `DIV2_QUAD_v1.sch` is regenerated from
+> `team_src/xschem/gen_div2_quad.py` (the topology now lives there, all 4 chains
+> identical by construction). `mk_sb.py` below was the netlist-level PROTOTYPE used
+> to find the topology on the pre-rework netlist — kept for provenance, superseded by
+> the generator. To re-verify the shipped design, netlist the regenerated
+> `DIV2_QUAD_tb.sch` (which carries the startup `.ic` + 20 ns tran) and run it directly.
+
 ## Flow
 1. Netlist the TB: from `team_src/xschem`,
    `xschem -n -q -o /foss/designs/_div2_work DIV2_QUAD_tb.sch`.

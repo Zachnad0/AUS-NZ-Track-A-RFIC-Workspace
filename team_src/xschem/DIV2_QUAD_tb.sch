@@ -55,5 +55,6 @@ C {code_shown.sym} -900 700 0 0 {name=s1 only_toplevel=false value="
 .include /foss/pdks/gf180mcuD/libs.tech/ngspice/design.ngspice
 .lib /foss/pdks/gf180mcuD/libs.tech/ngspice/sm141064.ngspice typical
 .save all i(V_VDD)
-.tran 0.2p 6n uic
+.ic v(x1.OI)=3.2 v(x1.OIB)=2.5 v(x1.OQ)=2.9 v(x1.OQB)=2.8 v(x1.G1_IP)=1.5 v(x1.G1_IN)=1.5 v(x1.G1_QP)=1.5 v(x1.G1_QN)=1.5
+.tran 0.2p 20n uic
 "}
