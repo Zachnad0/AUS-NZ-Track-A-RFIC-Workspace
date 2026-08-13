@@ -33,8 +33,8 @@ proc strap_col_m3 {x ytab yrail} {
                    else { set lo [expr {$yrail-$::VHW2-$::EXT}] ; set hi [expr {$ytab+$::M3HW}] }
     box values [expr {$x-$::M3HW}] $lo [expr {$x+$::M3HW}] $hi ; paint metal3
 }
-proc rail  {x1 x2 yc name} { box values $x1 [expr {$yc-$::M2HW}] $x2 [expr {$yc+$::M2HW}] ; paint metal2 ; label $name metal2 }
-proc rail3 {x1 x2 yc name} { box values $x1 [expr {$yc-$::M2HW}] $x2 [expr {$yc+$::M2HW}] ; paint metal3 ; label $name metal3 }
+proc rail  {x1 x2 yc name} { box values $x1 [expr {$yc-$::M2HW}] $x2 [expr {$yc+$::M2HW}] ; paint metal2 ; label $name }
+proc rail3 {x1 x2 yc name} { box values $x1 [expr {$yc-$::M2HW}] $x2 [expr {$yc+$::M2HW}] ; paint metal3 ; label $name }
 
 # gate_polyrail: poly rail connecting gate polys (py must be ABOVE pdiff top), one
 # polycontact->via1->metal2 at cx (far end, over field). rail 80 tall for CO.3 overlap.
@@ -46,7 +46,7 @@ proc gate_polyrail {px1 px2 py cx rG name} {
     box values [expr {$cx-24}] [expr {$py-24}] [expr {$cx+24}] [expr {$py+24}] ; paint polycontact
     box values [expr {$cx-$::M1HW}] [expr {$py-24}] [expr {$cx+$::M1HW}] [expr {$rG+$::VHW+$::EXT}] ; paint metal1
     box values [expr {$cx-$::VHW}] [expr {$rG-$::VHW}] [expr {$cx+$::VHW}] [expr {$rG+$::VHW}] ; paint m2contact
-    box values [expr {$cx-$::VHW-$::EXT}] [expr {$rG-$::M2HW}] [expr {$px2+40}] [expr {$rG+$::M2HW}] ; paint metal2 ; label $name metal2
+    box values [expr {$cx-$::VHW-$::EXT}] [expr {$rG-$::M2HW}] [expr {$px2+40}] [expr {$rG+$::M2HW}] ; paint metal2 ; label $name
 }
 # via stack M2<->M4 at (x,y): via2 (m3contact 56) + via3 (m4contact 52), metal3/4 pads.
 # Connects an existing metal2 rail up to metal4 (for inter-band M4 routing).
@@ -54,7 +54,7 @@ proc via_m2m4 {x y} {
     box values [expr {$x-$::M3HW}] [expr {$y-$::M3HW}] [expr {$x+$::M3HW}] [expr {$y+$::M3HW}] ; paint metal3
     box values [expr {$x-$::VHW2}] [expr {$y-$::VHW2}] [expr {$x+$::VHW2}] [expr {$y+$::VHW2}] ; paint m3contact
     box values [expr {$x-$::M3HW}] [expr {$y-$::M3HW}] [expr {$x+$::M3HW}] [expr {$y+$::M3HW}] ; paint metal4
-    box values [expr {$x-$::VHW}]  [expr {$y-$::VHW}]  [expr {$x+$::VHW}]  [expr {$y+$::VHW}]  ; paint m4contact
+    box values [expr {$x-$::VHW2}]  [expr {$y-$::VHW2}]  [expr {$x+$::VHW2}]  [expr {$y+$::VHW2}]  ; paint via3
 }
 # welltap: n+/p+ substrate tie in a well, metal1 riser up to a metal2 rail at raily.
 # Dimensions match the gencell guard ring: 46 contact, +13 implant enclosure (72),
@@ -68,7 +68,7 @@ proc welltap {cx clo chi raily diff cont} {
 proc via_m3m4 {x y} {
     box values [expr {$x-$::M3HW}] [expr {$y-$::M3HW}] [expr {$x+$::M3HW}] [expr {$y+$::M3HW}] ; paint metal3
     box values [expr {$x-$::M3HW}] [expr {$y-$::M3HW}] [expr {$x+$::M3HW}] [expr {$y+$::M3HW}] ; paint metal4
-    box values [expr {$x-$::VHW}]  [expr {$y-$::VHW}]  [expr {$x+$::VHW}]  [expr {$y+$::VHW}]  ; paint m4contact
+    box values [expr {$x-$::VHW2}]  [expr {$y-$::VHW2}]  [expr {$x+$::VHW2}]  [expr {$y+$::VHW2}]  ; paint via3
 }
 proc via_m1m3 {x y} {
     foreach l {metal1 metal2 metal3} { box values [expr {$x-$::M3HW}] [expr {$y-$::M3HW}] [expr {$x+$::M3HW}] [expr {$y+$::M3HW}] ; paint $l }
@@ -77,34 +77,34 @@ proc via_m1m3 {x y} {
 }
 proc m3route {x1 y1 x2 y2 name} {
     box values [expr {$x1<$x2?$x1-$::M2HW:$x2-$::M2HW}] [expr {$y1<$y2?$y1-$::M2HW:$y2-$::M2HW}] \
-               [expr {$x1<$x2?$x2+$::M2HW:$x1+$::M2HW}] [expr {$y1<$y2?$y2+$::M2HW:$y1+$::M2HW}] ; paint metal3 ; label $name metal3
+               [expr {$x1<$x2?$x2+$::M2HW:$x1+$::M2HW}] [expr {$y1<$y2?$y2+$::M2HW:$y1+$::M2HW}] ; paint metal3 ; label $name
 }
 # full via stacks (pads M3HW=84 enclose all vias). via1/3/4=52, via2=56.
 proc via_m1m4 {x y} {
     foreach l {metal1 metal2 metal3 metal4} { box values [expr {$x-$::M3HW}] [expr {$y-$::M3HW}] [expr {$x+$::M3HW}] [expr {$y+$::M3HW}] ; paint $l }
     box values [expr {$x-$::VHW}]  [expr {$y-$::VHW}]  [expr {$x+$::VHW}]  [expr {$y+$::VHW}]  ; paint m2contact
     box values [expr {$x-$::VHW2}] [expr {$y-$::VHW2}] [expr {$x+$::VHW2}] [expr {$y+$::VHW2}] ; paint m3contact
-    box values [expr {$x-$::VHW}]  [expr {$y-$::VHW}]  [expr {$x+$::VHW}]  [expr {$y+$::VHW}]  ; paint m4contact
+    box values [expr {$x-$::VHW2}]  [expr {$y-$::VHW2}]  [expr {$x+$::VHW2}]  [expr {$y+$::VHW2}]  ; paint via3
 }
 proc via_m1m5 {x y} {
     via_m1m4 $x $y
     box values [expr {$x-$::M5HW}] [expr {$y-$::M5HW}] [expr {$x+$::M5HW}] [expr {$y+$::M5HW}] ; paint metal5
-    box values [expr {$x-$::VHW}]  [expr {$y-$::VHW}]  [expr {$x+$::VHW}]  [expr {$y+$::VHW}]  ; paint m5contact
+    box values [expr {$x-$::VHW2}]  [expr {$y-$::VHW2}]  [expr {$x+$::VHW2}]  [expr {$y+$::VHW2}]  ; paint via4
 }
 proc via_m2m5 {x y} {
     foreach l {metal2 metal3 metal4} { box values [expr {$x-$::M3HW}] [expr {$y-$::M3HW}] [expr {$x+$::M3HW}] [expr {$y+$::M3HW}] ; paint $l }
     box values [expr {$x-$::M5HW}] [expr {$y-$::M5HW}] [expr {$x+$::M5HW}] [expr {$y+$::M5HW}] ; paint metal5
     box values [expr {$x-$::VHW2}] [expr {$y-$::VHW2}] [expr {$x+$::VHW2}] [expr {$y+$::VHW2}] ; paint m3contact
-    box values [expr {$x-$::VHW}]  [expr {$y-$::VHW}]  [expr {$x+$::VHW}]  [expr {$y+$::VHW}]  ; paint m4contact
-    box values [expr {$x-$::VHW}]  [expr {$y-$::VHW}]  [expr {$x+$::VHW}]  [expr {$y+$::VHW}]  ; paint m5contact
+    box values [expr {$x-$::VHW2}]  [expr {$y-$::VHW2}]  [expr {$x+$::VHW2}]  [expr {$y+$::VHW2}]  ; paint via3
+    box values [expr {$x-$::VHW2}]  [expr {$y-$::VHW2}]  [expr {$x+$::VHW2}]  [expr {$y+$::VHW2}]  ; paint via4
 }
 proc m5route {x1 y1 x2 y2 name} {
     box values [expr {$x1<$x2?$x1-$::M5HW:$x2-$::M5HW}] [expr {$y1<$y2?$y1-$::M5HW:$y2-$::M5HW}] \
-               [expr {$x1<$x2?$x2+$::M5HW:$x1+$::M5HW}] [expr {$y1<$y2?$y2+$::M5HW:$y1+$::M5HW}] ; paint metal5 ; label $name metal5
+               [expr {$x1<$x2?$x2+$::M5HW:$x1+$::M5HW}] [expr {$y1<$y2?$y2+$::M5HW:$y1+$::M5HW}] ; paint metal5 ; label $name
 }
 proc m4route {x1 y1 x2 y2 name} {
     box values [expr {$x1<$x2?$x1-$::M2HW:$x2-$::M2HW}] [expr {$y1<$y2?$y1-$::M2HW:$y2-$::M2HW}] \
-               [expr {$x1<$x2?$x2+$::M2HW:$x1+$::M2HW}] [expr {$y1<$y2?$y2+$::M2HW:$y1+$::M2HW}] ; paint metal4 ; label $name metal4
+               [expr {$x1<$x2?$x2+$::M2HW:$x1+$::M2HW}] [expr {$y1<$y2?$y2+$::M2HW:$y1+$::M2HW}] ; paint metal4 ; label $name
 }
 # simple single-device strap (source top, drain bottom) -- for switches/inverter/dummies
 proc strap_device {scol dcol sdt sdb rS rD sname dname} {

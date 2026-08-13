@@ -1,0 +1,51 @@
+
+Circuit 1 cell pfet_03v3 and Circuit 2 cell pfet_03v3 are black boxes.
+Warning: Equate pins:  cell pfet_03v3 is a placeholder, treated as a black box.
+Warning: Equate pins:  cell pfet_03v3 is a placeholder, treated as a black box.
+
+Subcircuit pins:
+Circuit 1: pfet_03v3                       |Circuit 2: pfet_03v3                       
+-------------------------------------------|-------------------------------------------
+1                                          |1                                          
+2                                          |2                                          
+3                                          |3                                          
+4                                          |4                                          
+---------------------------------------------------------------------------------------
+Cell pin lists are equivalent.
+Device classes pfet_03v3 and pfet_03v3 are equivalent.
+
+Class cp_pstrapped (0):  Merged 9 parallel devices.
+Subcircuit summary:
+Circuit 1: cp_pstrapped                    |Circuit 2: cp_pstrapped                    
+-------------------------------------------|-------------------------------------------
+pfet_03v3 (10->1)                          |pfet_03v3 (1)                              
+Number of devices: 1                       |Number of devices: 1                       
+Number of nets: 4                          |Number of nets: 4                          
+---------------------------------------------------------------------------------------
+Resolving symmetries by property value.
+Resolving symmetries by pin name.
+Resolving symmetries by net name.
+Netlists match with 1 symmetry with property errors.
+  Parallelized instances disagree on pin connections.
+    Circuit1 instance pfet_03v3:0 pin a_n2068_n500# connections are tied together (0)
+    Circuit2 instance pfet_03v3:M pin nc connections are no connects (1)
+  Parallelized instances disagree on pin connections.
+    Circuit1 instance pfet_03v3:0 pin a_n2900_522# connections are tied together (0)
+    Circuit2 instance pfet_03v3:M pin nb connections are no connects (1)
+  Parallelized instances disagree on pin connections.
+    Circuit1 instance pfet_03v3:0 pin a_n2556_n500# connections are tied together (0)
+    Circuit2 instance pfet_03v3:M pin na connections are no connects (1)
+
+Subcircuit pins:
+Circuit 1: cp_pstrapped                    |Circuit 2: cp_pstrapped                    
+-------------------------------------------|-------------------------------------------
+(no pins)                                  |(no pins)                                  
+---------------------------------------------------------------------------------------
+Cell pin lists are equivalent.
+Device classes cp_pstrapped and cp_pstrapped are equivalent.
+
+Final result: Circuits match uniquely.
+Property errors were found.
+
+The following cells had property errors:
+ cp_pstrapped

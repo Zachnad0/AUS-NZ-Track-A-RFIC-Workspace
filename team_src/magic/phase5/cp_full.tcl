@@ -41,7 +41,7 @@ rail -5080 5080 720 VDD
 gate_polyrail -5400 5040 564 -5350 960 VGP
 foreach x $pvgpd { strap_col $x -492 -720 }
 rail -5378 3568 -720 VGP
-box values -5378 -748 -5322 988 ; paint metal2 ; label VGP metal2
+box values -5378 -748 -5322 988 ; paint metal2 ; label VGP
 foreach x $ppmid { strap_col_m3 $x -492 -960 }
 rail3 -3568 4576 -960 PMID
 
@@ -53,7 +53,7 @@ rail -1048 1048 [yn 720] VSS
 gate_polyrail -1350 1008 [yn 564] -1300 [yn 960] VGN
 strap_col -504 [yn -492] [yn -720]
 rail -1328 -464 [yn -720] VGN
-box values -1328 [yn -748] -1272 [yn 988] ; paint metal2 ; label VGN metal2
+box values -1328 [yn -748] -1272 [yn 988] ; paint metal2 ; label VGN
 strap_col_m3 504 [yn -492] [yn -960]
 rail3 464 544 [yn -960] NMID
 
@@ -131,10 +131,10 @@ m5route -500 [yn 720] 8800 [yn 720] VSS
 box values -5450 -640 9250 640 ; paint nwell
 box values -1360 [yn -640] 9250 [yn 640] ; paint pwell
 # VDD tap: clear gap between mirror (x5162) and M_PSW (x6058) -> mirror VDD rail y720
-box values 5080 692 5340 748 ; paint metal2 ; label VDD metal2
+box values 5080 692 5340 748 ; paint metal2 ; label VDD
 welltap 5290 -550 550 720 nsubdiff nsubdiffcont
 # VSS tap: clear gap right of NMOS mirror (x1068) -> VSS rail yn720
-box values 1008 [yn 692] 1340 [yn 748] ; paint metal2 ; label VSS metal2
+box values 1008 [yn 692] 1340 [yn 748] ; paint metal2 ; label VSS
 welltap 1290 -4100 -3100 [yn 720] psubdiff psubdiffcont
 
 select top cell

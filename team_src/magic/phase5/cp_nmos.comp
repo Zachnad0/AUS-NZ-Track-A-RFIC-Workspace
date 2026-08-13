@@ -1,0 +1,34 @@
+
+Circuit 1 cell nfet_03v3 and Circuit 2 cell nfet_03v3 are black boxes.
+Warning: Equate pins:  cell nfet_03v3 is a placeholder, treated as a black box.
+Warning: Equate pins:  cell nfet_03v3 is a placeholder, treated as a black box.
+
+Subcircuit pins:
+Circuit 1: nfet_03v3                       |Circuit 2: nfet_03v3                       
+-------------------------------------------|-------------------------------------------
+1                                          |1                                          
+2                                          |2                                          
+3                                          |3                                          
+4                                          |4                                          
+---------------------------------------------------------------------------------------
+Cell pin lists are equivalent.
+Device classes nfet_03v3 and nfet_03v3 are equivalent.
+
+Class cp_nmos (0):  Merged 2 parallel devices.
+Subcircuit summary:
+Circuit 1: cp_nmos                         |Circuit 2: cp_nmos                         
+-------------------------------------------|-------------------------------------------
+nfet_03v3 (4->2)                           |nfet_03v3 (2)                              
+Number of devices: 2                       |Number of devices: 2                       
+Number of nets: 4                          |Number of nets: 4                          
+---------------------------------------------------------------------------------------
+Netlists match uniquely with port errors.
+
+Subcircuit pins:
+Circuit 1: cp_nmos                         |Circuit 2: cp_nmos                         
+-------------------------------------------|-------------------------------------------
+---------------------------------------------------------------------------------------
+Cell pin lists for cp_nmos and cp_nmos altered to match.
+Device classes cp_nmos and cp_nmos are equivalent.
+
+Final result: Top level cell failed pin matching.
