@@ -15,6 +15,12 @@ magic::gencell gf180mcu::pfet_03v3 MPMIR w 5 l 2 nf 20 m 1 guard 0 topc 0 botc 0
 # --- place NMOS mirror (nf=4, hw=1068 hh=568) center (0,YN) ---
 box values -1068 [expr {$YN-568}] -1068 [expr {$YN-568}]
 magic::gencell gf180mcu::nfet_03v3 MNMIR w 5 l 2 nf 4 m 1 guard 0 topc 0 botc 0
+# --- place M_PSW (pfet nf=10 L=0.3, hw=942) center (7000,0) ---
+box values [expr {7000-942}] -630 [expr {7000-942}] -630
+magic::gencell gf180mcu::pfet_03v3 MPSW w 5 l 0.3 nf 10 m 1 guard 0 topc 0 botc 0
+# --- place M_NSW (nfet nf=2 L=0.3, hw=224) center (7000,YN) ---
+box values [expr {7000-224}] [expr {$YN-568}] [expr {7000-224}] [expr {$YN-568}]
+magic::gencell gf180mcu::nfet_03v3 MNSW w 5 l 0.3 nf 2 m 1 guard 0 topc 0 botc 0
 
 flatten CP_flat
 load CP_flat
@@ -43,6 +49,22 @@ rail -1328 -464 [yn -720] VGN
 box values -1328 [yn -748] -1272 [yn 988] ; paint metal2 ; label VGN metal2
 strap_col_m3 504 [yn -492] [yn -960]
 rail3 464 544 [yn -960] NMID
+
+# --- strap M_PSW (FX=7000): source->PMID (top), drain->CP_OUT (bottom), gate->UP_B ---
+set psw_s {6180 6508 6836 7164 7492 7820}
+set psw_d {6344 6672 7000 7328 7656}
+foreach x $psw_s { strap_col $x 492 720 }
+rail 6140 7860 720 PMID
+foreach x $psw_d { strap_col $x -492 -720 }
+rail 6304 7696 -720 CP_OUT
+gate_polyrail 5950 7820 564 6000 960 UPB
+
+# --- strap M_NSW (FX=7000 FY=YN): source->NMID, drain->CP_OUT, gate->DOWN ---
+foreach x {6836 7164} { strap_col $x [yn 492] [yn 720] }
+rail 6796 7204 [yn 720] NMID
+strap_col 7000 [yn -492] [yn -720]
+rail 6900 7100 [yn -720] CP_OUT
+gate_polyrail 6550 7164 [yn 564] 6600 [yn 960] DOWN
 
 select top cell
 drc on ; drc euclidean on ; drc check ; drc catchup
