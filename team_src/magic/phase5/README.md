@@ -73,6 +73,19 @@ gf180 minimums hoisted to constants (via1 52, metal1 encl +12, metal2 56, riser 
 geometry (pfet nf=10 5u L2, device-local): S/D cols ±2520 step 504, tabs y±492; poly rail
 must sit ABOVE pdiff (y>500) or it forms a spurious FET; nwell ±2642/±630.
 
+## Progress (2026-08-13) — all structural methods PROVEN, DRC 0 + LVS
+- **Single strapped device** (`strap.tcl` procs): pfet nf=10 → W=50, DRC 0, match uniquely.
+- **Interleaved PMOS mirror** (`cp_pmos.tcl`): M_PREF+M_PSRC nf=20 common-centroid ABBA, split
+  drains VGP(M2)/PMID(M3), gate poly-rail, vertical M2 VGP unify. **DRC 0; netgen 20→2 merged,
+  match uniquely** vs `cp_pmos_golden.spice`.
+- **Interleaved NMOS mirror** (`cp_nmos.tcl`): M_NREF+M_NSNK nf=4, split drains VGN(M2)/NMID(M3).
+  **DRC 0; netgen 4→2 merged, match uniquely** vs `cp_nmos_golden.spice`.
+- (`strap.tcl` is a clean proc library; constants incl via1 52 / via2 56 hoisted.)
+Remaining to the gate: strap the switches/inverter/dummies (same procs), place all in the two-band
+floorplan (flatten-into-CP with tracked offset OR port-make + instance), inter-device routing
+(PMID→M_PSW.src, CP_OUT, UP_B, VGN, NMID, VDD/VSS rails), group guard rings (= bulk ties), 7 ports
+(`port make`), `verify_cp.sh` exit 0. Mechanical assembly on the proven methods.
+
 ## Remaining CP build (now unblocked — the tractable next chunk, same proven method)
 (c) **Interleaved mirror pair**: one `pfet nf=20` (topc=0), gate poly-rail→VGP, source→VDD,
     **split the 10 drain columns**: 5→VGP (= gate net, M_PREF) / 5→PMID (M_PSRC), common-centroid.

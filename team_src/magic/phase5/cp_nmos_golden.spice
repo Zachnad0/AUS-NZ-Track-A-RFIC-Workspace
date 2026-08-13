@@ -1,0 +1,4 @@
+.subckt cp_nmos
+XM_NREF VGN VGN VSS BULK nfet_03v3 L=2u W=10u
+XM_NSNK NMID VGN VSS BULK nfet_03v3 L=2u W=10u
+.ends
