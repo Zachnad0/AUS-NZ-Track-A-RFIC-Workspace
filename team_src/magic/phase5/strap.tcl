@@ -55,6 +55,15 @@ proc via_m2m4 {x y} {
     box values [expr {$x-$::M3HW}] [expr {$y-$::M3HW}] [expr {$x+$::M3HW}] [expr {$y+$::M3HW}] ; paint metal4
     box values [expr {$x-$::VHW}]  [expr {$y-$::VHW}]  [expr {$x+$::VHW}]  [expr {$y+$::VHW}]  ; paint m4contact
 }
+# welltap: n+/p+ substrate tie in a well, metal1 riser up to a metal2 rail at raily.
+# Dimensions match the gencell guard ring: 46 contact, +13 implant enclosure (72),
+# 76 metal1 (encloses via1 by 12), 52 via1. Caller paints the well + extends the rail.
+proc welltap {cx clo chi raily diff cont} {
+    box values [expr {$cx-36}] $clo [expr {$cx+36}] $chi ; paint $diff
+    box values [expr {$cx-23}] [expr {$clo+13}] [expr {$cx+23}] [expr {$chi-13}] ; paint $cont
+    box values [expr {$cx-38}] [expr {$clo+7}] [expr {$cx+38}] [expr {$raily+28}] ; paint metal1
+    box values [expr {$cx-26}] [expr {$raily-26}] [expr {$cx+26}] [expr {$raily+26}] ; paint m2contact
+}
 proc via_m3m4 {x y} {
     box values [expr {$x-$::M3HW}] [expr {$y-$::M3HW}] [expr {$x+$::M3HW}] [expr {$y+$::M3HW}] ; paint metal3
     box values [expr {$x-$::M3HW}] [expr {$y-$::M3HW}] [expr {$x+$::M3HW}] [expr {$y+$::M3HW}] ; paint metal4

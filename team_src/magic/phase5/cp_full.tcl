@@ -82,6 +82,18 @@ via_m2m4 6836 [yn 720]
 m4route 504 [yn -960] 6836 [yn -960] NMID
 m4route 6836 [yn -960] 6836 [yn 720] NMID
 
+# ===== bulk ties: band-merged wells + one tap each (nwell->VDD, pwell->VSS) =====
+# Merge every pfet nwell in the PMOS band and every nfet pwell in the NMOS band into
+# one well each; a single tap per band ties all bulks (taps land in clear device gaps).
+box values -5450 -640 9250 640 ; paint nwell
+box values -1360 [yn -640] 9250 [yn 640] ; paint pwell
+# VDD tap: clear gap between mirror (x5162) and M_PSW (x6058) -> mirror VDD rail y720
+box values 5080 692 5340 748 ; paint metal2 ; label VDD metal2
+welltap 5290 -550 550 720 nsubdiff nsubdiffcont
+# VSS tap: clear gap right of NMOS mirror (x1068) -> VSS rail yn720
+box values 1008 [yn 692] 1340 [yn 748] ; paint metal2 ; label VSS metal2
+welltap 1290 -4100 -3100 [yn 720] psubdiff psubdiffcont
+
 select top cell
 drc on ; drc euclidean on ; drc check ; drc catchup
 puts "CPFULL_DRC=[drc list count total]"
