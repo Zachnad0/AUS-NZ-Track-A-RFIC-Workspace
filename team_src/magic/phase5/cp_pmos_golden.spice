@@ -1,0 +1,4 @@
+.subckt cp_pmos
+XM_PREF VGP VGP VDD BULK pfet_03v3 L=2u W=50u
+XM_PSRC PMID VGP VDD BULK pfet_03v3 L=2u W=50u
+.ends

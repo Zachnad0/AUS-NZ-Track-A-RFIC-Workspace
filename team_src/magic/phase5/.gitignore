@@ -1,3 +1,4 @@
 *.mag
 *.ext
 *.spice
+!*_golden.spice
