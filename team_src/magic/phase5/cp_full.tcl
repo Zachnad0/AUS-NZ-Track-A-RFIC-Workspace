@@ -136,6 +136,11 @@ welltap 5290 -550 550 720 nsubdiff nsubdiffcont
 # VSS tap: clear gap right of NMOS mirror (x1068) -> VSS rail yn720
 box values 1008 [yn 692] 1340 [yn 748] ; paint metal2 ; label VSS
 welltap 1290 -4100 -3100 [yn 720] psubdiff psubdiffcont
+# 2nd VSS tap near NSW(x7000)+INVN(x9000): DF.14_LV latchup rule needs a substrate tap
+# within 20um of every nfet; tie to the VSS M5 spine overhead at (8000,yn720).
+box values 7960 [yn 692] 8040 [yn 748] ; paint metal2 ; label VSS
+welltap 8000 -4100 -3100 [yn 720] psubdiff psubdiffcont
+via_m2m5 8000 [yn 720]
 
 select top cell
 drc on ; drc euclidean on ; drc check ; drc catchup
