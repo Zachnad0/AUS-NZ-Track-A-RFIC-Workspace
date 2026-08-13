@@ -3,7 +3,7 @@ G {}
 K {type=subcircuit
 format="@name @pinlist @symname"
 template="name=X1"
-spice_sym_def=".include /foss/designs/xschem/vco_inductor_v2.subckt"
+spice_sym_def=".include $UPRJ_ROOT/team_src/xschem/vco_inductor_v2.subckt"
 }
 V {}
 S {}

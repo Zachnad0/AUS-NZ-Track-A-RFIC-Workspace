@@ -373,14 +373,50 @@ output into 50 Ω over the same window.
   **Inverted tuning (KVCO < 0)** — drives the loop-sign constraint (`scope.md` §2).
 - Drives Plan B (`scope.md` §3, FINAL).
 
-**Note on the run:** `vco_v1`'s netlist hardcodes an include path
-`/foss/designs/xschem/vco_inductor_v2.subckt`; corrected to the clone's actual
-path in the *generated deck only* to run (no schematic edit — see "For Zach").
+**Portability bug — FIXED (2026-08-12).** `vco_inductor_v2.sym` hardcoded
+`spice_sym_def=".include /foss/designs/xschem/vco_inductor_v2.subckt"` (a path that
+does not exist in any clone). Changed to `$UPRJ_ROOT/team_src/xschem/…` (ngspice
+expands `$UPRJ_ROOT`; portable across the 3 clones, matches the Phase 7.2 lvs
+convention). Sims require `UPRJ_ROOT` set to the clone root.
 
-### 3.2 Remaining VCO characterization — PENDING
-Corners (ss/ff + temp), supply current/power, startup time, tank swing, phase
-noise/harmonics. Sanity baseline (Zach's tb): −1.55 dBm into 50 Ω, 16.6 mW,
-H3 −18.4 dBc.
+### 3.2 VCO characterization (2026-08-12) — power/swing/startup/PVT measured; 2 gaps
+Current netlist (= `origin/main`, no diff), `vco_tb`, `.option method=gear`, at the
+ISM operating point **VTUNE = 2.15 V**. `tran 5p 80n`, settled 60–80 ns. File-read.
+
+| corner | VCO freq | ÷2 | core swing (se / diff) | total I (buf incl) | core I (ISS) |
+|---|---|---|---|---|---|
+| TT 27C  | 4.751 GHz | 2.375 | 2.03 / 4.04 Vpp | 5.04 mA (16.6 mW) | 1.38 mA (4.6 mW) |
+| FF      | 4.828 | 2.414 | 2.04 / 4.06 | 5.94 mA (19.6 mW) | 1.57 mA |
+| SS      | 4.640 | 2.320 | 2.01 / 4.00 | 4.37 mA (14.4 mW) | 1.24 mA |
+| TT −40C | 4.740 | 2.370 | 2.19 / 4.36 | 5.26 mA | 1.36 mA |
+| TT +85C | 4.764 | 2.382 | 1.88 / 3.75 | 4.92 mA | 1.40 mA |
+
+- **Swing:** near rail-to-rail single-ended (~2 Vpp-se, core rides 1.27–3.30 V) at every
+  corner — a strong oscillator, ample to drive the divider CML clock directly.
+- **Startup:** self-starts; ~14 ns latency then builds 16→24 ns to full 4.04 Vpp diff
+  (the 14 ns is op-point metastability breaking on numeric noise — thermal noise starts
+  it faster in silicon). **Bench: allow ~30 ns before reading.**
+- **Power:** VCO **core 1.2–1.6 mA (~4–5 mW)**; the 16.6 mW / 5 mA "VCO" budget figure is
+  core **plus the TB output buffer** (source-followers + 1 mA bias). Budget line = 5 mA if
+  an on-chip buffer like the TB's is used; core alone is ~1.4 mA.
+- **Freq PVT** spread 4.64–4.83 GHz (process) / 4.74–4.76 (temp) at VTUNE 2.15 V — tight.
+
+**GAP 1 — the §3.1 f-VTUNE table is NOT reproducible on the current netlist.** Same
+schematic + same inductor (v2 predates the 7/30 sweep — no design change between). With
+the method fully validated (buffer node == core node; exact §3.1 window 100–150 ns + uic;
+gear AND trap both tried), the current sim gives **4.90 GHz at VTUNE = 2.0 V vs the §3.1
+table's 5.235 GHz** — a **~330 MHz (6.4%) systematic offset, present at every point**. I
+did NOT re-run the sweep (per plan); this is one method-validated cross-check. Candidate
+cause: gf180 model / ngspice drift in the `:latest` container since 7/30, or a §3.1
+measurement error. **This must be resolved before the frequency plan is trusted:** Plan B
+(ISM 2.4–2.5 GHz at VTUNE 2.05–2.28 V) rests on §3.1; if the real band is ~330 MHz lower,
+the ISM VTUNE window shifts down (current data: VCO 4.8–5.0 GHz → VTUNE ≈ 1.9–2.1 V). This
+compounds the Phase 6 inductor-EM risk — both point at frequency-plan uncertainty.
+
+**GAP 2 — phase noise not measured.** Needs the ~1.04 µs transient-FFT run (expensive,
+and transient-FFT phase noise is approximate; ngspice has no PSS/HB). Deferred pending a
+go on the long sim or a proper tool. Sanity baseline from Zach's tb still stands:
+−1.55 dBm into 50 Ω, H3 −18.4 dBc.
 
 ## 4. Inductor re-extraction (condition 6) — PENDING
 
