@@ -502,7 +502,26 @@ tuning range. 5.4's VCO layout just *places* this cell.
    ownership ambiguous, and the answer decides whether pre-filling works or is moot. Settle before
    final DRC.
 
-(condition 6 stays PENDING until EM is run — needs openEMS or FastHenry installed; Greg installs.)
+### 4.1 Mohan analytical cross-check (2026-08-12, done — no install)
+Geometry (from `.mag`): **single-layer center-tapped differential square spiral on metal5**
+(28 metal5 segments) with a **metal4 underpass bridge** (5 thin rects) — NOT a 2-layer stack;
+the π-model's two 0.6 nH halves (L0/L1 through the center bridge) are the two sides of the
+differential winding, 1.2 nH port-to-port.
+Mohan current-sheet, square (c1=1.27, c2=2.07, c3=0.18, c4=0.13), n=3, D_out=76 µm, D_in=20 µm
+⇒ d_avg=48 µm, ρ=0.583: **L ≈ 0.49 nH**. That is **2.4× below the 1.2 nH π-model** — far outside
+Mohan's ~15 % accuracy. The differential winding leaves N-per-side ambiguous; if N=3 is per half
+(≈6 effective turns) Mohan gives ~1.95 nH, bracketing the model from above. **Net: the analytical
+check does NOT confirm 1.2 nH — plausible range ~0.5–2 nH.**
+
+**Consequence (elevates 6.2 to critical-path).** f ∝ 1/√L, so this ~0.5–2 nH spread maps to a
+**~1.2–1.55× VCO-frequency uncertainty** — the whole Plan B band (4.05–6.38 GHz, measured on the
+1.2 nH model) could shift by that much. At the low-L end (0.49 nH) the band rises ~1.55× and ISM
+(2.4–2.5 GHz after ÷2) risks going out of reach; at the high-L end it drops. So EM extraction is
+**necessary, not a nicety**. Per 6.3: prefer accept-and-replan (re-sim VCO, move VTUNE window,
+propagate) over redraw — redraw only if the extracted L pushes ISM outside the tuning range.
+
+(6.2 stays PENDING until openEMS or FastHenry is installed — **queued for Greg**; runs on the
+existing `.mag`, independent of the block layout.)
 
 ## 5. Notes — "For Zach" (Greg to relay; not edited here)
 
