@@ -53,7 +53,8 @@ Key points:
 - The **divider** closes the loop back to the PFD and also drives `MON_OUT`, a
   divided-down copy of the VCO for frequency observation on a digital pad.
 
-**Loop sign (KVCO < 0).** The VCO tuning is inverted — KVCO ≈ −683 MHz/V (§3), so
+**Loop sign (KVCO < 0).** The VCO tuning is inverted — KVCO ≈ −706 MHz/V avg, ≈ −1.1 GHz/V
+local near ISM (§3, corrected 2026-08-12), so
 frequency *falls* as VTUNE *rises*. For the loop to lock, the UP/DOWN → charge-pump
 sense must be **inverted** relative to the textbook KVCO > 0 case: a phase-lead
 condition must move VTUNE in the direction that *lowers* VCO frequency toward lock.
@@ -69,23 +70,26 @@ is a documented design constraint to be confirmed by simulation.
 ## 3. Frequency plan — FINAL (measured)
 
 **Operating spec: 2.4–2.5 GHz output, post-÷2.** The VCO runs at **4.8–5.0 GHz**
-(VTUNE ≈ 2.05–2.28 V) and the ÷2 divider brings it to the 2.4–2.5 GHz ISM band.
+(VTUNE ≈ **1.95–2.12 V**) and the ÷2 divider brings it to the 2.4–2.5 GHz ISM band.
 Plan **B** is adopted; Plan A (native 2.4 GHz, no divider) is eliminated — the
 tank cannot reach 2.4 GHz.
 
-Measured f–VTUNE of `vco_v1` (TT, 27 °C, VDD 3.3 V; full sweep in
-`verification.md` §3):
+Corrected f–VTUNE of `vco_v1` (TT, 27 °C, VDD 3.3 V; full sweep + the correction of the
+7/30 mid-curve error in `verification.md` §3.2):
 
-| | VTUNE ≈ 0 V | VTUNE ≈ 2.15 V (ISM) | VTUNE ≈ 3.3 V |
+| | VTUNE ≈ 0 V | VTUNE ≈ 2.0 V (ISM) | VTUNE ≈ 3.3 V |
 |---|---|---|---|
-| **VCO** | 6.37 GHz | ~4.9 GHz | 4.11 GHz |
-| **÷2 output** | 3.18 GHz | ~2.45 GHz | 2.06 GHz |
+| **VCO** | 6.38 GHz | 4.93 GHz | 4.05 GHz |
+| **÷2 output** | 3.19 GHz | 2.46 GHz | 2.02 GHz |
 
-- **Native band 4.11–6.37 GHz** → ÷2 output **2.06–3.18 GHz**. The 2.4–2.5 GHz ISM
+- **Native band 4.05–6.38 GHz** → ÷2 output **2.02–3.19 GHz**. The 2.4–2.5 GHz ISM
   target sits mid-range with **tuning margin on both sides**.
-- **KVCO ≈ −683 MHz/V** average (up to −1.4 GHz/V mid-range, ≈ −790 MHz/V near the
-  ISM operating point). Tuning is **inverted** (freq falls as VTUNE rises — NMOS
-  varactor); see the loop-sign note in §2.
+- **KVCO ≈ −706 MHz/V** average; **local KVCO near the ISM point ≈ −1.1 GHz/V**
+  (corrected 2026-08-12 — the old −790 MHz/V and the −1.4 GHz/V "mid-range" came from
+  §3.1's non-reproducible mid-curve; the real curve is smooth/monotonic). Tuning is
+  **inverted** (freq falls as VTUNE rises — NMOS varactor); see the loop-sign note in §2.
+  **Loop-filter design must use −1.1 GHz/V** (loop BW ∝ √KVCO → ~18% higher, phase
+  margin shifts; off-chip filter is unstarted so this is bench-adjustable).
 - **Divider is REQUIRED** and stays in Tier 1 minimum scope.
 
 **Paper-trail resolved (condition 2):** the proposal's 2.4–2.5 GHz was always the
@@ -255,3 +259,16 @@ components and the closed-loop stability risk from the silicon critical path.
 - **The `slot_0p5x0p5` full-frame plan is superseded** (see `pins.md` appendix);
   the workshop-slot LibreLane flow is retained **only as toolchain / sample-GDS
   proof**, not as our integration path.
+
+**Bring-up / calibration notes (silicon):**
+- **Corrected KVCO ≈ −1.1 GHz/V near ISM** (was −790 MHz/V; `verification.md` §3.2). Two
+  consequences for whoever designs the (off-chip, unstarted) **loop filter**: loop
+  bandwidth ∝ √KVCO → **~18% higher**, and **phase margin shifts** — bench-adjustable, not
+  a redesign, but design the filter with −1.1 GHz/V. **Reference spurs scale directly with
+  KVCO**, so CP_v1's known **+110 fC charge injection now maps to ~1.4× the VTUNE frequency
+  deviation** it did at −790 — strengthens the injection caveat (`verification.md` §2.6).
+  The **static phase-offset bound is KVCO-independent** (~1 ps from the 0.18% CP mismatch —
+  unchanged). Update the loop-filter KVCO everywhere it is quoted.
+- **DIV2 output settling:** the self-biased converters + CML + pad settle in ~16 ns (TT) to
+  ~26 ns (SS/85 °C). **Allow ~30 ns after VCO power-up before reading** I_P/I_N/Q_P/Q_N or
+  the I/Q phase on the bench (`div2-debug.md`). Startup transients are real in silicon too.

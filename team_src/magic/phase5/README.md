@@ -16,7 +16,13 @@ fine either way. The blocker is the matched PAIR: M_PREF and M_PSRC are two sepa
 that must common-centroid interdigitate (A B B A). Under guard=1 each gets its OWN ring — two
 rings cannot interleave. **So: `guard 0` on the mirror devices, and draw ONE group guard ring
 around the combined common-centroid array** (matches the packet's "ring the mirror pairs").
-guard=0 arrays are DRC-clean, so this is feasible. This is settled before array topology.
+guard=0 arrays are DRC-clean, so this is feasible. Settled before array topology.
+
+**Generalizes (applies to IBIAS 5.2 too):** the rule is not "always guard 0" — it is *only
+matched pairs need the manual group ring*. Any SINGLE multi-finger device (e.g. an IBIAS
+mirror leg drawn as one `m`-unit device, or the CP switches/inverter which have no match)
+may keep `guard=1` if convenient — its own ring is fine. Reserve guard=0 + group ring for
+the interdigitated matched pairs.
 
 ## Build stages (per packet, DRC=0 at each; render with lay2img.py)
 (a) one device → (b) matched pair → (c) interdigitated array + dummies → (d) guard rings →
