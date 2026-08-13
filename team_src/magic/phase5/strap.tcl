@@ -38,6 +38,9 @@ proc rail3 {x1 x2 yc name} { box values $x1 [expr {$yc-$::M2HW}] $x2 [expr {$yc+
 # gate_polyrail: poly rail connecting gate polys (py must be ABOVE pdiff top), one
 # polycontact->via1->metal2 at cx (far end, over field). rail 80 tall for CO.3 overlap.
 proc gate_polyrail {px1 px2 py cx rG name} {
+    # ASSERT: contact cx must be LEFT of px2, else the metal2 rail (cx..px2+40) runs
+    # backwards and silently makes malformed/undersized metal2. Fail loudly instead.
+    if {$cx >= $px2} { error "gate_polyrail: cx ($cx) must be < px2 ($px2) -- place the gate contact LEFT of the array" }
     box values $px1 [expr {$py-42}] $px2 [expr {$py+42}] ; paint polysilicon
     box values [expr {$cx-24}] [expr {$py-24}] [expr {$cx+24}] [expr {$py+24}] ; paint polycontact
     box values [expr {$cx-$::M1HW}] [expr {$py-24}] [expr {$cx+$::M1HW}] [expr {$rG+$::VHW+$::EXT}] ; paint metal1
