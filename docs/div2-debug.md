@@ -269,8 +269,10 @@ transients are real in silicon too; this is characterization, not an omission.
 **Budget (3.5).** Full divider + 4 converters supply current = **~23 mA avg** (22.96 mA,
 peak ~21.6 mA over the window; the transient inherently includes dynamic CV^2f on the
 stage-3 gates and short-circuit current — no hand-calc needed) vs the ~50 mA VDDA budget.
-~46% used. **Running RFIC total to watch (Phase 7): DIV2 ~23 mA + VCO ~16.6 mW (~5 mA) +
-CP/IBIAS/PFD — track against the 50 mA ceiling now, not at Phase 7.**
+~46% used. **Running RFIC total to watch (Phase 7): DIV2 ~23 mA + VCO (core 1.2-1.6 mA
+/ ~4-5 mW; 5 mA / 16.6 mW ONLY if an on-chip buffer like the TB's is included — see
+verification.md 3.2) + IBIAS 0.84 mA + CP ~0.2 mA + PFD (digital, small). Running total
+~25 mA core-only / ~29 mA with VCO buffer, against the 50 mA ceiling. Track now.**
 
 **Locked converter sizing (per phase):** CC 100 fF, RFB 20 kO, INV1 pfet 10u/nfet 4u,
 INV2 pfet 26u/nfet 11u, INV3 pfet 44u/nfet 16u, R_SER 1 kO. Internal node G1_<ph>.

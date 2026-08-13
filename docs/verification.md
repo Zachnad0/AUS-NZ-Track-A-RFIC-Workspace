@@ -373,6 +373,11 @@ output into 50 Ω over the same window.
   **Inverted tuning (KVCO < 0)** — drives the loop-sign constraint (`scope.md` §2).
 - Drives Plan B (`scope.md` §3, FINAL).
 
+> **SUPERSEDED (2026-08-12), see §3.2 GAP 1.** This 7/30 table's mid-curve is not
+> reproducible on the same netlist (container proven stable). The band edges hold, but the
+> corrected sweep gives a smooth curve with ISM at **VTUNE ≈ 1.95–2.12 V** and local KVCO
+> **≈ −1.1 GHz/V** (not 2.05–2.28 V / −790 MHz/V). Use §3.2's numbers for Plan B.
+
 **Portability bug — FIXED (2026-08-12).** `vco_inductor_v2.sym` hardcoded
 `spice_sym_def=".include /foss/designs/xschem/vco_inductor_v2.subckt"` (a path that
 does not exist in any clone). Changed to `$UPRJ_ROOT/team_src/xschem/…` (ngspice
@@ -401,22 +406,46 @@ ISM operating point **VTUNE = 2.15 V**. `tran 5p 80n`, settled 60–80 ns. File-
   an on-chip buffer like the TB's is used; core alone is ~1.4 mA.
 - **Freq PVT** spread 4.64–4.83 GHz (process) / 4.74–4.76 (temp) at VTUNE 2.15 V — tight.
 
-**GAP 1 — the §3.1 f-VTUNE table is NOT reproducible on the current netlist.** Same
-schematic + same inductor (v2 predates the 7/30 sweep — no design change between). With
-the method fully validated (buffer node == core node; exact §3.1 window 100–150 ns + uic;
-gear AND trap both tried), the current sim gives **4.90 GHz at VTUNE = 2.0 V vs the §3.1
-table's 5.235 GHz** — a **~330 MHz (6.4%) systematic offset, present at every point**. I
-did NOT re-run the sweep (per plan); this is one method-validated cross-check. Candidate
-cause: gf180 model / ngspice drift in the `:latest` container since 7/30, or a §3.1
-measurement error. **This must be resolved before the frequency plan is trusted:** Plan B
-(ISM 2.4–2.5 GHz at VTUNE 2.05–2.28 V) rests on §3.1; if the real band is ~330 MHz lower,
-the ISM VTUNE window shifts down (current data: VCO 4.8–5.0 GHz → VTUNE ≈ 1.9–2.1 V). This
-compounds the Phase 6 inductor-EM risk — both point at frequency-plan uncertainty.
+**GAP 1 — RESOLVED: §3.1's mid-curve was a measurement error; corrected sweep below.**
+Container is stable (CP compliance reproduced, above), so §3.1 was NOT drift. Re-ran the
+f-VTUNE sweep on the current netlist (core net1−net2, 80 n tran, settled 60–80 ns):
 
-**GAP 2 — phase noise not measured.** Needs the ~1.04 µs transient-FFT run (expensive,
-and transient-FFT phase noise is approximate; ngspice has no PSS/HB). Deferred pending a
-go on the long sim or a proper tool. Sanity baseline from Zach's tb still stands:
-−1.55 dBm into 50 Ω, H3 −18.4 dBc.
+| VTUNE (V) | VCO (GHz) | ÷2 (GHz) | core diff (Vpp) | §3.1 said | Δ |
+|---:|---:|---:|---:|---:|---:|
+| 0.0 | 6.378 | 3.189 | 4.33 | 6.367 | +11 |
+| 0.8 | 6.127 | 3.063 | 4.30 | 6.247 | −120 |
+| 1.2 | 5.848 | 2.924 | 4.26 | 5.669 | +179 |
+| 1.6 | 5.476 | 2.738 | 4.20 | 5.442 | +34 |
+| 2.0 | 4.929 | 2.464 | 4.09 | 5.235 | −306 |
+| 2.4 | 4.490 | 2.245 | 3.95 | 4.919 | −429 |
+| 2.8 | 4.187 | 2.094 | 3.78 | 4.527 | −340 |
+| 3.3 | 4.047 | 2.024 | 3.68 | 4.114 | −67 |
+
+- **Band edges MATCH** §3.1 (mine 4.05–6.38 GHz vs 4.11–6.37) — the native band and Plan B's
+  structure stand. The corrected curve is **smooth and monotonic** (a physical varactor C–V);
+  §3.1's anomalous "steep 0.8→1.2 V / KVCO −1.4 GHz/V" region does **not** reproduce and was
+  the error (likely mid-range settling/measurement artifacts at those points).
+- **Corrected ISM mapping:** DIV2 2.4–2.5 GHz ⇒ VCO 4.8–5.0 GHz at **VTUNE ≈ 1.95–2.12 V**
+  (§3.1 said 2.05–2.28 V — shifted **down ~0.15 V**). Avg KVCO −706 MHz/V (≈ §3.1's −683),
+  but **local KVCO near ISM ≈ −1.1 GHz/V** (§3.1 said −790 MHz/V — steeper; matters for loop
+  gain). **`scope.md` Plan B VTUNE window and the loop-filter KVCO should be updated to
+  1.95–2.12 V / −1.1 GHz/V.** ISM stays comfortably mid-band — reachable — as predicted.
+
+**GAP 2 — phase noise is NOT measurable with the open-source toolchain (closed).** ngspice
+has no PSS or harmonic-balance engine for autonomous oscillators, so the only route is a
+long transient + FFT. At 5 GHz that number is dominated by the simulator's numerical noise
+floor and timestep jitter, NOT device (thermal/flicker) noise — it would be a figure one
+would have to caveat into meaninglessness. Per Caglar's "phase noise if possible": the
+honest answer to condition 5 is that it is not obtainable here; it needs a PSS-capable tool
+(Spectre/ADS/AFS) at signoff. Output power/harmonics ARE measurable and stand as the
+sanity baseline (Zach's tb): −1.55 dBm into 50 Ω, H3 −18.4 dBc.
+
+**Container stability — CONFIRMED (no drift).** Before trusting or disputing any pre-7/30
+number, a pre-sweep measurement was re-run: **CP_v1 DC compliance reproduces 0.32–2.98 V /
+best |mismatch| 0.0011 % @ 1.50 V** vs the 2026-07-22 record 0.32–3.00 V / 0.001 %. So the
+`:latest` container is stable and the whole pre-7/30 evidence base (PFD dead-zone, CP
+steering, etc.) is safe — GAP 1 is a §3.1 error, not drift. **Toolchain fingerprint (record
+for future drift detection): ngspice-46 (KLU), open_pdks `7b70722e33c…`, Ubuntu 24.04.4.**
 
 ## 4. Inductor re-extraction (condition 6) — PENDING
 
