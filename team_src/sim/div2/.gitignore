@@ -1,0 +1,3 @@
+*.dat
+*.spice
+!div2_sb_TT.spice

@@ -213,3 +213,58 @@ pfet/device ×4 + a 4th taper stage (~26 mA). 1 kΩ delivers **157 mVpp (−12 d
 I/Q phase — with a moderate driver in **3 stages** and ~12.6 mA peak / ~6.3 mA avg. Amplitude
 arithmetic: V_scope = 3.3·50/(R_SER+50); load at INVO ≈ R_SER + 45 Ω (pad 300 fF ∥ 50 Ω at
 5 GHz). This **subsumes the old T6 output-load task** (the 450 Ω isolation-R ruling).
+
+### 2026-08-12 rework — SELF-BIASED AC-COUPLED CONVERTER (SOLVED; class removed)
+Sims/decks in `team_src/sim/div2/` (`mk_sb.py` rewrites all 4 chains; `analyze.awk`).
+All numbers file-read, `tran 0.2p 20n uic`, measured 16-20 ns unless noted.
+
+**Topology (per phase).** Keep the diff-pair front end (M_NT tail, M_BN1/2 in = OIB/OI,
+M_BP1/2 mirror load -> OC) — it already extracts the differential info and gives gain;
+it was never the problem. Break the DC hand-off that was:
+`OC --CC(100fF)--> G1 --> INV1(self-biased, pfet 10u/nfet 4u, RFB 20k INVO1->G1) --> INV2(26u/11u) --> INV3(44u/16u) --R_SER 1k--> I_P`.
+The feedback RFB pins G1 = INVO1 = INV1's own switching threshold across PVT; the AC
+coupling strips OC's ~1.87 V common mode. **There is no absolute level to match, by
+construction** — this removes the failure class, not the third instance of it. RFB·CC =
+2 ns (corner 80 MHz << 2.5 GHz signal). INV3 44/16 + R_SER 1k kept from move-c.
+
+**Result — the old design COLLAPSED at TT (21 mVpp @ 16-20 ns); the new one holds:**
+
+| corner | I_P (mVpp) | INVO3 rail (mV) | f (GHz) | duty | I/Q (settled) |
+|---|---|---|---|---|---|
+| TT (27C)  | 142 | -31 .. 2964 | 2.500 | 48.8% | 270.0 deg |
+| FF        | 146 | -43 .. 3030 | 2.500 | 49.0% | 270.0 deg |
+| SS        | 130 | 103 .. 2821 | 2.500 | 57.1% | 270.0 deg |
+| TT -40C   | 148 | -61 .. 3066 | 2.500 | 48.6% | 270.0 deg |
+| TT 85C    | 114*| -2 .. 2749  | 2.500 | ~49%  | 270.0 deg |
+
+*85 C measured at the settled 26-30 ns window (see settling note). All four outputs
+(I_P/I_N/Q_P/Q_N) track within 1-2 mVpp — the 4 chains are matched, so I/Q is EXACT
+quadrature (270.0 deg = Q_P leads I_P by 90 deg; swap Q_P/Q_N labels if lag is wanted).
+
+**Duty cycle** 48.8% at TT (49% FF, 57% SS — the slow-corner skew is the fixed-ratio
+INV2/INV3 driving the 2.5 GHz + R_SER load, cosmetic for a monitor pad). Strengthening
+the output nfet was TRIED (INV3 44/22, INV2 nfet 13) and made SS **worse** (stuck-high,
+82% duty) by gate-loading INV2 — reverted. 44/16 stands.
+
+**Settling caveat (real).** At TT/FF/cold the chain settles by ~16 ns, so 16-20 ns is
+valid. At SS and 85 C it settles ~24-26 ns (CML startup + self-bias + pad all slower),
+so a 16-20 ns read there catches residual settling in the *frequency/duty/phase
+precision* (e.g. SS 16-20 ns reads f=2.54 / I/Q=262 as an artifact); the **settled**
+window (>=24 ns) is exact 2.500 GHz / 270.0 deg at every corner incl 85 C. Amplitude at
+16-20 ns is already 129-148 mVpp (near rail) everywhere. Adding the startup `.ic` on the
+CML latch (TB currently has none — the divider self-starts from numeric asymmetry) would
+pull slow-corner settling into the 16-20 ns window; recommended for the committed TB.
+
+**Budget (3.5).** Full divider + 4 converters supply current = **22.4 mA avg** (20.8-23.6
+mA over the window; the transient inherently includes dynamic CV^2f on the stage-3 gates
+and short-circuit current — no hand-calc needed) vs the ~50 mA VDDA budget. ~45% used.
+
+**Locked converter sizing (per phase):** CC 100 fF, RFB 20 kO, INV1 pfet 10u/nfet 4u,
+INV2 pfet 26u/nfet 11u, INV3 pfet 44u/nfet 16u, R_SER 1 kO. New internal node G1_<ph>.
+
+**Schematic realization — NOT yet applied to `DIV2_QUAD_v1.sch`** (validated at netlist
+level; the .sch edit adds CC/RFB passives + rewires stage-1 input OC->G1 on 4 chains and
+is best done in the xschem GUI). Per phase <ph> in {IP,IN,QP,QN}: (1) stage-1 inverter
+input OC_<ph> -> new node G1_<ph>, resize pfet 26u->10u / nfet keep 4u; (2) add cap
+CC_<ph> = 100 fF from OC_<ph> to G1_<ph>; (3) add res RFB_<ph> = 20 kO from INVO1_<ph> to
+G1_<ph>; (4) stage-2 resize pfet 38u->26u / nfet 4u->11u. Stage-3 + R_SER unchanged.
