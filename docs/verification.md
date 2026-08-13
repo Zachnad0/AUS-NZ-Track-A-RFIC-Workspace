@@ -453,7 +453,47 @@ So the whole pre-7/30 evidence base (PFD dead-zone, CP steering, etc.) is safe. 
 fingerprint (record for future drift detection): ngspice-46 (KLU), open_pdks `7b70722e33c…`,
 Ubuntu 24.04.4.**
 
-## 4. Inductor re-extraction (condition 6) — PENDING
+## 4. Inductor / condition 6 — state + plan (2026-08-12, not yet run)
+
+**The spiral IS drawn — not model-only.** `team_src/magic/vco_inductor_v2/vco_inductor_v2.mag`
+is a real 3-turn dual square spiral (43 shapes on metal4/via4/metal5/rm5 + labels; params
+D_in=20, D_out=76, N=3, W=8, S=2, Gap=30). BUT `team_src/xschem/vco_inductor_v2.subckt` is an
+**analytical lumped π-model** (L0 0.60 n ×2 = 1.2 nH, metal R via `tm11k`, C) — hand-computed
+from spiral formulas, **NOT extracted from the `.mag`**. This is the "preliminary model"; the
+whole VCO band (§3.2, 4.05–6.38 GHz) rests on that 1.2 nH. **EM has never been run.**
+
+**Revised order (the spiral being already isolated relaxes the Phase 5/6 coupling):** EM runs
+on the existing `.mag` **independent of 5.4** — no need to draw it first. So: (1) Mohan
+analytical cross-check of 1.2 nH; (2) openEMS/FastHenry on `vco_inductor_v2.mag` for real
+L/Q/SRF/coupling; (3) if L disagrees, **PREFER accept-and-replan over redraw** — ISM sits
+mid-band with margin, and chasing a target L costs Q/area for no functional gain; a 20–30 %
+error does not put 2.4–2.5 GHz out of reach, so redraw ONLY if extracted L moves ISM outside
+tuning range. 5.4's VCO layout just *places* this cell.
+
+**Three items to settle BEFORE 5.4 (planned tonight, unresolved):**
+
+1. **Inductor LVS is an unsolved representation case** (unlike the transistor / std-cell cases
+   already settled). Extraction of drawn spiral metal yields distributed R/L, NOT the analytical
+   π-model's lumped elements — **netgen has nothing to match a spiral against a π-model**. Needs
+   a deliberate decision: **black-box the spiral and substitute the π-model**, as a documented
+   waiver under rubric row 1, at BOTH the VCO block level AND top level. Decide before 5.4, not
+   during verify (g).
+2. **Top-metal keep-out.** Spiral is on metal4/metal5/rm5; integration is organizer-scripted.
+   **Confirm nothing is routed above the spiral** — overlying metal degrades Q and shifts L, and
+   we do not control the organizer's router. Coordinate the keep-out with the organizer.
+3. **Density vs Q — the sleeper (confirmed real in the gf180 deck).** Bailey requires min clear
+   density; fill under/around a spiral degrades Q / shifts L. Checked
+   `libs.tech/klayout/tech/drc`: an inductor marker **`IND_MK` (layer 151/5) exists but only
+   `fill_comp.rb`/`fill_poly2.rb` honor it** (COMP/poly fill excluded within a 3 µm halo — protects
+   substrate). **`fill_metal.rb` does NOT reference IND_MK** — metal fill only keeps 2 µm from
+   existing metal, so it **WILL fill the spiral interior/surroundings (metal4/5), degrading Q**.
+   `metalX_blk` (datatype 5) exempts a region from the density *requirement* but does **not** stop
+   the fill script. So there is **no automatic metal-fill protection for the inductor** in this
+   deck: the fix is `metalX_blk` over the spiral (density exemption) + an explicit **metal-fill
+   keep-out coordinated with the organizer** (whose fill flow we don't control) + a documented
+   waiver — settle with the organizer BEFORE final DRC, not at signoff with no time left.
+
+(condition 6 stays PENDING until EM is run — needs openEMS or FastHenry installed; Greg installs.)
 
 ## 5. Notes — "For Zach" (Greg to relay; not edited here)
 
