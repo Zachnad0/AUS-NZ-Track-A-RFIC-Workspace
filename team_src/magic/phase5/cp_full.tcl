@@ -22,6 +22,13 @@ magic::gencell gf180mcu::pfet_03v3 MPSW w 5 l 0.3 nf 10 m 1 guard 0 topc 0 botc 
 box values [expr {7000-224}] [expr {$YN-568}] [expr {7000-224}] [expr {$YN-568}]
 magic::gencell gf180mcu::nfet_03v3 MNSW w 5 l 0.3 nf 2 m 1 guard 0 topc 0 botc 0
 
+# --- place inverters (nf=1, guard=0, topc=0 botc=0 = bare poly gate, DRC-0; gate
+#     contacted ABOVE the device to keep gate metal1 clear of S/D; bulk tied by band tap) ---
+box values 8796 -330 8796 -330
+magic::gencell gf180mcu::pfet_03v3 MINVP w 2 l 0.3 nf 1 m 1 guard 0 topc 0 botc 0
+box values 8858 -3768 8858 -3768
+magic::gencell gf180mcu::nfet_03v3 MINVN w 1 l 0.3 nf 1 m 1 guard 0 topc 0 botc 0
+
 flatten CP_flat
 load CP_flat
 
@@ -81,6 +88,42 @@ via_m3m4 504 [yn -960]
 via_m2m4 6836 [yn 720]
 m4route 504 [yn -960] 6836 [yn -960] NMID
 m4route 6836 [yn -960] 6836 [yn 720] NMID
+
+# ===== inverter routing (source x8800->M5/VDD, gate x9000->M3/UP, drain x9200->M4/UP_B) =====
+# UP (M3): INVP gate + INVN gate contacted ABOVE each device (clear of S/D), vertical at x9000
+# INVP gate: poly (to y244) extended up, poly pad + polycontact + metal1 at y276..340
+box values 8970 200 9030 340 ; paint polysilicon
+box values 8962 260 9038 340 ; paint polysilicon
+box values 8977 276 9023 322 ; paint polycontact
+box values 8962 276 9038 340 ; paint metal1
+via_m1m3 9000 300
+# INVN gate: poly (to -3456) extended up, contact at y-3324..-3260
+box values 8970 -3500 9030 -3260 ; paint polysilicon
+box values 8962 -3340 9038 -3260 ; paint polysilicon
+box values 8977 -3324 9023 -3278 ; paint polycontact
+box values 8962 -3324 9038 -3260 ; paint metal1
+via_m1m3 9000 -3300
+m3route 9000 300 9000 -3300 UP
+# UP_B (M4): INVP drain + INVN drain -> PSW UPB rail (M2 y960). Drains extended right to x9200.
+box values 9059 -42 9240 42 ; paint metal1
+via_m1m4 9200 0
+box values 9059 -3642 9240 -3558 ; paint metal1
+via_m1m4 9200 -3600
+m4route 9200 -3600 9200 960 UPB
+m4route 7820 960 9200 960 UPB
+via_m2m4 7820 960
+# VDD (M5): INVP source extended left to x8800 -> mirror VDD rail (M2 y720)
+box values 8760 -42 8941 42 ; paint metal1
+via_m1m5 8800 0
+via_m2m5 -2000 720
+m5route -2000 720 8800 720 VDD
+m5route 8800 0 8800 720 VDD
+# VSS (M5): INVN source extended left to x8800 -> NMOS mirror VSS rail (M2 yn720)
+box values 8760 -3642 8941 -3558 ; paint metal1
+via_m1m5 8800 -3600
+via_m2m5 -500 [yn 720]
+m5route 8800 -3600 8800 [yn 720] VSS
+m5route -500 [yn 720] 8800 [yn 720] VSS
 
 # ===== bulk ties: band-merged wells + one tap each (nwell->VDD, pwell->VSS) =====
 # Merge every pfet nwell in the PMOS band and every nfet pwell in the NMOS band into
