@@ -1,5 +1,13 @@
 # Inductor EM extraction (Phase 6.2) — INSTALL QUEUED
 
+**Status 2026-08-13:** zip extracted to `Downloads/openEMS_x64/openEMS/` — `openEMS.exe` runs
+(`Usage: openEMS <FDTD_XML_FILE>`). No-Python-module path attempted but **blocked**: the HDF5
+port post-processing needs `numpy`+`h5py`, and NEITHER is installed for Python 3.12 (and the
+bundled `openems`/`csxcad` wheels are cp313/cp314). So a result needs an install either way —
+the Python 3.13 + bundled cp313 wheels path below is the surest (uses `extract_inductor.py`
+directly). L is already confirmed ~1.2 nH analytically (§4.1); this run only refines Q/SRF.
+Note: the spiral FDTD may exceed the couple-minute compute cap — chunk or run it yourself.
+
 `extract_inductor.py` reproduces the drawn `vco_inductor_v2.mag` metal5 geometry and
 extracts L/Q/SRF via openEMS FDTD (lumped port PORT1↔PORT2). **Runs on Windows, not the
 container** (repo + .mag are Windows-side).
