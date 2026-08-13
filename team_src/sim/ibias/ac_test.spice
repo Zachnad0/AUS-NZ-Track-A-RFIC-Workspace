@@ -1,0 +1,34 @@
+* S4b -- IB_DIV2 -> VGN coupling. Inject AC at IB_DIV2, measure AC current at
+* the VGN sense source. Include the active subckt (separate or shared cascode
+* gate) via ibias_sub_active.spice. Iinj=1A AC so i(v_vgn) IS the transfer (A/A).
+.include /foss/pdks/gf180mcuD/libs.tech/ngspice/design.ngspice
+.lib /foss/pdks/gf180mcuD/libs.tech/ngspice/sm141064.ngspice typical
+.include /foss/designs/AUS-NZ-integration/team_src/sim/ibias/ibias_sub_active.spice
+
+V_VDD VDD 0 3.3
+I_BIAS VDD IBIAS 240u
+X1 IBIAS VGP VGN IB_DIV2 VDD 0 ibias_gen_v1
+
+* replica loads (DC bias path for each output) + 0V sense sources
+XM_PREF_rep VGP VGP vgp_s VDD pfet_03v3 L=2u W=50u nf=1
+V_VGP VDD vgp_s 0
+XM_NREF_rep VGN VGN vgn_s 0 nfet_03v3 L=2u W=10u nf=1
+V_VGN vgn_s 0 0
+XM_BREF_rep IB_DIV2 IB_DIV2 ibd_s 0 nfet_03v3 L=1u W=4u nf=1
+V_IBD ibd_s 0 0
+
+* AC current injection into IB_DIV2 (unit)
+Iinj 0 IB_DIV2 ac 1
+
+.control
+ac dec 10 1k 10G
+let tf_vgn = abs(i(v_vgn))
+* also the raw node modulation for context
+let vdiv = abs(v(IB_DIV2))
+print tf_vgn[0] vdiv[0]
+* sample at ~1MHz (index) via meas
+meas ac tf_1meg  find tf_vgn at=1e6
+meas ac tf_1g    find tf_vgn at=1e9
+meas ac vdiv_1meg find vdiv at=1e6
+.endc
+.end

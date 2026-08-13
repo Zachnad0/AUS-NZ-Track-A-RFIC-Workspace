@@ -1,0 +1,37 @@
+* S5 -- CP UP/DOWN match with the IBIAS generator substituted for the ideal
+* 50uA sources. Sweep CP_OUT 0..3.3V, source-only (UP=1) and sink-only (DOWN=1),
+* record i(V_OUT). Generator sinks I from VGP / sources I into VGN (real biases).
+.param fnoicor=0
+.param sw_stat_global=0
+.param sw_stat_mismatch=0
+.param sw_mc_global=0
+.param sw_mc_mismatch=0
+.lib /foss/pdks/gf180mcuD/libs.tech/ngspice/sm141064.ngspice typical
+.include /foss/designs/AUS-NZ-integration/team_src/sim/ibias/ibias_sub.spice
+.include /foss/designs/AUS-NZ-integration/team_src/sim/ibias/CP_core.spice
+
+V_VDD VDD 0 3.3
+V_VSS VSS 0 0
+I_BIAS VDD IBIAS 240u
+X_ib IBIAS VGP VGN IB_DIV2 VDD VSS ibias_gen_v1
+X_cp UP DOWN CP_OUT VDD VSS VGP VGN CP_core
+* DIV2 output load so the generator biases correctly (divider bias replica)
+XM_BREF_rep IB_DIV2 IB_DIV2 ibd_s VSS nfet_03v3 L=1u W=4u nf=1
+V_IBD ibd_s 0 0
+
+V_UP   UP   0 0
+V_DOWN DOWN 0 0
+V_OUT  CP_OUT 0 1.65
+
+.control
+alter V_UP = 3.3
+alter V_DOWN = 0
+dc V_OUT 0 3.3 0.02
+wrdata /foss/designs/AUS-NZ-integration/team_src/sim/ibias/s5_source.dat i(v_out)
+reset
+alter V_UP = 0
+alter V_DOWN = 3.3
+dc V_OUT 0 3.3 0.02
+wrdata /foss/designs/AUS-NZ-integration/team_src/sim/ibias/s5_sink.dat i(v_out)
+.endc
+.end

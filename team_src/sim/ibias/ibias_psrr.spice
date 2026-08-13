@@ -1,0 +1,27 @@
+* ibias_gen_v1 PSRR / supply sensitivity, VDD 3.0..3.6V.
+* ASSUMPTION: external reference is a FORCED CURRENT (I_BIAS=240uA isource),
+* independent of VDD -- so this measures the generator's own supply rejection.
+* (A resistor-to-VDD reference would make I_ref track VDD and void this number.)
+.param fnoicor=0
+.param sw_stat_global=0
+.param sw_stat_mismatch=0
+.param sw_mc_global=0
+.param sw_mc_mismatch=0
+.lib /foss/pdks/gf180mcuD/libs.tech/ngspice/sm141064.ngspice typical
+.include /foss/designs/AUS-NZ-integration/team_src/sim/ibias/ibias_sub.spice
+
+V_VDD VDD 0 3.3
+I_BIAS VDD IBIAS 240u
+X1 IBIAS VGP VGN IB_DIV2 VDD 0 ibias_gen_v1
+XM_PREF_rep VGP VGP vgp_s VDD pfet_03v3 L=2u W=50u nf=1
+V_VGP VDD vgp_s 0
+XM_NREF_rep VGN VGN vgn_s 0 nfet_03v3 L=2u W=10u nf=1
+V_VGN vgn_s 0 0
+XM_BREF_rep IB_DIV2 IB_DIV2 ibd_s 0 nfet_03v3 L=1u W=4u nf=1
+V_IBD ibd_s 0 0
+
+.control
+dc V_VDD 3.0 3.6 0.02
+wrdata /foss/designs/AUS-NZ-integration/team_src/sim/ibias/psrr.dat i(v_vgp) i(v_vgn) i(v_ibd)
+.endc
+.end

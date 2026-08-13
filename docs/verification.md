@@ -276,6 +276,64 @@ that would have shipped a broken PFD. `--skip OpenROAD.CTS` alone did NOT preven
 `final/nl/PFD_lib.nl.v` shows exactly **2× inv_1 in series on RSTN** and **no dlyb/buffer
 on REF or FB**. Grep the netlist before trusting the GDS.
 
+## 2.6 IBIAS generator — delivered CP/DIV2 bias (S1–S7, 2026-08-12)
+
+`ibias_gen_v1` replaces the CP's two ideal 50 µA sources (`I_PREF`/`I_NREF`) and
+the DIV2 tail reference with mirrored bias legs off one chip-level reference.
+Reference is a **forced current** `I_BIAS = 240 µA` (isource, VDD-independent);
+outputs VGP (CP PMOS-diode bias), VGN (CP NMOS-diode bias), IB_DIV2 (divider bias).
+All numbers ngspice, TT/3.3 V/27 °C unless stated; decks in `team_src/sim/ibias/`.
+
+**S1 — L uniform (committed).** Amendment-1's L=4 µm DIV2 legs (MN1/MP1, the 5%
+systematic) retracted to uniform **L = 2 µm** on all mirrors (m=10→5 preserves the
+(W/L)·m mirror ratio); cascodes stay L = 1 µm. Commit `bfbb497`.
+
+**S2 — collapse holds (TT).** VGP **50.00 µA**, VGN **49.91 µA**, IB_DIV2 **239.56 µA**;
+total VDDA **839 µA**. Matches the predicted collapse.
+
+**S4 — gain / linearity / compliance.** Input sweep 120–360 µA: VGP gain 5/24,
+linearity < 0.01 % (NMOS single mirror); VGN & IB_DIV2 share the added PMOS-mirror
+stage → −0.18 % at nominal, ≤ −0.5 % at 1.5×. Output compliance (5 % window): VGP
+0.247–3.30 V, VGN 0.0–3.053 V, IB_DIV2 0.0–3.053 V — **every branch envelops the
+CP's measured 0.32–3.00 V** compliance window with margin.
+
+**S4b — separate DIV2 cascode gate justified.** Injecting AC at IB_DIV2 and
+measuring the current transfer to VGN: with the shipped **separate** cascode gate
+(VBCPD) the transfer is 1.24e−6 @ 1 MHz / 3.61e−5 @ 1 GHz; with a **shared** PA gate
+it is 2.35e−4 / 1.57e−3 — i.e. the separate gate buys **~45 dB (1 MHz) / ~33 dB
+(1 GHz)** additional isolation of the divider bias node from the CP's VGN bias.
+
+**S5 — CP UP/DOWN match with the generator substituted (the real deliverable, TT).**
+Full CP (`CP_core`, 7-port, ideal sources removed) driven by the generator, DC-swept
+CP_OUT. The generator adds a **uniform +0.18 %** to the CP source/sink mismatch across
+the whole 0.4–2.8 V range — exactly the 50.00-vs-49.91 µA VGN deficit. The ±2 %
+variation of mismatch vs CP_OUT is the CP's **intrinsic output-impedance mismatch,
+present identically with ideal sources** (verified by running the ideal baseline in
+the same environment: gen−ideal = +0.18 % at every point).
+
+> **The 0.001 % figure was the CP topology's single-point zero-crossing with ideal,
+> perfectly-equal sources — NOT the delivered circuit.** The delivered generator-driven
+> figure is **~0.18 % at TT** at a fixed operating point.
+
+**S6 — corners (process tracking only, NOT random mismatch).** VGP is corner-invariant
+(50.00 µA, forced-current NMOS mirror). CP added-mismatch: **FF 0.004 %, TT 0.18 %,
+SS 0.94 %** (the VGN/DIV2 PMOS-mirror path carries the spread). These are **systematic
+process-tracking** numbers; **random device mismatch is not captured and requires
+Monte Carlo** — a TT/corner figure must not be presented as the delivered match.
+
+**PSRR (VDD 3.0–3.6 V, forced-current reference).** Because the reference is a forced
+current (not a resistor to VDD, which would make I_ref track VDD and void the number):
+VGP **0.003 %/V** (≈79 dB, cascoded NMOS mirror), VGN & IB_DIV2 **1.16 %/V** (≈28 dB,
+PMOS-mirror path). VGN's 1.16 %/V is the weak rail and, since VGN biases the CP, is a
+dynamic UP/DOWN-mismatch / reference-spur path under supply ripple.
+
+**Context — is 0.18 % alarming? No.** A CP current mismatch ΔI/I produces a static
+phase offset bounded by the reset-pulse balance: t_φ ≈ t_rst · (ΔI/I) ≈ 0.5 ns ·
+0.002 ≈ **1 ps**, i.e. **≈ 0.0004–0.0007° at the MHz-class reference** — negligible.
+Moreover the CP's known **+110 fC/cycle charge injection** (§2.1; ~105 fC measured at
+φ=0) is the **likely dominant reference-spur mechanism**, not the 0.18 % static
+mismatch. The generator does not meaningfully degrade the CP.
+
 ## 3. VCO characterization (condition 5)
 
 ### 3.1 f–VTUNE sweep (measured) — establishes the frequency plan
