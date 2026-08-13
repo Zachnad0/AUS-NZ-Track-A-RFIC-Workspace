@@ -61,7 +61,30 @@ a gate failure; the recipe above is the path.
 ## Phase 5.3 — 1kΩ resistor flavor (checked): `ppolyf_u_1k`, 1000 Ω/sq (rho 1000), minW=L=1µm.
 R_SER 1k = 1 square; size W≥2µm for ~3.3mA switching current (→L=2µm), ~20–30µm² each, ~100µm² ×4.
 
-## Strapping generator (`strap.tcl`) — electrical strap PROVEN, DRC wall found
+## Strapping generator (`strap.tcl`) — SOLVED (DRC 0 + LVS combine). Wall broken.
+**The 30 M1.2a "wall" was a wrong-topology artifact, not a density limit.** Fix (2026-08-13):
+generate the device with **`topc=0 botc=0`** (no gate metal1 contacts → metal1 count 62→22),
+strap **gates on a polysilicon rail** (one polycontact→via1→metal2 at the far end, over field),
+**S/D on metal2** (source top-contacted, drain bottom-contacted). metal1(S/D)-vs-poly(gate) is
+inter-layer, so the congested band is empty by construction. Verified on pfet nf=10 w=5 L=2:
+**STRAP_DRC=0**, netgen **Number of devices 1|1, match uniquely, W=50**. Closes the deferred
+Phase 1 routed-strapping check. `strap_device`/`gate_polyrail` procs are reusable per block;
+gf180 minimums hoisted to constants (via1 52, metal1 encl +12, metal2 56, riser +12). Key
+geometry (pfet nf=10 5u L2, device-local): S/D cols ±2520 step 504, tabs y±492; poly rail
+must sit ABOVE pdiff (y>500) or it forms a spurious FET; nwell ±2642/±630.
+
+## Remaining CP build (now unblocked — the tractable next chunk, same proven method)
+(c) **Interleaved mirror pair**: one `pfet nf=20` (topc=0), gate poly-rail→VGP, source→VDD,
+    **split the 10 drain columns**: 5→VGP (= gate net, M_PREF) / 5→PMID (M_PSRC), common-centroid.
+    Two drain rails interleaved ⇒ multi-layer: VGP-drains on metal2, PMID-drains on **metal3**
+    (via2/`m3contact`) — the split-drain analog of the source/drain layer split. Same for the
+    NMOS pair (nf=4). (d) group guard rings (n+/VDD around PMOS nwell, p+/VSS around NMOS) —
+    these also provide the bulk ties dropped from the single-device verify. (e) inter-device
+    routing VGP/VGN/PMID/NMID/CP_OUT/UP_B. (f) port labels UP/DOWN/CP_OUT/VDD/VSS/VGP/VGN via
+    `port make`. (g) `verify_cp.sh` → match uniquely, exit 0. Add the 4 end-dummies to
+    `CP_v1_golden.spice` as tied-off instances at (c).
+
+## (historical) Strapping generator — electrical strap PROVEN, DRC wall found
 `strap_device` (parameterized proc, device-local frame) straps a raw nf device: metal1
 risers from S/D/gate tabs → stacked metal2 rails (source/drain/gate) via `m2contact`.
 - **Electrical strapping WORKS:** extraction of the strapped pfet nf=10 combines all 10
