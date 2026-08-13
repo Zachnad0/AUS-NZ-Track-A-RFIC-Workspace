@@ -488,10 +488,19 @@ tuning range. 5.4's VCO layout just *places* this cell.
    substrate). **`fill_metal.rb` does NOT reference IND_MK** — metal fill only keeps 2 µm from
    existing metal, so it **WILL fill the spiral interior/surroundings (metal4/5), degrading Q**.
    `metalX_blk` (datatype 5) exempts a region from the density *requirement* but does **not** stop
-   the fill script. So there is **no automatic metal-fill protection for the inductor** in this
-   deck: the fix is `metalX_blk` over the spiral (density exemption) + an explicit **metal-fill
-   keep-out coordinated with the organizer** (whose fill flow we don't control) + a documented
-   waiver — settle with the organizer BEFORE final DRC, not at signoff with no time left.
+   the fill script. So there is **no automatic metal-fill protection for the inductor** in this deck.
+   **Fix — lead with owning the fill, not negotiating it:** **pre-fill our own block to density
+   with a manual metal-fill keep-out around the spiral**, so the GDS we hand over is already
+   density-compliant and the organizer's fill flow has nothing to add — this removes the dependency
+   on a script we don't control and can't test against. `metalX_blk` over the inductor covers the
+   residual density exemption; the waiver documents both. **Fallback if we do end up negotiating a
+   keep-out:** ask only for the **inner opening + ~1 trace-width of surround** (where fill actually
+   hurts Q — far-surround fill is nearly harmless); a narrow technically-justified ask gets granted,
+   a whole-block one gets pushed back. **Open question for Bailey (Greg to ask — pairs with the
+   stale #143 items):** on a team block, does the *team* run metal fill or the integration script?
+   "integration is organizer-scripted" vs "your own project must pass min clear density" leaves fill
+   ownership ambiguous, and the answer decides whether pre-filling works or is moot. Settle before
+   final DRC.
 
 (condition 6 stays PENDING until EM is run — needs openEMS or FastHenry installed; Greg installs.)
 
