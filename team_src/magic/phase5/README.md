@@ -61,6 +61,22 @@ a gate failure; the recipe above is the path.
 ## Phase 5.3 — 1kΩ resistor flavor (checked): `ppolyf_u_1k`, 1000 Ω/sq (rho 1000), minW=L=1µm.
 R_SER 1k = 1 square; size W≥2µm for ~3.3mA switching current (→L=2µm), ~20–30µm² each, ~100µm² ×4.
 
+## Strapping generator (`strap.tcl`) — electrical strap PROVEN, DRC wall found
+`strap_device` (parameterized proc, device-local frame) straps a raw nf device: metal1
+risers from S/D/gate tabs → stacked metal2 rails (source/drain/gate) via `m2contact`.
+- **Electrical strapping WORKS:** extraction of the strapped pfet nf=10 combines all 10
+  fingers to **1 gate net + 2 S/D rails** (the parallel W=50 device the golden wants).
+- **DRC: 204 → 30** after via/metal sizing fixes (via1 52, metal1 enclose +12, metal2 56).
+  Remaining **30 = M1.2a spacing in the gate/S-D contact band**: gate metal1 tabs sit ~54 u
+  (x) / 35 u (y) from the S/D columns — diagonally clear in the bare device (85 u), but any
+  strap metal1 or via pad added there breaks the 46 u rule. **guard=1 does NOT help** (also
+  extracts 10 unstrapped fingers — the generator never straps S/D). So this congestion is
+  universal to every nf device.
+- **To clear it:** contact S/D and gates from OPPOSITE sides with via-at-tab + route all
+  risers on metal2/metal3 (multi-layer), keeping metal1 minimal. That is dense custom
+  routing best done with a canvas — **QUEUED for interactive layout**; the proc + coords are
+  the starting point. This is the load-bearing wall for 5.1(e–g) and all of 5.2–5.4.
+
 ## Build stages (per packet, DRC=0 at each; render with lay2img.py)
 (a) one device → (b) matched pair → (c) interdigitated array + dummies → (d) guard rings →
 (e) routing → (f) labels/ports → (g) full verify_cp.sh (match uniquely vs golden).
