@@ -440,12 +440,18 @@ honest answer to condition 5 is that it is not obtainable here; it needs a PSS-c
 (Spectre/ADS/AFS) at signoff. Output power/harmonics ARE measurable and stand as the
 sanity baseline (Zach's tb): −1.55 dBm into 50 Ω, H3 −18.4 dBc.
 
-**Container stability — CONFIRMED (no drift).** Before trusting or disputing any pre-7/30
-number, a pre-sweep measurement was re-run: **CP_v1 DC compliance reproduces 0.32–2.98 V /
-best |mismatch| 0.0011 % @ 1.50 V** vs the 2026-07-22 record 0.32–3.00 V / 0.001 %. So the
-`:latest` container is stable and the whole pre-7/30 evidence base (PFD dead-zone, CP
-steering, etc.) is safe — GAP 1 is a §3.1 error, not drift. **Toolchain fingerprint (record
-for future drift detection): ngspice-46 (KLU), open_pdks `7b70722e33c…`, Ubuntu 24.04.4.**
+**Container stability — CONFIRMED across 3 independent domains (no drift).** GAP 1 is a
+§3.1 error, not drift:
+1. **DC** — CP_v1 compliance reproduces **0.32–2.98 V / best 0.0011 % @ 1.50 V** vs the
+   2026-07-22 record 0.32–3.00 V / 0.001 %.
+2. **Analog transient** — the corrected VCO **band edges match** §3.1 (4.05–6.38 vs
+   4.11–6.37 GHz); if models had drifted, oscillation frequency would have moved and it
+   didn't (only §3.1's mid-curve, a measurement artifact, differs).
+3. **Digital transient** — PFD_v1 **min reset pulse 0.500 ns** at equal REF/FB vs the
+   0.48–0.50 ns record.
+So the whole pre-7/30 evidence base (PFD dead-zone, CP steering, etc.) is safe. **Toolchain
+fingerprint (record for future drift detection): ngspice-46 (KLU), open_pdks `7b70722e33c…`,
+Ubuntu 24.04.4.**
 
 ## 4. Inductor re-extraction (condition 6) — PENDING
 
