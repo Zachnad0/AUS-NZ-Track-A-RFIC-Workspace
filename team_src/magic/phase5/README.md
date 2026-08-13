@@ -42,6 +42,25 @@ the interdigitated matched pairs.
   then place+abut at top. This is the load-bearing effort of 5.1 and repeats for every nf device
   in 5.2/5.3. Post-flatten coords otherwise require extraction (`a_X_Y#` names) per net.
 
+## Strapping method (worked out; the (e) recipe per nf device)
+Do it IN the device child cell (device-local frame; `magic::gencell_makecell` returns the cell
+without placing → no flatten shift). Layers: `metal2`, via `m2contact`/`via1` (m1↔m2).
+Coords (pfet nf=10 5u L=2, local): S/D columns x=±2520 step 504 (11); gates x=±2268 step 504 (10).
+Assign source=even cols {−2520,−1512,−504,504,1512,2520}, drain=odd {−2016,−1008,0,1008,2016}.
+**Density collision (the catch):** gate metal1 tabs (y533–579) and S/D tabs (y487–498) are only
+35 u apart (< M1.2a 46 u), so metal1 straps at the tab level collide. Avoid by **stacking rails
+on metal2 clear of the device** with metal1 risers: source→metal2 rail at y≈730 (risers up from
+source tabs, m2contact), drain→metal2 rail at y≈−730 (risers down), gate→metal2 rail at y≈900
+(risers up from gate tabs). Risers at source-x vs gate-x are 252 u apart (> 46), no collision;
+metal1 riser crossing under a metal2 rail is inter-layer, legal. Then label S/D/G/B ports.
+**Status:** placement + method proven; the routing itself (rails+risers+vias per device ×6 types
++ inter-device + guard rings) is a large, iteration-heavy headless effort with real density DRC
+friction — QUEUED for a focused/interactive session (see verification/report). Not a guess and not
+a gate failure; the recipe above is the path.
+
+## Phase 5.3 — 1kΩ resistor flavor (checked): `ppolyf_u_1k`, 1000 Ω/sq (rho 1000), minW=L=1µm.
+R_SER 1k = 1 square; size W≥2µm for ~3.3mA switching current (→L=2µm), ~20–30µm² each, ~100µm² ×4.
+
 ## Build stages (per packet, DRC=0 at each; render with lay2img.py)
 (a) one device → (b) matched pair → (c) interdigitated array + dummies → (d) guard rings →
 (e) routing → (f) labels/ports → (g) full verify_cp.sh (match uniquely vs golden).
