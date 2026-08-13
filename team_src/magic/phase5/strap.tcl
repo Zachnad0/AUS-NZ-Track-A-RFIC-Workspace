@@ -47,6 +47,23 @@ proc gate_polyrail {px1 px2 py cx rG name} {
     box values [expr {$cx-$::VHW}] [expr {$rG-$::VHW}] [expr {$cx+$::VHW}] [expr {$rG+$::VHW}] ; paint m2contact
     box values [expr {$cx-$::VHW-$::EXT}] [expr {$rG-$::M2HW}] [expr {$px2+40}] [expr {$rG+$::M2HW}] ; paint metal2 ; label $name metal2
 }
+# via stack M2<->M4 at (x,y): via2 (m3contact 56) + via3 (m4contact 52), metal3/4 pads.
+# Connects an existing metal2 rail up to metal4 (for inter-band M4 routing).
+proc via_m2m4 {x y} {
+    box values [expr {$x-$::M3HW}] [expr {$y-$::M3HW}] [expr {$x+$::M3HW}] [expr {$y+$::M3HW}] ; paint metal3
+    box values [expr {$x-$::VHW2}] [expr {$y-$::VHW2}] [expr {$x+$::VHW2}] [expr {$y+$::VHW2}] ; paint m3contact
+    box values [expr {$x-$::M3HW}] [expr {$y-$::M3HW}] [expr {$x+$::M3HW}] [expr {$y+$::M3HW}] ; paint metal4
+    box values [expr {$x-$::VHW}]  [expr {$y-$::VHW}]  [expr {$x+$::VHW}]  [expr {$y+$::VHW}]  ; paint m4contact
+}
+proc via_m3m4 {x y} {
+    box values [expr {$x-$::M3HW}] [expr {$y-$::M3HW}] [expr {$x+$::M3HW}] [expr {$y+$::M3HW}] ; paint metal3
+    box values [expr {$x-$::M3HW}] [expr {$y-$::M3HW}] [expr {$x+$::M3HW}] [expr {$y+$::M3HW}] ; paint metal4
+    box values [expr {$x-$::VHW}]  [expr {$y-$::VHW}]  [expr {$x+$::VHW}]  [expr {$y+$::VHW}]  ; paint m4contact
+}
+proc m4route {x1 y1 x2 y2 name} {
+    box values [expr {$x1<$x2?$x1-$::M2HW:$x2-$::M2HW}] [expr {$y1<$y2?$y1-$::M2HW:$y2-$::M2HW}] \
+               [expr {$x1<$x2?$x2+$::M2HW:$x1+$::M2HW}] [expr {$y1<$y2?$y2+$::M2HW:$y1+$::M2HW}] ; paint metal4 ; label $name metal4
+}
 # simple single-device strap (source top, drain bottom) -- for switches/inverter/dummies
 proc strap_device {scol dcol sdt sdb rS rD sname dname} {
     foreach x $scol { strap_col $x $sdt $rS }

@@ -66,6 +66,22 @@ strap_col 7000 [yn -492] [yn -720]
 rail 6900 7100 [yn -720] CP_OUT
 gate_polyrail 6550 7164 [yn 564] 6600 [yn 960] DOWN
 
+# ===== inter-device routing (layer per net; crossings are inter-layer, not shorts) =====
+# CP_OUT (M4): PSW drain rail (y-720) <-> NSW drain rail (yn-720), vertical bridge at x7000
+via_m2m4 7000 -720
+via_m2m4 7000 [yn -720]
+m4route 7000 -720 7000 [yn -720] CP_OUT
+# PMID (M4): mirror PMID M3 drain (4576,-960) <-> PSW source rail (6508,720)
+via_m3m4 4576 -960
+via_m2m4 6508 720
+m4route 4576 720 6508 720 PMID
+m4route 4576 -960 4576 720 PMID
+# NMID (M4): mirror NMID M3 drain (504,yn-960) <-> NSW source rail (6836,yn720)
+via_m3m4 504 [yn -960]
+via_m2m4 6836 [yn 720]
+m4route 504 [yn -960] 6836 [yn -960] NMID
+m4route 6836 [yn -960] 6836 [yn 720] NMID
+
 select top cell
 drc on ; drc euclidean on ; drc check ; drc catchup
 puts "CPFULL_DRC=[drc list count total]"
