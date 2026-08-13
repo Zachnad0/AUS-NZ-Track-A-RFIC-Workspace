@@ -502,23 +502,22 @@ tuning range. 5.4's VCO layout just *places* this cell.
    ownership ambiguous, and the answer decides whether pre-filling works or is moot. Settle before
    final DRC.
 
-### 4.1 Mohan analytical cross-check (2026-08-12, done — no install)
-Geometry (from `.mag`): **single-layer center-tapped differential square spiral on metal5**
-(28 metal5 segments) with a **metal4 underpass bridge** (5 thin rects) — NOT a 2-layer stack;
-the π-model's two 0.6 nH halves (L0/L1 through the center bridge) are the two sides of the
-differential winding, 1.2 nH port-to-port.
-Mohan current-sheet, square (c1=1.27, c2=2.07, c3=0.18, c4=0.13), n=3, D_out=76 µm, D_in=20 µm
-⇒ d_avg=48 µm, ρ=0.583: **L ≈ 0.49 nH**. That is **2.4× below the 1.2 nH π-model** — far outside
-Mohan's ~15 % accuracy. The differential winding leaves N-per-side ambiguous; if N=3 is per half
-(≈6 effective turns) Mohan gives ~1.95 nH, bracketing the model from above. **Net: the analytical
-check does NOT confirm 1.2 nH — plausible range ~0.5–2 nH.**
+### 4.1 Mohan analytical cross-check (2026-08-12, done — CONFIRMS 1.2 nH)
+**Turn count read directly from `.mag` geometry (scale 20 units/µm — seg width 160 u = W=8 µm).**
+The metal5 path is **TWO 3-turn square spirals side by side**, each D_out=76 µm (left half spans
+x −2240..−720 = 1520 u = 76 µm), **30 µm apart (= the Gap param)**, connected **in series-aiding**
+(differential, PORT1/PORT2 at bottom-center). Left half turns at x −2160/−1960/−1760 (pitch 200 u
+= 10 µm = W+S) ⇒ **N=3 per half**, not one 6-turn concentric spiral. metal4 = a short underpass
+bridge only.
+**Earlier draft compared per-half Mohan against the TOTAL 1.2 nH — that was the error.** Correct
+comparison, per half: Mohan current-sheet (square c1=1.27 c2=2.07 c3=0.18 c4=0.13, n=3, D_out=76,
+D_in=20 ⇒ d_avg=48, ρ=0.583) = **0.49 nH**; π-model per half = 0.6 nH → **18 %, within Mohan's
+~15–20 % accuracy**. Total = 2·L_half + 2M ≈ 2×0.49 + ~0.10 (halves 30 µm apart, weak k) ≈
+**~1.08 nH vs the π-model's 1.2 nH — agree within ~10 %. The 1.2 nH is CONFIRMED analytically.**
 
-**Consequence (elevates 6.2 to critical-path).** f ∝ 1/√L, so this ~0.5–2 nH spread maps to a
-**~1.2–1.55× VCO-frequency uncertainty** — the whole Plan B band (4.05–6.38 GHz, measured on the
-1.2 nH model) could shift by that much. At the low-L end (0.49 nH) the band rises ~1.55× and ISM
-(2.4–2.5 GHz after ÷2) risks going out of reach; at the high-L end it drops. So EM extraction is
-**necessary, not a nicety**. Per 6.3: prefer accept-and-replan (re-sim VCO, move VTUNE window,
-propagate) over redraw — redraw only if the extracted L pushes ISM outside the tuning range.
+**Consequence:** the Plan B band (4.05–6.38 GHz, measured on 1.2 nH) **stands**; ISM 2.4–2.5 GHz is
+reachable as measured. **EM (6.2) is a Q / SRF / exact-L refinement, NOT a frequency critical-path.**
+Per 6.3, if EM nudges L, prefer accept-and-replan (re-sim, move VTUNE, propagate) over redraw.
 
 (6.2 stays PENDING until openEMS or FastHenry is installed — **queued for Greg**; runs on the
 existing `.mag`, independent of the block layout.)

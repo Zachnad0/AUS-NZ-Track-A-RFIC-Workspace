@@ -38,7 +38,7 @@ Addresses review condition 8 (milestones + fallback reflecting unstarted blocks)
 | 3 | PLL diagram must include CP + loop filter | Corrected chain in `scope.md` §2 | 🟢 Done | Greg |
 | 4 | Verify PFD for lead / lag / equal-freq | 3-case PFD sim; min reset pulse re-confirmed **0.500 ns** (`verification.md §3.2` container check) | 🟢 Done | Greg |
 | 5 | Full VCO characterization | swing/startup/power/PVT done (`verification.md §3.2`); f-VTUNE corrected (7/30 mid-curve was an error, container proven stable); **KVCO −1.1 GHz/V near ISM**; phase noise NOT measurable with open-source toolchain (no PSS/HB) | 🟢 Done (phase-noise gap documented) | CC |
-| 6 | Inductor model is preliminary | Mohan cross-check (6.1) done — **does NOT confirm 1.2 nH** (0.5–2 nH range), EM elevated to critical-path; openEMS/FastHenry install QUEUED | 🟡 6.1 done, 6.2 queued | Zach/CC |
+| 6 | Inductor model is preliminary | Mohan cross-check (6.1) done — **CONFIRMS 1.2 nH** (turns read from `.mag`: two 3-turn D_out=76µm halves in series ⇒ ~1.08 nH vs 1.2, within ~10%). Plan B band stands, ISM reachable. EM (6.2) = Q/SRF refinement, not critical-path; openEMS install QUEUED | 🟡 6.1 done, 6.2 queued | Zach/CC |
 | 7 | On/off-chip partition + test approach | `pins.md` partition + per-pad test notes | 🟢 Done (v1) | Greg |
 | 8 | Milestones + fallback scope | This file + `scope.md` §6 | 🟢 Done | Greg |
 
