@@ -284,9 +284,11 @@ Reference is a **forced current** `I_BIAS = 240 µA` (isource, VDD-independent);
 outputs VGP (CP PMOS-diode bias), VGN (CP NMOS-diode bias), IB_DIV2 (divider bias).
 All numbers ngspice, TT/3.3 V/27 °C unless stated; decks in `team_src/sim/ibias/`.
 
-**S1 — L uniform (committed).** Amendment-1's L=4 µm DIV2 legs (MN1/MP1, the 5%
-systematic) retracted to uniform **L = 2 µm** on all mirrors (m=10→5 preserves the
-(W/L)·m mirror ratio); cascodes stay L = 1 µm. Commit `bfbb497`.
+**S1 — L uniform (committed).** Amendment-1's L=4 µm **CP output legs** (MN1 →
+VGP sink, MP1 → VGN source — these bias the CP, *not* the DIV2 branch; they were the
+5% systematic) retracted to uniform **L = 2 µm** on all mirrors (m=10→5 preserves the
+**5/24 mirror ratio** to the MN0/MP0 reference: (W/L)·m = 10 vs 48); cascodes stay
+L = 1 µm. Commit `bfbb497`.
 
 **S2 — collapse holds (TT).** VGP **50.00 µA**, VGN **49.91 µA**, IB_DIV2 **239.56 µA**;
 total VDDA **839 µA**. Matches the predicted collapse.
@@ -305,7 +307,9 @@ it is 2.35e−4 / 1.57e−3 — i.e. the separate gate buys **~45 dB (1 MHz) / ~
 
 **S5 — CP UP/DOWN match with the generator substituted (the real deliverable, TT).**
 Full CP (`CP_core`, 7-port, ideal sources removed) driven by the generator, DC-swept
-CP_OUT. The generator adds a **uniform +0.18 %** to the CP source/sink mismatch across
+CP_OUT. `CP_core` was verified **identical in port order, device set, connectivity and
+sizing to the LVS reference `CP_v1_golden.spice`** — the sim-CP and the golden-CP are
+the same circuit, so this characterizes what will be taped out. The generator adds a **uniform +0.18 %** to the CP source/sink mismatch across
 the whole 0.4–2.8 V range — exactly the 50.00-vs-49.91 µA VGN deficit. The ±2 %
 variation of mismatch vs CP_OUT is the CP's **intrinsic output-impedance mismatch,
 present identically with ideal sources** (verified by running the ideal baseline in
@@ -324,8 +328,16 @@ Monte Carlo** — a TT/corner figure must not be presented as the delivered matc
 **PSRR (VDD 3.0–3.6 V, forced-current reference).** Because the reference is a forced
 current (not a resistor to VDD, which would make I_ref track VDD and void the number):
 VGP **0.003 %/V** (≈79 dB, cascoded NMOS mirror), VGN & IB_DIV2 **1.16 %/V** (≈28 dB,
-PMOS-mirror path). VGN's 1.16 %/V is the weak rail and, since VGN biases the CP, is a
-dynamic UP/DOWN-mismatch / reference-spur path under supply ripple.
+PMOS-mirror path).
+
+> **Two distinct mechanisms — do not conflate them.** The 0.18 % *static* mismatch is
+> bounded to ~1 ps ≈ 0.0004° by the phase-offset argument above and is negligible.
+> **Supply *ripple* on VGN is a separate, dynamic mechanism**: at 1.16 %/V it modulates
+> I_CP within a cycle, injecting a reference spur — the static phase-offset bound does
+> NOT cover it. This is not a Phase 2 reopen; it is a **Phase 5 layout requirement**:
+> the `Vb_p` decap earns its place, and VDDA to the CP/IBIAS must be routed quiet and
+> away from the digital block (see block-separation rules). VGP (0.003 %/V) is immune,
+> so the exposure is VGN-specific.
 
 **Context — is 0.18 % alarming? No.** A CP current mismatch ΔI/I produces a static
 phase offset bounded by the reset-pulse balance: t_φ ≈ t_rst · (ΔI/I) ≈ 0.5 ns ·
