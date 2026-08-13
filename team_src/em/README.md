@@ -16,7 +16,20 @@ container** (repo + .mag are Windows-side).
 Bundled wheels in `Downloads/openEMS_x64_v0.0.36-93-g7b9cd51_msvc.zip` are **cp313 + cp314
 only**; your Python is **3.12.10** — incompatible (a cp313 wheel needs CPython 3.13).
 
-**Recommended (surest): install Python 3.13, then use the bundled cp313 wheels.**
+**PREFERRED (smaller install, 2026-08-13): numpy + h5py on your existing 3.12 — NO Python 3.13.**
+The openEMS *Python module* (cp313) is only a convenience wrapper. The binary path needs neither
+it nor 3.13: hand-write a CSX XML → `openEMS.exe <xml>` (extracted, runs) → it writes HDF5 field
+dumps → post-process Z11 = V/I with numpy+h5py (both have cp312 wheels). So:
+```
+py -3.12 -m pip install numpy h5py
+```
+Then run `openEMS.exe` on the CSX XML (a `write_csx.py` generator + `post_z11.py` reader are the
+remaining pieces to write — see extract_inductor.py for the geometry/port definitions to port
+into raw XML; the bundled `matlab/AddLumpedPort.m` is the reference for the port probe boxes).
+NOTE: the spiral FDTD may exceed the couple-minute compute cap — run it yourself / chunk it.
+
+---
+**Alt (surest but heavier): install Python 3.13, then use the bundled cp313 wheels.**
 1. Install Python 3.13 (python.org). 2. Extract the zip to e.g. `C:\openEMS`. 3.:
 ```
 py -3.13 -m pip install numpy matplotlib h5py

@@ -472,12 +472,19 @@ tuning range. 5.4's VCO layout just *places* this cell.
 
 **Three items to settle BEFORE 5.4 (planned tonight, unresolved):**
 
-1. **Inductor LVS is an unsolved representation case** (unlike the transistor / std-cell cases
-   already settled). Extraction of drawn spiral metal yields distributed R/L, NOT the analytical
-   π-model's lumped elements — **netgen has nothing to match a spiral against a π-model**. Needs
-   a deliberate decision: **black-box the spiral and substitute the π-model**, as a documented
-   waiver under rubric row 1, at BOTH the VCO block level AND top level. Decide before 5.4, not
-   during verify (g).
+1. **Inductor LVS — DECIDED (waiver, black-box the spiral).** Extraction of the drawn spiral
+   metal yields distributed R/L, NOT the analytical π-model's lumped elements — netgen has
+   nothing to match a spiral against a π-model, and this is unlike the transistor/std-cell cases.
+   **Decision:** treat `vco_inductor_v2` as a **black box** in LVS and substitute the golden's
+   π-model subckt for it, at BOTH the VCO block level and the RFIC top level. This is the third
+   documented LVS waiver under rubric row 1 (alongside the two existing `__fillcap_[[:digit:]]+`
+   decap ignores). **Waiver W3 (inductor black-box):** in the netgen setup, `ignore class` the
+   spiral cell (regexp-restricted to `vco_inductor_v2` only, exactly as the fillcap ignores are
+   scoped — NOT a blanket loosen), so netgen compares the rest of the VCO against the golden with
+   the inductor represented by its π-model on both sides. Justification: the spiral is a passive
+   with an EM-derived model; its terminal connectivity (PORT1/PORT2/GND) IS checked, only its
+   internal distributed structure is black-boxed — standard practice for inductors/RF passives.
+   Implement in `verify_cp.sh`'s local setup at the VCO/top stage (mirrors the fillcap block).
 2. **Top-metal keep-out.** Spiral is on metal4/metal5/rm5; integration is organizer-scripted.
    **Confirm nothing is routed above the spiral** — overlying metal degrades Q and shifts L, and
    we do not control the organizer's router. Coordinate the keep-out with the organizer.
