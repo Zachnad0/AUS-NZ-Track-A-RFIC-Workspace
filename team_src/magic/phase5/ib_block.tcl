@@ -7,13 +7,17 @@ source /foss/designs/AUS-NZ-integration/team_src/magic/phase5/strap.tcl
 
 set ::PITCH 504
 
-# place_nfet: place ONE raw nf-finger nfet (W=4 L=2) centered at x=xoff, unique
-# name. Placement only -- gencell with distinct names, flatten ONCE after all
-# devices are placed, THEN strap (mtest pattern). No strap geometry here.
-proc place_nfet {nf xoff name} {
-    set maxc [expr {int($nf*$::PITCH/2)}]
+# S/D contacted-poly pitch by L (measured from generated devices, W=4 nfet):
+# L=2 -> 504, L=1 -> 304. Vertical strap constants are W-dependent (same for both).
+proc pitch_for_L {L} { return [expr {$L == 1 ? 304 : 504}] }
+
+# place_nfet: place ONE raw nf-finger nfet (W=4) centered at x=xoff, unique name.
+# Placement only -- gencell with distinct names, flatten ONCE after all devices are
+# placed, THEN strap (mtest pattern). L defaults to 2 (mirror); pass 1 for cascodes.
+proc place_nfet {nf xoff name {L 2}} {
+    set maxc [expr {int($nf*[pitch_for_L $L]/2)}]
     box values [expr {$xoff-($maxc+60)}] -468 [expr {$xoff-($maxc+60)}] -468
-    magic::gencell gf180mcu::nfet_03v3 $name w 4 l 2 nf $nf m 1 guard 0 topc 0 botc 0
+    magic::gencell gf180mcu::nfet_03v3 $name w 4 l $L nf $nf m 1 guard 0 topc 0 botc 0
 }
 
 # nfet_leg: strap an already-placed+flattened nf-finger nfet centered at x=xoff.
@@ -22,8 +26,8 @@ proc place_nfet {nf xoff name} {
 # exactly once at its port location -- avoids the duplicate-label port-make failure.
 #   gc : 1 = make the poly->M2 gate contact + M2 gate rail; 0 = bare poly gate rail.
 # Returns the leg's outer half-extent (maxc+340).
-proc nfet_leg {nf xoff gc} {
-    set P $::PITCH
+proc nfet_leg {nf xoff gc {L 2}} {
+    set P [pitch_for_L $L]
     set maxc [expr {int($nf*$P/2)}]
     set src {} ; set drn {}
     for {set i 0} {$i <= $nf} {incr i} {
@@ -37,8 +41,11 @@ proc nfet_leg {nf xoff gc} {
     foreach x $drn { strap_col $x  380  600 }
     box values [expr {$xoff-($maxc+40)}] -628 [expr {$xoff+$maxc+40}] -572 ; paint metal2
     box values [expr {$xoff-($maxc+40)}]  572 [expr {$xoff+$maxc+40}]  628 ; paint metal2
-    # gate: bridges up to a horizontal poly rail
-    foreach fx $gfx { box values [expr {$fx-200}] 400 [expr {$fx+200}] 600 ; paint polysilicon }
+    # gate: bridges up to a horizontal poly rail. Bridge half-width = gate-poly
+    # half-width (100*L units); a wider bridge overhangs toward the S/D contacts and
+    # trips PL.5a/CO.7 at the tighter L=1 pitch (304 vs 504).
+    set bhw [expr {100*$L}]
+    foreach fx $gfx { box values [expr {$fx-$bhw}] 400 [expr {$fx+$bhw}] 600 ; paint polysilicon }
     set lx [expr {$xoff-($maxc+180)}]
     box values $lx 556 [expr {$xoff+$maxc-52}] 600 ; paint polysilicon
     if {$gc} {
