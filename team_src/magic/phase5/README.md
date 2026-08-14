@@ -73,13 +73,39 @@ strap (the mtest pattern; strapping before flatten or reusing a device name trip
   ratio-critical set). All gate=NB, all source=VSS merged by continuous M2 bars (NB@y960,
   VSS@y-600) bridging the per-leg rails; MN0 diode drain risered up to NB. Magic DRC 0,
   **KLayout DRC 0**, netgen 55 fingers -> 4 devices -> match uniquely, 5 ports.
-- **Remaining (deferred, large):** NMOS cascodes (MNC0/1/2, nfet L=1 — verify the L=1 S/D
-  pitch first), then the PMOS side. **PMOS is a NEW device geometry:** pfet W=16 has a TALL
-  16 um S/D contact strip (pdiffc y143..3317 at 20 u/um) and sits in NWELL with n+ taps —
-  the W=4 nfet vertical strap constants do NOT carry over; needs its own y-geometry. And
-  W=16 m=24 = 384 um > 200 um model wall -> split each wide pfet leg into 2x nf=12 (192 um)
-  in parallel (netgen should combine to m=24). Then 2-row cascode assembly + inter-band
-  routing (NB/PB/PA/VBCPD/IBIAS) + XCDEC decap + ports + verify_cp.sh.
+## Phase 5.2 IBIAS layout — run #2 progress (2026-08-14)
+Generator now covers L (pitch_for_L: L=2->504, L=1->304; gate-bridge half-width 100*L),
+row yoff, a taps flag (cascode rows skip own taps), and the full pfet path (place_pfet/
+pfet_leg). Gates passed this run:
+- **Gate C `ib_nmir4`** (+2 end dummies, nf=2 each, gate->NB S+D->VSS, netgen-merged m=4
+  in the golden): magic DRC 0, KLayout DRC 0, 59 fingers -> match uniquely, 5 ports.
+- **L=1 leg `ib_l1test`**: pitch 304 validated (DRC 0, LVS m=5). Bridge overhang at the
+  tighter pitch trips PL.5a/CO.7 -> bridge half-width = gate-poly half-width (100*L).
+- **Gate D `ib_nmos`** (full NMOS side, 7 devices + dummies): mirror row (L=2, y=0) +
+  cascode row (L=1, y=2000). Cascode bulk = SHARED pwell, no own taps -- placement keeps
+  every cascode nfet within 20um of a mirror tap (DF.14). Inter-row NB on M2 (no crossing),
+  n1/n2 on M3 (jump the NB M2 bar). magic DRC 0, KLayout DRC 0, 112 fingers -> match
+  uniquely, 6 ports (NB IBIAS VGP PA VBCPD VSS).
+- **Gate E.1 `ib_ptest`**: pfet nf=12 W=16 (192um) strap validated. Same x-pitch as nfet;
+  tall device (nwell 3460, S/D strip +/-1587); nwell taps (nsubdiff/nsubdiffcont) must sit
+  BELOW the gate-poly bottom (clear NP.4b=64) AND be >=180 tall (DF.9 area 8100). DRC 0,
+  KLayout 0, m=12.
+- **Gate E.2 `ib_pmir`**: PMOS mirror row (L=2). Wide m=24 legs split 2x nf=12 (combine in
+  netgen). PB gate bar; MP0 diode; XCDEC decap (gate=PB, D=S=VDD); MPB separate pb2 diode.
+  magic DRC 0, KLayout DRC 0, 61 fingers -> match uniquely, 5 ports (VDD PB pb2 p1 p2).
+
+### PMOS cascode (E.3) resume plan -- NOT yet built
+Golden (X D G S B): MP0c PA PA PB VDD (diode, m=24, L=1) | MP1c VGN PA p1 VDD (m=5) |
+MP2c IB_DIV2 VBCPD p2 VDD (m=24) | MPBc VBCPD VBCPD pb2 VDD (diode, m=2). Two gate nets:
+**PA bar** over MP0c/MP1c, **VBCPD bar** over MP2c/MPBc (not one shared bar like NMOS).
+Splits: MP0c/MP2c = 2x nf=12. **KEY DIFFERENCE vs NMOS cascode:** the tall PMOS rows sit
+far apart, so cascodes CANNOT share the mirror nwell taps for DF.14 -- they need OWN nwell
+taps tied to VDD. But pfet_leg ties taps to the SOURCE rail, and cascode source is PB/p1/
+p2/pb2 (not VDD). Fix: add a `tapy` param to pfet_leg so taps tie to a dedicated VDD rail
+(e.g. yoff-1700, 200 below the source rail), and the driver routes VDD into the cascode
+row. First TRY taps=0 + a close-enough YCP (investigate whether pfet even has the 20um
+tap rule before adding the tap-rail machinery). Inter-row sources PB/p1/p2/pb2 route on M3
+to jump the gate bars, exactly as n1/n2 did on the NMOS side.
 
 ### Two hard-won gotchas from CP3a (add to the deck-gotchas list)
 - **Label each net ONCE at its port.** A rail proc that labels every per-leg rail with the
