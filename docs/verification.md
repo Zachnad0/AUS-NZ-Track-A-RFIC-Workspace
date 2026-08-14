@@ -453,6 +453,30 @@ So the whole pre-7/30 evidence base (PFD dead-zone, CP steering, etc.) is safe. 
 fingerprint (record for future drift detection): ngspice-46 (KLU), open_pdks `7b70722e33c…`,
 Ubuntu 24.04.4.**
 
+### 4.0 Inductor `.mag` DRC — CLEAN in both tools (2026-08-14, file-read)
+The spiral `vco_inductor_v2.mag` had never been shown DRC-clean (it gates 5.4). Checked
+headless: **Magic DRC 0** (`drc euclidean on`, full check) and **KLayout DRC 0** — GDS
+written from the `.mag`, `run_drc.py --variant=D` (5LM/11K, matches gf180mcuD) reports
+"run is clean, GDS has no DRC violations" over 247 polygons. **Scope caveat:** this is the
+base FEOL/BEOL deck; `--density` was **not** run, so the metal-fill/min-density question in
+§4 item 3 (no automatic fill protection for the inductor) is still open and separate from
+this clean base-rule result. The spiral is placeable as-is for 5.4; density/fill ownership
+stays a Bailey question.
+
+### 4.1b Inductor EM (6.2) — openEMS setup built + runs; solve deferred (2026-08-14)
+`team_src/sim/ind_em/ind_em.py` (openEMS): parses the `.mag` (20 units/um), builds the
+gf180mcuD metal4/via4/metal5/rm5 stack at the real z-heights (magic tech `height` lines:
+m4 4.68-5.23, via4 5.23-5.83, m5 5.83-6.8325 um), places a differential lumped port across
+the 30 um gap between the two metal5 leads (no ground plane -> Z11 = jwL+R of the coil),
+meshes (edge-decimated to 1.5 um min), and post-processes Z11 -> L/Q/SRF vs the 1.2 nH
+pi-model. **Verified: model builds, FDTD engine runs** (32k cells, dt 9.6e-16 s, ~3-6
+MCells/s). **Solve DEFERRED under the 15 min/launch cap:** the low-freq Gaussian pulse needs
+~297k timesteps and dt is capped by the 0.55 um metal4 thickness (a thin 3D z-cell) -> ~50
+min full 3D solve. **Resume fix:** model metal4/metal5 as openEMS conducting sheets so the
+z-mesh coarsens to ~1.5 um -> dt ~3e-15 s -> ~11 min solve; re-place the gap port on the
+metal5 sheet plane; the post-processing runs unchanged. Not critical-path — Mohan (§4.1)
+already confirms 1.2 nH; EM is a Q/SRF refinement.
+
 ## 4. Inductor / condition 6 — state + plan (2026-08-12, not yet run)
 
 **The spiral IS drawn — not model-only.** `team_src/magic/vco_inductor_v2/vco_inductor_v2.mag`

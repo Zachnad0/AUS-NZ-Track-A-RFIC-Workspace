@@ -58,6 +58,41 @@ metal1 riser crossing under a metal2 rail is inter-layer, legal. Then label S/D/
 friction — QUEUED for a focused/interactive session (see verification/report). Not a guess and not
 a gate failure; the recipe above is the path.
 
+## Phase 5.2 IBIAS layout — progress (2026-08-14, `ib_block.tcl` generator library)
+Composable strapped-leg generator built on the CP strap procs. Reusable: `place_nfet`
+(gencell, distinct name), `nfet_leg` (strap an already-flattened nf-device, UNLABELED
+rails), `via_m2m3`. Pattern: place ALL devices (distinct names) -> `flatten` ONCE ->
+strap (the mtest pattern; strapping before flatten or reusing a device name trips a Tk
+`.params.title.ient` gencell-dialog error headless).
+- **CP2 `ib_n24`** (`ib_nleg.tcl`): single strapped nfet **nf=24** W=4 L=2 (96 um, under
+  the 200 um model-bin wall). Magic DRC 0, **KLayout DRC 0**, netgen 24 fingers -> match
+  uniquely m=24, 3 ports. De-risks the widest device. Wide devices need a **ROW of
+  substrate taps** at column midpoints (5040-unit spacing) so every finger is within 20 um
+  of a tap (DF.14_LV, KLayout-only) — one edge tap is not enough past ~13 um half-width.
+- **CP3a `ib_nmir4`** (`ib_nmir.tcl`): NMOS mirror row MN0:MN1:MN2:MNB = **24:5:24:2** (the
+  ratio-critical set). All gate=NB, all source=VSS merged by continuous M2 bars (NB@y960,
+  VSS@y-600) bridging the per-leg rails; MN0 diode drain risered up to NB. Magic DRC 0,
+  **KLayout DRC 0**, netgen 55 fingers -> 4 devices -> match uniquely, 5 ports.
+- **Remaining (deferred, large):** NMOS cascodes (MNC0/1/2, nfet L=1 — verify the L=1 S/D
+  pitch first), then the PMOS side. **PMOS is a NEW device geometry:** pfet W=16 has a TALL
+  16 um S/D contact strip (pdiffc y143..3317 at 20 u/um) and sits in NWELL with n+ taps —
+  the W=4 nfet vertical strap constants do NOT carry over; needs its own y-geometry. And
+  W=16 m=24 = 384 um > 200 um model wall -> split each wide pfet leg into 2x nf=12 (192 um)
+  in parallel (netgen should combine to m=24). Then 2-row cascode assembly + inter-band
+  routing (NB/PB/PA/VBCPD/IBIAS) + XCDEC decap + ports + verify_cp.sh.
+
+### Two hard-won gotchas from CP3a (add to the deck-gotchas list)
+- **Label each net ONCE at its port.** A rail proc that labels every per-leg rail with the
+  shared net name (e.g. VSS on 4 source rails) leaves MULTIPLE same-name labels; `port make`
+  over a region touching two of them fails silently -> netgen "(no pin, node is NB)" port
+  error while the netlist still "matches uniquely with port errors". Fix: paint rails
+  UNLABELED, merge with a continuous bar, and `label`+`port make` once at a clean spot.
+- **A `label` over pwell can stick to pwell, not the metal2 under the box** ("Moving label
+  X from space to pwell"), even after `paint metal2` there — happened only for a small
+  device's drain. Route the label to a metal2 pad in CLEAR FIELD (y>700, above the pwell
+  top) and it sticks to metal2 (as the NB bar at y960 did). This is why VBCPD gets a riser
+  to a pad above the pwell.
+
 ## Phase 5.3 — 1kΩ resistor flavor (checked): `ppolyf_u_1k`, 1000 Ω/sq (rho 1000), minW=L=1µm.
 R_SER 1k = 1 square; size W≥2µm for ~3.3mA switching current (→L=2µm), ~20–30µm² each, ~100µm² ×4.
 
