@@ -79,17 +79,21 @@ set ::PFPTOP 1600    ;# pdiff top/bottom |y|
 set ::PFGRL  1646    ;# gate poly rail center |y| (above pdiff top, overlaps finger tops)
 set ::PFGM2  1780    ;# gate M2 (PB) rail center |y|
 
-proc place_pfet {nf xoff name {yoff 0}} {
-    set maxc [expr {int($nf*504/2)}]
+proc place_pfet {nf xoff name {yoff 0} {L 2}} {
+    set maxc [expr {int($nf*[pitch_for_L $L]/2)}]
     box values [expr {$xoff-($maxc+122)}] [expr {$yoff-1730}] [expr {$xoff-($maxc+122)}] [expr {$yoff-1730}]
-    magic::gencell gf180mcu::pfet_03v3 $name w 16 l 2 nf $nf m 1 guard 0 topc 0 botc 0
+    magic::gencell gf180mcu::pfet_03v3 $name w 16 l $L nf $nf m 1 guard 0 topc 0 botc 0
 }
 
 # pfet_leg: strap a placed+flattened pfet nf-leg centered at (xoff,yoff). Sources ->
 # VDD rail (bottom, yoff-1500), drains -> drain rail (top, yoff+1500), gate poly rail
 # (yoff+1646) -> M2 (yoff+1780) at far left. nwell taps -> VDD. Rails UNLABELED.
-proc pfet_leg {nf xoff gc {yoff 0} {taps 1}} {
-    set P 504 ; set maxc [expr {int($nf*$P/2)}]
+# tapy : y-offset (from yoff) of the rail the nwell taps land on. Default -1500 =
+# the source rail (mirror rows, where source=VDD). Cascode rows pass a dedicated
+# VDD-rail offset (e.g. -1700) because their source rail is NOT VDD; the driver then
+# paints/labels a VDD rail at yoff+tapy and routes it to the main VDD.
+proc pfet_leg {nf xoff gc {L 2} {yoff 0} {taps 1} {tapy -1500}} {
+    set P [pitch_for_L $L] ; set maxc [expr {int($nf*$P/2)}]
     set src {} ; set drn {}
     for {set i 0} {$i <= $nf} {incr i} {
         set x [expr {round(($i-$nf/2.0)*$P)+$xoff}]
@@ -116,8 +120,11 @@ proc pfet_leg {nf xoff gc {yoff 0} {taps 1}} {
         # yoff-1644): tap top must clear it by NP.4b=64 -> tap top <= yoff-1708. riser up
         # to the VDD source rail.
         box values [expr {$xoff-($maxc+340)}] [expr {$yoff-1940}] [expr {$xoff+$maxc+340}] [expr {$yoff+1830}] ; paint nwell
-        for {set tx [expr {$xoff-$maxc+252}]} {$tx < [expr {$xoff+$maxc}]} {set tx [expr {$tx+5040}]} {
-            welltap $tx [expr {$yoff-1900}] [expr {$yoff-1720}] [expr {$yoff-1500}] nsubdiff nsubdiffcont
+        # taps at TRUE column midpoints (P/2 offset, P-multiple spacing). The pfet tap
+        # riser sits at the tall pdiffc's y, so an off-midpoint tap (e.g. the L=2 +252 at
+        # L=1 pitch 304) abuts the neighbouring S/D contact and shorts VDD to it.
+        for {set tx [expr {$xoff-$maxc+$P/2}]} {$tx < [expr {$xoff+$maxc}]} {set tx [expr {$tx+10*$P}]} {
+            welltap $tx [expr {$yoff-1900}] [expr {$yoff-1720}] [expr {$yoff+$tapy}] nsubdiff nsubdiffcont
         }
     }
     return [expr {$maxc+340}]
