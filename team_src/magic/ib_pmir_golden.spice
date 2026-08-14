@@ -1,0 +1,8 @@
+* PMOS mirror row of ibias_gen_v1 (L=2): mirrors + decap. Source=VDD.
+.subckt ib_pmir VDD PB pb2 p1 p2
+XMP0  PB  PB  VDD VDD pfet_03v3 L=2u W=16u nf=1 m=24
+XMP1  p1  PB  VDD VDD pfet_03v3 L=2u W=16u nf=1 m=5
+XMP2  p2  PB  VDD VDD pfet_03v3 L=2u W=16u nf=1 m=24
+XCDEC VDD PB  VDD VDD pfet_03v3 L=2u W=16u nf=1 m=6
+XMPB  pb2 pb2 VDD VDD pfet_03v3 L=2u W=16u nf=1 m=2
+.ends ib_pmir
