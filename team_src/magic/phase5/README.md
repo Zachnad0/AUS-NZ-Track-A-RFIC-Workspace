@@ -94,7 +94,22 @@ pfet_leg). Gates passed this run:
   netgen). PB gate bar; MP0 diode; XCDEC decap (gate=PB, D=S=VDD); MPB separate pb2 diode.
   magic DRC 0, KLayout DRC 0, 61 fingers -> match uniquely, 5 ports (VDD PB pb2 p1 p2).
 
-### PMOS cascode (E.3) resume plan -- NOT yet built
+### 5.2 MATCHING (run #3, item 4) -- DONE
+- **24:5 mirror common-centroid (A-B-A).** MN0 (m=24) is split into two nf=12 halves
+  MN0a|MN0b flanking MN1 (nf=5), so MN1 sits at MN0's centroid and linear process/temp
+  gradients across MN1 cancel (better for the ratio than the earlier side-by-side + end
+  dummies). Both halves are drain=gate=NB so netgen merges them to m=24 -- **the golden is
+  unchanged**. Applied in ib_nmir4, ib_nmos, ibias_gen_v1; all re-verified DRC 0 (magic +
+  KLayout) + LVS match uniquely (228 fingers at top level). Cascodes align cC1 over MN1,
+  cC2 over MN2; MNC0 reaches NB through the NB bar (position-independent).
+- **Dummy gate tie: kept -> NB (not VSS), deliberately.** A dummy at the array edge matches
+  best when its gate is at the SAME potential as the real gates -- tying to VSS would put a
+  gate-field step right at the edge device it is meant to protect. The added cap sits on NB,
+  a low-impedance diode-connected node (1/gm), where it is negligible and mildly filtering.
+  So the small "cap on the bias node" cost is worth the uniform edge field. (If NB-node
+  loading ever mattered, VSS is the alternative -- it does not here.)
+
+### PMOS cascode (E.3) resume plan -- BUILT (ib_pmos, ibias_gen_v1); kept for reference
 Golden (X D G S B): MP0c PA PA PB VDD (diode, m=24, L=1) | MP1c VGN PA p1 VDD (m=5) |
 MP2c IB_DIV2 VBCPD p2 VDD (m=24) | MPBc VBCPD VBCPD pb2 VDD (diode, m=2). Two gate nets:
 **PA bar** over MP0c/MP1c, **VBCPD bar** over MP2c/MPBc (not one shared bar like NMOS).

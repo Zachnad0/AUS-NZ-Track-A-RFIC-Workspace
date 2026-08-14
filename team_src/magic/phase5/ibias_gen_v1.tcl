@@ -11,13 +11,15 @@ set YC 2000 ; set YP 6000 ; set YCP 4400
 drc off ; snap internal
 cellname create $CELL ; load $CELL
 
-# ---- NMOS x-centers (ib_nmos) ----
-set cMN0 6400
-set cMN1 [expr {$cMN0 + 6048 + 1260 + 560}]
-set cMN2 [expr {$cMN1 + 1260 + 6048 + 560}]
-set cMNB [expr {$cMN2 + 6048 +  504 + 560}]
-set cDL  [expr {$cMN0 - 6048 -  504 - 560}]
-set cDR  [expr {$cMNB +  504 +  504 + 560}]
+# ---- NMOS x-centers (ib_nmos): A-B-A interdigitation (MN0a|MN1|MN0b) ----
+set cMN0a 3400
+set cMN1  [expr {$cMN0a + 3024 + 1260 + 560}]   ;# 8244
+set cMN0b [expr {$cMN1  + 1260 + 3024 + 560}]   ;# 13088
+set cMN2  [expr {$cMN0b + 3024 + 6048 + 560}]   ;# 22720
+set cMNB  [expr {$cMN2  + 6048 +  504 + 560}]   ;# 29832
+set cDL   [expr {$cMN0a - 3024 -  504 - 560}]   ;# -688
+set cDR   [expr {$cMNB  +  504 +  504 + 560}]   ;# 31400
+set cC0 $cMN0a ; set cC1 $cMN1 ; set cC2 $cMN2
 # ---- PMOS x-centers (ib_pmos) ----
 set c0a 3400
 set c0b [expr {$c0a + 3024 + 3024 + 560}]
@@ -28,9 +30,9 @@ set cCD [expr {$c2b + 3024 + 1512 + 560}]
 set cPB [expr {$cCD + 1512 +  504 + 560}]
 
 # ===== place all devices =====
-place_nfet  2 $cDL DL ; place_nfet 24 $cMN0 MN0 ; place_nfet 5 $cMN1 MN1
+place_nfet  2 $cDL DL ; place_nfet 12 $cMN0a MN0a ; place_nfet 5 $cMN1 MN1 ; place_nfet 12 $cMN0b MN0b
 place_nfet 24 $cMN2 MN2 ; place_nfet 2 $cMNB MNB ; place_nfet 2 $cDR DR
-place_nfet 24 $cMN0 MNC0 1 $YC ; place_nfet 5 $cMN1 MNC1 1 $YC ; place_nfet 24 $cMN2 MNC2 1 $YC
+place_nfet 24 $cC0 MNC0 1 $YC ; place_nfet 5 $cC1 MNC1 1 $YC ; place_nfet 24 $cC2 MNC2 1 $YC
 place_pfet 12 $c0a MP0a $YP ; place_pfet 12 $c0b MP0b $YP ; place_pfet 5 $p1c MP1 $YP
 place_pfet 12 $c2a MP2a $YP ; place_pfet 12 $c2b MP2b $YP ; place_pfet 6 $cCD MPCD $YP ; place_pfet 2 $cPB MPB $YP
 set YPC [expr {$YP+$YCP}]
@@ -39,20 +41,22 @@ place_pfet 12 $c2a MP2ca $YPC 1 ; place_pfet 12 $c2b MP2cb $YPC 1 ; place_pfet 2
 flatten ${CELL}_f ; load ${CELL}_f
 
 # ===== strap =====
-foreach {nf cx} [list 2 $cDL 24 $cMN0 5 $cMN1 24 $cMN2 2 $cMNB 2 $cDR] { nfet_leg $nf $cx 1 }
-nfet_leg 24 $cMN0 1 1 $YC 0 ; nfet_leg 5 $cMN1 1 1 $YC 0 ; nfet_leg 24 $cMN2 1 1 $YC 0
+foreach {nf cx} [list 2 $cDL 12 $cMN0a 5 $cMN1 12 $cMN0b 24 $cMN2 2 $cMNB 2 $cDR] { nfet_leg $nf $cx 1 }
+nfet_leg 24 $cC0 1 1 $YC 0 ; nfet_leg 5 $cC1 1 1 $YC 0 ; nfet_leg 24 $cC2 1 1 $YC 0
 foreach {nf cx} [list 12 $c0a 12 $c0b 5 $p1c 12 $c2a 12 $c2b 6 $cCD 2 $cPB] { pfet_leg $nf $cx 1 2 $YP }
 foreach {nf cx} [list 12 $c0a 12 $c0b 5 $p1c 12 $c2a 12 $c2b 2 $cPB] { pfet_leg $nf $cx 1 1 $YPC 1 -1700 }
 
-# ===== NMOS routing (ib_nmos) =====
-box values -1560 -820 31660 [expr {$YC+700}] ; paint pwell
+# ===== NMOS routing (ib_nmos, A-B-A) =====
+box values [expr {$cDL-844}] -820 [expr {$cDR+844}] [expr {$YC+700}] ; paint pwell
 set nxL [expr {$cDL - 504 - 210}] ; set nxR [expr {$cDR + 504 + 40}]
 box values $nxL 932 $nxR 988   ; paint metal2
 box values $nxL -628 $nxR -572 ; paint metal2
-box values [expr {$cMN0-28}] 572 [expr {$cMN0+28}] [expr {$YC-572}] ; paint metal2
+# MN0a diode + NB inter-row riser -> MNC0 source; MN0b diode -> NB bar
+box values [expr {$cMN0a-28}] 572 [expr {$cMN0a+28}] [expr {$YC-572}] ; paint metal2
+box values [expr {$cMN0b-28}] 572 [expr {$cMN0b+28}] 988 ; paint metal2
 foreach cx [list $cDL $cDR] { box values [expr {$cx-28}] -628 [expr {$cx+28}] 628 ; paint metal2 }
-box values [expr {$cMN0-3648-210}] [expr {$YC+932}] [expr {$cMN2+3648+40}] [expr {$YC+988}] ; paint metal2
-box values [expr {$cMN0-28}] [expr {$YC+572}] [expr {$cMN0+28}] [expr {$YC+988}] ; paint metal2
+box values [expr {$cC0-3648-210}] [expr {$YC+932}] [expr {$cC2+3648+40}] [expr {$YC+988}] ; paint metal2
+box values [expr {$cC0-28}] [expr {$YC+572}] [expr {$cC0+28}] [expr {$YC+988}] ; paint metal2
 foreach cx [list $cMN1 $cMN2] {
     via_m2m3 $cx 600 ; via_m2m3 $cx [expr {$YC-600}]
     box values [expr {$cx-$::M2HW}] 600 [expr {$cx+$::M2HW}] [expr {$YC-600}] ; paint metal3
@@ -115,7 +119,8 @@ box values [expr {$cMN1-40}] [expr {$YC+574}] [expr {$cMN1+40}] [expr {$YC+626}]
 box values [expr {$p1c-40}] [expr {$YPC+1474}] [expr {$p1c+40}] [expr {$YPC+1526}] ; label VGN center metal2 ; port make 3
 box values [expr {$c2a+2000}] [expr {$YPC+1474}] [expr {$c2a+2056}] [expr {$YPC+1526}] ; label IB_DIV2 center metal2 ; port make 4
 box values 13272 [expr {$YP-1520}] 13328 [expr {$YP-1480}] ; label VDD center metal2 ; port make 5
-box values 12700 -620 12756 -580 ; label VSS center metal2 ; port make 6
+set xvss [expr {($cMN0b+3024+$cMN2-6048)/2}]
+box values [expr {$xvss-28}] -620 [expr {$xvss+28}] -580 ; label VSS center metal2 ; port make 6
 select top cell
 save $OUT/$CELL
 puts "IB_SAVED"
