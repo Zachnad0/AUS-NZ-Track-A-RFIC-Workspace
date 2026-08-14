@@ -1,0 +1,12 @@
+* Full PMOS side of ibias_gen_v1: mirror (L=2) + cascode (L=1) + decap. Source=VDD.
+.subckt ib_pmos VDD PB PA VGN IB_DIV2 VBCPD
+XMP0  PB      PB    VDD VDD pfet_03v3 L=2u W=16u nf=1 m=24
+XMP0c PA      PA    PB  VDD pfet_03v3 L=1u W=16u nf=1 m=24
+XMP1  p1      PB    VDD VDD pfet_03v3 L=2u W=16u nf=1 m=5
+XMP1c VGN     PA    p1  VDD pfet_03v3 L=1u W=16u nf=1 m=5
+XMP2  p2      PB    VDD VDD pfet_03v3 L=2u W=16u nf=1 m=24
+XMP2c IB_DIV2 VBCPD p2  VDD pfet_03v3 L=1u W=16u nf=1 m=24
+XMPB  pb2     pb2   VDD VDD pfet_03v3 L=2u W=16u nf=1 m=2
+XMPBc VBCPD   VBCPD pb2 VDD pfet_03v3 L=1u W=16u nf=1 m=2
+XCDEC VDD     PB    VDD VDD pfet_03v3 L=2u W=16u nf=1 m=6
+.ends ib_pmos
