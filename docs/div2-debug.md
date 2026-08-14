@@ -18,7 +18,12 @@ mirror **10:1** → **2.4 mA/tail** (4.8 mA core total). Series isolation R relo
 > non-working — see that section). Front matter kept for continuity.
 
 ## Files
-- Cell:   `team_src/xschem/DIV2_QUAD_v1.sch` (45 FET + 8 R), symbol `DIV2_QUAD_v1.sym`
+- Cell:   `team_src/xschem/DIV2_QUAD_v1.sch` (**59 FET + 12 R + 4 caps** — the "45 FET +
+  8 R" here was the pre-2026-08-12 single-inverter converter; the self-biased 3-stage
+  rework (commit f600af3) added devices. Breakdown, file-read run #3: 12 CML-core nfet
+  + 4 CML loads (300R, one per output OI/OIB/OQ/OQB = 2 latches x 2, NOT 8) + 3 NMOS
+  bias nfet + 4 converters x (6 nfet + 5 pfet + RFB 20k + R_SER 1k + CC 100f).
+  All R_SER are on-chip inside the .subckt), symbol `DIV2_QUAD_v1.sym`
 - TB:     `team_src/xschem/DIV2_QUAD_tb.sch` — 240 µA into IBIAS, rail-to-rail diff
   clock (T = 200 p = 5 GHz), pad load 300 fF + 50 Ω to gnd on each output.
 - Generators (persistent, outside repo): `../_cp_work/gen_div2_quad.py`,
