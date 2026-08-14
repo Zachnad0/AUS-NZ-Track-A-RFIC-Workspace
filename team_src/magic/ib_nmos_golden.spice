@@ -1,0 +1,11 @@
+* NMOS side of ibias_gen_v1: mirror (L=2) + cascode (L=1) + end dummies (tied off).
+.subckt ib_nmos NB IBIAS VGP PA VBCPD VSS
+XMN0  NB     NB    VSS VSS nfet_03v3 L=2u W=4u nf=1 m=24
+XMNC0 IBIAS  IBIAS NB  VSS nfet_03v3 L=1u W=4u nf=1 m=24
+XMN1  n1     NB    VSS VSS nfet_03v3 L=2u W=4u nf=1 m=5
+XMNC1 VGP    IBIAS n1  VSS nfet_03v3 L=1u W=4u nf=1 m=5
+XMN2  n2     NB    VSS VSS nfet_03v3 L=2u W=4u nf=1 m=24
+XMNC2 PA     IBIAS n2  VSS nfet_03v3 L=1u W=4u nf=1 m=24
+XMNB  VBCPD  NB    VSS VSS nfet_03v3 L=2u W=4u nf=1 m=2
+XMDUM VSS    NB    VSS VSS nfet_03v3 L=2u W=4u nf=1 m=4
+.ends ib_nmos
