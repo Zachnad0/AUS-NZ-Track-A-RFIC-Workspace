@@ -20,4 +20,8 @@ XMP2c  IB_DIV2 VBCPD p2  VDD pfet_03v3 L=1u W=16u nf=1 m=24
 XMPB   pb2    pb2    VDD VDD pfet_03v3 L=2u W=16u nf=1 m=2
 XMPBc  VBCPD  VBCPD  pb2 VDD pfet_03v3 L=1u W=16u nf=1 m=2
 XCDEC  VDD    PB     VDD VDD pfet_03v3 L=2u W=16u nf=1 m=6
+* Layout matching device (not in the schematic): the two NMOS end dummies on the
+* 24:5 ratio array, tied off (gate->NB, S/D->VSS), netgen-merged to m=4. Added as a
+* tied-off instance per the CP_v1/ib_nmos precedent so LVS matches uniquely.
+XMDUM  VSS    NB     VSS VSS nfet_03v3 L=2u W=4u  nf=1 m=4
 .ends ibias_gen_v1
