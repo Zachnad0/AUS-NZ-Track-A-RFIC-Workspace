@@ -1,0 +1,6 @@
+.subckt ib_nmir4 NB n1 n2 VBCPD VSS
+XMN0 NB    NB VSS VSS nfet_03v3 L=2u W=4u nf=1 m=24
+XMN1 n1    NB VSS VSS nfet_03v3 L=2u W=4u nf=1 m=5
+XMN2 n2    NB VSS VSS nfet_03v3 L=2u W=4u nf=1 m=24
+XMNB VBCPD NB VSS VSS nfet_03v3 L=2u W=4u nf=1 m=2
+.ends ib_nmir4
