@@ -282,3 +282,15 @@ topology and `DIV2_QUAD_v1.sch` regenerated; the reworked netlist is confirmed t
 reproduce the table above directly (no hand-edit, all 4 chains identical). Generator path
 is now relative to the script and it lives in `team_src/xschem/` (was `_cp_work` scratch
 with a hardcoded Windows output path). This is the source of Phase 5.3's layout golden.
+
+### 2026-08-14 (run #2) — R_SER confirmed ON-CHIP, no schematic gap
+Reconciled the "12 resistors" count against the 1k R_SER isolation ruling. Netlist of the
+current `DIV2_QUAD_v1.sch` (file-read) has exactly **12 R = 4 CML loads (300R: RA1/RA2/RB1/
+RB2) + 4 RFB (20k) + 4 R_SER (1k: R_SER_IP/IN/QP/QN)**. The R_SER resistors are emitted by
+`gen_div2_quad.py` line 95 `res(x0+1560,1800,"R_SER_%s"%tag,S3,OUT,"1k")` INSIDE each
+converter chain, connecting internal INVO3 (S3) to the block OUTPUT ports; the subckt
+boundary is `.subckt DIV2_QUAD_v1 CK CKB IBIAS I_P I_N Q_P Q_N VDD VSS`. So R_SER is on-chip,
+inside the block, **not testbench-only** — no schematic gap. (The earlier "8 CML loads"
+worry was wrong: the /2 has 2 latches x 2 loads = 4 CML loads, not 8.) **Open for 5.3
+layout only:** the generator emits ideal `device=resistor`; the LVS golden must map R_SER
+1k -> `ppolyf_u_1k` (2x2um) and the 300R CML loads to their real flavor.

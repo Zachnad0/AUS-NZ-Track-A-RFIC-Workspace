@@ -87,11 +87,14 @@ strap (the mtest pattern; strapping before flatten or reusing a device name trip
   over a region touching two of them fails silently -> netgen "(no pin, node is NB)" port
   error while the netlist still "matches uniquely with port errors". Fix: paint rails
   UNLABELED, merge with a continuous bar, and `label`+`port make` once at a clean spot.
-- **A `label` over pwell can stick to pwell, not the metal2 under the box** ("Moving label
-  X from space to pwell"), even after `paint metal2` there — happened only for a small
-  device's drain. Route the label to a metal2 pad in CLEAR FIELD (y>700, above the pwell
-  top) and it sticks to metal2 (as the NB bar at y960 did). This is why VBCPD gets a riser
-  to a pad above the pwell.
+- **A bare `label X` can snap to pwell instead of the metal2 under the box** ("Moving label
+  X from space to pwell"), even after `paint metal2` there. **The real fix (proven, run #2):
+  magic's signature is `label str [pos [layer]]`** — give the layer explicitly:
+  `label VBCPD center metal2`. Verified on a throwaway cell: the saved mag then carries
+  `rlabel metal2 ... VBCPD` (vs `rlabel pwell ...` for the bare form). `center` is a valid
+  pos. The old clear-field-pad workaround is unnecessary; use the explicit-layer form.
+  (Note: `label NAME metal2` with NO pos parses metal2 as the *pos* arg -> still wrong;
+  the layer must be the THIRD token.)
 
 ## Phase 5.3 — 1kΩ resistor flavor (checked): `ppolyf_u_1k`, 1000 Ω/sq (rho 1000), minW=L=1µm.
 R_SER 1k = 1 square; size W≥2µm for ~3.3mA switching current (→L=2µm), ~20–30µm² each, ~100µm² ×4.
