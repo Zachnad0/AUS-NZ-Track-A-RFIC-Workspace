@@ -1,0 +1,3 @@
+.subckt mtest D G S
+XMT D G S S nfet_03v3 L=2u W=4u nf=1 m=3
+.ends mtest
