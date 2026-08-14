@@ -1,0 +1,3 @@
+.subckt ib_ntest S D G
+XMT D G S S nfet_03v3 L=2u W=4u nf=1 m=5
+.ends ib_ntest
