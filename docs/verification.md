@@ -346,6 +346,25 @@ Moreover the CP's known **+110 fC/cycle charge injection** (§2.1; ~105 fC measu
 φ=0) is the **likely dominant reference-spur mechanism**, not the 0.18 % static
 mismatch. The generator does not meaningfully degrade the CP.
 
+### 2.6.1 IBIAS LAYOUT COMPLETE (`ibias_gen_v1`, 2026-08-14) — DRC + LVS clean
+Full-custom Magic layout of the 16-device generator, headless via a parameterized
+generator (`team_src/magic/phase5/ib_block.tcl` + `ibias_gen_v1.tcl`). Four-row stack
+(NMOS mirror/cascode in pwell, PMOS mirror/cascode in nwell; ~150×64 µm), wide W=16
+m=24 legs split 2×nf=12 (200 µm model bin), inter-band routing by layer-per-net-class
+(M2 S/D, M3 crossings, M4 cascode-VDD, M5 PA/VBCPD cross-band), end dummies on the 24:5
+ratio array. Sign-off (`team_src/magic/verify_cp.sh ibias_gen_v1`, exit 0):
+
+| Gate | Result |
+|------|--------|
+| Magic DRC | **0** |
+| KLayout DRC (variant D) | **0** |
+| netgen LVS vs `ibias_gen_v1_golden.spice` | **228 fingers → 16 devices + m=4 end-dummy → match uniquely** |
+| Ports | **6** (IBIAS VGP VGN IB_DIV2 VDD VSS), 0 port errors, 0 property errors |
+
+Render: `docs/renders/ibias_gen_v1_{white,black}.png`. Both NMOS-side (`ib_nmos`, 112
+fingers) and PMOS-side (`ib_pmos`, 116 fingers) also verify standalone. The end dummy
+(gate→NB, S/D→VSS, m=4) is added to the golden as a tied-off instance.
+
 ## 3. VCO characterization (condition 5)
 
 ### 3.1 f–VTUNE sweep (measured) — establishes the frequency plan
