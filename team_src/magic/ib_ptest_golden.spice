@@ -1,0 +1,3 @@
+.subckt ib_ptest VDD D G
+XMT D G VDD VDD pfet_03v3 L=2u W=16u nf=1 m=12
+.ends ib_ptest
