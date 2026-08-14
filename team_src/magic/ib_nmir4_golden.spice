@@ -3,4 +3,5 @@ XMN0 NB    NB VSS VSS nfet_03v3 L=2u W=4u nf=1 m=24
 XMN1 n1    NB VSS VSS nfet_03v3 L=2u W=4u nf=1 m=5
 XMN2 n2    NB VSS VSS nfet_03v3 L=2u W=4u nf=1 m=24
 XMNB VBCPD NB VSS VSS nfet_03v3 L=2u W=4u nf=1 m=2
+XMDUM VSS   NB VSS VSS nfet_03v3 L=2u W=4u nf=1 m=4
 .ends ib_nmir4
