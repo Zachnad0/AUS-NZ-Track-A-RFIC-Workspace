@@ -1,0 +1,3 @@
+.subckt res1k A B VSS
+X0 A B VSS ppolyf_u_1k r_width=2u r_length=2u
+.ends res1k

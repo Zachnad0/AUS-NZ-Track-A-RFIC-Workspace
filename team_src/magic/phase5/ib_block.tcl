@@ -7,9 +7,10 @@ source /foss/designs/AUS-NZ-integration/team_src/magic/phase5/strap.tcl
 
 set ::PITCH 504
 
-# S/D contacted-poly pitch by L (measured from generated devices, W=4 nfet):
-# L=2 -> 504, L=1 -> 304. Vertical strap constants are W-dependent (same for both).
-proc pitch_for_L {L} { return [expr {$L == 1 ? 304 : 504}] }
+# S/D contacted-poly pitch by L (measured from generated devices): L=2->504,
+# L=1->304, L=0.3->164. Linear: pitch = 200*L + 104. Vertical strap constants are
+# W-dependent (finger width), NOT L-dependent, so they carry across L.
+proc pitch_for_L {L} { return [expr {int(round(200*$L + 104))}] }
 
 # place_nfet: place ONE raw nf-finger nfet (W=4) centered at x=xoff, unique name.
 # Placement only -- gencell with distinct names, flatten ONCE after all devices are

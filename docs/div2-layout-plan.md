@@ -25,7 +25,22 @@ that MUST be answered in-container before the golden is valid.
 | **ppolyf_u_1k** | R_SER (1k), loads (300), RFB (20k) | gencell `magic::gencell gf180mcu::ppolyf_u_1k`, defaults `w 1 l 2 rho 1000 val 2000 class resistor`. **1 kΩ = 1 square → w=2 l=2** (or w=1 l=1). **300 Ω = 0.3 sq → w=2 l=0.6** (min L 1 µm may force snaking/lower-value strategy — CHECK gencell minL). **20 kΩ = 20 sq → w=1 l=20, or snake=1** (long; use snake to fold). READ each flavor's real terminal coords + DRC (poly res has its own spacing + the res-marker layer). |
 | **CC cap 100 fF** | 4× | the `.sch` uses `capa.sym` (ideal). The LAYOUT needs a real gf180 cap flavor (MIM `cap_mim_*` or MOS cap). 100 fF: MIM ~ 100fF at ~ (area/Cdensity). READ the gencell + its LVS device name. This is the biggest unknown. |
 
-## OPEN QUESTIONS that gate the golden (answer in-container first)
+## RESOLVED device forms (run #5, in-container)
+- **Resistor** extracts as `X<name> <e1> <e2> <bulk> ppolyf_u_1k r_width=Wu r_length=Lu`
+  (3-terminal: two poly ends + a psubdiff guard = bulk → VSS). netgen matches uniquely and
+  **checks r_width/r_length**, so the golden geometry must equal the drawn geometry. Terminal
+  tap = paint metal1 over the end **polycontact** (NOT the full-width guard-ring metal1).
+  Geometries chosen: R_SER 1k = w2 l2 · CML load 300 = w5 l1.5 · RFB 20k = w1 l20.
+- **Cap** extracts as `X<name> <top> <bot> cap_mim_2f0_m4m5_noshield c_width=Wu c_length=Lu`
+  (2-terminal, MIM on m4/m5, 2 fF/µm²). 100 fF = 50 µm² → **w5 l10**.
+- **Golden is GENERATED** by `team_src/magic/phase5/mk_div2_golden.py` (netlist .sch → keep
+  FETs, map R→ppolyf_u_1k, C→cap_mim). Output `DIV2_QUAD_v1_golden.spice`, 75 devices.
+- **W=40 CML nfet**: fold as **w=4 nf=10** (L=0.3, pitch 164) to reuse the proven W=4
+  vertical strap constants; total W=40 < 200 µm bin. `pitch_for_L` generalized to
+  `200*L+104` (504/304/164 at L=2/1/0.3). CML devices need CUSTOM per-terminal routing
+  (they are not a common-source/gate mirror array), so `nfet_leg` does not apply directly.
+
+## (historical) OPEN QUESTIONS — now answered above
 1. **ppolyf_u_1k LVS representation.** netgen may see it as an `R` element (value) or as a
    subckt `ppolyf_u_1k` with PLUS/MINUS/BODY pins. Extract one strapped resistor and read
    the `.lvs.spice` device line — the golden's 12 resistors must use that exact form. Ideal
