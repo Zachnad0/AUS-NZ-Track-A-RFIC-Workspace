@@ -25,6 +25,16 @@ that MUST be answered in-container before the golden is valid.
 | **ppolyf_u_1k** | R_SER (1k), loads (300), RFB (20k) | gencell `magic::gencell gf180mcu::ppolyf_u_1k`, defaults `w 1 l 2 rho 1000 val 2000 class resistor`. **1 kΩ = 1 square → w=2 l=2** (or w=1 l=1). **300 Ω = 0.3 sq → w=2 l=0.6** (min L 1 µm may force snaking/lower-value strategy — CHECK gencell minL). **20 kΩ = 20 sq → w=1 l=20, or snake=1** (long; use snake to fold). READ each flavor's real terminal coords + DRC (poly res has its own spacing + the res-marker layer). |
 | **CC cap 100 fF** | 4× | the `.sch` uses `capa.sym` (ideal). The LAYOUT needs a real gf180 cap flavor (MIM `cap_mim_*` or MOS cap). 100 fF: MIM ~ 100fF at ~ (area/Cdensity). READ the gencell + its LVS device name. This is the biggest unknown. |
 
+## W=40 CML device strapping — VALIDATED (run #5)
+`place_nfet 10 x M 0.3` + `nfet_leg 10 x gc 0.3 yoff **taps=0**` → strapped W=40 (w4 nf10),
+magic DRC 0, netgen 10 fingers → match uniquely m=10 (total W=40). **The per-device tap MUST
+be off (taps=0)**: at L=0.3 pitch 164 the welltap sits at P/2=82 from the array edge, only
+~0.15 µm from the outer source via → V1.2a (via1 spacing). So the CML devices share ONE pwell
+with taps painted in clear field (the ibias-cascode pattern). The strap S/D/gate rails come
+out UNLABELED; the CML driver routes each device's three rails to its specific topology net
+(TAILA/nTA/nLA/OI/OIB/CK/CKB/VDD) — CML is not a common-source/gate mirror, so every device's
+rails go to different nets.
+
 ## RESOLVED device forms (run #5, in-container)
 - **Resistor** extracts as `X<name> <e1> <e2> <bulk> ppolyf_u_1k r_width=Wu r_length=Lu`
   (3-terminal: two poly ends + a psubdiff guard = bulk → VSS). netgen matches uniquely and
