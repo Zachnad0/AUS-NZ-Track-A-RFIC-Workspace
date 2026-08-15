@@ -19,6 +19,12 @@ set xMA4 [expr {3*$P}] ; set xMA2 [expr {4*$P}] ; set xMA6 [expr {5*$P}]
 foreach {nm x} [list MA5 $xMA5 MA1 $xMA1 MA3 $xMA3 MA4 $xMA4 MA2 $xMA2 MA6 $xMA6] {
     place_nfet 10 $x $nm 0.3
 }
+# 300ohm ppolyf_u_1k loads (w10 l3) above the OIB / OI regions. box LL -> device drawn
+# from LL-60; terminals (polycontact) at LL+189..235 (bottom=OIB/OI) and LL+961..1007
+# (top=VDD), x = LL+189..2163.
+set rLLy 2400
+box values 2264 $rLLy 2264 $rLLy ; magic::gencell gf180mcu::ppolyf_u_1k RA1 w 10 l 3
+box values 7464 $rLLy 7464 $rLLy ; magic::gencell gf180mcu::ppolyf_u_1k RA2 w 10 l 3
 flatten ${CELL}_f ; load ${CELL}_f
 foreach x [list $xMA5 $xMA1 $xMA3 $xMA4 $xMA2 $xMA6] { nfet_leg 10 $x 1 0.3 0 0 }
 
@@ -71,6 +77,20 @@ via_m2m4 $xMA4 960 ; via_m2m4 [expr {$xMA3-400}] 600
 hseg metal4 [expr {$xMA3-400}] $xMA4 960 $H
 vseg metal4 [expr {$xMA3-400}] 600 960 $H
 
+# --- resistor loads: bottom terminal -> OIB/OI (M3 down over the gate rails), top -> VDD ---
+# RA1 (OIB): bottom polycontact x2453..4427 y2589..2635 ; top y3361..3407
+box values 2453 2589 4427 2635 ; paint metal1
+via_m1m3 2600 2610 ; vseg metal3 2600 600 2610 $H
+box values 2453 3361 4427 3407 ; paint metal1
+via_m1m4 2600 3384 ; vseg metal4 2600 3384 3800 $H
+# RA2 (OI): bottom x7653..9627 y2589..2635 ; top y3361..3407
+box values 7653 2589 9627 2635 ; paint metal1
+via_m1m3 8700 2610 ; vseg metal3 8700 600 2610 $H
+box values 7653 3361 9627 3407 ; paint metal1
+via_m1m4 8700 3384 ; vseg metal4 8700 3384 3800 $H
+# VDD rail (M4, y3800) joining both resistor tops
+hseg metal4 2600 8700 3800 $H
+
 select top cell
 drc on ; drc euclidean on ; drc check ; drc catchup
 puts "CML_DRC=[drc list count total]"
@@ -88,6 +108,7 @@ box values [expr {($xMA1+$xMA3)/2-28}] 572 [expr {($xMA1+$xMA3)/2+28}] 628 ; lab
 box values [expr {($xMA4+$xMA2)/2-28}] 572 [expr {($xMA4+$xMA2)/2+28}] 628 ; label OI center metal3 ; port make 6
 box values 1972 -762 2028 -738 ; label TAILA center metal3 ; port make 7
 box values -833 -1100 -700 -1020 ; label VSS center metal1 ; port make 8
+box values 5622 3772 5678 3828 ; label VDD center metal4 ; port make 9
 select top cell
 save $OUT/$CELL
 puts "CML_SAVED"
