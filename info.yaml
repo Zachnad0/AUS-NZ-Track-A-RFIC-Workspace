@@ -17,3 +17,43 @@ project:
   discord: ""
   description: "PLL building blocks in GF180MCU: LC-VCO (4.11-6.37 GHz), CML divide-by-2 quadrature divider, PFD and charge pump; 2.4-2.5 GHz ISM quadrature output with off-chip loop filter."
   lvs_config: "lvs/lvs_config.json"
+
+# ======================================================
+# Pad / pin list  (config B: 1/8 die, 16-pin total, 12 used, 4 spare)
+# Order = CLOCKWISE from bottom-left in the upper-left quadrant. VDDA first so all
+# seven analog pads sit on the analog rail; VDDD breaks the power ring so the three
+# digital pads land on the digital rail. Ground is a single chip-wide common (no pin).
+# Source of truth: docs/pins.md (analog 7, digital 3, power 2, ground 0 = 12).
+# ======================================================
+pins:
+  - name: VDDA
+    io_type: power
+  - name: IBIAS
+    io_type: analog
+    secondary_esd: true
+  - name: VTUNE
+    io_type: analog
+    secondary_esd: true
+  - name: CP_OUT
+    io_type: analog
+    secondary_esd: true
+  - name: I_P
+    io_type: analog
+    secondary_esd: true
+  - name: I_N
+    io_type: analog
+    secondary_esd: true
+  - name: Q_P
+    io_type: analog
+    secondary_esd: true
+  - name: Q_N
+    io_type: analog
+    secondary_esd: true
+  - name: VDDD
+    io_type: power
+  - name: REF_IN
+    io_type: input_cmos
+  - name: RST_N
+    io_type: input_schmitt
+  - name: MON_OUT
+    io_type: bidirectional
