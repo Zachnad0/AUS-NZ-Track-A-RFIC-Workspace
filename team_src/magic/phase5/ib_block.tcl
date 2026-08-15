@@ -15,10 +15,11 @@ proc pitch_for_L {L} { return [expr {int(round(200*$L + 104))}] }
 # place_nfet: place ONE raw nf-finger nfet (W=4) centered at x=xoff, unique name.
 # Placement only -- gencell with distinct names, flatten ONCE after all devices are
 # placed, THEN strap (mtest pattern). L defaults to 2 (mirror); pass 1 for cascodes.
-proc place_nfet {nf xoff name {L 2} {yoff 0}} {
+proc place_nfet {nf xoff name {L 2} {yoff 0} {W 4}} {
     set maxc [expr {int($nf*[pitch_for_L $L]/2)}]
-    box values [expr {$xoff-($maxc+60)}] [expr {$yoff-468}] [expr {$xoff-($maxc+60)}] [expr {$yoff-468}]
-    magic::gencell gf180mcu::nfet_03v3 $name w 4 l $L nf $nf m 1 guard 0 topc 0 botc 0
+    set boy [expr {$yoff - (100*$W + 68)}]
+    box values [expr {$xoff-($maxc+60)}] $boy [expr {$xoff-($maxc+60)}] $boy
+    magic::gencell gf180mcu::nfet_03v3 $name w $W l $L nf $nf m 1 guard 0 topc 0 botc 0
 }
 
 # nfet_leg: strap an already-placed+flattened nf-finger nfet centered at x=xoff.
@@ -31,9 +32,13 @@ proc place_nfet {nf xoff name {L 2} {yoff 0}} {
 #   source-tied psubdiff tap row (mirror rows); 0 = skip both -- for cascode rows
 #   whose bulk is the SHARED pwell (VSS-tied by the mirror taps) and whose source is
 #   NOT VSS. The driver then paints the shared pwell spanning all rows.
-proc nfet_leg {nf xoff gc {L 2} {yoff 0} {taps 1}} {
+proc nfet_leg {nf xoff gc {L 2} {yoff 0} {taps 1} {W 4}} {
     set P [pitch_for_L $L]
     set maxc [expr {int($nf*$P/2)}]
+    # G = half the active height (=100*W). Every y-constant that was tuned for W=4
+    # (where G=400) scales as sign(C)*(G + |C| - 400); below the W=4 constants are
+    # already substituted (600->G+200, 380->G-20, 556->G+156, ... 820->G+420 etc.)
+    set G [expr {100*$W}]
     set src {} ; set drn {}
     for {set i 0} {$i <= $nf} {incr i} {
         set x [expr {round(($i-$nf/2.0)*$P)+$xoff}]
@@ -42,29 +47,27 @@ proc nfet_leg {nf xoff gc {L 2} {yoff 0} {taps 1}} {
     set gfx {}
     for {set i 0} {$i < $nf} {incr i} { lappend gfx [expr {round(($i-($nf-1)/2.0)*$P)+$xoff}] }
     # S/D straps (rails unlabeled)
-    foreach x $src { strap_col $x [expr {$yoff-380}] [expr {$yoff-600}] }
-    foreach x $drn { strap_col $x [expr {$yoff+380}] [expr {$yoff+600}] }
-    box values [expr {$xoff-($maxc+40)}] [expr {$yoff-628}] [expr {$xoff+$maxc+40}] [expr {$yoff-572}] ; paint metal2
-    box values [expr {$xoff-($maxc+40)}] [expr {$yoff+572}] [expr {$xoff+$maxc+40}] [expr {$yoff+628}] ; paint metal2
+    foreach x $src { strap_col $x [expr {$yoff-($G-20)}] [expr {$yoff-($G+200)}] }
+    foreach x $drn { strap_col $x [expr {$yoff+($G-20)}] [expr {$yoff+($G+200)}] }
+    box values [expr {$xoff-($maxc+40)}] [expr {$yoff-($G+228)}] [expr {$xoff+$maxc+40}] [expr {$yoff-($G+172)}] ; paint metal2
+    box values [expr {$xoff-($maxc+40)}] [expr {$yoff+($G+172)}] [expr {$xoff+$maxc+40}] [expr {$yoff+($G+228)}] ; paint metal2
     # gate: bridges up to a horizontal poly rail. Bridge half-width = gate-poly
-    # half-width (100*L units); a wider bridge overhangs toward the S/D contacts and
-    # trips PL.5a/CO.7 at the tighter L=1 pitch (304 vs 504).
+    # half-width (100*L units); a wider bridge overhangs the S/D and trips PL.5a/CO.7.
     set bhw [expr {100*$L}]
-    foreach fx $gfx { box values [expr {$fx-$bhw}] [expr {$yoff+400}] [expr {$fx+$bhw}] [expr {$yoff+600}] ; paint polysilicon }
+    foreach fx $gfx { box values [expr {$fx-$bhw}] [expr {$yoff+$G}] [expr {$fx+$bhw}] [expr {$yoff+($G+200)}] ; paint polysilicon }
     set lx [expr {$xoff-($maxc+180)}]
-    box values $lx [expr {$yoff+556}] [expr {$xoff+$maxc-52}] [expr {$yoff+600}] ; paint polysilicon
+    box values $lx [expr {$yoff+($G+156)}] [expr {$xoff+$maxc-52}] [expr {$yoff+($G+200)}] ; paint polysilicon
     if {$gc} {
-        box values $lx [expr {$yoff+556}] [expr {$lx+80}]   [expr {$yoff+720}] ; paint polysilicon
-        box values [expr {$lx+17}] [expr {$yoff+620}] [expr {$lx+63}] [expr {$yoff+666}] ; paint polycontact
-        box values [expr {$lx+2}]  [expr {$yoff+620}] [expr {$lx+78}] [expr {$yoff+988}] ; paint metal1
-        box values [expr {$lx+14}] [expr {$yoff+934}] [expr {$lx+66}] [expr {$yoff+986}] ; paint m2contact
-        box values [expr {$lx-30}] [expr {$yoff+932}] [expr {$xoff+$maxc-260}] [expr {$yoff+988}] ; paint metal2
+        box values $lx [expr {$yoff+($G+156)}] [expr {$lx+80}] [expr {$yoff+($G+320)}] ; paint polysilicon
+        box values [expr {$lx+17}] [expr {$yoff+($G+220)}] [expr {$lx+63}] [expr {$yoff+($G+266)}] ; paint polycontact
+        box values [expr {$lx+2}]  [expr {$yoff+($G+220)}] [expr {$lx+78}] [expr {$yoff+($G+588)}] ; paint metal1
+        box values [expr {$lx+14}] [expr {$yoff+($G+534)}] [expr {$lx+66}] [expr {$yoff+($G+586)}] ; paint m2contact
+        box values [expr {$lx-30}] [expr {$yoff+($G+532)}] [expr {$xoff+$maxc-260}] [expr {$yoff+($G+588)}] ; paint metal2
     }
     if {$taps} {
-        # bulk: pwell + tap row (<=25um spacing) tied to source rail
-        box values [expr {$xoff-($maxc+340)}] [expr {$yoff-820}] [expr {$xoff+$maxc+340}] [expr {$yoff+700}] ; paint pwell
+        box values [expr {$xoff-($maxc+340)}] [expr {$yoff-($G+420)}] [expr {$xoff+$maxc+340}] [expr {$yoff+($G+300)}] ; paint pwell
         for {set tx [expr {$xoff-$maxc+252}]} {$tx < [expr {$xoff+$maxc}]} {set tx [expr {$tx+5040}]} {
-            welltap $tx [expr {$yoff-760}] [expr {$yoff-580}] [expr {$yoff-600}] psubdiff psubdiffcont
+            welltap $tx [expr {$yoff-($G+360)}] [expr {$yoff-($G+180)}] [expr {$yoff-($G+200)}] psubdiff psubdiffcont
         }
     }
     return [expr {$maxc+340}]
