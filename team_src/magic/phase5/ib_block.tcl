@@ -83,10 +83,11 @@ set ::PFPTOP 1600    ;# pdiff top/bottom |y|
 set ::PFGRL  1646    ;# gate poly rail center |y| (above pdiff top, overlaps finger tops)
 set ::PFGM2  1780    ;# gate M2 (PB) rail center |y|
 
-proc place_pfet {nf xoff name {yoff 0} {L 2}} {
+proc place_pfet {nf xoff name {yoff 0} {L 2} {W 16}} {
     set maxc [expr {int($nf*[pitch_for_L $L]/2)}]
-    box values [expr {$xoff-($maxc+122)}] [expr {$yoff-1730}] [expr {$xoff-($maxc+122)}] [expr {$yoff-1730}]
-    magic::gencell gf180mcu::pfet_03v3 $name w 16 l $L nf $nf m 1 guard 0 topc 0 botc 0
+    set boy [expr {$yoff - (100*$W + 130)}]
+    box values [expr {$xoff-($maxc+122)}] $boy [expr {$xoff-($maxc+122)}] $boy
+    magic::gencell gf180mcu::pfet_03v3 $name w $W l $L nf $nf m 1 guard 0 topc 0 botc 0
 }
 
 # pfet_leg: strap a placed+flattened pfet nf-leg centered at (xoff,yoff). Sources ->
@@ -96,8 +97,9 @@ proc place_pfet {nf xoff name {yoff 0} {L 2}} {
 # the source rail (mirror rows, where source=VDD). Cascode rows pass a dedicated
 # VDD-rail offset (e.g. -1700) because their source rail is NOT VDD; the driver then
 # paints/labels a VDD rail at yoff+tapy and routes it to the main VDD.
-proc pfet_leg {nf xoff gc {L 2} {yoff 0} {taps 1} {tapy -1500}} {
+proc pfet_leg {nf xoff gc {L 2} {yoff 0} {taps 1} {tapy -1500} {W 16}} {
     set P [pitch_for_L $L] ; set maxc [expr {int($nf*$P/2)}]
+    set PG [expr {100*$W}]   ;# pfet constants scale as PG+offset (W=16 base, PG=1600)
     set src {} ; set drn {}
     for {set i 0} {$i <= $nf} {incr i} {
         set x [expr {round(($i-$nf/2.0)*$P)+$xoff}]
@@ -105,30 +107,29 @@ proc pfet_leg {nf xoff gc {L 2} {yoff 0} {taps 1} {tapy -1500}} {
     }
     set gfx {}
     for {set i 0} {$i < $nf} {incr i} { lappend gfx [expr {round(($i-($nf-1)/2.0)*$P)+$xoff}] }
-    foreach x $src { strap_col $x [expr {$yoff-1400}] [expr {$yoff-1500}] }
-    foreach x $drn { strap_col $x [expr {$yoff+1400}] [expr {$yoff+1500}] }
-    box values [expr {$xoff-($maxc+40)}] [expr {$yoff-1528}] [expr {$xoff+$maxc+40}] [expr {$yoff-1472}] ; paint metal2
-    box values [expr {$xoff-($maxc+40)}] [expr {$yoff+1472}] [expr {$xoff+$maxc+40}] [expr {$yoff+1528}] ; paint metal2
-    # gate poly rail overlaps the finger tops (1600-1644); no bridges needed
+    foreach x $src { strap_col $x [expr {$yoff-($PG-200)}] [expr {$yoff-($PG-100)}] }
+    foreach x $drn { strap_col $x [expr {$yoff+($PG-200)}] [expr {$yoff+($PG-100)}] }
+    box values [expr {$xoff-($maxc+40)}] [expr {$yoff-($PG-72)}] [expr {$xoff+$maxc+40}] [expr {$yoff-($PG-128)}] ; paint metal2
+    box values [expr {$xoff-($maxc+40)}] [expr {$yoff+($PG-128)}] [expr {$xoff+$maxc+40}] [expr {$yoff+($PG-72)}] ; paint metal2
+    # gate poly rail overlaps the finger tops; no bridges needed
     set lx [expr {$xoff-($maxc+180)}]
-    box values $lx [expr {$yoff+1624}] [expr {$xoff+$maxc-52}] [expr {$yoff+1668}] ; paint polysilicon
+    box values $lx [expr {$yoff+($PG+24)}] [expr {$xoff+$maxc-52}] [expr {$yoff+($PG+68)}] ; paint polysilicon
     if {$gc} {
-        box values $lx [expr {$yoff+1624}] [expr {$lx+80}] [expr {$yoff+1808}] ; paint polysilicon
-        box values [expr {$lx+17}] [expr {$yoff+1712}] [expr {$lx+63}] [expr {$yoff+1758}] ; paint polycontact
-        box values [expr {$lx+2}]  [expr {$yoff+1712}] [expr {$lx+78}] [expr {$yoff+1808}] ; paint metal1
-        box values [expr {$lx+14}] [expr {$yoff+1754}] [expr {$lx+66}] [expr {$yoff+1806}] ; paint m2contact
-        box values [expr {$lx-30}] [expr {$yoff+1752}] [expr {$xoff+$maxc-260}] [expr {$yoff+1808}] ; paint metal2
+        box values $lx [expr {$yoff+($PG+24)}] [expr {$lx+80}] [expr {$yoff+($PG+208)}] ; paint polysilicon
+        box values [expr {$lx+17}] [expr {$yoff+($PG+112)}] [expr {$lx+63}] [expr {$yoff+($PG+158)}] ; paint polycontact
+        box values [expr {$lx+2}]  [expr {$yoff+($PG+112)}] [expr {$lx+78}] [expr {$yoff+($PG+208)}] ; paint metal1
+        box values [expr {$lx+14}] [expr {$yoff+($PG+154)}] [expr {$lx+66}] [expr {$yoff+($PG+206)}] ; paint m2contact
+        box values [expr {$lx-30}] [expr {$yoff+($PG+152)}] [expr {$xoff+$maxc-260}] [expr {$yoff+($PG+208)}] ; paint metal2
     }
     if {$taps} {
         # nwell taps (n+ -> VDD) well BELOW the gate-poly bottom extension (which reaches
         # yoff-1644): tap top must clear it by NP.4b=64 -> tap top <= yoff-1708. riser up
         # to the VDD source rail.
-        box values [expr {$xoff-($maxc+340)}] [expr {$yoff-1940}] [expr {$xoff+$maxc+340}] [expr {$yoff+1830}] ; paint nwell
+        box values [expr {$xoff-($maxc+340)}] [expr {$yoff-($PG+340)}] [expr {$xoff+$maxc+340}] [expr {$yoff+($PG+230)}] ; paint nwell
         # taps at TRUE column midpoints (P/2 offset, P-multiple spacing). The pfet tap
-        # riser sits at the tall pdiffc's y, so an off-midpoint tap (e.g. the L=2 +252 at
-        # L=1 pitch 304) abuts the neighbouring S/D contact and shorts VDD to it.
+        # riser sits at the tall pdiffc's y, so an off-midpoint tap shorts VDD to the S/D.
         for {set tx [expr {$xoff-$maxc+$P/2}]} {$tx < [expr {$xoff+$maxc}]} {set tx [expr {$tx+10*$P}]} {
-            welltap $tx [expr {$yoff-1900}] [expr {$yoff-1720}] [expr {$yoff+$tapy}] nsubdiff nsubdiffcont
+            welltap $tx [expr {$yoff-($PG+300)}] [expr {$yoff-($PG+120)}] [expr {$yoff+$tapy}] nsubdiff nsubdiffcont
         }
     }
     return [expr {$maxc+340}]
