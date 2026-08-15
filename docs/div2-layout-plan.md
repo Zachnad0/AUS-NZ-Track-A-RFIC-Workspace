@@ -40,6 +40,31 @@ set the ~703 mV swing via I*R, and w=1 is the gencell min where matching is wors
 it in the converter layout if area needs it, and regenerate the golden to the snake form).
 Locked in mk_div2_golden.py.
 
+## Sub-block layout status — 1d DONE, 1e sub-blocks all PASS (run #6)
+Every DIV2 building block is now individually magic-DRC-0 + LVS-match-uniquely against a
+hand-typed sub-block golden (rule 12 governs only the FULL DIV2 golden). Assembly is the
+only remaining step.
+- **1d CML latch** — `ib_cml.tcl` (6 W=40 nfets + 2×300Ω), 9 ports. PASS, committed.
+- **1e diff-pair front-end** — `ib_conv_dp.tcl` (M_NT tail W8L1 + input pair W8L0.3 + PMOS
+  mirror W8L0.3), 6 ports. PASS. Gotcha fixed: pfet source→VDD risers must NOT share x with
+  the drain vias (they short via the shared M3 via pad) — use an M2 source bridge + one M3
+  riser at the far left.
+- **1e inverters** — `ib_inv1.tcl` (10/4, committed) + `ib_inv_gen.tcl` `make_inv {cell Wn Wp}`
+  builds INV2 (26/11) + INV3 (44/16). All three PASS, 4 ports each. Reusable proc: every
+  y-constant linear in Wn/Wp. INV3 is the tallest (~9µm risers) and passed first try.
+- **Converter FET widths** — `derisk_nfetw.tcl` (W4/11/16) + `derisk_pfetw.tcl` (W10/26/44)
+  both DRC 0. The W44 pfet gate M2 reaches YP+4608, so a shared nwell tap strip in the
+  converter/DIV2 must sit ≥ YP+4800.
+- **GOTCHA (single-finger devices)**: `nfet_leg`/`pfet_leg` with `taps=1` paint NO substrate
+  tap on a single-finger device — `welltap`'s loop starts at `xoff-maxc+252`, already past
+  `xoff+maxc` when maxc≈82, so the pwell floats and extracts as VSUBS (not VSS). ALL diff-pair
+  and inverter FETs are single-finger → use `taps=0` + an explicit pwell/nwell + VSS/VDD tap
+  strip (the diff-pair/CML pattern). Wide CML devices (maxc large) are unaffected.
+- **NEXT (1e assembly)**: flat converter cell — place the 5 front-end FETs + 6 inverter FETs +
+  CC MIM cap (100f w5 l10, m4/m5) + RFB 20k (w2 l40) + R_SER 1k (w2 l2), wire
+  OC→CC→G1, RFB S1→G1, G1→INV1→S1→INV2→S2→INV3→S3→R_SER→OUT. Then 1f: 2 latches + 3 NMOS
+  bias + 4 converters, 9 ports, `verify_cp.sh DIV2_QUAD_v1` exit 0 (golden via mk_div2_golden.py).
+
 ## W=40 CML device strapping — VALIDATED (run #5)
 `place_nfet 10 x M 0.3` + `nfet_leg 10 x gc 0.3 yoff **taps=0**` → strapped W=40 (w4 nf10),
 magic DRC 0, netgen 10 fingers → match uniquely m=10 (total W=40). **The per-device tap MUST
