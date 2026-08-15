@@ -1,0 +1,4 @@
+.subckt ib_inv3 IN OUT VDD VSS
+XM_P OUT IN VDD VDD pfet_03v3 L=0.3u W=44u nf=1 m=1
+XM_N OUT IN VSS VSS nfet_03v3 L=0.3u W=16u nf=1 m=1
+.ends ib_inv3
