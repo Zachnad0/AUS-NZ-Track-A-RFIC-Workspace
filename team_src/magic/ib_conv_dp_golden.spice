@@ -1,0 +1,7 @@
+.subckt ib_conv_dp IBIAS INP INM OC VDD VSS
+XMNT  NS  IBIAS VSS VSS nfet_03v3 L=1u   W=8u nf=1 m=1
+XMBN1 DN1 INP   NS  VSS nfet_03v3 L=0.3u W=8u nf=1 m=1
+XMBN2 OC  INM   NS  VSS nfet_03v3 L=0.3u W=8u nf=1 m=1
+XMBP1 DN1 DN1   VDD VDD pfet_03v3 L=0.3u W=8u nf=1 m=1
+XMBP2 OC  DN1   VDD VDD pfet_03v3 L=0.3u W=8u nf=1 m=1
+.ends ib_conv_dp
