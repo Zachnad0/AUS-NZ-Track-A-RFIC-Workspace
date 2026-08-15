@@ -59,11 +59,13 @@ via_m2m4 [expr {$xN1-235}] [expr {$YP+980}] ; via_m2m4 [expr {$xN2-235}] [expr {
 hseg metal4 [expr {$xN1-235}] [expr {$xN2-235}] [expr {$YP+980}] $H
 vseg metal4 [expr {$xN1-235}] [expr {$YP+700}] [expr {$YP+980}] $H
 hseg metal4 [expr {$xN1-235}] $xN1 [expr {$YP+700}] $H   ;# bridge gate M4 -> DN1 M4 at YP+700
-# --- VDD: pfet source rails(YP-700) -> nwell tap strip(YP+1160) on M3 ---
-foreach x [list $xN1 $xN2] {
-    via_m2m3 $x [expr {$YP-700}] ; vseg metal3 $x [expr {$YP-700}] [expr {$YP+1220}] $H
-    via_m1m3 $x [expr {$YP+1220}]
-}
+# --- VDD: join both pfet source rails (YP-700) with an M2 bridge, then ONE M3 riser
+#     at the far left (xNL, clear of every drain via at xN1/xN2 and the gate M4 at
+#     xN1-235) up to the nwell tap strip. Same-x risers shorted to the drain vias. ---
+set xNL [expr {$xN1-450}]
+box values [expr {$xNL-$H}] [expr {$YP-728}] [expr {$xN2+$H}] [expr {$YP-672}] ; paint metal2
+via_m2m3 $xNL [expr {$YP-700}] ; vseg metal3 $xNL [expr {$YP-700}] [expr {$YP+1220}] $H
+via_m1m3 $xNL [expr {$YP+1220}]
 # --- OC (M5): MBN2.drain(+1000) + MBP2.drain(YP+700) ---
 via_m2m5 $xN2 1000 ; via_m2m5 $xN2 [expr {$YP+700}]
 vseg metal5 $xN2 1000 [expr {$YP+700}] 44
