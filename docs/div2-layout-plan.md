@@ -25,6 +25,21 @@ that MUST be answered in-container before the golden is valid.
 | **ppolyf_u_1k** | R_SER (1k), loads (300), RFB (20k) | gencell `magic::gencell gf180mcu::ppolyf_u_1k`, defaults `w 1 l 2 rho 1000 val 2000 class resistor`. **1 kΩ = 1 square → w=2 l=2** (or w=1 l=1). **300 Ω = 0.3 sq → w=2 l=0.6** (min L 1 µm may force snaking/lower-value strategy — CHECK gencell minL). **20 kΩ = 20 sq → w=1 l=20, or snake=1** (long; use snake to fold). READ each flavor's real terminal coords + DRC (poly res has its own spacing + the res-marker layer). |
 | **CC cap 100 fF** | 4× | the `.sch` uses `capa.sym` (ideal). The LAYOUT needs a real gf180 cap flavor (MIM `cap_mim_*` or MOS cap). 100 fF: MIM ~ 100fF at ~ (area/Cdensity). READ the gencell + its LVS device name. This is the biggest unknown. |
 
+## DF.14 for taps=0 CML devices — CLOSED (run #6, KLayout)
+The taps=0 shared-pwell strategy passes DF.14_LV in KLayout (variant D) when a VSS
+psubdiff tap strip runs below the device row (tested: strip at y-1120..-1000, clear of
+the source-rail vias so no V1.2a). Each W=40 device is only ~4 um tall so one bottom
+strip covers the whole single-row latch within the 20 um rule. If devices are stacked in
+multiple rows, add a tap strip per row band.
+
+## Resistor geometries — LOCKED (run #6)
+Enlarged from the run-#5 first picks (same L/W ratio, bigger body, width >= 2um so end/
+contact R is a small fraction and poly matches better -- the 300ohm are the CML loads that
+set the ~703 mV swing via I*R, and w=1 is the gencell min where matching is worst):
+**R_SER 1k = w2 l2 | CML load 300 = w10 l3 | RFB 20k = w2 l40** (20k is a 40um strip; snake
+it in the converter layout if area needs it, and regenerate the golden to the snake form).
+Locked in mk_div2_golden.py.
+
 ## W=40 CML device strapping — VALIDATED (run #5)
 `place_nfet 10 x M 0.3` + `nfet_leg 10 x gc 0.3 yoff **taps=0**` → strapped W=40 (w4 nf10),
 magic DRC 0, netgen 10 fingers → match uniquely m=10 (total W=40). **The per-device tap MUST

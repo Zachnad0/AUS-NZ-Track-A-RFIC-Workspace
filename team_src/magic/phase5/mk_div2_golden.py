@@ -4,14 +4,17 @@
 # and maps the ideal R/C onto the real gf180 layout devices:
 #   ideal R value -> ppolyf_u_1k (3-term: e1 e2 bulk=VSS), r_width/r_length by value
 #   ideal C 100f  -> cap_mim_2f0_m4m5_noshield (2-term), c_width/c_length for 100fF
-# Layout geometries (golden r_width/r_length MUST equal what the layout draws):
-#   1k=w2 l2 | 300=w5 l1.5 | 20k=w1 l20 | 100f cap = w5 l10 (50um^2 @ 2fF/um^2)
+# Layout geometries (golden r_width/r_length MUST equal what the layout draws). Locked
+# run #6: same L/W ratio as the value needs, but LARGER bodies so end/contact resistance
+# is a small fraction (matters for the 300ohm CML loads that set the ~703mV swing via
+# I*R) and width is >= 2um (w=1 is the gencell min, where poly resistors match worst):
+#   1k=w2 l2 | 300=w10 l3 (l/w=0.3) | 20k=w2 l40 (l/w=20) | 100f cap = w5 l10 (50um^2)
 import re, sys
 
 NL  = sys.argv[1] if len(sys.argv) > 1 else '/tmp/DIV2_QUAD_v1.spice'
 OUT = sys.argv[2] if len(sys.argv) > 2 else \
       '/foss/designs/AUS-NZ-integration/team_src/magic/DIV2_QUAD_v1_golden.spice'
-RES = {'300': (5.0, 1.5), '20k': (1.0, 20.0), '1k': (2.0, 2.0)}   # value -> (w,l) um
+RES = {'300': (10.0, 3.0), '20k': (2.0, 40.0), '1k': (2.0, 2.0)}   # value -> (w,l) um
 CAP = (5.0, 10.0)   # 100f MIM w,l um (50 um^2 @ 2 fF/um^2)
 PORTS = "CK CKB IBIAS I_P I_N Q_P Q_N VDD VSS"
 
