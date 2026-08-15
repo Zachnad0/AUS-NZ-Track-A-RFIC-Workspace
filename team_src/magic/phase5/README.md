@@ -109,6 +109,18 @@ pfet_leg). Gates passed this run:
   So the small "cap on the bias node" cost is worth the uniform edge field. (If NB-node
   loading ever mattered, VSS is the alternative -- it does not here.)
 
+### MN2:MN1 -- NOT a ratio-critical pair (run #4 item 0b, question closed)
+All four NMOS mirror legs share gate=NB and mirror the MN0 (m=24) diode reference. MN1
+(m=5) -> n1 -> MNC1 -> **VGP** (CP PMOS-diode bias); MN2 (m=24) -> n2 -> MNC2 -> **PA**
+(PMOS cascode-gate bias). VGP and PA are DIFFERENT bias outputs, so MN1 and MN2 are
+independent legs, not a matched pair with each other. The gradient-sensitive ratios are
+each leg vs the MN0 reference: **MN0:MN1 = 24:5** (the tight one -> centroided A-B-A),
+MN0:MN2 = 24:24 (1:1), MN0:MNB = 24:2. A 1:1 match of two 24-unit arrays is far more
+gradient-tolerant than 24:5, and both carry end dummies. Centroiding MN0:MN2 would mean
+interleaving two 24-finger devices into one 48-finger A-B-A-B array (a large restructure
+of the signed-off block) for a match that is already robust -- **not warranted; leaving as
+drawn.** No restructure performed.
+
 ### PMOS cascode (E.3) resume plan -- BUILT (ib_pmos, ibias_gen_v1); kept for reference
 Golden (X D G S B): MP0c PA PA PB VDD (diode, m=24, L=1) | MP1c VGN PA p1 VDD (m=5) |
 MP2c IB_DIV2 VBCPD p2 VDD (m=24) | MPBc VBCPD VBCPD pb2 VDD (diode, m=2). Two gate nets:

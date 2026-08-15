@@ -71,6 +71,13 @@ Addresses review condition 8 (milestones + fallback reflecting unstarted blocks)
   `cp-wip` (CP), merged clean, all testbenches netlist. Not yet pushed to origin.
 - Docs live under `docs/` (`scope.md`, `pins.md`, `tracking.md`, and
   `verification.md` once Phase-3 sims run).
+- **`ibias_gen_v1` layout DONE + signed off (2026-08-14, `verification.md §2.6.1`):**
+  full-custom Magic, Magic DRC 0 / KLayout DRC 0 / netgen LVS match uniquely (228 fingers,
+  6 ports, `verify_cp.sh` exit 0). **Golden intentionally has one more device than the
+  schematic:** `ibias_gen_v1_golden.spice` = the 16 `.sch` devices **+ one tied-off layout
+  dummy** (`XMDUM`, m=4) on the 24:5 mirror array. The schematic is NOT edited; any
+  full-chip LVS off `ibias_gen_v1.sch` must add the same tied-off dummy or waive the
+  one-device count delta. See `verification.md §2.6.1`.
 
 ---
 

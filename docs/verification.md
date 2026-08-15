@@ -362,8 +362,17 @@ ratio array. Sign-off (`team_src/magic/verify_cp.sh ibias_gen_v1`, exit 0):
 | Ports | **6** (IBIAS VGP VGN IB_DIV2 VDD VSS), 0 port errors, 0 property errors |
 
 Render: `docs/renders/ibias_gen_v1_{white,black}.png`. Both NMOS-side (`ib_nmos`, 112
-fingers) and PMOS-side (`ib_pmos`, 116 fingers) also verify standalone. The end dummy
-(gate→NB, S/D→VSS, m=4) is added to the golden as a tied-off instance.
+fingers) and PMOS-side (`ib_pmos`, 116 fingers) also verify standalone.
+
+**Golden ≠ schematic by one device — intentional, flagged here.** `ibias_gen_v1_golden.spice`
+carries **17 device instances**: the 16 from `ibias_gen_v1.sch`/`.sym` **plus one layout-only
+tied-off dummy** `XMDUM` (nfet W=4 L=2, m=4; gate→NB, source=drain=VSS). The dummy is the two
+end-dummy fingers on the 24:5 mirror array, netgen-merged; it draws no current (Vds=0) and
+changes no node's connectivity, but it must appear in the golden or LVS reports a device-count
+mismatch. This is the standard "add end-dummies as tied-off instances" convention (same as
+CP_v1 and `ib_nmos`), **not** a schematic error — the schematic stays at 16 devices and does
+not need editing. Any future full-chip LVS that netlists `ibias_gen_v1.sch` directly must add
+the same tied-off dummy, or waive the one-device count delta, to match the drawn layout.
 
 ## 3. VCO characterization (condition 5)
 
