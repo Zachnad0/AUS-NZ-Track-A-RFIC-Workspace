@@ -29,13 +29,66 @@ box values -833 -1120 [expr {$xMA6+833}] -1000 ; paint psubdiff
 box values -816 -1107 [expr {$xMA6+816}] -1013 ; paint psubdiffcont
 box values -833 -1120 [expr {$xMA6+833}] -960 ; paint metal1
 
+# ================= ROUTING =================
+# offset access within each ±860 rail: drain via at x-400, source via at x+400, so a
+# device's own source and drain routes never share an x.
+# segments extend hw past each endpoint so L-corners fully overlap (no sub-width notch)
+proc hseg {lay x1 x2 y hw} { box values [expr {$x1-$hw}] [expr {$y-$hw}] [expr {$x2+$hw}] [expr {$y+$hw}] ; paint $lay }
+proc vseg {lay x y1 y2 hw} { box values [expr {$x-$hw}] [expr {$y1-$hw}] [expr {$x+$hw}] [expr {$y2+$hw}] ; paint $lay }
+set H 28 ; set H5 44
+
+# --- OIB (M3, y600): MA1.d(-400) + MA3.d(-400) ---
+via_m2m3 [expr {$xMA1-400}] 600 ; via_m2m3 [expr {$xMA3-400}] 600
+hseg metal3 [expr {$xMA1-400}] [expr {$xMA3-400}] 600 $H
+# --- OI (M3, y600): MA2.d(-400) + MA4.d(-400) ---
+via_m2m3 [expr {$xMA2-400}] 600 ; via_m2m3 [expr {$xMA4-400}] 600
+hseg metal3 [expr {$xMA4-400}] [expr {$xMA2-400}] 600 $H
+# --- nTA (M4, horiz y-900): MA5.d(-400,+600) + MA1.s(+400) + MA2.s(+400) ---
+via_m2m4 [expr {$xMA5-400}] 600 ; via_m2m4 [expr {$xMA1+400}] -600 ; via_m2m4 [expr {$xMA2+400}] -600
+vseg metal4 [expr {$xMA5-400}] -900 600 $H
+hseg metal4 [expr {$xMA5-400}] [expr {$xMA2+400}] -900 $H
+vseg metal4 [expr {$xMA1+400}] -900 -600 $H
+vseg metal4 [expr {$xMA2+400}] -900 -600 $H
+# --- nLA (M5, horiz y+1150): MA6.d(-400,+600) + MA3.s(+400) + MA4.s(+400) ---
+via_m2m5 [expr {$xMA6-400}] 600 ; via_m2m5 [expr {$xMA3+400}] -600 ; via_m2m5 [expr {$xMA4+400}] -600
+vseg metal5 [expr {$xMA6-400}] 600 1150 $H5
+hseg metal5 [expr {$xMA3+400}] [expr {$xMA6-400}] 1150 $H5
+vseg metal5 [expr {$xMA3+400}] -600 1150 $H5
+vseg metal5 [expr {$xMA4+400}] -600 1150 $H5
+# --- TAILA (M3, horiz y-750): MA5.s(+400) + MA6.s(+400). On M3 so it crosses nTA(M4)
+#     and nLA(M5) verticals inter-layer, not on M4 where nTA's risers would short it. ---
+via_m2m3 [expr {$xMA5+400}] -600 ; via_m2m3 [expr {$xMA6+400}] -600
+vseg metal3 [expr {$xMA5+400}] -750 -600 $H
+hseg metal3 [expr {$xMA5+400}] [expr {$xMA6+400}] -750 $H
+vseg metal3 [expr {$xMA6+400}] -750 -600 $H
+# --- cross-coupled gates: MA3.g=OI (M3), MA4.g=OIB (M4, different layer so they cross) ---
+# MA3.gate(5200,960) -> OI drain node (MA4.d at xMA4-400,600) on M3
+via_m2m3 $xMA3 960 ; via_m2m3 [expr {$xMA4-400}] 600
+hseg metal3 $xMA3 [expr {$xMA4-400}] 960 $H
+vseg metal3 [expr {$xMA4-400}] 600 960 $H
+# MA4.gate(7800,960) -> OIB drain node (MA3.d at xMA3-400,600) on M4
+via_m2m4 $xMA4 960 ; via_m2m4 [expr {$xMA3-400}] 600
+hseg metal4 [expr {$xMA3-400}] $xMA4 960 $H
+vseg metal4 [expr {$xMA3-400}] 600 960 $H
+
 select top cell
 drc on ; drc euclidean on ; drc check ; drc catchup
 puts "CML_DRC=[drc list count total]"
 if {[drc list count total] > 0} {
     puts "WHY: [drc list why]"
-    for {set i 0} {$i<10} {incr i} { drc find ; puts "EB: [box values]" }
+    for {set i 0} {$i<12} {incr i} { drc find ; puts "EB: [box values]" }
 }
+
+# ports: label each net once
+box values [expr {$xMA5-40}] 940 [expr {$xMA5+40}] 980 ; label CK center metal2 ; port make 1
+box values [expr {$xMA6-40}] 940 [expr {$xMA6+40}] 980 ; label CKB center metal2 ; port make 2
+box values [expr {$xMA1-40}] 940 [expr {$xMA1+40}] 980 ; label OQ center metal2 ; port make 3
+box values [expr {$xMA2-40}] 940 [expr {$xMA2+40}] 980 ; label OQB center metal2 ; port make 4
+box values [expr {($xMA1+$xMA3)/2-28}] 572 [expr {($xMA1+$xMA3)/2+28}] 628 ; label OIB center metal3 ; port make 5
+box values [expr {($xMA4+$xMA2)/2-28}] 572 [expr {($xMA4+$xMA2)/2+28}] 628 ; label OI center metal3 ; port make 6
+box values 1972 -762 2028 -738 ; label TAILA center metal3 ; port make 7
+box values -833 -1100 -700 -1020 ; label VSS center metal1 ; port make 8
+select top cell
 save $OUT/$CELL
 puts "CML_SAVED"
 quit -noprompt

@@ -1,0 +1,8 @@
+.subckt ib_cml CK CKB OQ OQB TAILA OI OIB VSS
+XMA1 OIB OQ  nTA   VSS nfet_03v3 L=0.3u W=40u nf=1 m=1
+XMA2 OI  OQB nTA   VSS nfet_03v3 L=0.3u W=40u nf=1 m=1
+XMA3 OIB OI  nLA   VSS nfet_03v3 L=0.3u W=40u nf=1 m=1
+XMA4 OI  OIB nLA   VSS nfet_03v3 L=0.3u W=40u nf=1 m=1
+XMA5 nTA CK  TAILA VSS nfet_03v3 L=0.3u W=40u nf=1 m=1
+XMA6 nLA CKB TAILA VSS nfet_03v3 L=0.3u W=40u nf=1 m=1
+.ends ib_cml
