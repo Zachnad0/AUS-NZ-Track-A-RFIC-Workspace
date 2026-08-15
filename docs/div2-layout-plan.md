@@ -1,0 +1,100 @@
+# DIV2_QUAD_v1 layout — plan + device inventory (prep, 2026-08-14 run #4)
+
+**Status: PREP ONLY.** Run #4's container (`iic-osic-tools_xvnc` / Docker Desktop Linux
+engine) was **down** for the whole run and could not be restarted (standing rule 1). All
+layout/verification tools (magic, gencell, netgen, KLayout, xschem netlisting) live in that
+container, so no DRC/LVS was run this session. This file is the host-only prep so the next
+container-up run executes fast: the full device/net inventory (transcribed from the
+authoritative generator `team_src/xschem/gen_div2_quad.py`, which the `.sch` is generated
+from), the golden's transistor lines ready to paste, and the open device-syntax questions
+that MUST be answered in-container before the golden is valid.
+
+## Totals (matches run #3's netlist count: 59 FET + 12 R + 4 C)
+- 12 CML-core nfet (W=40 L=0.3) + 3 NMOS-bias nfet + 4 converters × (6 nfet + 5 pfet) = **59 FET**
+- 4 CML loads (300 Ω) + 4×(RFB 20k + R_SER 1k) = **12 R**
+- 4× CC (100 fF) = **4 C**
+- Ports (9): CK CKB IBIAS (in) · VDD VSS (io) · I_P I_N Q_P Q_N (out)
+
+## New device geometries to de-risk BEFORE assembly (item 1a/1b, needs container)
+| device | where | de-risk |
+|---|---|---|
+| **nfet W=40 L=0.3** | 12 CML core + 2 bias tails | 40 µm > W=4 the library was built on. Generate one, READ real S/D pitch + gate + tap y-coords; W=40 is 10× taller than W=4 so NO vertical constant carries over. 40 µm < 200 µm bin so nf=1 is fine, but a 40 µm-tall single finger may want nf>1 folding — decide from the generated geometry. |
+| **nfet W=8 L=0.3 / L=1** | converter diff-pair + tail | standard-ish; same family as W=4, re-read if unsure. |
+| **nfet W=4/11/16 L=0.3** | converter inverters | small, W=4 family. |
+| **pfet W=8/10/26/44 L=0.3** | converter loads + inverters | pfet path proven (ib_ptest) at W=16; re-read W=44 (44 µm, still < 200). |
+| **ppolyf_u_1k** | R_SER (1k), loads (300), RFB (20k) | gencell `magic::gencell gf180mcu::ppolyf_u_1k`, defaults `w 1 l 2 rho 1000 val 2000 class resistor`. **1 kΩ = 1 square → w=2 l=2** (or w=1 l=1). **300 Ω = 0.3 sq → w=2 l=0.6** (min L 1 µm may force snaking/lower-value strategy — CHECK gencell minL). **20 kΩ = 20 sq → w=1 l=20, or snake=1** (long; use snake to fold). READ each flavor's real terminal coords + DRC (poly res has its own spacing + the res-marker layer). |
+| **CC cap 100 fF** | 4× | the `.sch` uses `capa.sym` (ideal). The LAYOUT needs a real gf180 cap flavor (MIM `cap_mim_*` or MOS cap). 100 fF: MIM ~ 100fF at ~ (area/Cdensity). READ the gencell + its LVS device name. This is the biggest unknown. |
+
+## OPEN QUESTIONS that gate the golden (answer in-container first)
+1. **ppolyf_u_1k LVS representation.** netgen may see it as an `R` element (value) or as a
+   subckt `ppolyf_u_1k` with PLUS/MINUS/BODY pins. Extract one strapped resistor and read
+   the `.lvs.spice` device line — the golden's 12 resistors must use that exact form. Ideal
+   `device=resistor` in the `.sch` netlist will NOT match a ppolyf_u_1k layout device unless
+   the golden is written in the layout device's form (or netgen `property` maps it).
+2. **Cap device + LVS form.** Which gf180 cap flavor realizes 100 fF cleanly, and how does
+   netgen name it? The golden's 4 caps must match.
+3. **verify_cp.sh resistor/cap handling.** verify_cp extracts + LVSes vs the golden; confirm
+   it does not need an `ignore`/property tweak for the res/cap models (the fillcap ignore is
+   already in the setup).
+
+## Golden — TRANSISTOR lines (faithful, ready to paste; nets/sizes from the generator)
+Format `X<name> D G S B <model> L=<>u W=<>u nf=1 m=1`. Ports order = `.sch` subckt:
+`CK CKB IBIAS I_P I_N Q_P Q_N VDD VSS` (confirm exact order by netlisting the .sch).
+
+```
+* --- CML core (12x nfet W=40 L=0.3, bulk=VSS) ---
+XMA1 OIB  OQ  nTA   VSS nfet_03v3 L=0.3u W=40u nf=1 m=1
+XMA2 OI   OQB nTA   VSS nfet_03v3 L=0.3u W=40u nf=1 m=1
+XMA3 OIB  OI  nLA   VSS nfet_03v3 L=0.3u W=40u nf=1 m=1
+XMA4 OI   OIB nLA   VSS nfet_03v3 L=0.3u W=40u nf=1 m=1
+XMA5 nTA  CK  TAILA VSS nfet_03v3 L=0.3u W=40u nf=1 m=1
+XMA6 nLA  CKB TAILA VSS nfet_03v3 L=0.3u W=40u nf=1 m=1
+XMB1 OQB  OIB nTB   VSS nfet_03v3 L=0.3u W=40u nf=1 m=1
+XMB2 OQ   OI  nTB   VSS nfet_03v3 L=0.3u W=40u nf=1 m=1
+XMB3 OQB  OQ  nLB   VSS nfet_03v3 L=0.3u W=40u nf=1 m=1
+XMB4 OQ   OQB nLB   VSS nfet_03v3 L=0.3u W=40u nf=1 m=1
+XMB5 nTB  CKB TAILB VSS nfet_03v3 L=0.3u W=40u nf=1 m=1
+XMB6 nLB  CK  TAILB VSS nfet_03v3 L=0.3u W=40u nf=1 m=1
+* --- NMOS bias mirror off IBIAS (L=1, bulk=VSS) ---
+XM_BREF  IBIAS IBIAS VSS VSS nfet_03v3 L=1u W=4u  nf=1 m=1
+XM_TAILA TAILA IBIAS VSS VSS nfet_03v3 L=1u W=40u nf=1 m=1
+XM_TAILB TAILB IBIAS VSS VSS nfet_03v3 L=1u W=40u nf=1 m=1
+* --- 4x converter (tag IP/IN/QP/QN); INP,INM,OUT per tag below ---
+* per tag T with (INP,INM,OUT):  IP:(OIB,OI,I_P) IN:(OI,OIB,I_N) QP:(OQB,OQ,Q_P) QN:(OQ,OQB,Q_N)
+* XM_NT_T   NS_T  IBIAS VSS  VSS nfet L=1u   W=8u
+* XM_BN1_T  DN1_T INP   NS_T VSS nfet L=0.3u W=8u
+* XM_BN2_T  OC_T  INM   NS_T VSS nfet L=0.3u W=8u
+* XM_BP1_T  DN1_T DN1_T VDD  VDD pfet L=0.3u W=8u
+* XM_BP2_T  OC_T  DN1_T VDD  VDD pfet L=0.3u W=8u
+* XM_IP1_T  INVO1_T G1_T   VDD VDD pfet L=0.3u W=10u
+* XM_IN1_T  INVO1_T G1_T   VSS VSS nfet L=0.3u W=4u
+* XM_IP2_T  INVO2_T INVO1_T VDD VDD pfet L=0.3u W=26u
+* XM_IN2_T  INVO2_T INVO1_T VSS VSS nfet L=0.3u W=11u
+* XM_IP3_T  INVO3_T INVO2_T VDD VDD pfet L=0.3u W=44u
+* XM_IN3_T  INVO3_T INVO2_T VSS VSS nfet L=0.3u W=16u
+* CC_T   (cap)  OC_T   - G1_T        100f  -> real cap device (TBD)
+* RFB_T  (res)  INVO1_T- G1_T        20k   -> ppolyf_u_1k (TBD form)
+* R_SER_T(res)  INVO3_T- OUT         1k    -> ppolyf_u_1k (TBD form)
+```
+(NOTE: nfet terminal order in the golden is D G S B; the generator's `nfet(G,D,S,B)` maps to
+`X D G S B`. Verify against the actual `.sch` netlist once the container is back — do not
+trust this transcription blind for signoff.)
+
+## Floorplan approach (model on ibias_gen_v1's flat four-row assembly)
+- **CML core**: 2 latches (MA*, MB*), each = tail pair (MA5/MA6) + input pair (MA1/MA2) +
+  cross-coupled pair (MA3/MA4). W=40 devices dominate area. Differential -> keep OI/OIB and
+  OQ/OQB pairs symmetric (common-centroid the cross-coupled MA3:MA4 and MB3:MB4).
+- **300 Ω loads** sit above the CML to VDD (4 resistors).
+- **NMOS bias** (M_BREF diode + 2 tails) as a small mirror row (reuse the nfet_leg mirror
+  pattern; tails are W=40 like the CML).
+- **4 converters** as 4 identical columns (generated once, placed ×4 — the generator-proc
+  approach), each: diff pair + PMOS mirror load + CC + RFB + 3 inverters + R_SER.
+- Routing by layer-per-net-class (M2 intra, M3/M4 crossings, M5 power) as in ibias.
+- de-risk order per queue: 1a W=40 nfet -> 1b R/C -> 1c one CML latch -> 1d one converter ->
+  1e full assembly + `verify_cp.sh DIV2_QUAD_v1` exit 0.
+
+## Golden source-of-truth
+Generate the golden by **netlisting the current `.sch`** in-container (it is the validated
+design, commit f600af3 — do NOT edit it), then transform the ideal R/C into the layout device
+forms per the open questions above. The transistor lines here are a faithful preview to speed
+that up, not a substitute for the real netlist.
