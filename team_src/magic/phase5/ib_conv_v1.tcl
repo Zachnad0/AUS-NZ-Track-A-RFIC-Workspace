@@ -36,10 +36,10 @@ proc strap_inv {xoff Wn Wp pfx} {
     box values [expr {$xoff-383}] [expr {$syN-690}] [expr {$xoff+383}] [expr {$syN-570}] ; paint metal1
     box values [expr {$xoff-110}] [expr {$syN-600}] [expr {$xoff-54}] [expr {$syN+20}] ; paint metal1
     box values [expr {$xoff-108}] [expr {$syN-26}] [expr {$xoff-56}] [expr {$syN+26}] ; paint m2contact
-    box values [expr {$xoff-600}] [expr {$YP-($PGp+340)}] [expr {$xoff+600}] [expr {$gyP+400}] ; paint nwell
-    box values [expr {$xoff-400}] [expr {$gyP+200}] [expr {$xoff+400}] [expr {$gyP+320}] ; paint nsubdiff
-    box values [expr {$xoff-383}] [expr {$gyP+213}] [expr {$xoff+383}] [expr {$gyP+307}] ; paint nsubdiffcont
-    box values [expr {$xoff-400}] [expr {$gyP+200}] [expr {$xoff+400}] [expr {$gyP+360}] ; paint metal1
+    box values [expr {$xoff-600}] [expr {$YP-($PGp+340)}] [expr {$xoff+600}] [expr {$gyP+440}] ; paint nwell
+    box values [expr {$xoff-400}] [expr {$gyP+160}] [expr {$xoff+400}] [expr {$gyP+360}] ; paint nsubdiff
+    box values [expr {$xoff-383}] [expr {$gyP+173}] [expr {$xoff+383}] [expr {$gyP+347}] ; paint nsubdiffcont
+    box values [expr {$xoff-400}] [expr {$gyP+160}] [expr {$xoff+400}] [expr {$gyP+400}] ; paint metal1
     vseg metal2 [expr {$xoff-235}] $gyN $gyP $H
     via_m2m3 $xoff $dyN ; via_m2m3 $xoff $dyP ; vseg metal3 $xoff $dyN $dyP $H
     box values [expr {$xoff+122}] [expr {$syP-$H}] [expr {$xoff+428}] [expr {$syP+$H}] ; paint metal2
@@ -138,8 +138,10 @@ box values [expr {$rfx+189}] [expr {$rfy+189}] [expr {$rfx+563}] [expr {$rfy+235
 box values [expr {$rfx+1629}] [expr {$rfy+189}] [expr {$rfx+2003}] [expr {$rfy+235}] ; paint metal1
 # term-A -> G1 on M4 down into the cap M4
 via_m1m4 $tAx $tY ; vseg metal4 $tAx [expr {$ccy+200}] $tY $H
-# term-B -> S1 on M3 down to INV1 drain tie
-via_m1m3 $tBx $tY ; vseg metal3 $tBx $S1my $tY $H ; hseg metal3 $tBx $S1x $S1my $H
+# term-B -> S1 on M3: jog RIGHT to x3200 (clear of the cap x1500..2980) BEFORE descending,
+# so the S1 vertical never runs under the cap OC/M5 plate. Then down and to INV1 drain.
+via_m1m3 $tBx $tY ; hseg metal3 $tBx 3200 $tY $H
+vseg metal3 3200 $S1my $tY $H ; hseg metal3 3200 $S1x $S1my $H
 # ---------- R_SER: bot=S3 @ +(376,212), top=OUT @ +(376,784) ----------
 box values [expr {$rsx+189}] [expr {$rsy+189}] [expr {$rsx+563}] [expr {$rsy+235}] ; paint metal1
 box values [expr {$rsx+189}] [expr {$rsy+761}] [expr {$rsx+563}] [expr {$rsy+807}] ; paint metal1
@@ -154,11 +156,18 @@ set xVSSbus -1000
 hseg metal1 $xVSSbus -833 -1230 60
 foreach pfx {I1 I2 I3} { foreach {sx sy} $::CVSS($pfx) break ; hseg metal1 $xVSSbus $sx $sy 60 }
 set vlo [lindex $::CVSS(I3) 1] ; vseg metal1 $xVSSbus $vlo -1230 60
-# VDD bus: left metal1 vertical tying front-end VDD strip (y~YP+1240) + inverter VDD strips
+# VDD bus on METAL2 (its high-y hseg's cross the RFB, whose guard-ring metal1 is VSS
+# bulk -- a metal1 VDD bus shorted VDD to VSS there; M2 crosses the RFB metal1 and the
+# cap M4/M5 inter-layer). m2contact ties the M2 bus to each metal1 CVDD strip.
 set xVDDbus -1300
-hseg metal1 $xVDDbus -833 [expr {$YP+1240}] 60
-foreach pfx {I1 I2 I3} { foreach {sx sy} $::CVDD($pfx) break ; hseg metal1 $xVDDbus $sx $sy 60 }
-set vhi [lindex $::CVDD(I3) 1] ; vseg metal1 $xVDDbus [expr {$YP+1240}] $vhi 60
+hseg metal2 $xVDDbus -800 [expr {$YP+1240}] 60
+box values -826 [expr {$YP+1214}] -774 [expr {$YP+1266}] ; paint m2contact
+foreach pfx {I1 I2 I3} {
+    foreach {sx sy} $::CVDD($pfx) break
+    hseg metal2 $xVDDbus $sx $sy 60
+    box values [expr {$sx-26}] [expr {$sy-26}] [expr {$sx+26}] [expr {$sy+26}] ; paint m2contact
+}
+set vhi [lindex $::CVDD(I3) 1] ; vseg metal2 $xVDDbus [expr {$YP+1240}] $vhi 60
 
 select top cell
 drc on ; drc euclidean on ; drc check ; drc catchup
@@ -172,7 +181,7 @@ box values [expr {$xNT-260}] 1300 [expr {$xNT-210}] 1360 ; label IBIAS center me
 box values [expr {$xN1-260}] 1300 [expr {$xN1-210}] 1360 ; label INP center metal2 ; port make 2
 box values [expr {$xN2-260}] 1300 [expr {$xN2-210}] 1360 ; label INM center metal2 ; port make 3
 box values [expr {$rsx+348}] [expr {$rsy+761}] [expr {$rsx+404}] [expr {$rsy+807}] ; label OUT center metal1 ; port make 4
-box values [expr {$xVDDbus-60}] 3000 [expr {$xVDDbus-60}] 3000 ; box size 56 56 ; label VDD center metal1 ; port make 5
+box values $xVDDbus [expr {$YP+1500}] $xVDDbus [expr {$YP+1500}] ; box size 56 56 ; label VDD center metal2 ; port make 5
 box values [expr {$xVSSbus-60}] -1300 [expr {$xVSSbus-60}] -1300 ; box size 56 56 ; label VSS center metal1 ; port make 6
 select top cell
 save $OUT/$CELL
