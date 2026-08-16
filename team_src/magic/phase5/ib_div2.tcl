@@ -192,6 +192,42 @@ box values -1178 [expr {$ly-28}] [expr {$xbias-500}] [expr {$ly+28}] ; paint met
 via_m2m3 -1150 $ly
 via_m1m2 [expr {$xbias-500}] $ly
 
+# ===== STAGE B: IP converter (getcell ib_conv_v1 + flatten; route 6 nets over-the-top) =====
+# The band y>3900 over the core+bias is clear on every layer (core tops at VDD y3800; all
+# cross-couple/CK/bias routing is at NEGATIVE y). Long INP/INM hauls go up-over-down on
+# spaced tracks; INP on M5, INM on M4, VDD haul on M4 @6500 (above the input hauls so its
+# riser clears them). Tap OIB @ its M3 west via x2200, OI @ its east via x10000 (both y600).
+proc via_m3m5 {x y} {
+    foreach l {metal3 metal4 metal5} { box values [expr {$x-44}] [expr {$y-44}] [expr {$x+44}] [expr {$y+44}] ; paint $l }
+    foreach v {via3 via4} { box values [expr {$x-28}] [expr {$y-28}] [expr {$x+28}] [expr {$y+28}] ; paint $v }
+}
+set bx 23500 ; set by -3330
+set OX [expr {$bx+1360}] ; set OY [expr {$by+2600}]
+box values $bx $by $bx $by ; getcell ib_conv_v1
+flatten ${CELL}_g ; load ${CELL}_g
+set ipIB [expr {$OX-235}] ; set ipINP [expr {$OX+965}] ; set ipINM [expr {$OX+2165}]
+set pY [expr {$OY+1330}] ; set ipVbus [expr {$OX-1300}]
+# landing pads: the conv INP/INM pins are only 50 wide -> too small for a stacked via (V2.3);
+# widen to +/-40 M2 before dropping vias.
+box values [expr {$ipINP-40}] [expr {$pY-40}] [expr {$ipINP+40}] [expr {$pY+40}] ; paint metal2
+box values [expr {$ipINM-40}] [expr {$pY-40}] [expr {$ipINM+40}] [expr {$pY+40}] ; paint metal2
+# INP <- OIB : M5 haul @5500 (INP native x965 is LEFT of the CC cap -> riser straight up)
+via_m2m5 2200 600 ; vseg metal5 2200 600 5500 44
+hseg metal5 2200 $ipINP 5500 44 ; vseg metal5 $ipINP $pY 5500 44 ; via_m2m5 $ipINP $pY
+# INM <- OI : the INM pin (native x2165) sits UNDER the CC MiM cap (native 1500..2980) whose
+# M4/M5 plates conflict -> escape WEST on M3 to native x1340 (left of the cap) THEN rise on M4.
+set inmEsc [expr {$OX+1340}]
+via_m2m3 $ipINM $pY ; hseg metal3 $inmEsc $ipINM $pY 28 ; via_m3m4 $inmEsc $pY
+vseg metal4 $inmEsc 600 5800 28 ; hseg metal4 10000 $inmEsc 5800 28 ; via_m2m4 10000 600
+# IBIAS : extend core M3 rail (y-2540) east, riser up to pin
+hseg metal3 21300 $ipIB -2540 28 ; vseg metal3 $ipIB -2540 $pY 28 ; via_m2m3 $ipIB $pY
+# VDD : riser @x8700 up to a M4 haul @6500 (above input hauls), east to the conv M2 bus
+vseg metal4 8700 3800 6500 28 ; hseg metal4 8700 $ipVbus 6500 28
+vseg metal4 $ipVbus 3850 6500 28 ; via_m2m4 $ipVbus 3850
+# VSS : extend the M2 collector plate east under the conv VSS pin, via to its M1 bus
+box values 21900 -2100 [expr {$OX-980}] -1900 ; paint metal2
+via_m1m2 [expr {$OX-1032}] -2002
+
 select top cell
 drc on ; drc euclidean on ; drc check ; drc catchup
 puts "DIV2_DRC=[drc list count total]"

@@ -55,3 +55,32 @@ guard ring OCCUPIED, CC cap = M4/M5 plates OCCUPIED). Inter-converter → core:
 Rule reminders: via stubs sit INSIDE a gate rail (not the edge, or V2.3); use `via_m4m5` at
 M4/M5 hops; M5 jog pad needs 92 clearance from a neighbouring M5 hseg (MT.2a); QUERY a rail's
 actual extent (leg procs offset gate rails, e.g. M_BREF gate @ x15268..15492, not xbr).
+
+## Stage B/C mechanism — PROVEN (getcell + flatten, not place_conv reparam)
+Reparameterising ib_conv_v1's ~100 hardcoded coords by (cx,cy) is too short-error-prone. The
+converter is a proven 14-device flat cell (bbox −1360,−2600 .. 9612,14564 = 10972×17164 iu =
+54.9×85.8 µm). REUSE IT VERBATIM:
+```
+box values $bx $by $bx $by ; getcell ib_conv_v1     ;# NO "child" arg (breaks it)
+flatten ${CELL}_g ; load ${CELL}_g                  ;# converter geometry pulled in flat
+```
+Verified in isolation: flatten → DRC 0, extract all → exactly 14 devices. getcell aligns the
+cell's bbox-LL (native −1360,−2600) to the box point, so the **effective offset is
+(bx+1360, by+2600)**. Native port (px,py) lands at parent (bx+1360+px, by+2600+py). With
+OX=bx+1360, OY=by+2600:
+| Port | native (px,py,layer) | parent (OX+px, OY+py) |
+|---|---|---|
+| IBIAS | (−235, 1330, M2) | front-end left |
+| INP | (965, 1330, M2) | → OIB |
+| INM | (2165, 1330, M2) | → OI |
+| VDD | (−1272, 4128, M2) | bus vertical @ OX−1300 |
+| VSS | (−1032, −1272, M1) | bus @ OX−1000 |
+| OUT | (9176, 7784, M1) | → I_P/I_N/Q_P/Q_N port |
+Getcell/flatten must happen in ib_div2_f AFTER CML straps; flatten to ib_div2_g; save writes
+ib_div2_g → ib_div2.mag. Routing (in ib_div2_g): the whole band y>3900 over the core+bias
+(x −1000..22000) is CLEAR on every layer (core tops at VDD y3800; cross-couple/CK/bias all at
+NEGATIVE y) — route the long INP/INM/IBIAS/VDD hauls "up-over-down" on M5 at spaced y-tracks
+(≥300 iu apart), tap OIB at its M3 west via x2200 and OI at its east via x10000 (both y600,
+clear of the x2600/8700 load risers). VSS: extend the M2 collector plate east to the conv VSS
+pin, via_m1m2. Partial golden gains 10th port I_P; conv nets → NS_IP/DN1_IP.. internal,
+INP=OIB INM=OI IBIAS=IBIAS VDD=VDD VSS=VSS OUT=I_P.
