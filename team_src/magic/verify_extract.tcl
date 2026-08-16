@@ -31,15 +31,8 @@ set drccount [drc list count total]
 puts "VERIFY_DRC_COUNT=$drccount"
 
 # ---- Extract device-level netlist for LVS (no parasitics) ----
-# merge aggressive: collapse truly-parallel identical fingers (same 4 nodes/L/W) into one
-# device with an M= multiplier. Folded CML/mirror devices (W40 -> w4 nf10, mirror m24) draw
-# as N fingers; without this they extract as N separate devices and never match the goldens,
-# which are written in the merged form (m=24, or W40 nf=1 = the summed-width equivalent that
-# netgen accepts since nfet/pfet_03v3 are pin-only black boxes). Only identical same-net
-# devices merge, so distinct/common-centroid devices on different nets are untouched.
 extract all
 ext2spice lvs
-ext2spice merge aggressive
 ext2spice -o $outsp
 puts "VERIFY_EXTRACT_DONE=$outsp"
 quit -noprompt
