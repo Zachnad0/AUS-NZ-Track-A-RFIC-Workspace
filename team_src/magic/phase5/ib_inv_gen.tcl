@@ -69,8 +69,10 @@ proc make_inv {cell Wn Wp} {
     puts "${cell}_SAVED"
 }
 
-# INV1 (10/4) already validated + committed as its own standalone ib_inv1; this proc
-# reproduces it identically (verified) and owns the two larger instances.
+# All three converter inverters share this ONE construction path (make_inv). ib_inv1 was
+# formerly a hand-built one-off (ib_inv1.tcl, now retired) -- regenerated here so the
+# assembly carries a single path per cell type.
+make_inv ib_inv1 4  10
 make_inv ib_inv2 11 26
 make_inv ib_inv3 16 44
 quit -noprompt
