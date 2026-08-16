@@ -64,11 +64,16 @@ set xI1 4800 ; set xI2 6400 ; set xI3 8000
 place_inv_dev $xI1 4  10 I1
 place_inv_dev $xI2 11 26 I2
 place_inv_dev $xI3 16 44 I3
-# passives: RFB (20k w2 l40) left of INV1; R_SER (1k w2 l2) right of INV3; CC (100f w5 l10)
-# in the channel above the front-end. gencell draws up/right from the box LL.
-box values 3900 3200 3900 3200 ; magic::gencell gf180mcu::ppolyf_u_1k RFB w 2 l 40
-box values 9000 200 9000 200 ; magic::gencell gf180mcu::ppolyf_u_1k RSER w 2 l 2
-box values 1600 5200 1600 5200 ; magic::gencell gf180mcu::cap_mim_2p0fF CC w 5 l 10
+# passives (measured). RFB = SERPENTINE nx2 l20.6 (r_length 40.04u = 20k, DRC-clean
+# both terminals at bottom: term-A=G1 @ LL+(376,212), term-B=S1 @ LL+(856,212));
+# CC cap w5 l10 (m4 bottom plate / m5 top plate, full bbox); R_SER w2 l2 (bot LL+(376,212)
+# top LL+(376,784)). All placed in the clear channel above the front-end / by INV3.
+set rfx 1500 ; set rfy 7000   ;# RFB snake LL
+set ccx 1500 ; set ccy 4200   ;# CC cap LL (bbox +1480 x +2240)
+set rsx 8800 ; set rsy 7000   ;# R_SER LL
+box values $rfx $rfy $rfx $rfy ; magic::gencell gf180mcu::ppolyf_u_1k RFB w 2 l 20.6 nx 2 snake 1
+box values $rsx $rsy $rsx $rsy ; magic::gencell gf180mcu::ppolyf_u_1k RSER w 2 l 2
+box values $ccx $ccy $ccx $ccy ; magic::gencell gf180mcu::cap_mim_2p0fF CC w 5 l 10
 flatten ${CELL}_f ; load ${CELL}_f
 
 # ---------- STRAP: front-end (native diff-pair) ----------
@@ -117,31 +122,31 @@ proc chain {src dst} {
 chain I1 I2
 chain I2 I3
 
-# ---------- CC cap: OC(M5) -> top plate ; bottom plate -> G1(M2 gate tie of INV1) ----------
-# CAP GEOMETRY (measured): cap_mim_2p0fF w5 l10 draws a 1480 x 2240 iu cell from its LL;
-# METAL4 (bottom plate) AND METAL5 (top plate) BOTH span the full bbox (via4 between).
-# So contacting is trivial: any metal5 overlapping the cell = TOP terminal, any metal4
-# overlapping = BOTTOM terminal (different layers, no short). Route OC's M5 to overlap
-# the cap M5; route G1 up to a metal4 that overlaps the cap M4. NEXT-SESSION FIX: replace
-# the placeholder hseg's below with real overlap contacts onto the cap bbox at (1600,5200).
-set G1x [lindex $::CIN(I1) 0] ; set G1my [lindex $::CIN(I1) 1]
-# OC(M5 @ OCx,OCy) up to cap region y, across to cap top plate
-via_m2m5 $xN2 [expr {$YP+700}]
-hseg metal5 $xN2 2100 5700 44 ;# OC M5 into cap-top area (placeholder plate contact)
-# G1 access: gate tie M2 @ (G1x,G1my). bring bottom plate (m4) down to G1 on M4->M2
-via_m2m4 $G1x $G1my
-hseg metal4 2100 $G1x 5500 $H
-# ---------- RFB 20k: S1 -> G1 ----------
+# ---------- layer-per-net around the caps: OC=M5, G1=M4, S1=M3 (so the G1/S1 routes
+#            cross inter-layer, never short). Cap M4=bottom(G1) / M5=top(OC), full bbox. ----------
+set G1x [lindex $::CIN(I1) 0]      ;# INV1 gate tie M2 x (=4565)
 set S1x [lindex $::COUT(I1) 0] ; set S1my [lindex $::COUT(I1) 1]
-# RFB drawn from (3900,3200) w2 l40 -> vertical strip; ends ~ bottom y3200 / top y11200.
-# bottom end -> G1 (M2) ; top end -> S1 (M3). (metal1 over end polycontacts + risers)
-box values 3941 3389 4059 3435 ; paint metal1 ; via_m1m3 4000 3410 ; hseg metal3 3800 $G1x 3410 $H ; via_m2m3 $G1x 3410
-box values 3941 11189 4059 11235 ; paint metal1 ; via_m1m3 4000 11210
-# ---------- R_SER 1k: S3 -> OUT ----------
-set S3x [lindex $::COUT(I3) 0] ; set S3my [lindex $::COUT(I3) 1]
-# RSER from (9000,200) w2 l2 -> small; bottom end -> S3(M3) ; top end -> OUT port
-box values 9041 389 9159 435 ; paint metal1 ; via_m1m3 9100 410 ; hseg metal3 $S3x 9100 $S3my $H
-box values 9041 589 9159 635 ; paint metal1 ; via_m1m3 9100 610
+set S3x [lindex $::COUT(I3) 0]
+# OC: extend front-end OC M5 up into the cap M5 (top plate)
+vseg metal5 $xN2 [expr {$YP+700}] [expr {$ccy+400}] 44
+# G1: cap M4 (bottom) -> INV1 gate tie (M4 across, via down to M2)
+hseg metal4 [expr {$ccx+200}] $G1x [expr {$ccy+200}] $H
+via_m2m4 $G1x [expr {$ccy+200}]
+# RFB serpentine terminals (both at bottom): term-A=G1 @ +376, term-B=S1 @ +1816
+set tAx [expr {$rfx+376}] ; set tBx [expr {$rfx+856}] ; set tY [expr {$rfy+212}]
+box values [expr {$rfx+189}] [expr {$rfy+189}] [expr {$rfx+563}] [expr {$rfy+235}] ; paint metal1
+box values [expr {$rfx+1629}] [expr {$rfy+189}] [expr {$rfx+2003}] [expr {$rfy+235}] ; paint metal1
+# term-A -> G1 on M4 down into the cap M4
+via_m1m4 $tAx $tY ; vseg metal4 $tAx [expr {$ccy+200}] $tY $H
+# term-B -> S1 on M3 down to INV1 drain tie
+via_m1m3 $tBx $tY ; vseg metal3 $tBx $S1my $tY $H ; hseg metal3 $tBx $S1x $S1my $H
+# ---------- R_SER: bot=S3 @ +(376,212), top=OUT @ +(376,784) ----------
+box values [expr {$rsx+189}] [expr {$rsy+189}] [expr {$rsx+563}] [expr {$rsy+235}] ; paint metal1
+box values [expr {$rsx+189}] [expr {$rsy+761}] [expr {$rsx+563}] [expr {$rsy+807}] ; paint metal1
+# bottom term -> S3 (INV3 drain tie M3 @ x8000) on M4 (crosses the M3 VDD riser inter-layer)
+via_m1m4 [expr {$rsx+376}] [expr {$rsy+212}]
+hseg metal4 $S3x [expr {$rsx+376}] [expr {$rsy+212}] $H
+via_m3m4 $S3x [expr {$rsy+212}]
 
 # ---------- VDD / VSS unification ----------
 # VSS bus: left metal1 vertical tying front-end VSS strip + inverter VSS strips
@@ -166,7 +171,7 @@ if {[drc list count total] > 0} {
 box values [expr {$xNT-260}] 1300 [expr {$xNT-210}] 1360 ; label IBIAS center metal2 ; port make 1
 box values [expr {$xN1-260}] 1300 [expr {$xN1-210}] 1360 ; label INP center metal2 ; port make 2
 box values [expr {$xN2-260}] 1300 [expr {$xN2-210}] 1360 ; label INM center metal2 ; port make 3
-box values 9091 585 9147 641 ; label OUT center metal1 ; port make 4
+box values [expr {$rsx+348}] [expr {$rsy+761}] [expr {$rsx+404}] [expr {$rsy+807}] ; label OUT center metal1 ; port make 4
 box values [expr {$xVDDbus-60}] 3000 [expr {$xVDDbus-60}] 3000 ; box size 56 56 ; label VDD center metal1 ; port make 5
 box values [expr {$xVSSbus-60}] -1300 [expr {$xVSSbus-60}] -1300 ; box size 56 56 ; label VSS center metal1 ; port make 6
 select top cell

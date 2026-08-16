@@ -1,0 +1,16 @@
+.subckt ib_conv_v1 IBIAS INP INM OUT VDD VSS
+XMNT  NS  IBIAS VSS VSS nfet_03v3 L=1u   W=8u nf=1 m=1
+XMBN1 DN1 INP   NS  VSS nfet_03v3 L=0.3u W=8u nf=1 m=1
+XMBN2 OC  INM   NS  VSS nfet_03v3 L=0.3u W=8u nf=1 m=1
+XMBP1 DN1 DN1   VDD VDD pfet_03v3 L=0.3u W=8u nf=1 m=1
+XMBP2 OC  DN1   VDD VDD pfet_03v3 L=0.3u W=8u nf=1 m=1
+XMIP1 S1 G1 VDD VDD pfet_03v3 L=0.3u W=10u nf=1 m=1
+XMIN1 S1 G1 VSS VSS nfet_03v3 L=0.3u W=4u  nf=1 m=1
+XMIP2 S2 S1 VDD VDD pfet_03v3 L=0.3u W=26u nf=1 m=1
+XMIN2 S2 S1 VSS VSS nfet_03v3 L=0.3u W=11u nf=1 m=1
+XMIP3 S3 S2 VDD VDD pfet_03v3 L=0.3u W=44u nf=1 m=1
+XMIN3 S3 S2 VSS VSS nfet_03v3 L=0.3u W=16u nf=1 m=1
+XCC   OC G1 cap_mim_2f0_m4m5_noshield c_width=5u c_length=10u
+XRFB  S1 G1 VSS ppolyf_u_1k r_width=2u r_length=40.04u
+XRSER S3 OUT VSS ppolyf_u_1k r_width=2u r_length=2u
+.ends ib_conv_v1
