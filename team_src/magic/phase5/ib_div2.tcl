@@ -166,6 +166,17 @@ foreach xb [list $xbr $xta $xtb] {
     box values [expr {$xb-40}] [expr {$ybias-1060}] [expr {$xb+40}] [expr {$ybias-570}] ; paint metal1
     box values [expr {$xb-26}] [expr {$ybias-626}] [expr {$xb+26}] [expr {$ybias-574}] ; paint m2contact
 }
+# VSS METAL RAIL: M3 spine @ x-1150 (left of the gate M2 rails, which reach -1060; M3 has no
+# gate structures and clears the load M3 risers @ x2600/8700). Ties the A/B taps directly and
+# the bias tap via an M2 link (inter-layer over the B-load M3 risers). pwell stays the bulk tie.
+box values -1150 [expr {$yA-1120}] -833 [expr {$yA-960}] ; paint metal1
+box values -1150 [expr {$yB-1120}] -833 [expr {$yB-960}] ; paint metal1
+vseg metal3 -1150 [expr {$yB-1040}] [expr {$yA-1040}] 56
+via_m1m3 -1150 [expr {$yA-1040}] ; via_m1m3 -1150 [expr {$yB-1040}]
+set ly [expr {$ybias-1030}]
+box values -1178 [expr {$ly-28}] [expr {$xbias-500}] [expr {$ly+28}] ; paint metal2
+via_m2m3 -1150 $ly
+via_m1m2 [expr {$xbias-500}] $ly
 
 select top cell
 drc on ; drc euclidean on ; drc check ; drc catchup
