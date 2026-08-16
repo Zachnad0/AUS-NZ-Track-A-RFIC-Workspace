@@ -10,6 +10,11 @@ set CELL ib_div2
 set H 28 ; set H5 44
 proc hseg {lay x1 x2 y hw} { box values [expr {$x1-$hw}] [expr {$y-$hw}] [expr {$x2+$hw}] [expr {$y+$hw}] ; paint $lay }
 proc vseg {lay x y1 y2 hw} { box values [expr {$x-$hw}] [expr {$y1-$hw}] [expr {$x+$hw}] [expr {$y2+$hw}] ; paint $lay }
+proc via_m4m5 {x y} {
+    box values [expr {$x-44}] [expr {$y-44}] [expr {$x+44}] [expr {$y+44}] ; paint metal4
+    box values [expr {$x-44}] [expr {$y-44}] [expr {$x+44}] [expr {$y+44}] ; paint metal5
+    box values [expr {$x-28}] [expr {$y-28}] [expr {$x+28}] [expr {$y+28}] ; paint via4
+}
 
 set P 2600
 # device x-columns (same for both latch rows): row order [5 1 3 4 2 6]
@@ -102,6 +107,26 @@ proc route_latch {yoff} {
 }
 route_latch $yA
 route_latch $yB
+
+# ---------- CROSS-COUPLE (master-slave). Outputs are M3 @ y+600; gates are M2 @ y+960.
+# M5 is free in the sub-y+960 region at the output/gate columns (nL's M5 hseg is at y+1150,
+# its risers at x=5600/8200/12600 only). Straight nets on M5 verticals; the two twisted
+# nets (OQ->A.M1, OQB->A.M2) use a gap-channel hop (OQ on M5, OQB on M4, so they cross
+# inter-layer). OIB(A)->MB1.g ; OI(A)->MB2.g ; OQ(B)->MA1.g ; OQB(B)->MA2.g.
+set g1 [expr {$yA-3200}] ; set g2 [expr {$yA-3800}]   ;# two gap horizontal tracks
+# OIB (A out @2400) -> B.MB1.g (rail 2338..3160): straight M5 vertical
+via_m2m5 2400 [expr {$yA+600}] ; vseg metal5 2400 [expr {$yB+960}] [expr {$yA+600}] $H5 ; via_m2m5 2400 [expr {$yB+960}]
+# OI (A out, extend M3 to 10400) -> B.MB2.g (rail 10138..10960): straight M5 vertical
+hseg metal3 10000 10400 [expr {$yA+600}] $H
+via_m2m5 10400 [expr {$yA+600}] ; vseg metal5 10400 [expr {$yB+960}] [expr {$yA+600}] $H5 ; via_m2m5 10400 [expr {$yB+960}]
+# OQ (B out @8700) -> A.MA1.g (rail 2338..3160): up on M5 @8700, gap-hop M5 @g1, up @2800
+via_m2m5 8700 [expr {$yB+600}] ; vseg metal5 8700 $g1 [expr {$yB+600}] $H5
+hseg metal5 2800 8700 $g1 $H5
+vseg metal5 2800 $g1 [expr {$yA+960}] $H5 ; via_m2m5 2800 [expr {$yA+960}]
+# OQB (B out @4800) -> A.MA2.g (rail 10138..10960): up @4800, gap-hop on M4 @g2, up @10600
+via_m2m5 4800 [expr {$yB+600}] ; vseg metal5 4800 $g2 [expr {$yB+600}] $H5 ; via_m4m5 4800 $g2
+hseg metal4 4800 10600 $g2 $H
+via_m4m5 10600 $g2 ; vseg metal5 10600 $g2 [expr {$yA+960}] $H5 ; via_m2m5 10600 [expr {$yA+960}]
 
 select top cell
 drc on ; drc euclidean on ; drc check ; drc catchup
