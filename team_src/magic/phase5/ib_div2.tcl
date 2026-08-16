@@ -155,9 +155,12 @@ via_m3m4 0 $g4 ; vseg metal3 0 [expr {$yB+960}] $g4 $H ; via_m2m3 0 [expr {$yB+9
 # TAILA=M_TAILA.d->A.TAIL(M3 @ yA-750) ; TAILB=M_TAILB.d->B.TAIL(M3 @ yB-750). ----------
 set xbr $xbias ; set xta [expr {$xbias+2100}] ; set xtb [expr {$xbias+5700}]
 set gy [expr {$ybias+960}] ; set dy [expr {$ybias+600}]
-via_m2m3 $xbr $gy ; via_m2m3 $xbr $dy ; vseg metal3 $xbr $dy $gy $H
-via_m2m4 $xbr $gy ; via_m2m4 $xta $gy ; via_m2m4 $xtb $gy
-hseg metal4 $xbr $xtb $gy $H
+# M_BREF gate M2 rail spans x15268..15492 (leg offsets the gate left of xbr=15600), and its
+# drain rail 15408..15792 -> tie diode + reach IBIAS at x15450 (inside both), not at xbr.
+via_m2m3 15450 $gy ; via_m2m3 15450 $dy ; vseg metal3 15450 $dy $gy $H
+# IBIAS gate rail on M3 (not M4) so the TAILA/TAILB M4 drain risers cross it inter-layer
+via_m2m3 15450 $gy ; via_m2m3 $xta $gy ; via_m2m3 $xtb $gy
+hseg metal3 15450 $xtb $gy $H
 via_m2m4 $xta $dy ; vseg metal4 $xta [expr {$yA-750}] $dy $H ; hseg metal4 13000 $xta [expr {$yA-750}] $H ; via_m3m4 13000 [expr {$yA-750}]
 via_m2m4 $xtb $dy ; vseg metal4 $xtb $dy [expr {$yB-750}] $H ; hseg metal4 13000 $xtb [expr {$yB-750}] $H ; via_m3m4 13000 [expr {$yB-750}]
 
@@ -193,7 +196,7 @@ if {[drc list count total] > 0} {
 # ---------- ports (Stage A: CK CKB IBIAS VDD VSS + OI OIB OQ OQB exposed) ----------
 box values -20 [expr {$yA+940}] 20 [expr {$yA+980}] ; label CK center metal2 ; port make 1
 box values 12980 [expr {$yA+940}] 13020 [expr {$yA+980}] ; label CKB center metal2 ; port make 2
-box values [expr {$xbr-20}] [expr {$gy-20}] [expr {$xbr+20}] [expr {$gy+20}] ; label IBIAS center metal2 ; port make 3
+box values 15430 [expr {$gy-20}] 15470 [expr {$gy+20}] ; label IBIAS center metal2 ; port make 3
 box values 4980 [expr {$yA+3772}] 5020 [expr {$yA+3828}] ; label VDD center metal4 ; port make 4
 box values 4980 [expr {$yA-1060}] 5020 [expr {$yA-1020}] ; label VSS center metal1 ; port make 5
 box values 8672 [expr {$yA+572}] 8728 [expr {$yA+628}] ; label OI center metal3 ; port make 6
