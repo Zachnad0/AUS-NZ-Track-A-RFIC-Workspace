@@ -170,10 +170,16 @@ hseg metal4 -1000 2600 [expr {$yB+3800}] $H
 vseg metal4 -1000 [expr {$yB+3800}] [expr {$yA+3800}] $H
 # ---------- VSS: all taps share the one pwell. Drop the 3 bias sources onto the bias tap
 # (M2 source rail -> metal1 riser -> the tap = pwell = VSS). ----------
-foreach xb [list $xbr $xta $xtb] {
-    box values [expr {$xb-40}] [expr {$ybias-1060}] [expr {$xb+40}] [expr {$ybias-570}] ; paint metal1
-    box values [expr {$xb-26}] [expr {$ybias-626}] [expr {$xb+26}] [expr {$ybias-574}] ; paint m2contact
-}
+# EM (0b): VSS carries ~4.8mA (CML tails 2x2.4mA) now, ~17mA peak w/ converters. Widen:
+# a 7.5um-tall M2 collector plate over the bias (the aggregate VSS node), wide (500) source
+# risers, m2contacts. VSS port sits here so the tail current exits on wide metal, not the
+# thin M3 spine (which now only ties the low-current bulk taps). Converters tap this in B/C.
+box values [expr {$xbias-600}] [expr {$ybias-2500}] [expr {$xbias+6300}] [expr {$ybias-1000}] ; paint metal2
+# The nfet source rail is already M2 -> connect it to the plate with WIDE M2 (no metal1,
+# so no collision with the interleaved TAILA/B drain straps). M_TAILA/B wide, M_BREF narrow.
+box values [expr {$xta-250}] [expr {$ybias-1000}] [expr {$xta+250}] [expr {$ybias-580}] ; paint metal2
+box values [expr {$xtb-250}] [expr {$ybias-1000}] [expr {$xtb+250}] [expr {$ybias-580}] ; paint metal2
+box values [expr {$xbr-40}]  [expr {$ybias-1000}] [expr {$xbr+40}]  [expr {$ybias-580}] ; paint metal2
 # VSS METAL RAIL: M3 spine @ x-1150 (left of the gate M2 rails, which reach -1060; M3 has no
 # gate structures and clears the load M3 risers @ x2600/8700). Ties the A/B taps directly and
 # the bias tap via an M2 link (inter-layer over the B-load M3 risers). pwell stays the bulk tie.
@@ -198,7 +204,7 @@ box values -20 [expr {$yA+940}] 20 [expr {$yA+980}] ; label CK center metal2 ; p
 box values 12980 [expr {$yA+940}] 13020 [expr {$yA+980}] ; label CKB center metal2 ; port make 2
 box values 15430 [expr {$gy-20}] 15470 [expr {$gy+20}] ; label IBIAS center metal2 ; port make 3
 box values 4980 [expr {$yA+3772}] 5020 [expr {$yA+3828}] ; label VDD center metal4 ; port make 4
-box values 4980 [expr {$yA-1060}] 5020 [expr {$yA-1020}] ; label VSS center metal1 ; port make 5
+box values [expr {$xbias+1980}] [expr {$ybias-1780}] [expr {$xbias+2020}] [expr {$ybias-1740}] ; label VSS center metal2 ; port make 5
 box values 8672 [expr {$yA+572}] 8728 [expr {$yA+628}] ; label OI center metal3 ; port make 6
 box values 2572 [expr {$yA+572}] 2628 [expr {$yA+628}] ; label OIB center metal3 ; port make 7
 box values 8672 [expr {$yB+572}] 8728 [expr {$yB+628}] ; label OQ center metal3 ; port make 8
