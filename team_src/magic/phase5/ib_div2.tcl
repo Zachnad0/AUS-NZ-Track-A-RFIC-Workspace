@@ -137,11 +137,13 @@ via_m4m5 10600 $g2 ; vseg metal5 10600 $g2 [expr {$yA+960}] $H5 ; via_m2m5 10600
 # ---------- CK / CKB (cross-mirrored clock feed). x0: M3 free; x13000: M4 free (below y+1150).
 # CK -> A.MA5.g(x0,+960) + B.MB6.g(x13000). CKB -> A.MA6.g(x13000) + B.MB5.g(x0). ----------
 set g3 [expr {$yA-2400}] ; set g4 [expr {$yA-4600}]
+# CK B-stub @ x12500, CKB A-stub @ x12000 (both within MB6/MA6 gate rail 12000..13560) so
+# they don't overlap each other or TAILA's M4 hseg (13000..17700 @ y-750).
 via_m2m3 0 [expr {$yA+960}] ; vseg metal3 0 $g3 [expr {$yA+960}] $H
-hseg metal3 0 13000 $g3 $H
-via_m3m4 13000 $g3 ; vseg metal4 13000 [expr {$yB+960}] $g3 $H ; via_m2m4 13000 [expr {$yB+960}]
-via_m2m4 13000 [expr {$yA+960}] ; vseg metal4 13000 $g4 [expr {$yA+960}] $H
-hseg metal4 0 13000 $g4 $H
+hseg metal3 0 12500 $g3 $H
+via_m3m4 12500 $g3 ; vseg metal4 12500 [expr {$yB+960}] $g3 $H ; via_m2m4 12500 [expr {$yB+960}]
+via_m2m4 12300 [expr {$yA+960}] ; vseg metal4 12300 $g4 [expr {$yA+960}] $H
+hseg metal4 0 12300 $g4 $H
 via_m3m4 0 $g4 ; vseg metal3 0 [expr {$yB+960}] $g4 $H ; via_m2m3 0 [expr {$yB+960}]
 
 # ---------- NMOS bias mirror. IBIAS=M_BREF.g+M_BREF.d(diode)+M_TAILA.g+M_TAILB.g ;
