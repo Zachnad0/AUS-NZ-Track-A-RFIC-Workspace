@@ -118,8 +118,12 @@ chain I1 I2
 chain I2 I3
 
 # ---------- CC cap: OC(M5) -> top plate ; bottom plate -> G1(M2 gate tie of INV1) ----------
-# cap CC drawn from LL (1600,5200): plates ~ m4 (bottom) / m5 (top). Access both plates.
-# top(m5) -> OC(M5) route ; bottom(m4) -> G1.  (approx plate access points; refine on DRC)
+# CAP GEOMETRY (measured): cap_mim_2p0fF w5 l10 draws a 1480 x 2240 iu cell from its LL;
+# METAL4 (bottom plate) AND METAL5 (top plate) BOTH span the full bbox (via4 between).
+# So contacting is trivial: any metal5 overlapping the cell = TOP terminal, any metal4
+# overlapping = BOTTOM terminal (different layers, no short). Route OC's M5 to overlap
+# the cap M5; route G1 up to a metal4 that overlaps the cap M4. NEXT-SESSION FIX: replace
+# the placeholder hseg's below with real overlap contacts onto the cap bbox at (1600,5200).
 set G1x [lindex $::CIN(I1) 0] ; set G1my [lindex $::CIN(I1) 1]
 # OC(M5 @ OCx,OCy) up to cap region y, across to cap top plate
 via_m2m5 $xN2 [expr {$YP+700}]
