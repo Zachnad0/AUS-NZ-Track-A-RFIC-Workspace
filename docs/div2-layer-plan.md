@@ -84,3 +84,37 @@ NEGATIVE y) — route the long INP/INM/IBIAS/VDD hauls "up-over-down" on M5 at s
 clear of the x2600/8700 load risers). VSS: extend the M2 collector plate east to the conv VSS
 pin, via_m1m2. Partial golden gains 10th port I_P; conv nets → NS_IP/DN1_IP.. internal,
 INP=OIB INM=OI IBIAS=IBIAS VDD=VDD VSS=VSS OUT=I_P.
+
+## Stage B ACTUAL (IP, CLOSED) — corrections to the mechanism above
+- Converter is a **hierarchical child**, NOT flattened. A 2nd `flatten` shatters the CML folded
+  W40 fets into 147 unmergeable fingers → LVS device-count blows up. `getcell ib_conv_v1`
+  (no flatten); netgen auto-flattens the child to compare against the flat golden. Golden built
+  by grepping the IP section out of the full `DIV2_QUAD_v1_golden.spice` (`^X\S*_IP `).
+- getcell aligns bbox-LL to the box → effective offset (bx+1360, by+2600). IP at bx23500,
+  by−3330 (OX24860, OY−730) → front-end pins land at y600, level with latch-A outputs.
+- INM pin (native x2165) sits UNDER the CC MiM cap AND the converter's DN1 gate net runs on M4
+  right over the pin. Route INM: OI tap M4 → haul → via_m4m5 in the clear gap → M5 down at
+  native x1340 (LEFT of cap) → M3 east UNDER the cap to the pin. A straight M4 riser shorts DN1.
+- I_P port: PAINT a top-level M1 patch over the child OUT port before `label`+`port make`; a bare
+  label lands on empty top metal and reads as a floating net.
+- Gate MUST run `PDK=gf180mcuD PDK_ROOT=/foss/pdks verify_cp.sh` (ambient PDK=ihp-sg13g2 breaks
+  the netgen setup). NO ext2spice merge needed — netgen combines the folds itself.
+
+## Stage C FLOORPLAN (the gating decision — resolve BEFORE routing)
+IP works because it sits BESIDE the core with its front-end (INP/INM/IBIAS + VDD/VSS bus) facing
+the core, so all 6 nets are SHORT lateral hops. The other three cannot all do that:
+- Tiled same-side (all east): far converters' hauls cross near converters' bodies → the cap
+  M4/M5 plates guarantee MIMTM shorts. REJECTED.
+- Vertical stacking: no body-crossing, but VSS/VDD/IBIAS then run the full ~17k-iu core height
+  across every core net. REJECTED (worse).
+- **Mirrored side-placement (RECOMMENDED):** IP east unmirrored (done). Place **IN, QP, QN with
+  `getcell ib_conv_v1` then `sideways`** (mirror-x) on the WEST / opposite side so each front-end
+  faces the core → short hauls like IP. IP+IN feed latch A (OI/OIB, y600 band); QP+QN feed latch
+  B (OQ/OQB, yB+600=−6400 band) so place the Q pair lower. Symmetric: IP/IN mirror-paired on
+  OI/OIB, QP/QN on OQ/OQB. TODO next session: prove `sideways` (getcell then sideways; the
+  post-getcell box readout is unreliable in an empty cell — instead `select`, `sideways`, then
+  read the instance transform / find a labelled port to fix the mirrored pin coords), then route
+  each converter with IP's 6-net pattern, one rung each. Golden: grep `_IN`/`_QP`/`_QN` sections
+  from `DIV2_QUAD_v1_golden.spice`, extend ports I_N/Q_P/Q_N (47→61→75 devices). Stage D renames
+  the cell to DIV2_QUAD_v1 and DROPS OI/OIB/OQ/OQB as ports (fully internal once all 4 tap them);
+  final 9 ports CK CKB IBIAS I_P I_N Q_P Q_N VDD VSS.
