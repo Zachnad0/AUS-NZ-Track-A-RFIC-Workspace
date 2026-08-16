@@ -25,10 +25,11 @@ cellname create $CELL ; load $CELL
 foreach {nm x} [list MA5 $x5 MA1 $x1 MA3 $x3 MA4 $x4 MA2 $x2 MA6 $x6] { place_nfet 10 $x $nm 0.3 $yA }
 foreach {nm x} [list MB5 $x5 MB1 $x1 MB3 $x3 MB4 $x4 MB2 $x2 MB6 $x6] { place_nfet 10 $x $nm 0.3 $yB }
 # 300R loads (w10 l3) above each latch row: A at yA+2400, B at yB+2400. LL x = out-col-2136ish
-box values [expr {$x1+64}] [expr {$yA+2400}] [expr {$x1+64}] [expr {$yA+2400}] ; magic::gencell gf180mcu::ppolyf_u_1k RA1 w 10 l 3
-box values [expr {$x2+64}] [expr {$yA+2400}] [expr {$x2+64}] [expr {$yA+2400}] ; magic::gencell gf180mcu::ppolyf_u_1k RA2 w 10 l 3
-box values [expr {$x1+64}] [expr {$yB+2400}] [expr {$x1+64}] [expr {$yB+2400}] ; magic::gencell gf180mcu::ppolyf_u_1k RB1 w 10 l 3
-box values [expr {$x2+64}] [expr {$yB+2400}] [expr {$x2+64}] [expr {$yB+2400}] ; magic::gencell gf180mcu::ppolyf_u_1k RB2 w 10 l 3
+# load LL = ib_cml positions (RA1 above OIB @2264, RA2 above OI @7464) for both rows
+box values 2264 [expr {$yA+2400}] 2264 [expr {$yA+2400}] ; magic::gencell gf180mcu::ppolyf_u_1k RA1 w 10 l 3
+box values 7464 [expr {$yA+2400}] 7464 [expr {$yA+2400}] ; magic::gencell gf180mcu::ppolyf_u_1k RA2 w 10 l 3
+box values 2264 [expr {$yB+2400}] 2264 [expr {$yB+2400}] ; magic::gencell gf180mcu::ppolyf_u_1k RB1 w 10 l 3
+box values 7464 [expr {$yB+2400}] 7464 [expr {$yB+2400}] ; magic::gencell gf180mcu::ppolyf_u_1k RB2 w 10 l 3
 # 3 NMOS bias: M_BREF W4 L1 diode, M_TAILA/B W40 L1 (nf=10)
 # M_TAILA/B are nf=10 L=1 (maxc=1520, ~3.2um wide) -> space ~3600
 place_nfet 1  $xbias              M_BREF  1 $ybias 4
@@ -52,6 +53,55 @@ proc pwell_row {x0 x1 yoff} {
 pwell_row $x5 $x6 $yA
 pwell_row $x5 $x6 $yB
 pwell_row $xbias [expr {$xbias+5700}] $ybias
+
+# ---------- per-latch INTERNAL routing (ib_cml geometry, offset by yoff) ----------
+# nets internal to a latch: outB(=M1.d+M3.d) out(=M2.d+M4.d) nT(=M5.d+M1.s+M2.s)
+# nL(=M6.d+M3.s+M4.s) TAIL(=M5.s+M6.s) + cross-gates (3.g->out, 4.g->outB) + loads->out/outB.
+proc route_latch {yoff} {
+    global x1 x2 x3 x4 x5 x6 H H5
+    # outB (M3, y+600): M1.d(-400)+M3.d(-400)
+    via_m2m3 [expr {$x1-400}] [expr {$yoff+600}] ; via_m2m3 [expr {$x3-400}] [expr {$yoff+600}]
+    hseg metal3 [expr {$x1-400}] [expr {$x3-400}] [expr {$yoff+600}] $H
+    # out (M3, y+600): M2.d(-400)+M4.d(-400)
+    via_m2m3 [expr {$x2-400}] [expr {$yoff+600}] ; via_m2m3 [expr {$x4-400}] [expr {$yoff+600}]
+    hseg metal3 [expr {$x4-400}] [expr {$x2-400}] [expr {$yoff+600}] $H
+    # nT (M4, y-900): M5.d(-400,+600)+M1.s(+400)+M2.s(+400)
+    via_m2m4 [expr {$x5-400}] [expr {$yoff+600}] ; via_m2m4 [expr {$x1+400}] [expr {$yoff-600}] ; via_m2m4 [expr {$x2+400}] [expr {$yoff-600}]
+    vseg metal4 [expr {$x5-400}] [expr {$yoff-900}] [expr {$yoff+600}] $H
+    hseg metal4 [expr {$x5-400}] [expr {$x2+400}] [expr {$yoff-900}] $H
+    vseg metal4 [expr {$x1+400}] [expr {$yoff-900}] [expr {$yoff-600}] $H
+    vseg metal4 [expr {$x2+400}] [expr {$yoff-900}] [expr {$yoff-600}] $H
+    # nL (M5, y+1150): M6.d(-400,+600)+M3.s(+400)+M4.s(+400)
+    via_m2m5 [expr {$x6-400}] [expr {$yoff+600}] ; via_m2m5 [expr {$x3+400}] [expr {$yoff-600}] ; via_m2m5 [expr {$x4+400}] [expr {$yoff-600}]
+    vseg metal5 [expr {$x6-400}] [expr {$yoff+600}] [expr {$yoff+1150}] $H5
+    hseg metal5 [expr {$x3+400}] [expr {$x6-400}] [expr {$yoff+1150}] $H5
+    vseg metal5 [expr {$x3+400}] [expr {$yoff-600}] [expr {$yoff+1150}] $H5
+    vseg metal5 [expr {$x4+400}] [expr {$yoff-600}] [expr {$yoff+1150}] $H5
+    # TAIL (M3, y-750): M5.s(+400)+M6.s(+400)
+    via_m2m3 [expr {$x5+400}] [expr {$yoff-600}] ; via_m2m3 [expr {$x6+400}] [expr {$yoff-600}]
+    vseg metal3 [expr {$x5+400}] [expr {$yoff-750}] [expr {$yoff-600}] $H
+    hseg metal3 [expr {$x5+400}] [expr {$x6+400}] [expr {$yoff-750}] $H
+    vseg metal3 [expr {$x6+400}] [expr {$yoff-750}] [expr {$yoff-600}] $H
+    # cross-gates: M3.g->out (M3), M4.g->outB (M4)
+    via_m2m3 $x3 [expr {$yoff+960}] ; via_m2m3 [expr {$x4-400}] [expr {$yoff+600}]
+    hseg metal3 $x3 [expr {$x4-400}] [expr {$yoff+960}] $H
+    vseg metal3 [expr {$x4-400}] [expr {$yoff+600}] [expr {$yoff+960}] $H
+    via_m2m4 $x4 [expr {$yoff+960}] ; via_m2m4 [expr {$x3-400}] [expr {$yoff+600}]
+    hseg metal4 [expr {$x3-400}] $x4 [expr {$yoff+960}] $H
+    vseg metal4 [expr {$x3-400}] [expr {$yoff+600}] [expr {$yoff+960}] $H
+    # loads: R1(outB) bottom->outB(M3), R2(out) bottom->out(M3), tops->VDD rail (M4 y+3800)
+    box values 2453 [expr {$yoff+2589}] 4427 [expr {$yoff+2635}] ; paint metal1
+    via_m1m3 2600 [expr {$yoff+2610}] ; vseg metal3 2600 [expr {$yoff+600}] [expr {$yoff+2610}] $H
+    box values 2453 [expr {$yoff+3361}] 4427 [expr {$yoff+3407}] ; paint metal1
+    via_m1m4 2600 [expr {$yoff+3384}] ; vseg metal4 2600 [expr {$yoff+3384}] [expr {$yoff+3800}] $H
+    box values 7653 [expr {$yoff+2589}] 9627 [expr {$yoff+2635}] ; paint metal1
+    via_m1m3 8700 [expr {$yoff+2610}] ; vseg metal3 8700 [expr {$yoff+600}] [expr {$yoff+2610}] $H
+    box values 7653 [expr {$yoff+3361}] 9627 [expr {$yoff+3407}] ; paint metal1
+    via_m1m4 8700 [expr {$yoff+3384}] ; vseg metal4 8700 [expr {$yoff+3384}] [expr {$yoff+3800}] $H
+    hseg metal4 2600 8700 [expr {$yoff+3800}] $H
+}
+route_latch $yA
+route_latch $yB
 
 select top cell
 drc on ; drc euclidean on ; drc check ; drc catchup
