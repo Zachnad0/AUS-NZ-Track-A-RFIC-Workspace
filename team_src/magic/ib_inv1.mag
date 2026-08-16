@@ -1,9 +1,9 @@
 magic
 tech gf180mcuD
 magscale 1 10
-timestamp 1786848706
+timestamp 1786864218
 << nwell >>
-rect -600 3632 600 6524
+rect -600 3632 600 6564
 << pwell >>
 rect -400 -1400 400 700
 << nmos >>
@@ -40,14 +40,14 @@ rect -383 -1277 -366 -1183
 rect 366 -1277 383 -1183
 rect -383 -1290 383 -1277
 << nsubdiff >>
-rect -400 6431 400 6444
-rect -400 6337 -383 6431
-rect 383 6337 400 6431
-rect -400 6324 400 6337
+rect -420 6471 420 6504
+rect -420 6297 -383 6471
+rect 383 6297 420 6471
+rect -420 6264 420 6297
 << psubdiffcont >>
 rect -366 -1277 366 -1183
 << nsubdiffcont >>
-rect -383 6337 383 6431
+rect -383 6297 383 6471
 << polysilicon >>
 rect -262 6130 -182 6180
 rect -262 6084 -245 6130
@@ -67,14 +67,14 @@ rect -30 -444 30 -400
 rect -245 6084 -199 6130
 rect -245 620 -199 666
 << metal1 >>
-rect -400 6431 400 6484
-rect -400 6337 -383 6431
-rect 383 6426 400 6431
+rect -400 6471 400 6524
+rect -400 6297 -383 6471
+rect 383 6426 400 6471
 rect 383 6410 442 6426
 rect 426 6358 442 6410
 rect 383 6342 442 6358
-rect 383 6337 400 6342
-rect -400 6324 400 6337
+rect 383 6297 400 6342
+rect -400 6284 400 6297
 rect -260 6178 -184 6180
 rect -260 6126 -248 6178
 rect -196 6126 -184 6178
@@ -210,8 +210,8 @@ rlabel metal2 -235 3236 -207 3292 0 IN
 port 1 nsew
 rlabel metal3 0 3236 28 3292 0 OUT
 port 2 nsew
-rlabel metal2 275 4044 331 4100 0 VDD
+rlabel metal1 0 6404 56 6460 0 VDD
 port 3 nsew
-rlabel metal2 -28 -628 28 -572 0 VSS
+rlabel metal1 0 -1230 56 -1174 0 VSS
 port 4 nsew
 << end >>
