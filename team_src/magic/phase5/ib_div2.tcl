@@ -172,6 +172,17 @@ if {[drc list count total] > 0} {
     puts "WHY: [drc list why]"
     for {set i 0} {$i<16} {incr i} { drc find ; puts "EB: [box values]" }
 }
+# ---------- ports (Stage A: CK CKB IBIAS VDD VSS + OI OIB OQ OQB exposed) ----------
+box values -20 [expr {$yA+940}] 20 [expr {$yA+980}] ; label CK center metal2 ; port make 1
+box values 12980 [expr {$yA+940}] 13020 [expr {$yA+980}] ; label CKB center metal2 ; port make 2
+box values [expr {$xbr-20}] [expr {$gy-20}] [expr {$xbr+20}] [expr {$gy+20}] ; label IBIAS center metal2 ; port make 3
+box values 4980 [expr {$yA+3772}] 5020 [expr {$yA+3828}] ; label VDD center metal4 ; port make 4
+box values 4980 [expr {$yA-1060}] 5020 [expr {$yA-1020}] ; label VSS center metal1 ; port make 5
+box values 8672 [expr {$yA+572}] 8728 [expr {$yA+628}] ; label OI center metal3 ; port make 6
+box values 2572 [expr {$yA+572}] 2628 [expr {$yA+628}] ; label OIB center metal3 ; port make 7
+box values 8672 [expr {$yB+572}] 8728 [expr {$yB+628}] ; label OQ center metal3 ; port make 8
+box values 2572 [expr {$yB+572}] 2628 [expr {$yB+628}] ; label OQB center metal3 ; port make 9
+select top cell
 save $OUT/$CELL
 puts "DIV2_SAVED"
 quit -noprompt

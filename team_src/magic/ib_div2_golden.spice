@@ -1,0 +1,21 @@
+.subckt ib_div2 CK CKB IBIAS VDD VSS OI OIB OQ OQB
+XMA1 OIB OQ nTA VSS nfet_03v3 L=0.3u W=40u nf=1 m=1
+XMA2 OI OQB nTA VSS nfet_03v3 L=0.3u W=40u nf=1 m=1
+XMA3 OIB OI nLA VSS nfet_03v3 L=0.3u W=40u nf=1 m=1
+XMA4 OI OIB nLA VSS nfet_03v3 L=0.3u W=40u nf=1 m=1
+XMA5 nTA CK TAILA VSS nfet_03v3 L=0.3u W=40u nf=1 m=1
+XMA6 nLA CKB TAILA VSS nfet_03v3 L=0.3u W=40u nf=1 m=1
+XMB1 OQB OIB nTB VSS nfet_03v3 L=0.3u W=40u nf=1 m=1
+XMB2 OQ OI nTB VSS nfet_03v3 L=0.3u W=40u nf=1 m=1
+XMB3 OQB OQ nLB VSS nfet_03v3 L=0.3u W=40u nf=1 m=1
+XMB4 OQ OQB nLB VSS nfet_03v3 L=0.3u W=40u nf=1 m=1
+XMB5 nTB CKB TAILB VSS nfet_03v3 L=0.3u W=40u nf=1 m=1
+XMB6 nLB CK TAILB VSS nfet_03v3 L=0.3u W=40u nf=1 m=1
+XRA1 VDD OIB VSS ppolyf_u_1k r_width=10.0u r_length=3.0u
+XRA2 VDD OI VSS ppolyf_u_1k r_width=10.0u r_length=3.0u
+XRB1 VDD OQB VSS ppolyf_u_1k r_width=10.0u r_length=3.0u
+XRB2 VDD OQ VSS ppolyf_u_1k r_width=10.0u r_length=3.0u
+XM_BREF IBIAS IBIAS VSS VSS nfet_03v3 L=1u W=4u nf=1 m=1
+XM_TAILA TAILA IBIAS VSS VSS nfet_03v3 L=1u W=40u nf=1 m=1
+XM_TAILB TAILB IBIAS VSS VSS nfet_03v3 L=1u W=40u nf=1 m=1
+.ends ib_div2

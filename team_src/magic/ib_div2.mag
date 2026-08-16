@@ -1,7 +1,7 @@
 magic
 tech gf180mcuD
 magscale 1 10
-timestamp 1786896405
+timestamp 1786896475
 << pwell >>
 rect 2204 2340 4676 3656
 rect 7404 2340 9876 3656
@@ -4050,4 +4050,23 @@ rect 12556 -6444 12644 -6428
 rect 8156 -7628 8172 -7572
 rect 8228 -7628 8244 -7572
 rect 8156 -7644 8244 -7628
+<< labels >>
+rlabel via2 -20 940 20 980 0 CK
+port 1 nsew
+rlabel via2 12980 940 13020 980 0 CKB
+port 2 nsew
+rlabel via2 15580 -2560 15620 -2520 0 IBIAS
+port 3 nsew
+rlabel metal4 4980 3772 5020 3828 0 VDD
+port 4 nsew
+rlabel metal1 4980 -1060 5020 -1020 0 VSS
+port 5 nsew
+rlabel metal3 8672 572 8728 628 0 OI
+port 6 nsew
+rlabel metal3 2572 572 2628 628 0 OIB
+port 7 nsew
+rlabel via3 8672 -6428 8728 -6372 0 OQ
+port 8 nsew
+rlabel metal3 2572 -6428 2628 -6372 0 OQB
+port 9 nsew
 << end >>
