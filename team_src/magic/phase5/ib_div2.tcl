@@ -15,6 +15,11 @@ proc via_m4m5 {x y} {
     box values [expr {$x-44}] [expr {$y-44}] [expr {$x+44}] [expr {$y+44}] ; paint metal5
     box values [expr {$x-28}] [expr {$y-28}] [expr {$x+28}] [expr {$y+28}] ; paint via4
 }
+proc via_m1m2 {x y} {
+    box values [expr {$x-40}] [expr {$y-40}] [expr {$x+40}] [expr {$y+40}] ; paint metal1
+    box values [expr {$x-40}] [expr {$y-40}] [expr {$x+40}] [expr {$y+40}] ; paint metal2
+    box values [expr {$x-26}] [expr {$y-26}] [expr {$x+26}] [expr {$y+26}] ; paint m2contact
+}
 
 set P 2600
 # device x-columns (same for both latch rows): row order [5 1 3 4 2 6]
@@ -48,16 +53,17 @@ nfet_leg 1  $xbias           1 1 $ybias 0 4
 nfet_leg 10 [expr {$xbias+2100}] 1 1 $ybias 0 4
 nfet_leg 10 [expr {$xbias+5700}] 1 1 $ybias 0 4
 
-# shared pwell + VSS psubdiff tap strip, per latch row + bias row
-proc pwell_row {x0 x1 yoff} {
-    box values [expr {$x0-1200}] [expr {$yoff-1200}] [expr {$x1+1200}] [expr {$yoff+1100}] ; paint pwell
+# ONE continuous pwell over both latch rows + gap + bias -> all taps share the VSS bulk
+# (no metal spine needed; every psubdiff tap connects to the same pwell = VSS).
+box values -1200 [expr {$yB-1200}] [expr {$xbias+6900}] [expr {$yA+1100}] ; paint pwell
+proc tap_row {x0 x1 yoff} {
     box values [expr {$x0-833}] [expr {$yoff-1120}] [expr {$x1+833}] [expr {$yoff-1000}] ; paint psubdiff
     box values [expr {$x0-816}] [expr {$yoff-1107}] [expr {$x1+816}] [expr {$yoff-1013}] ; paint psubdiffcont
     box values [expr {$x0-833}] [expr {$yoff-1120}] [expr {$x1+833}] [expr {$yoff-960}] ; paint metal1
 }
-pwell_row $x5 $x6 $yA
-pwell_row $x5 $x6 $yB
-pwell_row $xbias [expr {$xbias+5700}] $ybias
+tap_row $x5 $x6 $yA
+tap_row $x5 $x6 $yB
+tap_row $xbias [expr {$xbias+5700}] $ybias
 
 # ---------- per-latch INTERNAL routing (ib_cml geometry, offset by yoff) ----------
 # nets internal to a latch: outB(=M1.d+M3.d) out(=M2.d+M4.d) nT(=M5.d+M1.s+M2.s)
@@ -127,6 +133,37 @@ vseg metal5 2800 $g1 [expr {$yA+960}] $H5 ; via_m2m5 2800 [expr {$yA+960}]
 via_m2m5 4800 [expr {$yB+600}] ; vseg metal5 4800 $g2 [expr {$yB+600}] $H5 ; via_m4m5 4800 $g2
 hseg metal4 4800 10600 $g2 $H
 via_m4m5 10600 $g2 ; vseg metal5 10600 $g2 [expr {$yA+960}] $H5 ; via_m2m5 10600 [expr {$yA+960}]
+
+# ---------- CK / CKB (cross-mirrored clock feed). x0: M3 free; x13000: M4 free (below y+1150).
+# CK -> A.MA5.g(x0,+960) + B.MB6.g(x13000). CKB -> A.MA6.g(x13000) + B.MB5.g(x0). ----------
+set g3 [expr {$yA-2400}] ; set g4 [expr {$yA-4600}]
+via_m2m3 0 [expr {$yA+960}] ; vseg metal3 0 $g3 [expr {$yA+960}] $H
+hseg metal3 0 13000 $g3 $H
+via_m3m4 13000 $g3 ; vseg metal4 13000 [expr {$yB+960}] $g3 $H ; via_m2m4 13000 [expr {$yB+960}]
+via_m2m4 13000 [expr {$yA+960}] ; vseg metal4 13000 $g4 [expr {$yA+960}] $H
+hseg metal4 0 13000 $g4 $H
+via_m3m4 0 $g4 ; vseg metal3 0 [expr {$yB+960}] $g4 $H ; via_m2m3 0 [expr {$yB+960}]
+
+# ---------- NMOS bias mirror. IBIAS=M_BREF.g+M_BREF.d(diode)+M_TAILA.g+M_TAILB.g ;
+# TAILA=M_TAILA.d->A.TAIL(M3 @ yA-750) ; TAILB=M_TAILB.d->B.TAIL(M3 @ yB-750). ----------
+set xbr $xbias ; set xta [expr {$xbias+2100}] ; set xtb [expr {$xbias+5700}]
+set gy [expr {$ybias+960}] ; set dy [expr {$ybias+600}]
+via_m2m3 $xbr $gy ; via_m2m3 $xbr $dy ; vseg metal3 $xbr $dy $gy $H
+via_m2m4 $xbr $gy ; via_m2m4 $xta $gy ; via_m2m4 $xtb $gy
+hseg metal4 $xbr $xtb $gy $H
+via_m2m4 $xta $dy ; vseg metal4 $xta [expr {$yA-750}] $dy $H ; hseg metal4 13000 $xta [expr {$yA-750}] $H ; via_m3m4 13000 [expr {$yA-750}]
+via_m2m4 $xtb $dy ; vseg metal4 $xtb $dy [expr {$yB-750}] $H ; hseg metal4 13000 $xtb [expr {$yB-750}] $H ; via_m3m4 13000 [expr {$yB-750}]
+
+# ---------- VDD: tie the two load M4 rails (yA+3800, yB+3800) via a left vertical @ x-1000 ----------
+hseg metal4 -1000 2600 [expr {$yA+3800}] $H
+hseg metal4 -1000 2600 [expr {$yB+3800}] $H
+vseg metal4 -1000 [expr {$yB+3800}] [expr {$yA+3800}] $H
+# ---------- VSS: all taps share the one pwell. Drop the 3 bias sources onto the bias tap
+# (M2 source rail -> metal1 riser -> the tap = pwell = VSS). ----------
+foreach xb [list $xbr $xta $xtb] {
+    box values [expr {$xb-40}] [expr {$ybias-1060}] [expr {$xb+40}] [expr {$ybias-570}] ; paint metal1
+    box values [expr {$xb-26}] [expr {$ybias-626}] [expr {$xb+26}] [expr {$ybias-574}] ; paint m2contact
+}
 
 select top cell
 drc on ; drc euclidean on ; drc check ; drc catchup
