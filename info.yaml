@@ -14,7 +14,7 @@
 project:
   title: "GF180MCU integer-N PLL RFIC (2.4-2.5 GHz)"
   team: "A01"
-  discord: ""
+  discord: "gregorydaley_87272_39557"
   description: "PLL building blocks in GF180MCU: LC-VCO (4.11-6.37 GHz), CML divide-by-2 quadrature divider, PFD and charge pump; 2.4-2.5 GHz ISM quadrature output with off-chip loop filter."
   lvs_config: "lvs/lvs_config.json"
 
