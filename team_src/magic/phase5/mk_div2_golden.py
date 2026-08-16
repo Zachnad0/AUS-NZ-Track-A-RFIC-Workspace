@@ -14,7 +14,7 @@ import re, sys
 NL  = sys.argv[1] if len(sys.argv) > 1 else '/tmp/DIV2_QUAD_v1.spice'
 OUT = sys.argv[2] if len(sys.argv) > 2 else \
       '/foss/designs/AUS-NZ-integration/team_src/magic/DIV2_QUAD_v1_golden.spice'
-RES = {'300': (10.0, 3.0), '20k': (2.0, 40.0), '1k': (2.0, 2.0)}   # value -> (w,l) um
+RES = {'300': (10.0, 3.0), '20k': (2.0, 40.04), '1k': (2.0, 2.0)}   # value -> (w,l) um
 CAP = (5.0, 10.0)   # 100f MIM w,l um (50 um^2 @ 2 fF/um^2)
 PORTS = "CK CKB IBIAS I_P I_N Q_P Q_N VDD VSS"
 
