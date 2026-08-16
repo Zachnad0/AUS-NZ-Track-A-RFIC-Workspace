@@ -3,8 +3,11 @@
 # every y-constant from Wn/Wp; place_inv_dev places the raw devices; strap_inv straps +
 # paints wells/taps + local IN/OUT/VDD/VSS routing at an x-offset, ports left UNLABELED,
 # coords stashed in ::CIN/::COUT/::CVSS/::CVDD.
-# The VDD nsubdiff tap is +/-420 (NOT +/-400): a diffusion edge on an exact +/-2.0um (=400iu)
-# boundary makes magic's auto-nplus enclose unevenly -> a sub-0.4um NP.1 tab (see 0c).
+# The VDD nsubdiff tap is +/-420 (NOT +/-400): at +/-400 the tap's auto-nplus pinched to a
+# sub-0.4um NP.1 tab, but ONLY in the inverter context (its interaction with the pfet/metal1
+# below). 0c DISPROVED the "exact-micron-boundary" theory: an isolated +/-400 tap is clean,
+# and round vs off-micron isolated taps generate an IDENTICAL nplus (same 0.01um corner grid-
+# jog, 4.04um wide). +/-420 works by moving the tap edge clear of the neighbour interaction.
 proc hseg {lay x1 x2 y hw} { box values [expr {$x1-$hw}] [expr {$y-$hw}] [expr {$x2+$hw}] [expr {$y+$hw}] ; paint $lay }
 proc vseg {lay x y1 y2 hw} { box values [expr {$x-$hw}] [expr {$y1-$hw}] [expr {$x+$hw}] [expr {$y2+$hw}] ; paint $lay }
 

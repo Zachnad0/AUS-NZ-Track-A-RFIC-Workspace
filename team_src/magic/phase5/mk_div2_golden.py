@@ -14,6 +14,12 @@ import re, sys
 NL  = sys.argv[1] if len(sys.argv) > 1 else '/tmp/DIV2_QUAD_v1.spice'
 OUT = sys.argv[2] if len(sys.argv) > 2 else \
       '/foss/designs/AUS-NZ-integration/team_src/magic/DIV2_QUAD_v1_golden.spice'
+# 20k drawn SERPENTINE nx2 l20.6: magic extracts r_length=40.04u (41.2u drawn leg-sum
+# minus the serpentine corner over-count). Under the PDK model (sm141064: rsh=1000/sq,
+# r_dw=0.0148u width-narrowing -> r_n=40.04/1.9704=20.32sq, + 2 terminal R ~87ohm) this
+# is ~20.4kOhm typ @25C -- ~2% over ideal 20k, negligible vs the +/-20% rsh corner
+# (16.3-24.5k) and RFB*CC=2ns/80MHz. r_length MUST equal the drawn geometry (netgen
+# checks it); the resistance is verified against the model, not encoded blind.
 RES = {'300': (10.0, 3.0), '20k': (2.0, 40.04), '1k': (2.0, 2.0)}   # value -> (w,l) um
 CAP = (5.0, 10.0)   # 100f MIM w,l um (50 um^2 @ 2 fF/um^2)
 PORTS = "CK CKB IBIAS I_P I_N Q_P Q_N VDD VSS"
