@@ -18,18 +18,19 @@ proc inv_geom {Wn Wp} {
         gyP [expr {$YP+$PGp+152}] dyP [expr {$YP+$PGp-100}] syP [expr {$YP-($PGp-100)}] \
         my [expr {(($Gn+200)+($YP+$PGp-100))/2}]
 }
-proc place_inv_dev {xoff Wn Wp pfx} {
+proc place_inv_dev {xoff Wn Wp pfx {cy 0}} {
     set g [inv_geom $Wn $Wp]
-    place_nfet 1 $xoff N_$pfx 0.3 0 $Wn
-    place_pfet 1 $xoff P_$pfx [dict get $g YP] 0.3 $Wp
+    place_nfet 1 $xoff N_$pfx 0.3 $cy $Wn
+    place_pfet 1 $xoff P_$pfx [expr {$cy + [dict get $g YP]}] 0.3 $Wp
 }
-proc strap_inv {xoff Wn Wp pfx} {
+proc strap_inv {xoff Wn Wp pfx {cy 0}} {
     global H
     set g [inv_geom $Wn $Wp]
     foreach k {Gn PGp gyN YP dyN syN gyP dyP syP my} { set $k [dict get $g $k] }
-    nfet_leg 1 $xoff 1 0.3 0 0 $Wn
+    foreach k {gyN YP dyN syN gyP dyP syP my} { set $k [expr {[set $k] + $cy}] }
+    nfet_leg 1 $xoff 1 0.3 $cy 0 $Wn
     pfet_leg 1 $xoff 1 0.3 $YP 0 -700 $Wp
-    box values [expr {$xoff-400}] [expr {$syN-800}] [expr {$xoff+400}] [expr {$Gn+300}] ; paint pwell
+    box values [expr {$xoff-400}] [expr {$syN-800}] [expr {$xoff+400}] [expr {$Gn+300+$cy}] ; paint pwell
     box values [expr {$xoff-383}] [expr {$syN-690}] [expr {$xoff+383}] [expr {$syN-570}] ; paint psubdiff
     box values [expr {$xoff-366}] [expr {$syN-677}] [expr {$xoff+366}] [expr {$syN-583}] ; paint psubdiffcont
     box values [expr {$xoff-383}] [expr {$syN-690}] [expr {$xoff+383}] [expr {$syN-570}] ; paint metal1
