@@ -122,11 +122,16 @@ route_latch $yB
 set g1 [expr {$yA-3200}] ; set g2 [expr {$yA-3800}]   ;# two gap horizontal tracks
 # OIB (A out @2400) -> B.MB1.g (rail 2338..3160): straight M5 vertical
 via_m2m5 2400 [expr {$yA+600}] ; vseg metal5 2400 [expr {$yB+960}] [expr {$yA+600}] $H5 ; via_m2m5 2400 [expr {$yB+960}]
-# OI (A out, extend M3 to 10400) -> B.MB2.g (rail 10138..10960): straight M5 vertical
+# OI (A out) -> B.MB2.g: M5 down, JOG to M4 through B nL M5 hseg (yB+1150, 5600..12600)
+# so OI does not short to nLB; M4 down to the gate.
 hseg metal3 10000 10400 [expr {$yA+600}] $H
-via_m2m5 10400 [expr {$yA+600}] ; vseg metal5 10400 [expr {$yB+960}] [expr {$yA+600}] $H5 ; via_m2m5 10400 [expr {$yB+960}]
-# OQ (B out @8700) -> A.MA1.g (rail 2338..3160): up on M5 @8700, gap-hop M5 @g1, up @2800
-via_m2m5 8700 [expr {$yB+600}] ; vseg metal5 8700 $g1 [expr {$yB+600}] $H5
+via_m2m5 10400 [expr {$yA+600}] ; vseg metal5 10400 [expr {$yB+1500}] [expr {$yA+600}] $H5
+via_m4m5 10400 [expr {$yB+1500}] ; vseg metal4 10400 [expr {$yB+960}] [expr {$yB+1500}] $H ; via_m2m4 10400 [expr {$yB+960}]
+# OQ (B out @8700) -> A.MA1.g: M5 up, JOG to M4 through B nL hseg (yB+1150), back to M5 for
+# the g1 gap-hop, up @2800.
+via_m2m5 8700 [expr {$yB+600}] ; vseg metal5 8700 [expr {$yB+900}] [expr {$yB+600}] $H5
+via_m4m5 8700 [expr {$yB+900}] ; vseg metal4 8700 [expr {$yB+1500}] [expr {$yB+900}] $H ; via_m4m5 8700 [expr {$yB+1500}]
+vseg metal5 8700 $g1 [expr {$yB+1500}] $H5
 hseg metal5 2800 8700 $g1 $H5
 vseg metal5 2800 $g1 [expr {$yA+960}] $H5 ; via_m2m5 2800 [expr {$yA+960}]
 # OQB (B out @4800) -> A.MA2.g (rail 10138..10960): up @4800, gap-hop on M4 @g2, up @10600
