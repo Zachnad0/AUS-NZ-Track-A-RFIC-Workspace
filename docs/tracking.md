@@ -130,6 +130,31 @@ treated as a **firm floor, not a 2×-slack target** — revisit once the VCO cor
 drawn. Per-block device utilization is not recomputed here (needs extraction; the areas above
 are footprints). #143's area line is **not edited** (browser action, Greg's to hand-update).
 
+### 5.2 Density check (drop-gate) — 2026-08-15
+
+Bailey: minimum clear density MUST pass; final-DRC failures likely dropped. Ran KLayout
+`run_drc.py --density_only --variant=D`, **one cell per invocation**, on all four drawn
+blocks. **ALL FOUR FAIL — every failure is a MINIMUM-coverage floor** (`>= X%`, i.e. *too
+little* metal), never a max-density violation. Actual coverage (merged layer area / cell
+bbox) vs threshold:
+
+| Cell | COMP ≥25% | Poly2 ≥14% | Metal M1…MTop (≥30% each) | Verdict |
+|------|-----------|------------|----------------------------|---------|
+| PFD_lib | 21.4% (**−3.6**) | 19.1% ✓ | M1 22.8%; M2–M4 1–4%; M5/MTop 0% | FAIL |
+| CP_v1 | 17.9% (**−7.1**) | 15.0% ✓ | M1–M5 1.2–3.7%; MTop 0% | FAIL |
+| ibias_gen_v1 | 40.6% ✓ | 32.5% ✓ | M1 5.8%, M2 4.3%, M3–M5 0.1–0.7%; MTop 0% | FAIL |
+| vco_inductor_v2 | 0% (absent) | 0% (absent) | M4 5.5%; **M5 60.9% ✓**; rest 0% | FAIL |
+
+**Root cause: no metal fill.** These are sparse standalone blocks — metal exists only where
+signals route, so every metal layer sits far below the 30 % floor (fill-class failures, not
+layout defects). ibias is device-dense enough to pass COMP+Poly2; the inductor passes M5
+(the spiral) only. **This is the expected pre-fill state; dummy-metal fill is inserted at
+integration to meet these minimums.** Bailey's "minimum density MUST pass" governs the FINAL
+integrated GDS (with fill), not these pre-fill blocks. **Fill strategy deliberately NOT
+attempted** — it is a design decision (Greg's), and fill choice interacts with the analog
+matching / shielding (guard rings, CP_OUT shield, inductor keep-out). Rules hit: DCF.1b (COMP),
+PL.8 (Poly2, inductor only), M1.4/M2.4/M3.4/M4.4/M5.4 (metal1–5), MT.3 (MetalTop).
+
 Rubric caveat: the authoritative layout-review requirements land at the **Aug 7
 session** (not yet held); the CP/PFD content stays valid but extra artifacts
 (PEX/ESD numbers, specific doc format) may be added once the rubric is known.
