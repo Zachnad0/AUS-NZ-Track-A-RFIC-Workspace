@@ -3,8 +3,9 @@
 Block under review: **PFD_lib** (library-cell PFD, gf180 5 V std cells, our PFD topology).
 All numbers below are read from files in the passing run
 `librelane_pfd/runs/RUN_2026-08-05_23-52-38/` unless noted. Image: `docs/img/PFD_lib_white.png`.
-Second Aug-14 target CP_v1 is analog full-custom — golden + drawing packet done, **layout
-not yet drawn** (see §3).
+Second Aug-14 target CP_v1 is analog full-custom — golden + drawing packet done, and the
+**layout is now drawn and gate-passed** (Magic + KLayout DRC 0, netgen LVS match uniquely,
+`verify_cp.sh` exit 0 — see the CP_v1 section).
 
 Ground note (applies throughout): the padframe provides **one chip-wide common ground**
 (#143: ground = 0 pins). `VSSA`/`VSSD` are **on-chip routing labels only — not separate
@@ -73,10 +74,13 @@ metrics (only total route/global-route vias reported).
   - Drawing packet **written** (`docs/cp-layout-packet.md`): matched-mirror finger breakdown +
     dummies, guard rings, noise-driven ≥20 µm CP↔PFD separation (not the 0.48 µm DRC floor),
     CP_OUT shielding.
-  - **Layout NOT drawn.** No CP `.mag`, no CP DRC/LVS/matching evidence exists yet.
+  - **Layout DRAWN and gate-passed** (2026-08-13): `CP_v1.mag` + `gds/CP_v1.gds`, Magic DRC 0,
+    KLayout signoff DRC 0, netgen LVS match uniquely (8 devices), `verify_cp.sh` exit 0 — see
+    the CP_v1 section below for the file-cited numbers.
 
-Not verified (CP_v1): entire layout, device matching, guard-ring geometry, CP↔PFD noise
-separation, CP_OUT shielding — all pending the GUI draw.
+Still NOT-DONE for CP_v1 (physical-matching refinement, deferred): extracted (PEX) device
+matching, full dummy fingers + complete guard-ring geometry, and the CP↔PFD noise separation /
+CP_OUT shielding (top-integration placement, not a block-level number).
 
 ---
 
@@ -131,13 +135,14 @@ GDS (`tracking.md §4`).
 
 ---
 
-# CP_v1 — charge pump (full-custom analog) — LAYOUT NOT DRAWN
+# CP_v1 — charge pump (full-custom analog) — LAYOUT GATE PASSED (2026-08-13)
 
-**`CP_v1.mag` does not exist yet.** This section reviews the block against the five rubric
-rows from its schematic golden (`team_src/magic/CP_v1_golden.spice`) and drawing packet
-(`docs/cp-layout-packet.md`). **Every *measured layout* number below is an explicit `[TODO]`
-placeholder** that stays open until `CP_v1.mag` exists **and** `team_src/magic/verify_cp.sh`
-has been run on it. Schematic/golden/packet facts are stated as such.
+**`CP_v1.mag` is drawn and `gds/CP_v1.gds` is committed.** `bash team_src/magic/verify_cp.sh
+CP_v1` (which reads the committed GDS in preference to the `.mag`) **exits 0** — re-confirmed
+this session (2026-08-15). Every measured number below is read from the verify_work logs and
+the KLayout report, each cited inline. Checks that genuinely do not exist in the flow yet
+(PEX, EM, ESD quantification, antenna) are written as **NOT-DONE** lines, not softened and not
+scored — the rubric is the reviewer's instrument.
 
 **Device table** (golden, 8 transistors; ports `UP DOWN CP_OUT VDD VSS VGP VGN`):
 
@@ -153,15 +158,23 @@ has been run on it. Schematic/golden/packet facts are stated as such.
 | M_INVN | nfet_03v3 | 1u / 0.3u | UP inverter |
 
 ## CP.1 — DRC and LVS correctness
-- **LVS target:** `CP_v1_golden.spice` — 8 transistor-level devices, 7 ports, `*_03v3` primitives.
-- **DRC:** `[TODO]` (expect 0) — after `CP_v1.mag` is drawn and `verify_cp.sh CP_v1` runs.
-- **LVS:** `[TODO]` (expect "circuits match uniquely", 8 devices) — same gate.
-- **Known LVS gotcha to handle first (not a defect, a flow note):** `nfet_03v3`/`pfet_03v3`
-  are **PDK wrapper subcircuits** around the primitive. Extracting `CP_v1.mag` yields **raw
-  devices** while the golden instantiates the wrappers → the identical **def-vs-blackbox
-  mismatch** seen on PFD_lib's std cells. Fix by **resolving the PDK primitive spice on the
-  golden side (or flattening both)** — *not* by loosening the netgen setup. `verify_cp.sh`
-  will need the analogous primitive-wrapper handling before CP_v1 LVS will pass.
+- **Magic DRC = 0** — `team_src/magic/verify_work/CP_v1.drc.log` (`VERIFY_DRC_COUNT=0`).
+- **KLayout signoff DRC = 0 violations** — `run_drc.py --variant=D --topcell=CP_v1` on
+  `gds/CP_v1.gds`: *"Klayout DRC run is clean. GDS has no DRC violations"*, report
+  `team_src/magic/verify_work/klayout_cp/CP_v1_main.lyrdb` (main deck, 4.3 s). The main deck
+  includes the FEOL latch-up / substrate-tap rules (DF.14 etc.), so those pass too.
+- **netgen LVS = Circuits match uniquely** — `team_src/magic/verify_work/CP_v1.lvs.log` and
+  `CP_v1.comp.out`: layout extracts 38 raw fingers, netgen parallel-merges 30 → **8 devices
+  (4 nfet_03v3 + 4 pfet_03v3), 10 nets**, both sides equal; **7 ports** (`.subckt CP_v1 VDD
+  VSS VGP VGN DOWN CP_OUT UP`, `CP_v1.lvs.spice`) with cell pin lists equivalent. `verify_cp.sh`
+  treats any device-property (W/L) error as a hard fail; the run reports the clean
+  *"match uniquely"* verdict, so **zero property errors and zero port errors**.
+- **verify_cp.sh CP_v1 → exit 0** (`RESULT: PASS`), matching against the hand golden
+  `team_src/magic/CP_v1_golden.spice` (8 devices).
+- **PDK wrapper handling (resolved, was flagged as the first gotcha):** `nfet_03v3`/`pfet_03v3`
+  are PDK wrapper subcircuits; netgen treats them as **black-box placeholders** and the
+  extracted raw devices equate to the golden's wrapped devices (*"Device classes … are
+  equivalent"* in `CP_v1.comp.out`). Handled in the netgen setup, not by loosening it.
 
 ## CP.2 — Power, ground, current paths
 - **Chip-wide COMMON ground.** `VSSA`/`VSSD` are **on-chip labels only — NOT separate ground
@@ -176,7 +189,8 @@ has been run on it. Schematic/golden/packet facts are stated as such.
   Ground is the exception — common, not split.
 - **Current path:** PMOS mirror sources I_CP when UP; NMOS mirror sinks when DOWN;
   `CP_OUT = M_PSW drain = M_NSW drain`, high-impedance into the off-chip loop filter.
-- **IR drop / rail current density:** `[TODO]` — after layout + PEX.
+- **IR drop / rail current density: NOT-DONE** — needs PEX; no parasitic extraction exists for
+  `CP_v1` (the LibreLane OpenROAD IR-drop report covers `PFD_lib` only, not this full-custom block).
 
 ## CP.3 — Analog matching, symmetry, noise isolation
 - **Matching is the CP's spec** (UP/DOWN current match 0.001 % @ 1.5 V in *schematic* sim).
@@ -193,21 +207,31 @@ has been run on it. Schematic/golden/packet facts are stated as such.
   plane, kept short, never parallel to any switching net).
 - **Deep nwell deliberately NOT adopted this cycle** (new layer + new DRC rules, wrong week);
   recorded as a later-revision isolation option if measured spurs demand it.
-- **Extracted matching / achieved gap:** `[TODO]` — after `CP_v1.mag` + PEX.
+- **Extracted matching (PEX): NOT-DONE** — no PEX in the flow, so no extracted UP/DOWN current
+  match or parasitic-aware mirror ratio for the drawn layout; the 0.001 % is schematic-only.
+- **Full dummies + complete guard rings: DEFERRED** to a matching-refinement pass — the drawn,
+  LVS-clean `CP_v1.mag` implements the 8 golden devices; the packet's full common-centroid
+  dummy fingers and complete guard-ring treatment are not claimed as done here.
+- **Achieved CP↔PFD gap: N/A at block level** — `CP_v1` is a standalone block with no PFD
+  adjacency drawn; the ≥ 20 µm noise gap is a top-integration placement number, not set here.
 
 ## CP.4 — Reliability and physical-design risks
 - **ESD:** block has **no pads**; secondary ESD sits with the organizer padframe. **ESD
   quantification NOT DONE.**
-- **Electromigration / current density: NOT DONE** — no EM check exists in the flow; `[TODO]`
-  until PEX on the drawn layout.
+- **Electromigration / current density: NOT-DONE** — no EM check exists in the flow; needs PEX
+  on the drawn layout.
 - **DUALGATE keep-out to PFD_lib:** DV.6 (0.24 µm) + DV.3 (0.24 µm) = **0.48 µm is the DRC
   floor only** (oxide/well legality). The real CP-to-PFD gap target is the **20–50 µm
   noise-driven separation** (CP.3), not 0.48 µm.
-- **Antenna / latch-up (DRC):** `[TODO]` — after layout.
+- **Latch-up (DRC): PASS** — the KLayout main deck (CP.1, 0 violations) includes the substrate-
+  tap / DF.14 latch-up rules, so they pass on the drawn GDS.
+- **Antenna: NOT-DONE** — antenna is a separate KLayout `--antenna` run; it has not been run on
+  `CP_v1` (the LibreLane antenna report covers `PFD_lib` only).
 
 ## CP.5 — Top-level integration and name correspondence
-- **Name correspondence:** golden is `.subckt CP_v1`; `[TODO]` GDS top cell / `.mag` cell name
-  = `CP_v1` (after drawing). Ports `UP DOWN CP_OUT VDD VSS VGP VGN` match the golden.
+- **Name correspondence: PASS** — golden is `.subckt CP_v1`; the GDS top cell is `CP_v1`
+  (`verify_cp.sh` and `run_drc.py --topcell=CP_v1` both read `gds/CP_v1.gds` as top cell `CP_v1`).
+  Ports `UP DOWN CP_OUT VDD VSS VGP VGN` match the golden (`CP_v1.lvs.spice` subckt line).
 - **VGP/VGN are block current ports** off the chip-level IBIAS generator (CP.2), not pads.
 - **Block ≠ integrated top** (as with PFD_lib); `lvs_config` repoint to the integrated top is
   an Aug-21 item.
