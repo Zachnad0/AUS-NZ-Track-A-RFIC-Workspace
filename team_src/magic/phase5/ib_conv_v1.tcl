@@ -37,7 +37,7 @@ proc strap_inv {xoff Wn Wp pfx} {
     box values [expr {$xoff-110}] [expr {$syN-600}] [expr {$xoff-54}] [expr {$syN+20}] ; paint metal1
     box values [expr {$xoff-108}] [expr {$syN-26}] [expr {$xoff-56}] [expr {$syN+26}] ; paint m2contact
     box values [expr {$xoff-600}] [expr {$YP-($PGp+340)}] [expr {$xoff+600}] [expr {$gyP+440}] ; paint nwell
-    box values [expr {$xoff-400}] [expr {$gyP+160}] [expr {$xoff+400}] [expr {$gyP+360}] ; paint nsubdiff
+    box values [expr {$xoff-420}] [expr {$gyP+140}] [expr {$xoff+420}] [expr {$gyP+380}] ; paint nsubdiff
     box values [expr {$xoff-383}] [expr {$gyP+173}] [expr {$xoff+383}] [expr {$gyP+347}] ; paint nsubdiffcont
     box values [expr {$xoff-400}] [expr {$gyP+160}] [expr {$xoff+400}] [expr {$gyP+400}] ; paint metal1
     vseg metal2 [expr {$xoff-235}] $gyN $gyP $H
