@@ -203,8 +203,11 @@ proc via_m3m5 {x y} {
 }
 set bx 23500 ; set by -3330
 set OX [expr {$bx+1360}] ; set OY [expr {$by+2600}]
+# Keep the converter as a HIERARCHICAL child instance (do NOT flatten again): a second
+# flatten shatters the CML folded W40 fets (nf=10) into 147 raw fingers that no longer
+# merge -> LVS device-count mismatch. extract all handles the hierarchy; the top routing
+# below connects to the child ports (INP/INM/IBIAS/VDD/VSS/OUT) by geometric overlap.
 box values $bx $by $bx $by ; getcell ib_conv_v1
-flatten ${CELL}_g ; load ${CELL}_g
 set ipIB [expr {$OX-235}] ; set ipINP [expr {$OX+965}] ; set ipINM [expr {$OX+2165}]
 set pY [expr {$OY+1330}] ; set ipVbus [expr {$OX-1300}]
 # landing pads: the conv INP/INM pins are only 50 wide -> too small for a stacked via (V2.3);
@@ -214,11 +217,18 @@ box values [expr {$ipINM-40}] [expr {$pY-40}] [expr {$ipINM+40}] [expr {$pY+40}]
 # INP <- OIB : M5 haul @5500 (INP native x965 is LEFT of the CC cap -> riser straight up)
 via_m2m5 2200 600 ; vseg metal5 2200 600 5500 44
 hseg metal5 2200 $ipINP 5500 44 ; vseg metal5 $ipINP $pY 5500 44 ; via_m2m5 $ipINP $pY
-# INM <- OI : the INM pin (native x2165) sits UNDER the CC MiM cap (native 1500..2980) whose
-# M4/M5 plates conflict -> escape WEST on M3 to native x1340 (left of the cap) THEN rise on M4.
+# INM <- OI : the INM pin (native x2165) sits UNDER the CC MiM cap (native 1500..2980), and the
+# converter's DN1 gate net runs on M4 right above the pin -> a straight M4 riser SHORTS DN1.
+# Route: OI tap on M4 -> haul east to the clear gap (x21000) -> up to M5 -> M5 haul to native
+# x1340 (LEFT of the cap; the M5 down-riser there clears the cap and crosses DN1's M4 inter-
+# layer) -> M5 down -> M3 east UNDER the cap to the pin. M4 on the OI side crosses the INP M5
+# haul inter-layer; the converter-side riser is M5 so it never shares a layer with DN1's M4.
 set inmEsc [expr {$OX+1340}]
-via_m2m3 $ipINM $pY ; hseg metal3 $inmEsc $ipINM $pY 28 ; via_m3m4 $inmEsc $pY
-vseg metal4 $inmEsc 600 5800 28 ; hseg metal4 10000 $inmEsc 5800 28 ; via_m2m4 10000 600
+via_m2m4 10000 600 ; vseg metal4 10000 600 5800 28
+hseg metal4 10000 21000 5800 28 ; via_m4m5 21000 5800
+hseg metal5 21000 $inmEsc 5800 44
+vseg metal5 $inmEsc $pY 5800 44 ; via_m2m5 $inmEsc $pY
+hseg metal3 $inmEsc $ipINM $pY 28 ; via_m2m3 $ipINM $pY
 # IBIAS : extend core M3 rail (y-2540) east, riser up to pin
 hseg metal3 21300 $ipIB -2540 28 ; vseg metal3 $ipIB -2540 $pY 28 ; via_m2m3 $ipIB $pY
 # VDD : riser @x8700 up to a M4 haul @6500 (above input hauls), east to the conv M2 bus
@@ -245,6 +255,9 @@ box values 8672 [expr {$yA+572}] 8728 [expr {$yA+628}] ; label OI center metal3 
 box values 2572 [expr {$yA+572}] 2628 [expr {$yA+628}] ; label OIB center metal3 ; port make 7
 box values 8672 [expr {$yB+572}] 8728 [expr {$yB+628}] ; label OQ center metal3 ; port make 8
 box values 2572 [expr {$yB+572}] 2628 [expr {$yB+628}] ; label OQB center metal3 ; port make 9
+# I_P: the IP converter OUT pin (native R_SER top @ (9176,7784) M1). PAINT top-level M1 over
+# the child OUT M1 so it connects across the hierarchy (a bare label lands on empty top metal).
+box values [expr {$OX+9148}] [expr {$OY+7761}] [expr {$OX+9204}] [expr {$OY+7807}] ; paint metal1 ; label I_P center metal1 ; port make 10
 select top cell
 save $OUT/$CELL
 puts "DIV2_SAVED"
