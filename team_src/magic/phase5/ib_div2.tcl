@@ -238,6 +238,40 @@ vseg metal4 $ipVbus 3850 6500 28 ; via_m2m4 $ipVbus 3850
 box values 21900 -2100 [expr {$OX-980}] -1900 ; paint metal2
 via_m1m2 [expr {$OX-1032}] -2002
 
+# ===== STAGE C: IN converter (WEST, MIRRORED via sideways; latch A; INP=OI INM=OIB) =====
+# getcell leaves the NEW use selected; `sideways` (NO `select cell` -- that re-selects about the
+# wrong centre and leaves pins effectively unmirrored) mirrors only IN about its bbox centre:
+# pin native (px,py) -> parent (bxN+9612-px, OYN+py). Front-end pins land on IN's EAST side
+# facing the core. IN tracks 7000/7300/7600 (above IP's 5500-6500); VDD is a low hop.
+set bxN -13000 ; set byN -3330 ; set OYN [expr {$byN+2600}] ; set pYn 600
+box values $bxN $byN $bxN $byN ; getcell ib_conv_v1 ; sideways
+set ipINPn [expr {$bxN+9612-965}]   ; set ipINMn [expr {$bxN+9612-2165}]
+set ipIBn  [expr {$bxN+9612+235}]   ; set ipVbusN [expr {$bxN+9612+1300}]
+set ipVSSn [expr {$bxN+10644}]
+box values [expr {$ipINPn-40}] [expr {$pYn-40}] [expr {$ipINPn+40}] [expr {$pYn+40}] ; paint metal2
+box values [expr {$ipINMn-40}] [expr {$pYn-40}] [expr {$ipINMn+40}] [expr {$pYn+40}] ; paint metal2
+# INP_N <- OI (tap x10000, latch-A out east via) : M5 haul WEST @7000
+via_m2m5 10000 600 ; vseg metal5 10000 600 7000 44
+hseg metal5 $ipINPn 10000 7000 44 ; vseg metal5 $ipINPn $pYn 7000 44 ; via_m2m5 $ipINPn $pYn
+# INM_N <- OIB (tap x2200) : mirrored cap @ -6368..-4888 over the pin; escape is EAST of it
+# (mirror of "west of cap") to native1340 -> bxN+9612-1340. M4 haul, via_m4m5, M5 down, M3 to pin.
+set inmEscN [expr {$bxN+9612-1340}]
+via_m2m4 2200 600 ; vseg metal4 2200 600 7300 28
+hseg metal4 -8000 2200 7300 28 ; via_m4m5 -8000 7300
+hseg metal5 -8000 $inmEscN 7300 44 ; vseg metal5 $inmEscN $pYn 7300 44 ; via_m2m5 $inmEscN $pYn
+hseg metal3 $ipINMn $inmEscN $pYn 28 ; via_m2m3 $ipINMn $pYn
+# IBIAS_N <- core IBIAS M3 rail (east x15450, y-2540) : riser up, long M5 haul WEST @7600
+via_m3m5 15450 -2540 ; vseg metal5 15450 -2540 7600 44
+hseg metal5 $ipIBn 15450 7600 44 ; vseg metal5 $ipIBn $pYn 7600 44 ; via_m2m5 $ipIBn $pYn
+# VDD_N <- core VDD M4 @x-1000 : SHORT LOW hop (y3400) straight to the IN VDD bus, so no tall
+# VDD riser sits in the path of the INP/INM/IBIAS hauls (that shorted OIB/IBIAS to VDD).
+# via_m2m4 paints NO metal2 -> paint an explicit M2 pad on the bus first for via2 enclosure.
+hseg metal4 $ipVbusN -1000 3400 28
+box values [expr {$ipVbusN-60}] 3340 [expr {$ipVbusN+60}] 3460 ; paint metal2 ; via_m2m4 $ipVbusN 3400
+# VSS_N : tie IN VSS pin (M1) east to the core VSS M3 spine @x-1150 (y-2002 within its span)
+box values [expr {$ipVSSn-28}] -2030 -1122 -1974 ; paint metal2
+via_m1m2 $ipVSSn -2002 ; via_m2m3 -1150 -2002
+
 select top cell
 drc on ; drc euclidean on ; drc check ; drc catchup
 puts "DIV2_DRC=[drc list count total]"
@@ -258,6 +292,8 @@ box values 2572 [expr {$yB+572}] 2628 [expr {$yB+628}] ; label OQB center metal3
 # I_P: the IP converter OUT pin (native R_SER top @ (9176,7784) M1). PAINT top-level M1 over
 # the child OUT M1 so it connects across the hierarchy (a bare label lands on empty top metal).
 box values [expr {$OX+9148}] [expr {$OY+7761}] [expr {$OX+9204}] [expr {$OY+7807}] ; paint metal1 ; label I_P center metal1 ; port make 10
+# I_N: the IN converter OUT pin, mirrored (native OUT (9176,7784) -> parent (bxN+436, OYN+7784))
+box values [expr {$bxN+408}] [expr {$OYN+7761}] [expr {$bxN+464}] [expr {$OYN+7807}] ; paint metal1 ; label I_N center metal1 ; port make 11
 select top cell
 save $OUT/$CELL
 puts "DIV2_SAVED"

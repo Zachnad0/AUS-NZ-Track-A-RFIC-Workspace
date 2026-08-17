@@ -1,4 +1,4 @@
-.subckt ib_div2 CK CKB IBIAS VDD VSS OI OIB OQ OQB I_P
+.subckt ib_div2 CK CKB IBIAS VDD VSS OI OIB OQ OQB I_P I_N
 XMA1 OIB OQ nTA VSS nfet_03v3 L=0.3u W=40u nf=1 m=1
 XMA2 OI OQB nTA VSS nfet_03v3 L=0.3u W=40u nf=1 m=1
 XMA3 OIB OI nLA VSS nfet_03v3 L=0.3u W=40u nf=1 m=1
@@ -32,4 +32,18 @@ XM_IN2_IP INVO2_IP INVO1_IP VSS VSS nfet_03v3 L=0.3u W=11u nf=1 m=1
 XM_IP3_IP INVO3_IP INVO2_IP VDD VDD pfet_03v3 L=0.3u W=44u nf=1 m=1
 XM_IN3_IP INVO3_IP INVO2_IP VSS VSS nfet_03v3 L=0.3u W=16u nf=1 m=1
 XR_SER_IP INVO3_IP I_P VSS ppolyf_u_1k r_width=2.0u r_length=2.0u
+XM_NT_IN NS_IN IBIAS VSS VSS nfet_03v3 L=1u W=8u nf=1 m=1
+XM_BN1_IN DN1_IN OI NS_IN VSS nfet_03v3 L=0.3u W=8u nf=1 m=1
+XM_BN2_IN OC_IN OIB NS_IN VSS nfet_03v3 L=0.3u W=8u nf=1 m=1
+XM_BP1_IN DN1_IN DN1_IN VDD VDD pfet_03v3 L=0.3u W=8u nf=1 m=1
+XM_BP2_IN OC_IN DN1_IN VDD VDD pfet_03v3 L=0.3u W=8u nf=1 m=1
+XCC_IN OC_IN G1_IN cap_mim_2f0_m4m5_noshield c_width=5.0u c_length=10.0u
+XRFB_IN INVO1_IN G1_IN VSS ppolyf_u_1k r_width=2.0u r_length=40.04u
+XM_IP1_IN INVO1_IN G1_IN VDD VDD pfet_03v3 L=0.3u W=10u nf=1 m=1
+XM_IN1_IN INVO1_IN G1_IN VSS VSS nfet_03v3 L=0.3u W=4u nf=1 m=1
+XM_IP2_IN INVO2_IN INVO1_IN VDD VDD pfet_03v3 L=0.3u W=26u nf=1 m=1
+XM_IN2_IN INVO2_IN INVO1_IN VSS VSS nfet_03v3 L=0.3u W=11u nf=1 m=1
+XM_IP3_IN INVO3_IN INVO2_IN VDD VDD pfet_03v3 L=0.3u W=44u nf=1 m=1
+XM_IN3_IN INVO3_IN INVO2_IN VSS VSS nfet_03v3 L=0.3u W=16u nf=1 m=1
+XR_SER_IN INVO3_IN I_N VSS ppolyf_u_1k r_width=2.0u r_length=2.0u
 .ends ib_div2
