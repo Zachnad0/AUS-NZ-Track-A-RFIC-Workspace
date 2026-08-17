@@ -6,7 +6,7 @@
 # B input gates, B.OQ/OQB -> A input gates; CK/CKB swapped between the two tail pairs.
 source /foss/designs/AUS-NZ-integration/team_src/magic/phase5/ib_block.tcl
 set OUT  /foss/designs/AUS-NZ-integration/team_src/magic
-set CELL ib_div2
+set CELL DIV2_QUAD_v1
 set H 28 ; set H5 44
 proc hseg {lay x1 x2 y hw} { box values [expr {$x1-$hw}] [expr {$y-$hw}] [expr {$x2+$hw}] [expr {$y+$hw}] ; paint $lay }
 proc vseg {lay x y1 y2 hw} { box values [expr {$x-$hw}] [expr {$y1-$hw}] [expr {$x+$hw}] [expr {$y2+$hw}] ; paint $lay }
@@ -349,25 +349,26 @@ if {[drc list count total] > 0} {
     puts "WHY: [drc list why]"
     for {set i 0} {$i<16} {incr i} { drc find ; puts "EB: [box values]" }
 }
-# ---------- ports (Stage A: CK CKB IBIAS VDD VSS + OI OIB OQ OQB exposed) ----------
+# ---------- ports (Stage D: 9 top ports; OI/OIB/OQ/OQB now INTERNAL, labeled but not ports) ----------
 box values -20 [expr {$yA+940}] 20 [expr {$yA+980}] ; label CK center metal2 ; port make 1
 box values 12980 [expr {$yA+940}] 13020 [expr {$yA+980}] ; label CKB center metal2 ; port make 2
 box values 15430 [expr {$gy-20}] 15470 [expr {$gy+20}] ; label IBIAS center metal2 ; port make 3
 box values 4980 [expr {$yA+3772}] 5020 [expr {$yA+3828}] ; label VDD center metal4 ; port make 4
 box values [expr {$xbias+1980}] [expr {$ybias-1780}] [expr {$xbias+2020}] [expr {$ybias-1740}] ; label VSS center metal2 ; port make 5
-box values 8672 [expr {$yA+572}] 8728 [expr {$yA+628}] ; label OI center metal3 ; port make 6
-box values 2572 [expr {$yA+572}] 2628 [expr {$yA+628}] ; label OIB center metal3 ; port make 7
-box values 8672 [expr {$yB+572}] 8728 [expr {$yB+628}] ; label OQ center metal3 ; port make 8
-box values 2572 [expr {$yB+572}] 2628 [expr {$yB+628}] ; label OQB center metal3 ; port make 9
+# OI/OIB/OQ/OQB: internal CML outputs feeding all 4 converters -- label (name the nets) but NO port
+box values 8672 [expr {$yA+572}] 8728 [expr {$yA+628}] ; label OI center metal3
+box values 2572 [expr {$yA+572}] 2628 [expr {$yA+628}] ; label OIB center metal3
+box values 8672 [expr {$yB+572}] 8728 [expr {$yB+628}] ; label OQ center metal3
+box values 2572 [expr {$yB+572}] 2628 [expr {$yB+628}] ; label OQB center metal3
 # I_P: the IP converter OUT pin (native R_SER top @ (9176,7784) M1). PAINT top-level M1 over
 # the child OUT M1 so it connects across the hierarchy (a bare label lands on empty top metal).
-box values [expr {$OX+9148}] [expr {$OY+7761}] [expr {$OX+9204}] [expr {$OY+7807}] ; paint metal1 ; label I_P center metal1 ; port make 10
+box values [expr {$OX+9148}] [expr {$OY+7761}] [expr {$OX+9204}] [expr {$OY+7807}] ; paint metal1 ; label I_P center metal1 ; port make 6
 # I_N: the IN converter OUT pin, mirrored (native OUT (9176,7784) -> parent (bxN+436, OYN+7784))
-box values [expr {$bxN+408}] [expr {$OYN+7761}] [expr {$bxN+464}] [expr {$OYN+7807}] ; paint metal1 ; label I_N center metal1 ; port make 11
-# Q_N: the QN converter OUT pin, mirrored (parent (bxQ+436, OYNq+7784))
-box values [expr {$bxQ+408}] [expr {$OYNq+7761}] [expr {$bxQ+464}] [expr {$OYNq+7807}] ; paint metal1 ; label Q_N center metal1 ; port make 12
+box values [expr {$bxN+408}] [expr {$OYN+7761}] [expr {$bxN+464}] [expr {$OYN+7807}] ; paint metal1 ; label I_N center metal1 ; port make 7
 # Q_P: the QP converter OUT pin, unmirrored (parent (OXP+9176, OYP2+7784))
-box values [expr {$OXP+9148}] [expr {$OYP2+7761}] [expr {$OXP+9204}] [expr {$OYP2+7807}] ; paint metal1 ; label Q_P center metal1 ; port make 13
+box values [expr {$OXP+9148}] [expr {$OYP2+7761}] [expr {$OXP+9204}] [expr {$OYP2+7807}] ; paint metal1 ; label Q_P center metal1 ; port make 8
+# Q_N: the QN converter OUT pin, mirrored (parent (bxQ+436, OYNq+7784))
+box values [expr {$bxQ+408}] [expr {$OYNq+7761}] [expr {$bxQ+464}] [expr {$OYNq+7807}] ; paint metal1 ; label Q_N center metal1 ; port make 9
 select top cell
 save $OUT/$CELL
 puts "DIV2_SAVED"
