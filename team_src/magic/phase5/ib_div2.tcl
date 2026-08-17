@@ -286,23 +286,28 @@ set qIB [expr {$bxQ+9612+235}] ; set qVbus [expr {$bxQ+9612+1300}] ; set qVSS [e
 set qinmEsc [expr {$bxQ+9612-1340}]
 box values [expr {$qINP-40}] [expr {$pYq-40}] [expr {$qINP+40}] [expr {$pYq+40}] ; paint metal2
 box values [expr {$qINM-40}] [expr {$pYq-40}] [expr {$qINM+40}] [expr {$pYq+40}] ; paint metal2
-# INP_Q <- OQ (tap x10000) : M5 descend to track -16000, M3 drop to pin
-via_m3m5 10000 -6400 ; vseg metal5 10000 -16000 -6400 44
-hseg metal5 $qINP 10000 -16000 44 ; via_m3m5 $qINP -16000 ; vseg metal3 $qINP -17070 -16000 28 ; via_m2m3 $qINP $pYq
-# INM_Q <- OQB (tap x2200) : M5 descend to track -16300, M5 to the cap-escape, M3 to pin under cap
+# Descents all M5 (cross latch-B TAIL M3/nT M4 inter-layer); HAULS staggered by layer so the
+# converging nets cross inter-layer -- INP on M4, INM on M5, IBIAS on M3 (the IN convergence fix).
+# INP_Q <- OQ (tap x10000) : M5 descend to -16000, M4 haul west, M4 drop to pin
+via_m3m5 10000 -6400 ; vseg metal5 10000 -16000 -6400 44 ; via_m4m5 10000 -16000
+hseg metal4 $qINP 10000 -16000 28 ; vseg metal4 $qINP -17070 -16000 28 ; via_m2m4 $qINP $pYq
+# INM_Q <- OQB (tap x2200) : M5 descend to -16300, M5 haul west to the cap-escape, M3 to pin
 via_m3m5 2200 -6400 ; vseg metal5 2200 -16300 -6400 44
-hseg metal5 $qinmEsc 2200 -16300 44 ; via_m3m5 $qinmEsc -16300 ; vseg metal3 $qinmEsc -17070 -16300 28 ; via_m2m3 $qinmEsc $pYq
+hseg metal5 $qinmEsc 2200 -16300 44 ; vseg metal5 $qinmEsc -17070 -16300 44 ; via_m2m5 $qinmEsc $pYq
 hseg metal3 $qINM $qinmEsc $pYq 28 ; via_m2m3 $qINM $pYq
-# IBIAS_Q <- core IBIAS M3 rail (x15450,-2540) : M5 descend to track -16600, M3 drop to pin
-via_m3m5 15450 -2540 ; vseg metal5 15450 -16600 -2540 44
-hseg metal5 $qIB 15450 -16600 44 ; via_m3m5 $qIB -16600 ; vseg metal3 $qIB -17070 -16600 28 ; via_m2m3 $qIB $pYq
-# VDD_Q <- latch-B VDD M4 rail (y-3200, x-1000..8700) : short low M4 hop to the QN VDD bus (@qVbus)
-hseg metal4 $qVbus -1000 -3200 28
-box values [expr {$qVbus-60}] -3260 [expr {$qVbus+60}] -3140 ; paint metal2 ; via_m2m4 $qVbus -3200
-# VSS_Q : QN VSS pin (M1) east to the core VSS M3 spine @x-1150 (spine spans yB-1040..yA-1040)
+# IBIAS_Q <- core IBIAS M3 rail (x15450,-2540) : M5 descend to -16600, M3 haul west, M3 drop
+via_m3m5 15450 -2540 ; vseg metal5 15450 -16600 -2540 44 ; via_m3m5 15450 -16600
+hseg metal3 $qIB 15450 -16600 28 ; vseg metal3 $qIB -17070 -16600 28 ; via_m2m3 $qIB $pYq
+# VDD_Q <- latch-B VDD M4 rail (y-3200, x-1000..8700) : M4 hop then DOWN to the QN VDD bus, whose
+# top is ~-3996 (native 3840 -> OYNq+3840); via at -4200 (inside the bus), not -3200 (above it).
+hseg metal4 $qVbus -1000 -3200 28 ; vseg metal4 $qVbus -4200 -3200 28
+box values [expr {$qVbus-60}] -4260 [expr {$qVbus+60}] -4140 ; paint metal2 ; via_m2m4 $qVbus -4200
+# VSS_Q : extend the core VSS spine (M3 @x-1150) DOWN to QN's deep VSS pin, on M2 (so it crosses
+# the Q hauls -- INP M4, INM M5, IBIAS M3 -- all inter-layer instead of shorting IBIAS on M3).
 set qVSSy [expr {$OYNq-1272}]
+via_m2m3 -1150 -8040 ; vseg metal2 -1150 $qVSSy -8040 56
 box values [expr {$qVSS-28}] [expr {$qVSSy-28}] -1122 [expr {$qVSSy+28}] ; paint metal2
-via_m1m2 $qVSS $qVSSy ; via_m2m3 -1150 $qVSSy
+via_m1m2 $qVSS $qVSSy
 
 select top cell
 drc on ; drc euclidean on ; drc check ; drc catchup
