@@ -235,3 +235,33 @@ scored — the rubric is the reviewer's instrument.
 - **VGP/VGN are block current ports** off the chip-level IBIAS generator (CP.2), not pads.
 - **Block ≠ integrated top** (as with PFD_lib); `lvs_config` repoint to the integrated top is
   an Aug-21 item.
+
+---
+
+# DIV2_QUAD_v1 — quad-phase ÷2 divider (full-custom) — LAYOUT GATE PASSED (2026-08-17)
+
+**`DIV2_QUAD_v1.mag` drawn, `gds/DIV2_QUAD_v1.gds` committed.** `verify_cp.sh DIV2_QUAD_v1` exit 0
+vs the GDS (magic DRC 0, netgen LVS match uniquely, 9 ports, 0 property/port errors); KLayout DRC
+0 (variant D). 75 devices; measured bbox 237.4 × 174.2 µm = 41,340 µm².
+
+## DIV2.1 — I/Q quadrature: CHARACTERIZED layout limitation (~1.0°)
+The four slicer converters are placed option-c (I_P/Q_P east-unmirrored, I_N/Q_N west-mirrored) so
+any mirror-induced slicer offset is common to the I and Q paths and cancels in the quadrature
+comparison. The residual is a **routing-length asymmetry**: the Q converters sit ~53 µm below their
+latch-B taps (the I converters sit at their latch-A taps' y-level), so each Q input haul is ~53 µm
+longer than its I counterpart. At ~41 fs/µm (CML 300 Ω load driving ~0.2 fF/µm wire) that is ~2.2 ps
+→ **~1.0° at the 1.25 GHz divider output**. It is COMMON to Q_P and Q_N (both mirror-paired, equal
+hauls) → a static I-to-Q offset, not an intra-pair duty error, adding a small fixed layout term to
+the schematic-sim I/Q result (270.0° exact). It is the cost of the stacked-below Q floorplan chosen
+to keep the I pair adjacent to the core.
+
+## DIV2.2 — Electromigration on the VSS network: KNOWN VIOLATION (now quantified)
+No longer unknown. Total VSS return **22.4 mA** (SPICE, div2_sb_TT deck, i(V_VDD) 16–20 ns — matches
+the validated headline); **per-converter VSS 2.96 mA** (measured through a 0 V meter split into the
+IP converter's return). The open gf180mcuD PDK ships NO EM current-density deck (no EM rule in the
+DRC decks — confirmed), so the limit is the GF design-manual Al-metal rule, ~1 mA/µm for M1–M4
+(~2 mA/µm for the thicker M5) at 110 °C. Against that:
+- 7.5 µm M2 collector plate carries the ~17–22 mA aggregate → **~2.3–2.9 mA/µm — OVER**.
+- Per-converter VSS ties are 0.28–0.56 µm carrying ~2.96 mA → **~5.3–10.6 mA/µm — well OVER**.
+**Fix = widen the plate to ~22 µm and every per-converter tie to ~3 µm** (M2/M3), then re-gate
+DIV2_QUAD_v1. This is a reliability fix on the VSS rail; the DRC/LVS/port sign-off is unaffected.
