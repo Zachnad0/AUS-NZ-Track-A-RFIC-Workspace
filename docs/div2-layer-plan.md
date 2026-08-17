@@ -107,14 +107,26 @@ the core, so all 6 nets are SHORT lateral hops. The other three cannot all do th
   M4/M5 plates guarantee MIMTM shorts. REJECTED.
 - Vertical stacking: no body-crossing, but VSS/VDD/IBIAS then run the full ~17k-iu core height
   across every core net. REJECTED (worse).
-- **Mirrored side-placement (RECOMMENDED):** IP east unmirrored (done). Place **IN, QP, QN with
-  `getcell ib_conv_v1` then `sideways`** (mirror-x) on the WEST / opposite side so each front-end
-  faces the core → short hauls like IP. IP+IN feed latch A (OI/OIB, y600 band); QP+QN feed latch
-  B (OQ/OQB, yB+600=−6400 band) so place the Q pair lower. Symmetric: IP/IN mirror-paired on
-  OI/OIB, QP/QN on OQ/OQB. TODO next session: prove `sideways` (getcell then sideways; the
-  post-getcell box readout is unreliable in an empty cell — instead `select`, `sideways`, then
-  read the instance transform / find a labelled port to fix the mirrored pin coords), then route
-  each converter with IP's 6-net pattern, one rung each. Golden: grep `_IN`/`_QP`/`_QN` sections
-  from `DIV2_QUAD_v1_golden.spice`, extend ports I_N/Q_P/Q_N (47→61→75 devices). Stage D renames
-  the cell to DIV2_QUAD_v1 and DROPS OI/OIB/OQ/OQB as ports (fully internal once all 4 tap them);
-  final 9 ports CK CKB IBIAS I_P I_N Q_P Q_N VDD VSS.
+- Mirrored side-placement: front-ends face the core → short hauls like IP. Needs mirror for the
+  non-east converters.
+
+## ORIENTATION DECISION (item 2, chosen) — option (c): P-east-unmirrored, N-west-mirrored
+`sideways` PROVEN (getcell after loading master to warm the tech; mirror-x about bbox centre →
+native (px,py) → parent (bx+9612−px, by+2600+py); flatten+extract = 14 clean devices).
+**Chosen: I_P & Q_P east UNMIRRORED; I_N & Q_N west MIRRORED (`sideways`).** IP east (done), IN
+mirror-west (latch A, by−3330, pins y600), QP east-lower + QN mirror-west-lower (latch B, taps
+OQ/OQB at yB+600=−6400, placed low with down-hauls, gapped clear of the upper pair).
+**Matching argument:** the four converters are threshold slicers; mirroring shifts a slicer's
+input-referred offset systematically (STI stress / well proximity, a few mV) → a phase skew =
+offset/slew. The binding spec is I-to-Q quadrature. Option (c) makes the I and Q paths
+STRUCTURALLY IDENTICAL (both have P-unmirrored + N-mirrored), so the mirror-induced offset is
+common to I and Q and cancels in the I-vs-Q comparison — quadrature is preserved to first order.
+It leaves only a small P/N (duty) offset shared by both paths, which is second-order (the
+master-slave latch sets ~50% duty) and correctable. Option (d) (east/west split by I-vs-Q) would
+put the offset directly on the quadrature axis — rejected. Option (a) (all-unmirrored row below
+core) is matching-optimal (zero relative mirror) BUT discards the closed/verified IP Stage B and
+needs an unproven down-channel routing scheme; (c) preserves IP, gives every converter a clean
+core-facing placement, and preserves the binding quadrature spec — chosen for that balance.
+Golden: grep `_IN`/`_QP`/`_QN` from `DIV2_QUAD_v1_golden.spice`, ports I_N/Q_P/Q_N (47→61→75).
+Stage D renames cell → DIV2_QUAD_v1, DROPS OI/OIB/OQ/OQB as ports (internal once all 4 tap them);
+final 9 ports CK CKB IBIAS I_P I_N Q_P Q_N VDD VSS.
