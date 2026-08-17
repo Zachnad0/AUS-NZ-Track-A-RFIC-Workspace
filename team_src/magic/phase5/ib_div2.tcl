@@ -309,6 +309,39 @@ via_m2m3 -1150 -8040 ; vseg metal2 -1150 $qVSSy -8040 56
 box values [expr {$qVSS-28}] [expr {$qVSSy-28}] -1122 [expr {$qVSSy+28}] ; paint metal2
 via_m1m2 $qVSS $qVSSy
 
+# ===== STAGE C: QP converter (EAST, UNMIRRORED, BELOW IP; latch B; INP=OQB INM=OQ) =====
+# Mirror of QN (east hauls). Tracks -15400/-15100/-14800 (ABOVE QN's so the shared-tap OQ/OQB
+# hauls don't collide). Descend M5 through latch B, stagger INP M4 / INM M5 / IBIAS M3.
+set bxP 23500 ; set byP -21000 ; set OXP [expr {$bxP+1360}] ; set OYP2 [expr {$byP+2600}] ; set pYp [expr {$OYP2+1330}]
+box values $bxP $byP $bxP $byP ; getcell ib_conv_v1
+set qpINP [expr {$OXP+965}] ; set qpINM [expr {$OXP+2165}] ; set qpIB [expr {$OXP-235}]
+set qpVbus [expr {$OXP-1300}] ; set qpVSS [expr {$OXP-1032}] ; set qpInmEsc [expr {$OXP+1340}]
+box values [expr {$qpINP-40}] [expr {$pYp-40}] [expr {$qpINP+40}] [expr {$pYp+40}] ; paint metal2
+box values [expr {$qpINM-40}] [expr {$pYp-40}] [expr {$qpINM+40}] [expr {$pYp+40}] ; paint metal2
+# INP_QP <- OQB (tap x2200) : M5 descend to -15400, M4 haul EAST, M4 drop
+via_m3m5 2200 -6400 ; vseg metal5 2200 -15400 -6400 44 ; via_m4m5 2200 -15400
+hseg metal4 2200 $qpINP -15400 28 ; vseg metal4 $qpINP -17070 -15400 28 ; via_m2m4 $qpINP $pYp
+# INM_QP <- OQ (tap x10000) : M5 descend to -15100, then M4 haul EAST (NOT M5 -- an M5 haul crosses
+# QN's IBIAS M5 descent at x15450 and shorts OQ->IBIAS); M4 drop to the cap-escape, M3 to pin.
+via_m3m5 10000 -6400 ; vseg metal5 10000 -15100 -6400 44 ; via_m4m5 10000 -15100
+hseg metal4 10000 22000 -15100 28 ; via_m4m5 22000 -15100
+hseg metal5 22000 $qpInmEsc -15100 44 ; vseg metal5 $qpInmEsc -17070 -15100 44 ; via_m2m5 $qpInmEsc $pYp
+hseg metal3 $qpInmEsc $qpINM $pYp 28 ; via_m2m3 $qpINM $pYp
+# IBIAS_QP <- IBIAS rail (15450,-2540) : M5 descend to -14800 (merges w/ QN's IBIAS descent, same
+# net), M3 haul EAST, M3 drop
+via_m3m5 15450 -2540 ; vseg metal5 15450 -14800 -2540 44 ; via_m3m5 15450 -14800
+hseg metal3 15450 $qpIB -14800 28 ; vseg metal3 $qpIB -17070 -14800 28 ; via_m2m3 $qpIB $pYp
+# VDD_QP : connect QP VDD bus UP to IP's VDD bus (both M2 @23560) on M4 -- a straight M2 riser
+# crosses IP's VSS M2 plate-strip (y-2000, x21900..23880) and shorts VDD to VSS.
+box values [expr {$qpVbus-60}] -4050 [expr {$qpVbus+60}] -3900 ; paint metal2 ; via_m2m4 $qpVbus -3980
+vseg metal4 $qpVbus -3980 3200 28
+box values [expr {$qpVbus-60}] 3110 [expr {$qpVbus+60}] 3260 ; paint metal2 ; via_m2m4 $qpVbus 3200
+# VSS_QP : drop from the core VSS plate's east edge (x21900, plate y-6000..-4500), MERGED with it
+# (not a separate near-by M2 -> M2.2a spacing), down to QP's deep VSS pin, then east to the pin.
+set qpVSSy [expr {$OYP2-1272}]
+vseg metal2 21900 $qpVSSy -4500 56
+box values 21844 [expr {$qpVSSy-28}] [expr {$qpVSS+28}] [expr {$qpVSSy+28}] ; paint metal2 ; via_m1m2 $qpVSS $qpVSSy
+
 select top cell
 drc on ; drc euclidean on ; drc check ; drc catchup
 puts "DIV2_DRC=[drc list count total]"
@@ -333,6 +366,8 @@ box values [expr {$OX+9148}] [expr {$OY+7761}] [expr {$OX+9204}] [expr {$OY+7807
 box values [expr {$bxN+408}] [expr {$OYN+7761}] [expr {$bxN+464}] [expr {$OYN+7807}] ; paint metal1 ; label I_N center metal1 ; port make 11
 # Q_N: the QN converter OUT pin, mirrored (parent (bxQ+436, OYNq+7784))
 box values [expr {$bxQ+408}] [expr {$OYNq+7761}] [expr {$bxQ+464}] [expr {$OYNq+7807}] ; paint metal1 ; label Q_N center metal1 ; port make 12
+# Q_P: the QP converter OUT pin, unmirrored (parent (OXP+9176, OYP2+7784))
+box values [expr {$OXP+9148}] [expr {$OYP2+7761}] [expr {$OXP+9204}] [expr {$OYP2+7807}] ; paint metal1 ; label Q_P center metal1 ; port make 13
 select top cell
 save $OUT/$CELL
 puts "DIV2_SAVED"
