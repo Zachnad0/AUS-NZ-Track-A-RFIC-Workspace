@@ -250,19 +250,22 @@ set ipIBn  [expr {$bxN+9612+235}]   ; set ipVbusN [expr {$bxN+9612+1300}]
 set ipVSSn [expr {$bxN+10644}]
 box values [expr {$ipINPn-40}] [expr {$pYn-40}] [expr {$ipINPn+40}] [expr {$pYn+40}] ; paint metal2
 box values [expr {$ipINMn-40}] [expr {$pYn-40}] [expr {$ipINMn+40}] [expr {$pYn+40}] ; paint metal2
-# INP_N <- OI (tap x10000, latch-A out east via) : M5 haul WEST @7000
-via_m2m5 10000 600 ; vseg metal5 10000 600 7000 44
-hseg metal5 $ipINPn 10000 7000 44 ; vseg metal5 $ipINPn $pYn 7000 44 ; via_m2m5 $ipINPn $pYn
-# INM_N <- OIB (tap x2200) : mirrored cap @ -6368..-4888 over the pin; escape is EAST of it
-# (mirror of "west of cap") to native1340 -> bxN+9612-1340. M4 haul, via_m4m5, M5 down, M3 to pin.
+# The tap-side risers must cross IP's haul band (OIB M5 @5500, OI/INM M4 @5800, VDD M4 @6500,
+# all spanning the core) on M3, or they short to those nets. So every riser is M3 up to its
+# track, then via_m3m5 to the M5 haul above IP's band.
 set inmEscN [expr {$bxN+9612-1340}]
-via_m2m4 2200 600 ; vseg metal4 2200 600 7300 28
-hseg metal4 -8000 2200 7300 28 ; via_m4m5 -8000 7300
-hseg metal5 -8000 $inmEscN 7300 44 ; vseg metal5 $inmEscN $pYn 7300 44 ; via_m2m5 $inmEscN $pYn
+# INP_N <- OI (tap x10000) : M3 riser (clears IP's OIB M5 @5500) -> M5 haul WEST @7000 -> drop
+vseg metal3 10000 600 7000 28 ; via_m3m5 10000 7000
+hseg metal5 $ipINPn 10000 7000 44 ; vseg metal5 $ipINPn $pYn 7000 44 ; via_m2m5 $ipINPn $pYn
+# INM_N <- OIB (tap x2200; pin under the mirrored cap @ -6368..-4888) : M3 riser -> M5 haul @7300
+# -> M5 down at the cap-escape (native1340 mirror) -> M3 east under the cap to the pin
+vseg metal3 2200 600 7300 28 ; via_m3m5 2200 7300
+hseg metal5 $inmEscN 2200 7300 44 ; vseg metal5 $inmEscN $pYn 7300 44 ; via_m2m5 $inmEscN $pYn
 hseg metal3 $ipINMn $inmEscN $pYn 28 ; via_m2m3 $ipINMn $pYn
-# IBIAS_N <- core IBIAS M3 rail (east x15450, y-2540) : riser up, long M5 haul WEST @7600
-via_m3m5 15450 -2540 ; vseg metal5 15450 -2540 7600 44
-hseg metal5 $ipIBn 15450 7600 44 ; vseg metal5 $ipIBn $pYn 7600 44 ; via_m2m5 $ipIBn $pYn
+# IBIAS_N <- core IBIAS M3 rail (x15450, y-2540) : M3 riser (clears IP's M5/M4 hauls) -> M5 haul
+# WEST @7600 -> M3 drop riser at the pin
+vseg metal3 15450 -2540 7600 28 ; via_m3m5 15450 7600
+hseg metal5 $ipIBn 15450 7600 44 ; via_m3m5 $ipIBn 7600 ; vseg metal3 $ipIBn $pYn 7600 28 ; via_m2m3 $ipIBn $pYn
 # VDD_N <- core VDD M4 @x-1000 : SHORT LOW hop (y3400) straight to the IN VDD bus, so no tall
 # VDD riser sits in the path of the INP/INM/IBIAS hauls (that shorted OIB/IBIAS to VDD).
 # via_m2m4 paints NO metal2 -> paint an explicit M2 pad on the bus first for via2 enclosure.
