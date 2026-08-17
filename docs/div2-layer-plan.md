@@ -100,6 +100,18 @@ INP=OIB INM=OI IBIAS=IBIAS VDD=VDD VSS=VSS OUT=I_P.
 - Gate MUST run `PDK=gf180mcuD PDK_ROOT=/foss/pdks verify_cp.sh` (ambient PDK=ihp-sg13g2 breaks
   the netgen setup). NO ext2spice merge needed — netgen combines the folds itself.
 
+## Q PLACEMENT (decided) — stacked-below, symmetric with the I pair
+QP east DIRECTLY BELOW IP (bx23500, by−21000; IP bottom −3330, QP top −3836, gap 506), unmirrored.
+QN west directly below IN (bx−13000, by−21000), mirrored. Same x per side as the I pair, mirror-
+paired (QP unmirrored / QN mirrored) → mirrors the I arrangement (P-east/N-west), so option (c)'s
+common-mode-cancellation holds and QP/QN stay matched to each other. Pins at y = by+3930 = −17070.
+Cost: Q pins sit ~10,670 iu (53 µm) below their latch-B taps (OQ/OQB @ y−6400), so each Q input
+haul is ~53 µm longer than the matching I haul → ~2.2 ps → **~1.0° at 1.25 GHz**, COMMON to Q_P/Q_N
+(a static I-to-Q offset, not an intra-pair duty error). Beats the old QP-below-IP/QN-far-west plan
+(unequal QP/QN hauls). Q hauls run in the clear band BELOW latch B (y<−8200): tap OQ/OQB → down to
+the clear band → across to the converter x → down to the pins; tap-side risers cross latch B's
+band (TAIL M3 @yB−750=−7750, nT M4 @−7900, nL M5 @−5850) inter-layer, per the west-converter rule.
+
 ## Stage C FLOORPLAN (the gating decision — resolve BEFORE routing)
 IP works because it sits BESIDE the core with its front-end (INP/INM/IBIAS + VDD/VSS bus) facing
 the core, so all 6 nets are SHORT lateral hops. The other three cannot all do that:
