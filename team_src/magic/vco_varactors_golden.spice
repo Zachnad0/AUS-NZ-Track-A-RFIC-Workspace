@@ -1,0 +1,4 @@
+.subckt vco_varactors cap_bias OUT_n OUT_p
+XC1 cap_bias OUT_n cap_nmos_03v3_b c_width=5u c_length=5u m=21
+XC4 cap_bias OUT_p cap_nmos_03v3_b c_width=5u c_length=5u m=21
+.ends
