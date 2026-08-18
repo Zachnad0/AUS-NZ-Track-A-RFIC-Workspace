@@ -258,9 +258,11 @@ to keep the I pair adjacent to the core.
 ## DIV2.2 — Electromigration on the VSS network: KNOWN VIOLATION (now quantified)
 No longer unknown. Total VSS return **22.4 mA** (SPICE, div2_sb_TT deck, i(V_VDD) 16–20 ns — matches
 the validated headline); **per-converter VSS 2.96 mA** (measured through a 0 V meter split into the
-IP converter's return). The open gf180mcuD PDK ships NO EM current-density deck (no EM rule in the
-DRC decks — confirmed), so the limit is the GF design-manual Al-metal rule, ~1 mA/µm for M1–M4
-(~2 mA/µm for the thicker M5) at 110 °C. Against that:
+IP converter's return). The open gf180mcuD PDK ships **NO EM current-density deck at all** (no EM
+rule in any DRC/LVS deck — confirmed by search). There is therefore no PDK limit to cite; the
+comparison below uses an **industry rule of thumb for ~0.5 µm Al metal, ~1 mA/µm (M1–M4), ~2 mA/µm
+(thick M5)** — NOT a value read from the GF design manual (which was not consulted). The real
+per-layer limits must come from that manual before sign-off. Against the rule of thumb:
 - 7.5 µm M2 collector plate carries the ~17–22 mA aggregate → **~2.3–2.9 mA/µm — OVER**.
 - Per-converter VSS ties are 0.28–0.56 µm carrying ~2.96 mA → **~5.3–10.6 mA/µm — well OVER**.
 **Fix = widen the plate to ~22 µm and every per-converter tie to ~3 µm** (M2/M3), then re-gate

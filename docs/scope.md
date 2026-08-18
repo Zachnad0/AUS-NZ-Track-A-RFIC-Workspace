@@ -215,6 +215,15 @@ Derived bottom-up, not invented:
 7. **Rounded to a clean rectangle with keep-out / buffer / routing headroom:**
    **350 µm × 300 µm** (105,000 µm²), ≈ 2× the bottoms-up active area.
 
+> **[CORRECTED 2026-08-17 — this §5 bottoms-up is superseded by measured layout; see
+> `tracking.md` area table.]** Two lines above were badly off: (a) the "÷2/quadrature divider
+> ≈ 162 µm²" (item 3) was a std-cell-DFF guess — the real full-custom CML+slicer
+> `DIV2_QUAD_v1` measures **41,340 µm²**; (b) the "43 k VCO w/ keep-out" over-counted — the VCO
+> is inductor-dominated at **~18,000 µm²** (measured inductor 15,288 + ~2.7 k core). Measured
+> reality: 4 signed-off blocks = **56,635 µm²** + VCO ~18,000 = **~75,000 µm²** of blocks; with
+> 30–50 % top routing → **~96,000–114,000 µm²**. So **350×300 (105,000) STRADDLES the range —
+> tight but plausible**, NOT the "≈ 2× slack" this line claims. Final figure at Phase 7 assembly.
+
 **Slot fit:** the `slot_0p5x0p5` core is **1052 µm × 1647 µm** (from
 `librelane/slots/slot_0p5x0p5.yaml`, CORE_AREA [442,442,1494,2089]). The estimate
 uses **33 % of the core width and 18 % of the core height** — comfortable margin,
