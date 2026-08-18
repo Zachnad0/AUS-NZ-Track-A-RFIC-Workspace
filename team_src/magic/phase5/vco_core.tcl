@@ -23,12 +23,10 @@ place_nfet 10 $xR MN2 0.28 $yN 4
 place_pfet 5  $xL MP1 $yP 0.28 14
 place_pfet 5  $xR MP2 $yP 0.28 14
 flatten ${CELL}_f ; load ${CELL}_f
-# ---------- STRAP ----------  (nfet taps=0: leg tap offset is tuned for L=2, collides
-#   with a source via at L0.28 pitch -> paint shared pwell + psub taps in clean spots)
-nfet_leg 10 $xL 1 0.28 $yN 0 4
-nfet_leg 10 $xR 1 0.28 $yN 0 4
-box values -1140 -820 4140 700 ; paint pwell
-foreach tx {-1000 1500 4000} { welltap $tx -760 -580 -600 psubdiff psubdiffcont }
+# ---------- STRAP ----------  (nfet_leg tap offset now scales with pitch (offset P);
+#   taps=1 DRC-cleans at L0.28 -- the former hand-painted pwell workaround is gone)
+nfet_leg 10 $xL 1 0.28 $yN 1 4
+nfet_leg 10 $xR 1 0.28 $yN 1 4
 pfet_leg 5  $xL 1 0.28 $yP 1 -1500 14
 pfet_leg 5  $xR 1 0.28 $yP 1 -1500 14
 # pfet tap risers: cover the tap via (fix V1.4) + connect nwell tap -> VDD rail (yP-1300)

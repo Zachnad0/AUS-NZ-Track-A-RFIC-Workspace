@@ -66,7 +66,10 @@ proc nfet_leg {nf xoff gc {L 2} {yoff 0} {taps 1} {W 4}} {
     }
     if {$taps} {
         box values [expr {$xoff-($maxc+340)}] [expr {$yoff-($G+420)}] [expr {$xoff+$maxc+340}] [expr {$yoff+($G+300)}] ; paint pwell
-        for {set tx [expr {$xoff-$maxc+252}]} {$tx < [expr {$xoff+$maxc}]} {set tx [expr {$tx+5040}]} {
+        # tap at a DRAIN-column midpoint (offset P, not P/2): the nfet tap via sits at
+        # the source-rail y, so a P/2 offset collides with the i=0 source via at small
+        # pitch (L0.28). Offset P lands it between two source vias -> clean at every L.
+        for {set tx [expr {$xoff-$maxc+$P}]} {$tx < [expr {$xoff+$maxc}]} {set tx [expr {$tx+10*$P}]} {
             welltap $tx [expr {$yoff-($G+360)}] [expr {$yoff-($G+180)}] [expr {$yoff-($G+200)}] psubdiff psubdiffcont
         }
     }
