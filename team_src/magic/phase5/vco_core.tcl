@@ -23,10 +23,16 @@ place_nfet 10 $xR MN2 0.28 $yN 4
 place_pfet 5  $xL MP1 $yP 0.28 14
 place_pfet 5  $xR MP2 $yP 0.28 14
 flatten ${CELL}_f ; load ${CELL}_f
-# ---------- STRAP ----------  (nfet_leg tap offset now scales with pitch (offset P);
-#   taps=1 DRC-cleans at L0.28 -- the former hand-painted pwell workaround is gone)
-nfet_leg 10 $xL 1 0.28 $yN 1 4
-nfet_leg 10 $xR 1 0.28 $yN 1 4
+# ---------- STRAP ----------  nfets get taps=0 (NO bulk->source tie). We paint the pwell
+#   and psub taps ourselves, tied to a SEPARATE GND rail (y-760), so nfet bulk = GND while
+#   the source rail stays its own ISS net. This gives a REAL tail node (ISS != GND) -- the
+#   B=ISS + no-isolation short is gone. (gf180 nfet_03v3 has no dnwell isolation, so the
+#   pwell IS the global psub = GND; the source rail is a distinct M2 net.)
+nfet_leg 10 $xL 1 0.28 $yN 0 4
+nfet_leg 10 $xR 1 0.28 $yN 0 4
+box values -1140 -1080 4140 700 ; paint pwell
+foreach tx {-1000 1500 4000} { welltap $tx -1060 -880 -900 psubdiff psubdiffcont }  ;# default offsets (clo=raily-160, chi=raily+20): 180-tall diff, M1/contact enclosure OK
+hseg metal2 -1040 4040 -900 28    ;# GND rail (M2) at -900, distinct from ISS @ -600
 pfet_leg 5  $xL 1 0.28 $yP 1 -1500 14
 pfet_leg 5  $xR 1 0.28 $yP 1 -1500 14
 # pfet tap risers: cover the tap via (fix V1.4) + connect nwell tap -> VDD rail (yP-1300)
@@ -70,6 +76,7 @@ box values 680 [expr {$yN-628}] 720 [expr {$yN-572}] ; label ISS center metal2 ;
 box values 980 [expr {$yP-1328}] 1020 [expr {$yP-1272}] ; label VDD center metal2 ; port make 2
 box values -1320 2480 -1280 2520 ; label OUT_p center metal3 ; port make 3
 box values 4280 2480 4320 2520 ; label OUT_n center metal4 ; port make 4
+box values -520 -928 -480 -872 ; label GND center metal2 ; port make 5    ;# GND rail (nfet bulk)
 select top cell
 save $OUT/$CELL
 puts "VCORE_SAVED bbox=[box values]"

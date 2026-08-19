@@ -1,6 +1,6 @@
-.subckt vco_core VDD OUT_p OUT_n ISS
-XM1 OUT_p OUT_n ISS ISS nfet_03v3 L=0.28u W=40u nf=1
-XM4 OUT_n OUT_p ISS ISS nfet_03v3 L=0.28u W=40u nf=1
+.subckt vco_core VDD OUT_p OUT_n ISS GND
+XM1 OUT_p OUT_n ISS GND nfet_03v3 L=0.28u W=40u nf=1
+XM4 OUT_n OUT_p ISS GND nfet_03v3 L=0.28u W=40u nf=1
 XM2 OUT_p OUT_n VDD VDD pfet_03v3 L=0.28u W=70u nf=1
 XM3 OUT_n OUT_p VDD VDD pfet_03v3 L=0.28u W=70u nf=1
 .ends
