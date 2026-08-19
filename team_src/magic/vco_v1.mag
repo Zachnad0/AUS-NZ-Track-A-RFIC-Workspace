@@ -1,7 +1,36 @@
 magic
 tech gf180mcuD
 magscale 1 10
-timestamp 1787157836
+timestamp 1787158716
+<< checkpaint >>
+rect -10704 -11922 -6624 -8516
+rect -2953 -9790 1127 -6890
+rect -10740 -12596 -6624 -11922
+rect -3273 -10970 1127 -9790
+rect -10740 -15958 -6660 -12596
+rect -3273 -13870 807 -10970
+<< metal1 >>
+rect -8704 -10596 -8624 -10516
+rect -8706 -13702 -8622 -13686
+rect -8706 -13754 -8690 -13702
+rect -8638 -13754 -8622 -13702
+rect -8706 -13770 -8622 -13754
+rect -8740 -13958 -8660 -13922
+<< via1 >>
+rect -8690 -13754 -8638 -13702
+<< metal2 >>
+rect -953 -8970 -873 -8890
+rect -1273 -11870 -1193 -11790
+rect -8706 -13700 -8622 -13686
+rect -8706 -13756 -8692 -13700
+rect -8636 -13756 -8622 -13700
+rect -8706 -13770 -8622 -13756
+<< via2 >>
+rect -8692 -13702 -8636 -13700
+rect -8692 -13754 -8690 -13702
+rect -8690 -13754 -8638 -13702
+rect -8638 -13754 -8636 -13702
+rect -8692 -13756 -8636 -13754
 << metal3 >>
 rect -84 -5370 4 -5356
 rect -3490 -5372 4 -5370
@@ -11,6 +40,12 @@ rect -3490 -5430 4 -5428
 rect -3480 -8700 -3420 -5430
 rect -84 -5444 4 -5430
 rect -3500 -8760 -3213 -8700
+rect -8694 -13086 -4270 -13026
+rect -8694 -13686 -8634 -13086
+rect -8706 -13700 -8622 -13686
+rect -8706 -13756 -8692 -13700
+rect -8636 -13756 -8622 -13700
+rect -8706 -13770 -8622 -13756
 rect -844 -23822 -756 -23808
 rect -84 -23822 4 -23808
 rect -4852 -23824 -756 -23822
@@ -73,22 +108,28 @@ timestamp 1787030341
 transform 1 0 -1913 0 1 -11230
 box -1342 -820 4368 5230
 use vco_inductor_v2  vco_inductor_v2_0 vco_inductor_v2
-timestamp 1787157812
+timestamp 1787157899
 transform 1 0 0 0 1 0
 box -880 -480 40 1040
+use vco_tune_r  vco_tune_r_0
+timestamp 1787126724
+transform 1 0 -8940 0 1 -13940
+box -60 -60 612 3656
 use vco_varactors  vco_varactors_0
 timestamp 1787031854
 transform 1 0 -5014 0 1 -23412
 box -60 -482 9288 10412
 << labels >>
-rlabel metal2 -941 -8958 -885 -8902 0 VDD
+rlabel metal2 -953 -8970 -873 -8890 0 VDD
 port 1 nsew
-rlabel metal2 -1261 -11858 -1205 -11802 0 ISS
+rlabel metal2 -1273 -11870 -1193 -11790 0 ISS
 port 2 nsew
 rlabel metal5 -84 -5044 4 -4956 0 OUT_p
 port 3 nsew
 rlabel metal5 -844 -5044 -756 -4956 0 OUT_n
 port 4 nsew
-rlabel metal3 -4328 -13084 -4272 -13028 0 cap_bias
+rlabel metal1 -8704 -10596 -8624 -10516 0 TUNE
 port 5 nsew
+rlabel metal1 -8740 -13958 -8660 -13922 0 GND
+port 6 nsew
 << end >>
