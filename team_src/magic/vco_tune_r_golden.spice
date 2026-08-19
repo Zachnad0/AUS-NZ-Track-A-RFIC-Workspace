@@ -1,0 +1,3 @@
+.subckt vco_tune_r TUNE cap_bias GND
+XR2 TUNE cap_bias GND ppolyf_u_1k r_width=1u r_length=15u
+.ends
