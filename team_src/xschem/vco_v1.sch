@@ -43,12 +43,8 @@ N 310 -830 320 -830 {lab=VDD}
 N 610 -800 620 -800 {lab=VDD}
 N 620 -830 620 -800 {lab=VDD}
 N 610 -830 620 -830 {lab=VDD}
-N 310 -320 320 -320 {lab=ISS}
-N 310 -320 310 -290 {lab=ISS}
-N 310 -290 320 -290 {lab=ISS}
-N 610 -320 620 -320 {lab=ISS}
-N 620 -320 620 -290 {lab=ISS}
-N 610 -290 620 -290 {lab=ISS}
+N 310 -320 320 -320 {lab=GND}
+N 610 -320 620 -320 {lab=GND}
 N 580 -580 580 -560 {lab=OUT_p}
 N 580 -580 610 -580 {lab=OUT_p}
 N 320 -580 350 -580 {lab=OUT_n}
@@ -153,6 +149,8 @@ model=cap_nmos_03v3_b
 spiceprefix=X
 m=21}
 C {lab_wire.sym} 420 -490 0 0 {name=p8 sig_type=std_logic lab=cap_bias}
+C {lab_wire.sym} 620 -320 0 0 {name=p9 sig_type=std_logic lab=GND}
+C {lab_wire.sym} 310 -320 0 0 {name=p10 sig_type=std_logic lab=GND}
 C {symbols/ppolyf_u_3k.sym} 460 -460 0 0 {name=R2
 W=1u
 L=5u
