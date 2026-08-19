@@ -1,13 +1,13 @@
-# vco_v1.tcl -- rung 3c (WIP): VCO assembly. Inductor + core + varactor PLACED;
-#   core<->varactor tank ROUTED + verified DISTINCT (OUT_p/OUT_n each connect core+var).
-#   Inductor at native position; active blocks below, centred under the centre channel.
-#   Tank on two M5 buses (OUT_p @ x-40, OUT_n @ x-800) that stop at y-5000 (below the
-#   inductor). INDUCTOR-PORT CONNECTION DEFERRED: the dual-spiral's PORT1/PORT2 are M5
-#   leads interior to a continuous coil; a bus run up to them touches the coil (which is
-#   one DC-continuous conductor) rather than landing cleanly on the labelled terminal
-#   (OUT_p reached PORT2, OUT_n would not reach PORT1). Needs the inductor's designed
-#   feed path (or re-exported edge ports) + the W3 black-box for LVS. Cross-taps kept on
-#   M3/M4 UNDER the M5 buses so the two nets never share a layer at a crossing.
+# vco_v1.tcl -- VCO assembly. Inductor + core + varactor placed; FULL TANK routed.
+#   Tank on two M5 buses UP the clear centre channel to the inductor ports: OUT_p @
+#   x-40 -> PORT2, OUT_n @ x-800 -> PORT1 (1a geometry proof: each bus intersects ONLY
+#   its own port lead, no coil turn). vco_inductor_v2 is an ABSTRACT cell (LEFview +
+#   GDS_FILE=gds/vco_inductor_v2.gds, GDS_START/END, FIXED_BBOX) so magic's extractor
+#   does NOT traverse the DC-continuous coil -> PORT1/PORT2 come out as DISTINCT pins
+#   and OUT_p/OUT_n stay separate. The full spiral (271 shapes) is streamed into the
+#   final GDS from GDS_FILE. Cross-taps kept on M3/M4 UNDER the M5 buses so the two nets
+#   never share a layer at a crossing.
+# PRE-LOAD masters (incl the abstract inductor) before getcell AND before gds write.
 # Port coords after getcell (LL placement): shifts core (-1913,-11230), var (-5014,-23412).
 source /foss/designs/AUS-NZ-integration/team_src/magic/phase5/strap.tcl
 set OUT /foss/designs/AUS-NZ-integration/team_src/magic
@@ -40,13 +40,13 @@ set vOP_x -172 ; set vON_x -4852 ; set vOy -23852 ;# var OUT_p/OUT_n (M3)
 
 # channel between core-top (-6000) and inductor-bottom (-4800): OUT_p @ -5400, OUT_n @ -5700
 # ---- OUT_p : M5 bus @ x-40 ; core exits LEFT of its edge, up, right to bus ----
-v metal5 $P2x $vOy -5000 44
+v metal5 $P2x $vOy 100 44
 h metal3 -3500 $cOP_x $cOy 30                           ;# core OUT_p out past left edge
 v metal3 -3450 $cOy -5370 30                            ;# up (outside core)
 h metal3 -3490 $P2x -5400 30 ; via_m3m5 $P2x -5400     ;# right to bus @ -5400 (overlaps v)
 h metal3 $vOP_x $P2x $vOy 30 ; via_m3m5 $P2x $vOy       ;# var OUT_p M3 -> bus
 # ---- OUT_n : M5 bus @ x-800 ; core exits RIGHT of its edge, up, left to bus ----
-v metal5 $P1x $vOy -5000 44
+v metal5 $P1x $vOy 100 44
 h metal4 $cON_x 2650 $cOy 30                            ;# core OUT_n out past right edge
 v metal4 2600 $cOy -5670 30                             ;# up (outside core)
 h metal4 $P1x 2650 -5700 30 ; via_m4m5 $P1x -5700     ;# left to bus @ -5700 (overlaps v; clears OUT_p via)

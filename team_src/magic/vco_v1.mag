@@ -1,7 +1,7 @@
 magic
 tech gf180mcuD
 magscale 1 10
-timestamp 1787042773
+timestamp 1787157836
 << metal3 >>
 rect -84 -5370 4 -5356
 rect -3490 -5372 4 -5370
@@ -54,14 +54,14 @@ rect -828 -5728 -772 -5672
 rect -828 -23880 -772 -23824
 rect -68 -23880 -12 -23824
 << metal5 >>
-rect -844 -5672 -756 -5000
+rect -844 -5672 -756 100
 rect -844 -5728 -828 -5672
 rect -772 -5728 -756 -5672
 rect -844 -23824 -756 -5728
 rect -844 -23880 -828 -23824
 rect -772 -23880 -756 -23824
 rect -844 -23896 -756 -23880
-rect -84 -5372 4 -5000
+rect -84 -5372 4 100
 rect -84 -5428 -68 -5372
 rect -12 -5428 4 -5372
 rect -84 -23824 4 -5428
@@ -73,9 +73,9 @@ timestamp 1787030341
 transform 1 0 -1913 0 1 -11230
 box -1342 -820 4368 5230
 use vco_inductor_v2  vco_inductor_v2_0 vco_inductor_v2
-timestamp 1782177062
+timestamp 1787157812
 transform 1 0 0 0 1 0
-box -22400 -4800 14000 12000
+box -880 -480 40 1040
 use vco_varactors  vco_varactors_0
 timestamp 1787031854
 transform 1 0 -5014 0 1 -23412
@@ -85,9 +85,9 @@ rlabel metal2 -941 -8958 -885 -8902 0 VDD
 port 1 nsew
 rlabel metal2 -1261 -11858 -1205 -11802 0 ISS
 port 2 nsew
-rlabel metal5 -84 -5044 4 -5000 0 OUT_p
+rlabel metal5 -84 -5044 4 -4956 0 OUT_p
 port 3 nsew
-rlabel metal5 -844 -5044 -756 -5000 0 OUT_n
+rlabel metal5 -844 -5044 -756 -4956 0 OUT_n
 port 4 nsew
 rlabel metal3 -4328 -13084 -4272 -13028 0 cap_bias
 port 5 nsew
