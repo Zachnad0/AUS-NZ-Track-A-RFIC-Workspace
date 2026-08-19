@@ -1,16 +1,20 @@
 magic
 tech gf180mcuD
-timestamp 1787157899
+magscale 1 2
+timestamp 1787161791
 << metal5 >>
-rect -88 -48 -72 104
-rect -12 -48 4 104
+rect -176 -96 -144 208
+rect -99 -111 -69 -81
+rect -24 -96 8 208
 << labels >>
-rlabel metal5 -81 -48 -79 -47 0 PORT1
+rlabel metal5 -162 -96 -158 -94 0 PORT1
 port 1 nsew
-rlabel metal5 -5 -48 -3 -47 0 PORT2
+rlabel metal5 -10 -96 -6 -94 0 PORT2
 port 2 nsew
+rlabel metal5 -86 -98 -82 -94 0 GND
+port 3 nsew
 << properties >>
-string FIXED_BBOX -2240 -480 1400 1200
+string FIXED_BBOX -4480 -960 2800 2400
 string GDS_END 17426
 string GDS_FILE /foss/designs/AUS-NZ-integration/gds/vco_inductor_v2.gds
 string GDS_START 122

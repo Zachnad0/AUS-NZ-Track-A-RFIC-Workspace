@@ -1,0 +1,10 @@
+.subckt vco_v1 VDD OUT_p OUT_n GND TUNE ISS
+XM1 OUT_p OUT_n ISS ISS nfet_03v3 L=0.28u W=40u nf=1
+XM4 OUT_n OUT_p ISS ISS nfet_03v3 L=0.28u W=40u nf=1
+XM2 OUT_p OUT_n VDD VDD pfet_03v3 L=0.28u W=70u nf=1
+XM3 OUT_n OUT_p VDD VDD pfet_03v3 L=0.28u W=70u nf=1
+XC1 cap_bias OUT_n cap_nmos_03v3_b c_width=5u c_length=5u m=21
+XC4 cap_bias OUT_p cap_nmos_03v3_b c_width=5u c_length=5u m=21
+X1 OUT_n OUT_p GND vco_inductor_v2
+XR2 TUNE cap_bias GND ppolyf_u_1k r_width=1u r_length=15u
+.ends
