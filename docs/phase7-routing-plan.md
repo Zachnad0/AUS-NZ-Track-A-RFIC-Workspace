@@ -79,3 +79,34 @@ verbatim golden-merge that builds the deliverable GDS) — magic must not re-ren
    cross-layer ones (UP, I_P), then the long differential pair VCO_OUTP/VCO_OUTN last.
 3. 4c: 10 die-edge port labels; re-run verify_cp for the final unique match + zero
    property/port errors.
+
+---
+
+## PROGRESS + LESSONS (2026-08-20, rung 3a WIP)
+
+Routing infra is built and validated: `route_lib.py` (via stacks M1–M5, wires; gf180 via
+0.26 µm + enclosures) is **DRC-clean** in isolation (`route_selftest.py`). `route_chip.py`
+adds top-level metal to the placed `chip_top.gds` (run after `chip_merge.py`).
+
+**Power buses** live in the **y[180,205] band** — verified clear of ALL block geometry across
+the full width. Ports escape up a via stack to **M4**, an **M4 riser** drops to the bus level,
+**via4 to the M5 bus only at the target**.
+
+**SILENT SHORT — found and fixed (the key lesson).** The first cut ran risers on **M5**, so a
+riser crossing a *non-target* M5 bus silently merged two nets (the GND riser crossed the VDDD
+bus → PFD.VDD extracted as `VSUBS`). **DRC-legal, LVS-fatal.** This is the project's recurring
+failure mode. Rule for all remaining routing: **vertical risers on M4, horizontal buses on M5;
+a riser vias to M5 only where it joins its own bus.** Verified by re-extraction: after the fix
+each supply is a distinct net and VDDA correctly ties CP.VDD + ibias.VDD.
+
+**Connected so far** (magic DRC 0, KLayout var-D 168): VDDA = CP.VDD + ibias.VDD; GND bus on
+CP/ibias/PFD VSS; VDDD bus on PFD.VDD. No shorts.
+
+**The hard blocker — interior ports in dense metal.** vco (VDD/GND/ISS) and DIV2 (VDD/VSS,
+CK/CKB) expose their ports deep inside dense block metal (DIV2 dense on M2/M3/M4; vco active
+dense on M1/M2). A via drop lands on the port fine (M3/M4/M5 are locally clear above it), but
+the **riser from the port out to a channel/band crosses dense block metal and shorts**. These
+need per-net threading through the sparse upper-layer gaps — the remaining iterative work.
+Reachable-from-a-channel ports (CP/ibias/PFD, DIV2 I_P/Q_P on the right edge, PFD REF/UP/DOWN
+on its edges) route cleanly; interior ports are the cost. The loop is `chip_merge → route_chip
+→ run_drc / verify_cp chip_top` (watch the net count and the per-block VDD/VSS net names).
