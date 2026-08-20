@@ -113,14 +113,18 @@ PORT_LABELS = [
 for name, x, y, m in PORT_LABELS:
     port_label(name, x, y, m)
 
-# --- signals (rung 4b). H hops on M4, V risers on M3 (crossing-safe). ---
-# UP (PFD.UP<->CP.UP): CONNECTS (extracted PFD.UP=CP.UP at tap (246,268), OUT distinct), but
-# PFD's UP/DOWN are 0.28um std-cell pins at 0.28um PITCH; the minimum via pad is 0.26+2*0.06 =
-# 0.38um (V1.3d enclosure floor), leaving only 0.23um to the neighbour DOWN pin < the 0.28um
-# M2.2a limit. A top-down via cannot be DRC-clean on these pins without reopening PFD -- same for
-# DOWN and FB (all PFD digital pins). Flag for Greg: PFD needs chip-level pin escapes, or a
-# waivered 0.23um spacing on these taps. Analog signals (VGP/VGN/IB_DIV2) are the tractable next.
-#   Verified route shape: via(2,4)@(246,268); M4 -> x282.25; via(3,4); M3 -> CP.UP.
+# --- signals (rung 4b). SAME-LAYER ESCAPE: extend a pin along its OWN axis out of the block
+#     (min width, no via pad, so neighbour spacing stays as-drawn), then via up in open space.
+#     Signals M2/M3, power M4/M5, never crossing a same-layer power riser. ---
+# UP: PFD.UP M2 pin x[245.4,247.5] (vertical) -> escape UP into the y270.3-272.5 gap (above PFD,
+#     below the GND ring); CP.UP M3 pin x282 -> escape UP into the y233-245 CP/PFD gap.
+UPX = 246.12                                       # PFD.UP label x (DOWN is at 247.24)
+R.vwire(chip, ly, 2, 268.0, 271.0, UPX, w=0.3)     # narrow M2 stub up out of PFD (clear of DOWN)
+R.via_stack(chip, ly, 2, 4, UPX, 271.0)            # via up in the open gap (no neighbour here)
+R.hwire(chip, ly, 4, UPX, 282.25, 271.0, w=0.6)    # M4 across to x282.25 (right of PFD, clear of risers)
+R.vwire(chip, ly, 4, 271.0, 238.0, 282.25, w=0.6)  # M4 down (same net -> its own L corner)
+R.via_stack(chip, ly, 3, 4, 282.25, 238.0)         # to M3 at the CP.UP escape (above CP, open)
+R.vwire(chip, ly, 3, 238.0, 228.0, 282.25, w=0.28) # extend CP.UP M3 (x282.11-282.39 pin) down onto it
 
 # VGP/VGN/IB_DIV2 (analog signals): DEFERRED. The pins are wide (tappable), but ibias.VGP/VGN
 # sit INTERIOR to ibias (x48.9 / x82, ~140um from the right edge), so any run to CP crosses
