@@ -1,0 +1,186 @@
+* chip_top_golden.spice -- PLL die-level LVS golden.
+* TOP: netlisted from team_src/xschem/chip_top/chip_top.sch (never typed).
+* BLOCKS: the five SIGNED-OFF block goldens, inlined verbatim below.
+* GND is the chip-wide common (internal net, no pad). vco ISS tied to GND.
+*
+.subckt chip_top VDDA IBIAS VTUNE CP_OUT I_P I_N Q_P Q_N VDDD REF_IN
+*.ipin VDDA
+*.ipin IBIAS
+*.ipin VTUNE
+*.opin CP_OUT
+*.opin I_P
+*.opin I_N
+*.opin Q_P
+*.opin Q_N
+*.ipin VDDD
+*.ipin REF_IN
+x_pfd_lib REF_IN I_P UP DOWN VDDD GND PFD_lib
+x_cp_v1 UP DOWN CP_OUT VDDA GND VGP VGN CP_v1
+x_ibias_gen_v1 IBIAS VGP VGN IB_DIV2 VDDA GND ibias_gen_v1
+x_div2_quad_v1 VCO_OUTP VCO_OUTN IB_DIV2 I_P I_N Q_P Q_N VDDD GND DIV2_QUAD_v1
+x_vco_v1 VDDA VCO_OUTP VCO_OUTN GND VTUNE GND vco_v1
+.ends
+
+* ---- inlined: PFD_lib_golden.spice ----
+* PFD_lib -- LVS golden netlist for the library-cell PFD (Aug-14 layout)
+* Topology = our PFD_v1 (2 reset-DFFs + coincidence NAND), leaves = gf180 std cells.
+* Reset path has 2x inv_1 delay (RSTN) to restore min pulse to 0.50 ns (verification 2.2).
+* Layout must LVS uniquely against this subckt.
+.subckt PFD_lib REF FB UP DOWN VDD VSS
+* tie-high cells for D (antenna/ESD-correct); LibreLane ties each D separately -> 2x tieh
+*   tieh ports: Z VDD VNW VPW VSS
+XTIE1 DHI1 VDD VDD VSS VSS gf180mcu_fd_sc_mcu7t5v0__tieh
+XTIE2 DHI2 VDD VDD VSS VSS gf180mcu_fd_sc_mcu7t5v0__tieh
+* DFFs: D=DHIx (tied high), clocked by REF/FB, async active-low reset RN=RSTN
+*   dffrnq_1 ports: D RN CLK Q VDD VNW VPW VSS  (VNW=VDD, VPW=VSS)
+X1 DHI1 RSTN REF  UP   VDD VDD VSS VSS gf180mcu_fd_sc_mcu7t5v0__dffrnq_1
+X2 DHI2 RSTN FB   DOWN VDD VDD VSS VSS gf180mcu_fd_sc_mcu7t5v0__dffrnq_1
+* coincidence: nand2_1 ports A1 A2 ZN VDD VNW VPW VSS
+XN UP DOWN NANDO VDD VDD VSS VSS gf180mcu_fd_sc_mcu7t5v0__nand2_1
+* reset delay: 2x inv_1 (ports I ZN VDD VNW VPW VSS), polarity preserved
+XI1 NANDO NDLY VDD VDD VSS VSS gf180mcu_fd_sc_mcu7t5v0__inv_1
+XI2 NDLY  RSTN VDD VDD VSS VSS gf180mcu_fd_sc_mcu7t5v0__inv_1
+.ends PFD_lib
+
+* ---- inlined: CP_v1_golden.spice ----
+* CP_v1 -- LVS golden netlist for the charge-pump layout (Aug-14, full-custom analog)
+* 8 transistors. PARTITION DECIDED (Greg, 2026-08-05): TWO CURRENT PORTS into the
+* block -- VGP feeds diode ref M_PREF, VGN feeds diode ref M_NREF -- both driven by
+* the chip-level IBIAS generator (block ports, NOT pads; pin count unaffected). The
+* schematic's ideal I_CP=50uA sources (I_PREF/I_NREF) are NOT laid out; the IBIAS
+* generator sinks I_CP from VGP and sources I_CP into VGN externally. Devices are
+* UNCHANGED from the characterized CP_v1; only the port list differs (VGP/VGN exposed).
+.subckt CP_v1 UP DOWN CP_OUT VDD VSS VGP VGN
+* --- PMOS current mirror (sources I_CP when UP) --- MATCH M_PREF <-> M_PSRC
+XM_PREF VGP  VGP  VDD VDD pfet_03v3 L=2u   W=50u  nf=1  m=1
+XM_PSRC PMID VGP  VDD VDD pfet_03v3 L=2u   W=50u  nf=1  m=1
+XM_PSW  CP_OUT UP_B PMID VDD pfet_03v3 L=0.3u W=50u nf=1 m=1
+* --- NMOS current mirror (sinks I_CP when DOWN) --- MATCH M_NREF <-> M_NSNK
+XM_NREF VGN  VGN  VSS VSS nfet_03v3 L=2u   W=10u  nf=1  m=1
+XM_NSNK NMID VGN  VSS VSS nfet_03v3 L=2u   W=10u  nf=1  m=1
+XM_NSW  CP_OUT DOWN NMID VSS nfet_03v3 L=0.3u W=10u nf=1 m=1
+* --- UP inverter (UP -> UP_B for the pmos switch) ---
+XM_INVP UP_B UP VDD VDD pfet_03v3 L=0.3u W=2u nf=1 m=1
+XM_INVN UP_B UP VSS VSS nfet_03v3 L=0.3u W=1u nf=1 m=1
+.ends CP_v1
+
+* ---- inlined: ibias_gen_v1_golden.spice ----
+* ibias_gen_v1 -- LVS golden, netlisted from team_src/xschem/ibias_gen_v1.sch (2026-08-14).
+* Wide-swing cascode bias generator. NMOS mirror gate=NB, cascode gate=IBIAS (L=1u);
+* PMOS mirror gate=PB, cascode gate=PA/VBCPD (L=1u). Currents scale by unit count m
+* (unit nfet W=4u, unit pfet W=16u). XCDEC is the Vb_p(=PB) decap. XMN* legs feed the
+* PFD/CP (VGP,VGN) and the DIV2 replica (IB_DIV2). Ports match the schematic .subckt.
+.subckt ibias_gen_v1 IBIAS VGP VGN IB_DIV2 VDD VSS
+XMN0   NB     NB     VSS VSS nfet_03v3 L=2u W=4u  nf=1 m=24
+XMNC0  IBIAS  IBIAS  NB  VSS nfet_03v3 L=1u W=4u  nf=1 m=24
+XMN1   n1     NB     VSS VSS nfet_03v3 L=2u W=4u  nf=1 m=5
+XMNC1  VGP    IBIAS  n1  VSS nfet_03v3 L=1u W=4u  nf=1 m=5
+XMN2   n2     NB     VSS VSS nfet_03v3 L=2u W=4u  nf=1 m=24
+XMNC2  PA     IBIAS  n2  VSS nfet_03v3 L=1u W=4u  nf=1 m=24
+XMNB   VBCPD  NB     VSS VSS nfet_03v3 L=2u W=4u  nf=1 m=2
+XMP0   PB     PB     VDD VDD pfet_03v3 L=2u W=16u nf=1 m=24
+XMP0c  PA     PA     PB  VDD pfet_03v3 L=1u W=16u nf=1 m=24
+XMP1   p1     PB     VDD VDD pfet_03v3 L=2u W=16u nf=1 m=5
+XMP1c  VGN    PA     p1  VDD pfet_03v3 L=1u W=16u nf=1 m=5
+XMP2   p2     PB     VDD VDD pfet_03v3 L=2u W=16u nf=1 m=24
+XMP2c  IB_DIV2 VBCPD p2  VDD pfet_03v3 L=1u W=16u nf=1 m=24
+XMPB   pb2    pb2    VDD VDD pfet_03v3 L=2u W=16u nf=1 m=2
+XMPBc  VBCPD  VBCPD  pb2 VDD pfet_03v3 L=1u W=16u nf=1 m=2
+XCDEC  VDD    PB     VDD VDD pfet_03v3 L=2u W=16u nf=1 m=6
+* Layout matching device (not in the schematic): the two NMOS end dummies on the
+* 24:5 ratio array, tied off (gate->NB, S/D->VSS), netgen-merged to m=4. Added as a
+* tied-off instance per the CP_v1/ib_nmos precedent so LVS matches uniquely.
+XMDUM  VSS    NB     VSS VSS nfet_03v3 L=2u W=4u  nf=1 m=4
+.ends ibias_gen_v1
+
+* ---- inlined: DIV2_QUAD_v1_golden.spice ----
+.subckt DIV2_QUAD_v1 CK CKB IBIAS I_P I_N Q_P Q_N VDD VSS
+XMA1 OIB OQ nTA VSS nfet_03v3 L=0.3u W=40u nf=1 m=1
+XMA2 OI OQB nTA VSS nfet_03v3 L=0.3u W=40u nf=1 m=1
+XMA3 OIB OI nLA VSS nfet_03v3 L=0.3u W=40u nf=1 m=1
+XMA4 OI OIB nLA VSS nfet_03v3 L=0.3u W=40u nf=1 m=1
+XMA5 nTA CK TAILA VSS nfet_03v3 L=0.3u W=40u nf=1 m=1
+XMA6 nLA CKB TAILA VSS nfet_03v3 L=0.3u W=40u nf=1 m=1
+XMB1 OQB OIB nTB VSS nfet_03v3 L=0.3u W=40u nf=1 m=1
+XMB2 OQ OI nTB VSS nfet_03v3 L=0.3u W=40u nf=1 m=1
+XMB3 OQB OQ nLB VSS nfet_03v3 L=0.3u W=40u nf=1 m=1
+XMB4 OQ OQB nLB VSS nfet_03v3 L=0.3u W=40u nf=1 m=1
+XMB5 nTB CKB TAILB VSS nfet_03v3 L=0.3u W=40u nf=1 m=1
+XMB6 nLB CK TAILB VSS nfet_03v3 L=0.3u W=40u nf=1 m=1
+XRA1 VDD OIB VSS ppolyf_u_1k r_width=10.0u r_length=3.0u
+XRA2 VDD OI VSS ppolyf_u_1k r_width=10.0u r_length=3.0u
+XRB1 VDD OQB VSS ppolyf_u_1k r_width=10.0u r_length=3.0u
+XRB2 VDD OQ VSS ppolyf_u_1k r_width=10.0u r_length=3.0u
+XM_BREF IBIAS IBIAS VSS VSS nfet_03v3 L=1u W=4u nf=1 m=1
+XM_TAILA TAILA IBIAS VSS VSS nfet_03v3 L=1u W=40u nf=1 m=1
+XM_TAILB TAILB IBIAS VSS VSS nfet_03v3 L=1u W=40u nf=1 m=1
+XM_NT_IP NS_IP IBIAS VSS VSS nfet_03v3 L=1u W=8u nf=1 m=1
+XM_BN1_IP DN1_IP OIB NS_IP VSS nfet_03v3 L=0.3u W=8u nf=1 m=1
+XM_BN2_IP OC_IP OI NS_IP VSS nfet_03v3 L=0.3u W=8u nf=1 m=1
+XM_BP1_IP DN1_IP DN1_IP VDD VDD pfet_03v3 L=0.3u W=8u nf=1 m=1
+XM_BP2_IP OC_IP DN1_IP VDD VDD pfet_03v3 L=0.3u W=8u nf=1 m=1
+XCC_IP OC_IP G1_IP cap_mim_2f0_m4m5_noshield c_width=5.0u c_length=10.0u
+XRFB_IP INVO1_IP G1_IP VSS ppolyf_u_1k r_width=2.0u r_length=40.04u
+XM_IP1_IP INVO1_IP G1_IP VDD VDD pfet_03v3 L=0.3u W=10u nf=1 m=1
+XM_IN1_IP INVO1_IP G1_IP VSS VSS nfet_03v3 L=0.3u W=4u nf=1 m=1
+XM_IP2_IP INVO2_IP INVO1_IP VDD VDD pfet_03v3 L=0.3u W=26u nf=1 m=1
+XM_IN2_IP INVO2_IP INVO1_IP VSS VSS nfet_03v3 L=0.3u W=11u nf=1 m=1
+XM_IP3_IP INVO3_IP INVO2_IP VDD VDD pfet_03v3 L=0.3u W=44u nf=1 m=1
+XM_IN3_IP INVO3_IP INVO2_IP VSS VSS nfet_03v3 L=0.3u W=16u nf=1 m=1
+XR_SER_IP INVO3_IP I_P VSS ppolyf_u_1k r_width=2.0u r_length=2.0u
+XM_NT_IN NS_IN IBIAS VSS VSS nfet_03v3 L=1u W=8u nf=1 m=1
+XM_BN1_IN DN1_IN OI NS_IN VSS nfet_03v3 L=0.3u W=8u nf=1 m=1
+XM_BN2_IN OC_IN OIB NS_IN VSS nfet_03v3 L=0.3u W=8u nf=1 m=1
+XM_BP1_IN DN1_IN DN1_IN VDD VDD pfet_03v3 L=0.3u W=8u nf=1 m=1
+XM_BP2_IN OC_IN DN1_IN VDD VDD pfet_03v3 L=0.3u W=8u nf=1 m=1
+XCC_IN OC_IN G1_IN cap_mim_2f0_m4m5_noshield c_width=5.0u c_length=10.0u
+XRFB_IN INVO1_IN G1_IN VSS ppolyf_u_1k r_width=2.0u r_length=40.04u
+XM_IP1_IN INVO1_IN G1_IN VDD VDD pfet_03v3 L=0.3u W=10u nf=1 m=1
+XM_IN1_IN INVO1_IN G1_IN VSS VSS nfet_03v3 L=0.3u W=4u nf=1 m=1
+XM_IP2_IN INVO2_IN INVO1_IN VDD VDD pfet_03v3 L=0.3u W=26u nf=1 m=1
+XM_IN2_IN INVO2_IN INVO1_IN VSS VSS nfet_03v3 L=0.3u W=11u nf=1 m=1
+XM_IP3_IN INVO3_IN INVO2_IN VDD VDD pfet_03v3 L=0.3u W=44u nf=1 m=1
+XM_IN3_IN INVO3_IN INVO2_IN VSS VSS nfet_03v3 L=0.3u W=16u nf=1 m=1
+XR_SER_IN INVO3_IN I_N VSS ppolyf_u_1k r_width=2.0u r_length=2.0u
+XM_NT_QP NS_QP IBIAS VSS VSS nfet_03v3 L=1u W=8u nf=1 m=1
+XM_BN1_QP DN1_QP OQB NS_QP VSS nfet_03v3 L=0.3u W=8u nf=1 m=1
+XM_BN2_QP OC_QP OQ NS_QP VSS nfet_03v3 L=0.3u W=8u nf=1 m=1
+XM_BP1_QP DN1_QP DN1_QP VDD VDD pfet_03v3 L=0.3u W=8u nf=1 m=1
+XM_BP2_QP OC_QP DN1_QP VDD VDD pfet_03v3 L=0.3u W=8u nf=1 m=1
+XCC_QP OC_QP G1_QP cap_mim_2f0_m4m5_noshield c_width=5.0u c_length=10.0u
+XRFB_QP INVO1_QP G1_QP VSS ppolyf_u_1k r_width=2.0u r_length=40.04u
+XM_IP1_QP INVO1_QP G1_QP VDD VDD pfet_03v3 L=0.3u W=10u nf=1 m=1
+XM_IN1_QP INVO1_QP G1_QP VSS VSS nfet_03v3 L=0.3u W=4u nf=1 m=1
+XM_IP2_QP INVO2_QP INVO1_QP VDD VDD pfet_03v3 L=0.3u W=26u nf=1 m=1
+XM_IN2_QP INVO2_QP INVO1_QP VSS VSS nfet_03v3 L=0.3u W=11u nf=1 m=1
+XM_IP3_QP INVO3_QP INVO2_QP VDD VDD pfet_03v3 L=0.3u W=44u nf=1 m=1
+XM_IN3_QP INVO3_QP INVO2_QP VSS VSS nfet_03v3 L=0.3u W=16u nf=1 m=1
+XR_SER_QP INVO3_QP Q_P VSS ppolyf_u_1k r_width=2.0u r_length=2.0u
+XM_NT_QN NS_QN IBIAS VSS VSS nfet_03v3 L=1u W=8u nf=1 m=1
+XM_BN1_QN DN1_QN OQ NS_QN VSS nfet_03v3 L=0.3u W=8u nf=1 m=1
+XM_BN2_QN OC_QN OQB NS_QN VSS nfet_03v3 L=0.3u W=8u nf=1 m=1
+XM_BP1_QN DN1_QN DN1_QN VDD VDD pfet_03v3 L=0.3u W=8u nf=1 m=1
+XM_BP2_QN OC_QN DN1_QN VDD VDD pfet_03v3 L=0.3u W=8u nf=1 m=1
+XCC_QN OC_QN G1_QN cap_mim_2f0_m4m5_noshield c_width=5.0u c_length=10.0u
+XRFB_QN INVO1_QN G1_QN VSS ppolyf_u_1k r_width=2.0u r_length=40.04u
+XM_IP1_QN INVO1_QN G1_QN VDD VDD pfet_03v3 L=0.3u W=10u nf=1 m=1
+XM_IN1_QN INVO1_QN G1_QN VSS VSS nfet_03v3 L=0.3u W=4u nf=1 m=1
+XM_IP2_QN INVO2_QN INVO1_QN VDD VDD pfet_03v3 L=0.3u W=26u nf=1 m=1
+XM_IN2_QN INVO2_QN INVO1_QN VSS VSS nfet_03v3 L=0.3u W=11u nf=1 m=1
+XM_IP3_QN INVO3_QN INVO2_QN VDD VDD pfet_03v3 L=0.3u W=44u nf=1 m=1
+XM_IN3_QN INVO3_QN INVO2_QN VSS VSS nfet_03v3 L=0.3u W=16u nf=1 m=1
+XR_SER_QN INVO3_QN Q_N VSS ppolyf_u_1k r_width=2.0u r_length=2.0u
+.ends DIV2_QUAD_v1
+
+* ---- inlined: vco_v1_golden.spice ----
+.subckt vco_v1 VDD OUT_p OUT_n GND TUNE ISS
+XM1 OUT_p OUT_n ISS GND nfet_03v3 L=0.28u W=40u nf=1
+XM4 OUT_n OUT_p ISS GND nfet_03v3 L=0.28u W=40u nf=1
+XM2 OUT_p OUT_n VDD VDD pfet_03v3 L=0.28u W=70u nf=1
+XM3 OUT_n OUT_p VDD VDD pfet_03v3 L=0.28u W=70u nf=1
+XC1 cap_bias OUT_n cap_nmos_03v3_b c_width=5u c_length=5u m=21
+XC4 cap_bias OUT_p cap_nmos_03v3_b c_width=5u c_length=5u m=21
+X1 OUT_n OUT_p GND vco_inductor_v2
+XR2 TUNE cap_bias GND ppolyf_u_1k r_width=1u r_length=15u
+.ends
+

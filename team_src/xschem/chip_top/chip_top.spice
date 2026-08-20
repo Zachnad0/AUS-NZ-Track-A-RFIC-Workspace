@@ -1,0 +1,54 @@
+** sch_path: /foss/designs/AUS-NZ-integration/team_src/xschem/chip_top/chip_top.sch
+**.subckt chip_top VDDA IBIAS VTUNE CP_OUT I_P I_N Q_P Q_N VDDD REF_IN
+*.ipin VDDA
+*.ipin IBIAS
+*.ipin VTUNE
+*.opin CP_OUT
+*.opin I_P
+*.opin I_N
+*.opin Q_P
+*.opin Q_N
+*.ipin VDDD
+*.ipin REF_IN
+x_pfd_lib REF_IN I_P UP DOWN VDDD GND PFD_lib
+x_cp_v1 UP DOWN CP_OUT VDDA GND VGP VGN CP_v1
+x_ibias_gen_v1 IBIAS VGP VGN IB_DIV2 VDDA GND ibias_gen_v1
+x_div2_quad_v1 VCO_OUTP VCO_OUTN IB_DIV2 I_P I_N Q_P Q_N VDDD GND DIV2_QUAD_v1
+x_vco_v1 VDDA VCO_OUTP VCO_OUTN GND VTUNE GND vco_v1
+**.ends
+
+* expanding   symbol:  PFD_lib.sym # of pins=6
+** sym_path: /foss/designs/AUS-NZ-integration/team_src/xschem/chip_top/PFD_lib.sym
+** sch_path: /foss/designs/AUS-NZ-integration/team_src/xschem/chip_top/PFD_lib.sch
+.subckt PFD_lib REF FB UP DOWN VDD VSS
+.ends
+
+
+* expanding   symbol:  CP_v1.sym # of pins=7
+** sym_path: /foss/designs/AUS-NZ-integration/team_src/xschem/chip_top/CP_v1.sym
+** sch_path: /foss/designs/AUS-NZ-integration/team_src/xschem/chip_top/CP_v1.sch
+.subckt CP_v1 UP DOWN CP_OUT VDD VSS VGP VGN
+.ends
+
+
+* expanding   symbol:  ibias_gen_v1.sym # of pins=6
+** sym_path: /foss/designs/AUS-NZ-integration/team_src/xschem/chip_top/ibias_gen_v1.sym
+** sch_path: /foss/designs/AUS-NZ-integration/team_src/xschem/chip_top/ibias_gen_v1.sch
+.subckt ibias_gen_v1 IBIAS VGP VGN IB_DIV2 VDD VSS
+.ends
+
+
+* expanding   symbol:  DIV2_QUAD_v1.sym # of pins=9
+** sym_path: /foss/designs/AUS-NZ-integration/team_src/xschem/chip_top/DIV2_QUAD_v1.sym
+** sch_path: /foss/designs/AUS-NZ-integration/team_src/xschem/chip_top/DIV2_QUAD_v1.sch
+.subckt DIV2_QUAD_v1 CK CKB IBIAS I_P I_N Q_P Q_N VDD VSS
+.ends
+
+
+* expanding   symbol:  vco_v1.sym # of pins=6
+** sym_path: /foss/designs/AUS-NZ-integration/team_src/xschem/chip_top/vco_v1.sym
+** sch_path: /foss/designs/AUS-NZ-integration/team_src/xschem/chip_top/vco_v1.sch
+.subckt vco_v1 VDD OUT_p OUT_n GND TUNE ISS
+.ends
+
+.end
