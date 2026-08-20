@@ -14,8 +14,8 @@ load ib_conv_v1
 load DIV2_QUAD_v1
 load ibias_gen_v1
 load CP_v1
-# PFD_lib.mag is a bare 5-logic-cell scaffold (no endcap/filltie/tieh) -> its rows have no
-# well/substrate ties and trip DF.13/14_MV (latch-up max-tap-distance) at chip level. The
+# PFD_lib_SCAFFOLD_DO_NOT_BUILD.mag is a bare 5-logic-cell scaffold (no endcap/filltie/tieh)
+# -> its rows have no well/substrate ties and trip DF.13/14_MV (latch-up) at chip level. The
 # SIGNED-OFF gds/PFD_lib.gds carries the full tie/fill/endcap ring and is clean. Stream THAT
 # as the master. (DIV2/ibias/CP .mags are full layouts = their goldens' source, so load-as-mag
 # is fine for them.) noduplicates keeps already-loaded masters when the stream shares subcells.

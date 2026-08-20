@@ -1,8 +1,12 @@
+# !!! SUPERSEDED — DO NOT RUN. This built the 496-byte PFD scaffold (5 bare logic cells,
+# !!! NO endcap/filltie/tieh) that FAILS latch-up (DF.13/14_MV) at chip level. The real
+# !!! signed-off block is gds/PFD_lib.gds (57 KB, full tie ring) from the librelane flow.
+# !!! load/save renamed to *_SCAFFOLD_DO_NOT_BUILD so this can never regenerate PFD_lib.mag.
 # Scripted placement of the library-cell PFD (abutted std-cell row).
 # Cells abut on shared VDD(top)/VSS(bottom) rails at y=0..3.92; power connects by abutment.
 drc off
 snap internal
-load PFD_lib -quiet
+load PFD_lib_SCAFFOLD_DO_NOT_BUILD -quiet
 # add the std-cell mag dir to the search path
 path search +/foss/designs/AUS-NZ-integration/gf180mcu/gf180mcuD/libs.ref/gf180mcu_fd_sc_mcu7t5v0/mag
 # place instances left-to-right, lower-left at cumulative x
@@ -20,8 +24,8 @@ getcell gf180mcu_fd_sc_mcu7t5v0__inv_1
 select top cell
 box
 puts "INSTANCES:"
-foreach i [cellname list children PFD_lib] { puts "  $i" }
-save PFD_lib
+foreach i [cellname list children PFD_lib_SCAFFOLD_DO_NOT_BUILD] { puts "  $i" }
+save PFD_lib_SCAFFOLD_DO_NOT_BUILD
 drc on
 drc euclidean on
 drc check
