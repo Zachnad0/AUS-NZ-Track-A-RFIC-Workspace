@@ -31,11 +31,13 @@ project:
 # so the tail current stays controllable off-chip -- grounding it on-chip would change the
 # operating point away from the characterized 4.13-6.35 GHz band (simulated with a 1 mA tail
 # mirror driving ISS). Placed among the analog group so it lands on the analog rail.
-# GROUND PADS REQUIRED (Bailey 2026-08-20): "multiple grounds require multiple pads; pair each
-# power pin with a ground pin; the first quadrant pin is a fixed down-bonded quiet ground."
-# VSSA (index 0 = the quiet quadrant ground) and VSSD added. Both tie to the shared GND ring /
-# p-substrate (electrically one net without deep-nwell); the two pads separate bond-wire L.
-# Source of truth: docs/pins.md (analog 8, digital 1, power 2, ground 2 = 13).
+# GROUND PAD REQUIRED (Bailey 2026-08-20): "the first quadrant pin is a fixed down-bonded quiet
+# ground." VSSA (index 0) is that quiet ground. A second ground pad VSSD was considered, but the
+# layout has ONE ground net (all VSS ties to the shared p-substrate; no deep-nwell) and therefore
+# ONE ground PORT -- so the pin list is 12 to match the 12 layout ports exactly (an extra VSSD pin
+# would star as a missing port in Bailey's audit). The die still bonds ground at more than one ring
+# point; that is a bond/package detail, not a second pin here.
+# Source of truth: docs/pins.md (analog 8, digital 1, power 2, ground 1 = 12).
 # ======================================================
 pins:
   - name: VSSA
@@ -66,8 +68,6 @@ pins:
   - name: Q_N
     io_type: analog
     secondary_esd: true
-  - name: VSSD
-    io_type: ground
   - name: VDDD
     io_type: power
   - name: REF_IN
