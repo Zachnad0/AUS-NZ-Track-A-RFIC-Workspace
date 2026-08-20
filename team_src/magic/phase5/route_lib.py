@@ -60,3 +60,19 @@ def via_stack(cell, ly, m_from, m_to, x, y):
     lo, hi = (m_from, m_to) if m_from <= m_to else (m_to, m_from)
     for m in range(lo, hi):
         via1_at(cell, ly, m, m + 1, x, y)
+
+
+def via1_small(cell, ly, m_lo, m_hi, x, y, pad=0.38):
+    """single via between adjacent metals with a MINIMAL landing pad (for tight std-cell pins:
+    0.26 via + 0.06 enclosure/side = 0.38um). Use where a 0.5um pad would hit a neighbour."""
+    v = VIA_SIZE / 2.0
+    box(cell, ly, VIA_BETWEEN[m_lo], x - v, y - v, x + v, y + v)
+    p = pad / 2.0
+    for m in (m_lo, m_hi):
+        box(cell, ly, METAL[m], x - p, y - p, x + p, y + p)
+
+
+def via_stack_small(cell, ly, m_from, m_to, x, y, pad=0.38):
+    lo, hi = (m_from, m_to) if m_from <= m_to else (m_to, m_from)
+    for m in range(lo, hi):
+        via1_small(cell, ly, m, m + 1, x, y, pad)

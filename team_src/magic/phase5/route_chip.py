@@ -78,11 +78,12 @@ def corridor_tap(tx, ty, tm, cx, jm, net, w):
 # DIV2.VDD: tap ON its M4 collector wire (x108-183 @ y137.5); x160 is an M5-clear column.
 # CLEAN: extraction shows DIV2.VDD merges into VDDD (PFD+DIV2), no side effects.
 corridor_tap(160.0, 137.5, 4, 160.0, 4, "VDDD", 2.0)
-# vco.VDD: DEFERRED. Its M2 wire (x390-410) sits in vco's congested right side (a wide M4 bar
-# x328-434 y123-131, the inductor leads, and OUT_p's M5 lead). Routing up the x366-385 corridor
-# from there SILENTLY SHORTS vco.OUT_p to VDDA (caught by the extraction diff, DRC-legal). Needs
-# a different tap -- vco.VDD's left reach or a lower-layer approach clear of the OUT_p lead.
-# corridor_tap(391.0, 74.85, 2, 382.0, 3, "VDDA", 2.0)
+# vco.VDD: DEFERRED. The ONLY M5-riser-able column over vco is x[388,394] (OUT_p/OUT_n M5 fill
+# x[396,472]; spiral fills x<=366). But vco.VDD's M2 there is a 1.5um wire interleaved with
+# other-net active M2 at ~0.14um, so a via pad lands 0.14um off it (M2.2a) and does not merge --
+# no clean tap without reopening vco (its VDD has no wider/edge-accessible reach). vco.VDD ISS
+# ride to VDDA needs a vco-internal supply pin. Flag for Greg. VDDA stays CP+ibias (2/3).
+# R.via_stack(chip, ly, 2, 5, 392.5, 74.3); R.vwire(chip, ly, 5, 74.3, 199.0, 392.5, w=2.0)
 
 # --- die-edge port labels (rung 4c). A top-level label needs top-level metal to land on:
 #     paint a small patch on the port's centerline (overlaps the block port -> connects) and
@@ -112,14 +113,14 @@ PORT_LABELS = [
 for name, x, y, m in PORT_LABELS:
     port_label(name, x, y, m)
 
-# --- signals (rung 4b). Point-to-point: horizontal hops on M4, vertical risers on M3
-#     (different layers -> crossing-safe). Tap each end on its accessible extent. ---
-# UP (PFD.UP <-> CP.UP): connectivity PROVEN (a first cut extracted PFD.UP=CP.UP=one net with
-# no OUT short), but PFD's UP/DOWN std-cell pins are 0.28um wide and 0.28um-pitched, so a
-# 0.26um via + enclosure either bridges the neighbor (M2.2a) or misses the pin (disconnects).
-# Needs a minimal-enclosure via landed on the pin's exact centerline -- a per-pin precision
-# tweak, deferred. The route shape (H on M4 across the top, V on M3 down x282) is correct:
-#   via_stack(2,4, PFD.UP_center, ~266); hwire M4 -> x282.25; via_stack(3,4); vwire M3 -> CP.UP.
+# --- signals (rung 4b). H hops on M4, V risers on M3 (crossing-safe). ---
+# UP (PFD.UP<->CP.UP): CONNECTS (extracted PFD.UP=CP.UP at tap (246,268), OUT distinct), but
+# PFD's UP/DOWN are 0.28um std-cell pins at 0.28um PITCH; the minimum via pad is 0.26+2*0.06 =
+# 0.38um (V1.3d enclosure floor), leaving only 0.23um to the neighbour DOWN pin < the 0.28um
+# M2.2a limit. A top-down via cannot be DRC-clean on these pins without reopening PFD -- same for
+# DOWN and FB (all PFD digital pins). Flag for Greg: PFD needs chip-level pin escapes, or a
+# waivered 0.23um spacing on these taps. Analog signals (VGP/VGN/IB_DIV2) are the tractable next.
+#   Verified route shape: via(2,4)@(246,268); M4 -> x282.25; via(3,4); M3 -> CP.UP.
 
 ly.write(GDS)
-print("routed power + 11 labels (UP deferred: tight PFD pin taps); wrote %s" % GDS)
+print("routed power + GND ring + 11 labels (UP defeated by 0.28um PFD pin pitch); wrote %s" % GDS)
