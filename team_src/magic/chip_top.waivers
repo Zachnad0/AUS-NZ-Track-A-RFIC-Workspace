@@ -1,0 +1,6 @@
+# Accepted DRC-rule waivers for chip_top (KLayout variant D signoff).
+# W4 varactor waiver: nmoscap_3p3 gencell field-poly-to-guardring, device-internal, 2/unit x
+# 42 units x 2 rules = 168 items. magic-on-.mag (gencell-aware) DRC is 0; the foundry/Bailey
+# LVS handles the nmoscap from GDS. Only these two exact rules are accepted, only for this cell.
+PL.5a_LV
+PL.5b_LV
