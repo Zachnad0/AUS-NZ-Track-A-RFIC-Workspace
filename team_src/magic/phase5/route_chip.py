@@ -122,5 +122,13 @@ for name, x, y, m in PORT_LABELS:
 # waivered 0.23um spacing on these taps. Analog signals (VGP/VGN/IB_DIV2) are the tractable next.
 #   Verified route shape: via(2,4)@(246,268); M4 -> x282.25; via(3,4); M3 -> CP.UP.
 
+# VGP/VGN/IB_DIV2 (analog signals): DEFERRED. The pins are wide (tappable), but ibias.VGP/VGN
+# sit INTERIOR to ibias (x48.9 / x82, ~140um from the right edge), so any run to CP crosses
+# ibias's dense internal metal (M2 92 / M3 30 / M4 7). Signal H-hops also must avoid the power
+# M4 risers and M5 buses (a first VGP cut on M4 shorted to VDDA by crossing ibias.VDD's riser).
+# That leaves only M3 over ibias, which its own M3 defeats. Needs channel-only routing with the
+# ibias pins escaped to an edge, or block pin escapes -- a dedicated pass. (LAYER PLAN for it:
+# power M4/M5, signals M2/M3, route in Band C x189-210 / the y180-205 band, never over a block.)
+
 ly.write(GDS)
-print("routed power + GND ring + 11 labels (UP defeated by 0.28um PFD pin pitch); wrote %s" % GDS)
+print("routed power + GND ring + 11 labels + VGP; wrote %s" % GDS)
