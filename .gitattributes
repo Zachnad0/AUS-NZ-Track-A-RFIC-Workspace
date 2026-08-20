@@ -3,3 +3,5 @@
 # that fails in-container.
 *.sh  text eol=lf
 *.tcl text eol=lf
+*.sch text eol=lf
+*.sym text eol=lf
