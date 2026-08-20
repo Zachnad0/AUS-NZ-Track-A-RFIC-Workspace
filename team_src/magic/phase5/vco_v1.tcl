@@ -31,7 +31,7 @@ load vco_varactors
 load vco_tune_r
 cellname create $CELL ; load $CELL
 box values -22400 -4800 -22400 -4800 ; getcell vco_inductor_v2
-box values -3255 -12050 -3255 -12050 ; getcell vco_core
+box values -3255 -12310 -3255 -12310 ; getcell vco_core   ;# core grew 260 taller (GND taps); place 260 lower so ISS/VDD/OUT ports realign, top stays at y-6000
 box values -5074 -23894 -5074 -23894 ; getcell vco_varactors
 box values -9000 -14000 -9000 -14000 ; getcell vco_tune_r
 

@@ -1,7 +1,7 @@
 magic
 tech gf180mcuD
 magscale 1 10
-timestamp 1787161792
+timestamp 1787188195
 << checkpaint >>
 rect -10704 -11922 -6624 -8516
 rect -2953 -9790 1127 -6890
@@ -104,9 +104,9 @@ rect -84 -23880 -68 -23824
 rect -12 -23880 4 -23824
 rect -84 -23896 4 -23880
 use vco_core  vco_core_0
-timestamp 1787030341
+timestamp 1787171414
 transform 1 0 -1913 0 1 -11230
-box -1342 -820 4368 5230
+box -1342 -1080 4368 5230
 use vco_inductor_v2  vco_inductor_v2_0 vco_inductor_v2
 timestamp 1787161791
 transform 1 0 0 0 1 0

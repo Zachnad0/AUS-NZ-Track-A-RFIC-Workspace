@@ -67,10 +67,24 @@ echo "== verify_cp: $CELL =="
 echo "   layout : $SRC ($SRCTYPE)"
 echo "   golden : $GOLDEN"
 
+# --- optional per-cell ABSTRACT config: <CELL>.abstract lines PRELOAD=/PRELOAD_PATH=/IGNORE=
+#     For cells that instance a magic abstract (LEFview + GDS_FILE, e.g. the VCO spiral):
+#     preload the abstract so the GDS extract keeps it, and black-box it in netgen.
+#     No file -> no effect (regression-safe for CP_v1, ibias_gen_v1, DIV2_QUAD_v1, ...). ---
+ABS_CFG="$MAGIC_DIR/${CELL}.abstract"
+VPRELOAD=""; VPRELOAD_PATH=""; VIGNORE=""
+if [ -f "$ABS_CFG" ]; then
+    VPRELOAD="$(sed -n 's/^PRELOAD=//p' "$ABS_CFG" | tr '\n' ' ')"
+    VPRELOAD_PATH="$(sed -n 's/^PRELOAD_PATH=//p' "$ABS_CFG" | head -1)"
+    VIGNORE="$(sed -n 's/^IGNORE=//p' "$ABS_CFG" | tr '\n' ' ')"
+    echo "   abstract: preload [$VPRELOAD] ignore [$VIGNORE]"
+fi
+
 # --- Magic: DRC + LVS-netlist extraction ---
 rm -f "$LVS_SPICE"
 ( cd "$WORK" && \
   VERIFY_CELL="$CELL" VERIFY_SRC="$SRC" VERIFY_SRCTYPE="$SRCTYPE" VERIFY_OUT="$LVS_SPICE" \
+  VERIFY_PRELOAD="$VPRELOAD" VERIFY_PRELOAD_PATH="$VPRELOAD_PATH" \
   magic -dnull -noconsole -rcfile "$MAGICRC" "$SCRIPT_DIR/verify_extract.tcl" ) > "$DRC_LOG" 2>&1
 
 DRC="$(grep -oE 'VERIFY_DRC_COUNT=[0-9]+' "$DRC_LOG" | tail -1 | cut -d= -f2)"
@@ -106,6 +120,10 @@ printf '.include %s\n' "$GOLDEN" >> "$GOLD_RES"
     printf 'source %s\n' "$NETGEN_SETUP"
     printf 'foreach cell $cells1 { if {[regexp {gf180mcu_fd_sc_[^_]+__fillcap_[[:digit:]]+} $cell match]} { ignore class "-circuit1 $cell" } }\n'
     printf 'foreach cell $cells2 { if {[regexp {gf180mcu_fd_sc_[^_]+__fillcap_[[:digit:]]+} $cell match]} { ignore class "-circuit2 $cell" } }\n'
+    for ig in $VIGNORE; do
+        printf 'ignore class "-circuit1 %s"\n' "$ig"
+        printf 'ignore class "-circuit2 %s"\n' "$ig"
+    done
 } > "$LOCAL_SETUP"
 
 # --- netgen LVS ---

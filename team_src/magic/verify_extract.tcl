@@ -14,6 +14,17 @@ set outsp $env(VERIFY_OUT)
 
 drc off
 if {$stype eq "gds"} {
+    # env-gated abstract preload: for cells that instance a magic ABSTRACT (LEFview +
+    # GDS_FILE) whose coil/black-box geometry must NOT be traversed for LVS. Pre-loading
+    # the abstract + `gds noduplicates true` makes `gds read` keep the abstract instead of
+    # reading the full geometry from the stream. Untouched for cells with no VERIFY_PRELOAD.
+    if {[info exists env(VERIFY_PRELOAD)] && $env(VERIFY_PRELOAD) ne ""} {
+        gds noduplicates true
+        if {[info exists env(VERIFY_PRELOAD_PATH)] && $env(VERIFY_PRELOAD_PATH) ne ""} {
+            foreach p $env(VERIFY_PRELOAD_PATH) { addpath $p }
+        }
+        foreach c $env(VERIFY_PRELOAD) { load $c }
+    }
     gds read $src
     load $cell
 } else {
