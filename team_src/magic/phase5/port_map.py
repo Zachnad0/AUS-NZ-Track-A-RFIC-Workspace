@@ -18,7 +18,7 @@ NETMAP = {
     "CP_v1": {"UP": "UP", "DOWN": "DOWN", "CP_OUT": "CP_OUT", "VDD": "VDDA", "VSS": "GND", "VGP": "VGP", "VGN": "VGN"},
     "ibias_gen_v1": {"IBIAS": "IBIAS", "VGP": "VGP", "VGN": "VGN", "IB_DIV2": "IB_DIV2", "VDD": "VDDA", "VSS": "GND"},
     "DIV2_QUAD_v1": {"CK": "VCO_OUTP", "CKB": "VCO_OUTN", "IBIAS": "IB_DIV2", "I_P": "I_P", "I_N": "I_N", "Q_P": "Q_P", "Q_N": "Q_N", "VDD": "VDDD", "VSS": "GND"},
-    "vco_v1": {"VDD": "VDDA", "OUT_p": "VCO_OUTP", "OUT_n": "VCO_OUTN", "GND": "GND", "TUNE": "VTUNE", "ISS": "GND"},
+    "vco_v1": {"VDD": "VDDA", "OUT_p": "VCO_OUTP", "OUT_n": "VCO_OUTN", "GND": "GND", "TUNE": "VTUNE", "ISS": "ISS"},
 }
 # only these labels are real block ports (skip internal ones like NMID/PMID/UPB/OI...)
 PORTS = {b: set(m) for b, m in NETMAP.items()}
