@@ -19,11 +19,15 @@ project:
   lvs_config: "lvs/lvs_config.json"
 
 # ======================================================
-# Pad / pin list  (config B: 1/8 die, 16-pin total, 12 used, 4 spare)
+# Pad / pin list  (config B: 1/8 die, 16-pin total, 10 used, 6 spare)
 # Order = CLOCKWISE from bottom-left in the upper-left quadrant. VDDA first so all
-# seven analog pads sit on the analog rail; VDDD breaks the power ring so the three
-# digital pads land on the digital rail. Ground is a single chip-wide common (no pin).
-# Source of truth: docs/pins.md (analog 7, digital 3, power 2, ground 0 = 12).
+# seven analog pads sit on the analog rail; VDDD breaks the power ring so the digital
+# pad lands on the digital rail. Ground is a single chip-wide common (no pin).
+# RST_N and MON_OUT DROPPED 2026-08-20: DIV2_QUAD_v1 exposes no reset port (RST_N had
+# nowhere to land) and no block exposes a monitor tap (MON_OUT could only be a divider
+# phase at ~2.5 GHz, far too fast for a monitor pad). Dropping them avoids reopening any
+# signed-off block; 10 pins is well inside config B's 16.
+# Source of truth: docs/pins.md (analog 7, digital 1, power 2, ground 0 = 10).
 # ======================================================
 pins:
   - name: VDDA
@@ -53,7 +57,3 @@ pins:
     io_type: power
   - name: REF_IN
     io_type: input_cmos
-  - name: RST_N
-    io_type: input_schmitt
-  - name: MON_OUT
-    io_type: bidirectional

@@ -45,4 +45,5 @@ and only abuts DIV2 across a 53 µm channel carrying the one net that must be sh
 - Power: VDDA(pad)→vco.VDD, CP.VDD, ibias.VDD ; VDDD(pad)→PFD.VDD, DIV2.VDD.
 - Ground: chip-wide common (no pin) — vco.GND/ISS-return, all blocks' VSS. Size rails
   for current (DIV2 ~22 mA); check SEGMENTS not just the trunk.
-- RST_N(pad)→PFD/DIV2 reset ; MON_OUT(pad)→monitor tap (chip-top schematic defines).
+- ~~RST_N(pad)→PFD/DIV2 reset ; MON_OUT(pad)→monitor tap~~ **DROPPED 2026-08-20** — no
+  block exposes a reset or monitor port; pins 12→10. PFD.FB now driven by DIV2 **I_P**.

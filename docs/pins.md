@@ -23,28 +23,38 @@ Config totals (organizer proposal):
 
 ---
 
-## 1. Block signal interface (primary) — 12 pins
+## 1. Block signal interface (primary) — 10 pins
 
 Quadrature is padded to differential I/Q; **4 monitor-grade RF output buffers**
 (~2.4–3.2 GHz) drive `I_P/I_N/Q_P/Q_N` off-chip.
 
 | # | Signal | Dir | Pad type | Notes |
 |---|--------|-----|----------|-------|
-| 1 | **I_P** | out | analog | in-phase output + (2.4–3.2 GHz, buffered) |
+| 1 | **I_P** | out | analog | in-phase output + (2.4–3.2 GHz, buffered); also closes the PLL loop → PFD.FB |
 | 2 | **I_N** | out | analog | in-phase output − |
 | 3 | **Q_P** | out | analog | quadrature output + |
 | 4 | **Q_N** | out | analog | quadrature output − |
 | 5 | **VTUNE** | in | analog | control voltage from off-chip loop filter |
 | 6 | **CP_OUT** | out | analog | charge-pump output to off-chip loop filter |
-| 7 | **IBIAS** | in | analog (DC) | chip-level bias reference (external 240 µA); on-chip bias generator fans out to CP (~50 µA) and DIV2 tails (2.4 mA/tail). Was `IBIAS_CP`; renamed 2026-08-04 — **still one pad, pin total unchanged (12)** |
+| 7 | **IBIAS** | in | analog (DC) | chip-level bias reference (external 240 µA); on-chip bias generator fans out to CP (~50 µA) and DIV2 tails (2.4 mA/tail). Was `IBIAS_CP`; renamed 2026-08-04 — **one pad** |
 | 8 | **REF_IN** | in | digital | reference clock |
-| 9 | **RST_N** | in | digital | active-low reset (divider active-low RST confirmed) |
-| 10 | **MON_OUT** | out | digital | divided-down VCO monitor |
-| 11 | **VDDA** | — | power | analog supply |
-| 12 | **VDDD** | — | power | digital supply |
+| 9 | **VDDA** | — | power | analog supply |
+| 10 | **VDDD** | — | power | digital supply |
 
-**Tally:** analog **7** · digital **3** · power **2** · **ground 0** (chip-wide
-common). **Block pin total = 12.**
+**Tally:** analog **7** · digital **1** · power **2** · **ground 0** (chip-wide
+common). **Block pin total = 10.**
+
+> **RST_N and MON_OUT DROPPED (2026-08-20, Phase-7 integration).** Neither maps to a
+> real block port, so keeping them would have forced reopening a signed-off block:
+> - **RST_N** — `DIV2_QUAD_v1` exposes **no reset port** (its top labels are CK CKB
+>   IBIAS I_N I_P OI OIB OQ OQB Q_N Q_P VDD VSS). The "divider active-low reset" was
+>   never brought out; adding it means re-laying-out and re-signing-off DIV2.
+> - **MON_OUT** — **no block exposes a monitor tap**. It could only have tapped a
+>   divider phase, which runs at ~2.5 GHz (VCO÷2) — far too fast for a monitor pad /
+>   counter, so it would not have been usable anyway.
+>
+> The loop feedback now uses **I_P → PFD.FB** directly (any quadrature phase closes the
+> loop; I_P is the pick). Pin count 12 → **10**, still well inside config B's 16.
 
 ---
 
@@ -59,30 +69,30 @@ VTUNE, CP_OUT, IBIAS (DC / low-freq) are insensitive. Verification item.
 > reference. One external 240 µA feeds an on-chip bias generator that fans out to
 > both the charge pump (~50 µA) and the DIV2 CML tails (2.4 mA each). This matches
 > `CP_v1`'s stated end-state (mirrored bias from the PLL bias generator). **Pin
-> count is unchanged (still one analog-DC pad → block total 12.)** Issue #143's
+> count is unchanged by the rename (still one analog-DC pad).** Issue #143's
 > pin-line wording may need to follow this rename (Greg to update — external).
 
 ---
 
 ## 3. Config fit (against the real proposal totals)
 
-Block needs **12 pins** (analog 7 + digital 3 + power 2; ground is common, 0). The
+Block needs **10 pins** (analog 7 + digital 1 + power 2; ground is common, 0). The
 binding constraints are **total pin count** and **per-block power** — *not* an
 analog-pad budget (each project picks its own pad types within its total).
 
-| Config | Pin total | Fits (need 12)? | Spare | Verdict |
+| Config | Pin total | Fits (need 10)? | Spare | Verdict |
 |--------|----------:|-----------------|------:|---------|
-| A | 22 | ✓ | 10 | oversized for the block |
-| **B** | 16 | ✓ | **4** | **chosen fit** |
-| C | 6  | ✗ | −6 | too few pins |
-| D | 10 | ✗ (12 > 10) → ✓ reduced | 0 | **fallback** (see below) |
-| E | 6  | ✗ | −6 | too few pins |
+| A | 22 | ✓ | 12 | oversized for the block |
+| **B** | 16 | ✓ | **6** | **chosen fit** |
+| C | 6  | ✗ | −4 | too few pins |
+| D | 10 | ✓ (exact) | 0 | fits with zero spare |
+| E | 6  | ✗ | −4 | too few pins |
 
-- **Primary: config B (16 pins) — fits the 12-pin block with 4 spare.** Our
-  350 × 300 µm footprint (`scope.md` §5) sits well inside B's 1/8 die share.
-- **Fallback: config D (10 pins)** if B is unavailable — drop to **single-ended
-  I_P/Q_P** (remove I_N/Q_N) and **merge VDDA+VDDD** → **10 pins exact**. Costs the
-  differential I/Q outputs (monitor becomes single-ended) and supply isolation.
+- **Primary: config B (16 pins) — fits the 10-pin block with 6 spare** (was 4 spare at
+  12 pins; RST_N/MON_OUT dropped 2026-08-20, see §1). Die ≈ 472 × 270 µm before routing
+  sits well inside B's 1/8 share (~624,000 µm²).
+- **Config D (10 pins)** now fits the block **exactly** (no reduction needed) — but with
+  zero spare it leaves no margin, so B stays primary.
 
 ---
 

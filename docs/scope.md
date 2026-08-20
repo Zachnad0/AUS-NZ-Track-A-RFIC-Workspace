@@ -50,8 +50,10 @@ Key points:
   leaves the die, the passive filter is on the test PCB, and the filtered control
   voltage returns as `VTUNE`. This keeps the large filter capacitors and the RC
   tuning off silicon and lets us tune loop dynamics on the bench.
-- The **divider** closes the loop back to the PFD and also drives `MON_OUT`, a
-  divided-down copy of the VCO for frequency observation on a digital pad.
+- The **divider** closes the loop back to the PFD (feedback via DIV2 **I_P** → PFD.FB).
+  *(MON_OUT dropped 2026-08-20: DIV2_QUAD_v1 exposes no dedicated monitor tap and its
+  divider output runs at ~2.5 GHz — too fast for a monitor pad; pin count 12→10. See
+  docs/pins.md §1.)*
 
 **Loop sign (KVCO < 0).** The VCO tuning is inverted — KVCO ≈ −706 MHz/V avg, ≈ −1.1 GHz/V
 local near ISM (§3, corrected 2026-08-12), so
