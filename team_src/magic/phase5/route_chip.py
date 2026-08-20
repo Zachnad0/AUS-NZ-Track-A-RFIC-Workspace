@@ -180,6 +180,14 @@ R.hwire(chip, ly, 4, 81.92, 232.0, 183.0, w=0.6)  # M4 across at y183, clear of 
 R.via_stack(chip, ly, 2, 4, 232.0, 183.0)         # down to M2 (x232 is right of the risers)
 R.vwire(chip, ly, 2, 183.0, 206.5, 232.0, w=0.28) # M2 up (crosses the M5 buses on a diff layer) to CP.VGN
 
+# IB_DIV2: DIV2.IBIAS M3 (x142.2, reaches y142.78; column clear above) extend UP out of DIV2 to
+# the band; ibias.IB_DIV2 (x96.8-148.5 @ y268.5 top edge) down the clear M4 column; join at y183.
+R.vwire(chip, ly, 3, 142.78, 186.0, 142.2, w=0.28)  # extend DIV2.IBIAS M3 up the clear column into band
+R.via_stack(chip, ly, 3, 4, 142.2, 186.0)           # to M4 in the band
+R.via_stack(chip, ly, 2, 4, 120.0, 268.5)           # ibias.IB_DIV2 up to M4 (wide pin)
+R.vwire(chip, ly, 4, 268.5, 186.0, 120.0, w=0.6)    # M4 down the clear column into the band
+R.hwire(chip, ly, 4, 120.0, 142.2, 186.0, w=0.6)    # M4 across at y186 (clear of VGN's y183, below y188 bus)
+
 # --- 0/0 boundary at the true die extent (Bailey: determines size + available-block budget) ---
 bb = chip.dbbox()
 chip.shapes(ly.layer(0, 0)).insert(pya.DBox(bb.left, bb.bottom, bb.right, bb.top))
