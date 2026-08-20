@@ -110,3 +110,43 @@ need per-net threading through the sparse upper-layer gaps — the remaining ite
 Reachable-from-a-channel ports (CP/ibias/PFD, DIV2 I_P/Q_P on the right edge, PFD REF/UP/DOWN
 on its edges) route cleanly; interior ports are the cost. The loop is `chip_merge → route_chip
 → run_drc / verify_cp chip_top` (watch the net count and the per-block VDD/VSS net names).
+
+---
+
+## ITEM 1+2 (2026-08-20): the "interior port" blocker is REFUTED; real EM sizing
+
+**Tap a net anywhere on its metal, not at its label.** Full-extent geometry (`net_extent.py`,
+`corridor.py`) shows the "buried" power ports reach accessible metal:
+
+| net | metal extent (chip µm) | closest block edge | escape |
+|---|---|---|---|
+| DIV2.VSS (M2) | x[59,184] y[6.4,84.6] | **bottom 6.4 µm** | tap low, out the bottom margin |
+| DIV2.VDD (M4) | x[54,183] y[84,138] | top 36.5 µm | hardest — see below |
+| vco.VDD (M2) | x[390,410] y[73,75] | right 62 µm | jog to the x366–385 M5 corridor, riser up |
+| vco.ISS (M2) | x[387,413] y[60] | right 59 µm | same corridor |
+| vco.GND (M1) | x[357,360] y[50,68] | bottom 50 µm | below spiral; jog to corridor |
+
+**M5 occupancy / clear corridors:** PFD **0** M5 (fully clear); ibias/CP **4** each (thin
+rails at y270 / y213,231); vco spiral fills x290–366 but **x366–385 is an M5-clear vertical
+corridor**; DIV2 M5 fills x33–204 but **x220–235 is M5-clear**. So over-block M5 routing is
+possible in the clear columns. DIV2.VDD is the one genuinely awkward net (extent x≤183, y≤138;
+nearest M5 corridor x220–235 is 37 µm right and its own metal doesn't reach it) — will need a
+short M-jog or a lower-layer thread; flagged.
+
+**EM sizing** (`em_sizing.py`; 1 mA/µm M2–M4, 2 mA/µm M5):
+
+| net | segment | width | I (mA) | mA/µm | verdict |
+|---|---|--:|--:|--:|---|
+| GND | M5 bus | 15 µm | 26.4 | 1.76 | OK |
+| VDDD | M5 bus | 12 µm | 22.9 | 1.91 | OK |
+| VDDA | M5 bus | 3 µm | 3.5 | 1.17 | OK |
+| VDDD | DIV2.VDD riser | **23 µm** | 22.4 | 0.97 | OK (22 µm was 1.02, over) |
+| GND | DIV2.VSS riser | **23 µm** | 22.4 | 0.97 | OK |
+| VDDA | vco.VDD riser | 2 µm | 2.0 | 1.00 | OK |
+| ISS | vco.ISS riser | 2 µm | 1.0 | 0.50 | OK |
+| — | PFD/CP/ibias risers | 1–2 µm | ≤1.0 | ≤0.5 | OK |
+
+Currents: **VDDA 3.5, VDDD 22.9, GND 26.4, ISS 1.0 mA** (DIV2 22.4 on record; vco/CP/ibias/PFD
+estimated from bias structure). **Band-fit:** GND15+VDDD12+VDDA3+spacing = 32 µm > the 25 µm
+band → **GND's 15 µm strap goes in a grown bottom margin** (DIV2.VSS reaches 6.4 µm from the
+bottom edge, taps straight down); VDDD12+VDDA3 stay in the y[180,205] band.
