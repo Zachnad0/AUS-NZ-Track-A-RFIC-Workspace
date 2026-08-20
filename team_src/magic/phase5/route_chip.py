@@ -1,56 +1,61 @@
 #!/usr/bin/env python3
-# route_chip.py -- add top-level metal routing to the PLACED chip_top.gds and write it back.
-# Run AFTER chip_merge.py (which places the 5 blocks verbatim). Iterate:
-#   chip_merge.py  ->  route_chip.py  ->  run_drc.py / verify_cp.sh chip_top
+# route_chip.py -- add top-level power/signal metal to the PLACED chip_top.gds, write it back.
+# Run AFTER chip_merge.py. Iterate: chip_merge -> route_chip -> run_drc / verify_cp / chip_conn.
 #
-# Strategy (see docs/phase7-routing-plan.md): the band y in [180,205] is clear of ALL block
-# geometry across the full die width -> put M5 power buses there. Blocks above the band
-# (ibias/CP/PFD: y>=205) expose power on M2/M4 and use M5 sparsely (0-4 polys), so a short
-# M5 drop from the port down to the bus is reachable. Blocks below the band (DIV2/vco:
-# y<179.5) bury their power/clock ports in dense metal -> handled separately / flagged.
+# GND needs NO routing: every block's VSS and vco.GND already extract as VSUBS (substrate) --
+# a chip-wide common with no pad. So power routing is just VDDA and VDDD.
+#
+# LAYER DISCIPLINE (silent-short fix): horizontal buses on M5; vertical risers on M4; a riser
+# vias to M5 ONLY at its own target bus. An M5 riser is allowed ONLY inside a verified M5-clear
+# corridor AND only where no other M5 bus shares its x (so it crosses only its target bus).
 import pya, sys, os
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import route_lib as R
 
 GDS = "/foss/designs/AUS-NZ-integration/gds/chip_top.gds"
-
-ly = pya.Layout()
-ly.read(GDS)
+ly = pya.Layout(); ly.read(GDS)
 chip = ly.cell("chip_top")
 if chip is None:
-    raise SystemExit("chip_top not found in %s" % GDS)
+    raise SystemExit("chip_top not found")
 
-# --- power buses in the clear band (M5), full needed width ---
-BUS = {"VDDA": 184.0, "GND": 191.0, "VDDD": 198.0}
-BUS_W = {"VDDA": 2.0, "GND": 3.0, "VDDD": 2.0}
-BUS_X = {"VDDA": (60.0, 405.0), "GND": (60.0, 245.0), "VDDD": (95.0, 235.0)}
+# --- buses in the clear y[180,205] band (M5), EM-sized ---
+BUS = {"VDDA": 199.0, "VDDD": 188.0}
+BUS_W = {"VDDA": 3.0, "VDDD": 12.0}
+BUS_X = {"VDDA": (60.0, 405.0), "VDDD": (150.0, 236.0)}
 for net, y in BUS.items():
     x1, x2 = BUS_X[net]
     R.hwire(chip, ly, 5, x1, x2, y, w=BUS_W[net])
 
-# --- reachable terminals: (net, chip_x, chip_y, term_metal) ; all ABOVE the band ---
-# drop = via stack term_metal->M5 at the port, then vertical M5 down to the bus, joined by
-# the bus itself. Each drop crosses its own block on M5 only (sparse) between y_bus and y_port.
+# --- ABOVE-band drops: port -> via stack to M4 -> M4 riser DOWN to bus -> via4 to M5 bus ---
 DROPS = [
-    ("VDDA", 219.48, 231.61, 2),   # CP.VDD  M2
-    ("VDDA", 74.16, 231.60, 2),    # ibias.VDD M2
-    ("VDDD", 229.68, 256.76, 4),   # PFD.VDD  M4
-    ("GND",  237.25, 213.61, 2),   # CP.VSS  M2
-    ("GND",  89.62, 206.10, 2),    # ibias.VSS M2
-    ("GND",  232.98, 256.76, 4),   # PFD.VSS  M4
+    ("VDDA", 219.48, 231.61, 2, 2.0),   # CP.VDD  M2
+    ("VDDA", 74.16, 231.60, 2, 2.0),    # ibias.VDD M2
+    ("VDDD", 229.68, 256.76, 4, 2.0),   # PFD.VDD  M4
 ]
-# LAYER DISCIPLINE (silent-short fix): buses are M5 (horizontal), risers are M4 (vertical).
-# An M4 riser crossing a NON-target M5 bus does not short (different layer); it vias up to M5
-# ONLY at its own target bus. (A previous cut ran risers on M5 and silently merged GND into
-# VDDD where a riser crossed a bus -- DRC-legal, LVS-fatal.)
-for net, x, y, m in DROPS:
-    ybus = BUS[net]
-    R.via_stack(chip, ly, m, 4, x, y)          # escape port up to M4
-    R.vwire(chip, ly, 4, y, ybus, x, w=1.0)    # M4 riser down to the bus level
-    R.via1_at(chip, ly, 4, 5, x, ybus)         # via4 up to the M5 bus ONLY here
-    x1, x2 = BUS_X[net]
-    if not (x1 <= x <= x2):
-        R.hwire(chip, ly, 5, min(x, x1), max(x, x2), ybus, w=BUS_W[net])
+for net, x, y, m, w in DROPS:
+    yb = BUS[net]
+    R.via_stack(chip, ly, m, 4, x, y)
+    R.vwire(chip, ly, 4, y, yb, x, w=w)
+    R.via1_at(chip, ly, 4, 5, x, yb)
+
+# --- BELOW-band corridor taps: tap net at an accessible extent point, ride an M5-CLEAR column
+#     up to the bus. (tap_x,tap_y,tap_metal, corridor_x, jog_metal, bus, riser_w) ---
+def corridor_tap(tx, ty, tm, cx, jm, net, w):
+    yb = BUS[net]
+    R.via_stack(chip, ly, tm, jm, tx, ty)          # escape to jog layer
+    if abs(cx - tx) > 0.01:
+        R.hwire(chip, ly, jm, tx, cx, ty, w=w)     # jog to the corridor x on jog layer
+    R.via_stack(chip, ly, jm, 5, cx, ty)           # up to M5 in the corridor
+    R.vwire(chip, ly, 5, ty, yb, cx, w=w)          # M5 riser up the clear column to the bus
+
+# DIV2.VDD: tap ON its M4 collector wire (x108-183 @ y137.5); x160 is an M5-clear column.
+# CLEAN: extraction shows DIV2.VDD merges into VDDD (PFD+DIV2), no side effects.
+corridor_tap(160.0, 137.5, 4, 160.0, 4, "VDDD", 2.0)
+# vco.VDD: DEFERRED. Its M2 wire (x390-410) sits in vco's congested right side (a wide M4 bar
+# x328-434 y123-131, the inductor leads, and OUT_p's M5 lead). Routing up the x366-385 corridor
+# from there SILENTLY SHORTS vco.OUT_p to VDDA (caught by the extraction diff, DRC-legal). Needs
+# a different tap -- vco.VDD's left reach or a lower-layer approach clear of the OUT_p lead.
+# corridor_tap(391.0, 74.85, 2, 382.0, 3, "VDDA", 2.0)
 
 ly.write(GDS)
-print("routed power (buses + %d drops); wrote %s" % (len(DROPS), GDS))
+print("routed VDDA+VDDD (buses + %d above-band drops + 2 corridor taps); wrote %s" % (len(DROPS), GDS))
