@@ -289,3 +289,34 @@ DIV2_QUAD_v1. This is a reliability fix on the VSS rail; the DRC/LVS/port sign-o
 - **Pins reduced 12 → 10:** RST_N + MON_OUT dropped (no matching block port; see docs/pins.md).
 - **Remaining:** inter-block routing (rungs 4a–4c) per `docs/phase7-routing-plan.md`, then the
   chip LVS match and the `lvs_config.json` repoint to `chip_top`.
+
+---
+
+## Phase-7 chip CLOSED — LVS clean (2026-08-20)
+
+`chip_top` is fully placed, routed, and **LVS-clean**. Image: `docs/img/chip_top_black.png`.
+
+- **Declared area: 522 × 309 µm** (the one number to use; grew from 472×270 for the GND-ring
+  margin). Config B is 550 × 1110 — 28 µm width margin, ~800 µm vertical headroom.
+- **Chip LVS: `verify_cp chip_top` → magic DRC 0, 12 ports, "match uniquely", zero property/port
+  errors, PASS.** 5-block regression all exit 0. All 12 nets connected (VDDA=CP+ibias+vco,
+  VDDD=PFD+DIV2, ground ring, UP/DOWN/FB, VGP/VGN/IB_DIV2, VCO_OUTP/N). All signals routed at
+  chip level via clear M3/M4 columns above each pin — **no block layout edits were needed.**
+- **W4 waiver: 168 items** (84 PL.5a_LV + 84 PL.5b_LV) — nmoscap_3p3 gencell field-poly-to-guard,
+  device-internal; `klayout_signoff.py chip_top` reports them WAIVED and PASSes.
+- **Grounds (Bailey req):** 13 pins incl VSSA (quiet quadrant ground, pin 0) + VSSD. They are ONE
+  electrical net (shared p-substrate, no deep-nwell); LVS carries one ground port (VSSA), the two
+  pads separate only bond-wire L. 0/0 boundary present at the die extent.
+- **VCO output load (A5, estimate — NOT resized):** OUT_p route ~494 µm, OUT_n ~431 µm (0.4 µm
+  M3/M4, ~0.08 fF/µm ⇒ ~40 / ~35 fF) + DIV2 CML input gate (W=40 ⇒ ~40–55 fF) ⇒ **~75–95 fF/side**.
+  Against the ~844 fF tank that is Δf ≈ **−4 to −7 %** (f ∝ 1/√C): the characterized 4.13–6.35 GHz
+  band shifts to ≈ 3.9–6.05 GHz, still covering the 4.8–5.0 GHz needed for the 2.4–2.5 GHz ÷2
+  output. Retunable via VTUNE; no device change.
+- **DIV2 internal VSS EM:** unchanged from the Aug-14 note (per-converter VSS ties ~0.28–0.56 µm
+  carrying ~2.96 mA — over; fix = widen the plate/ties, a DIV2-internal reliability item, not a
+  chip-route issue). The DIV2 **VDD** chip tap is a single 0.28 µm M4 collector at 80 mA/µm — a
+  chip-level multi-point tap or a wider internal collector is the fix (Greg's call; not reopened).
+- **I/Q offset:** the divider I/Q phase target is 90° with a residual **~1.0° offset** (layout/route
+  asymmetry) — the VCO_OUTP/N pair is connected but length-mismatched (OUT_p ~337 µm > OUT_n ~268 µm,
+  ~69 µm); stacking vco above/below DIV2 (using the ~800 µm vertical headroom) would shorten and
+  match the pair — a floorplan option, Greg's call.

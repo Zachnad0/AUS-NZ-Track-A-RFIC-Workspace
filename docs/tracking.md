@@ -179,7 +179,21 @@ phase at ~2.5 GHz is too fast for a monitor pad). Pins 12→10 (info.yaml + docs
 - **LVS harness** — `chip_top.abstract` (vco preload + inductor ignore). `verify_cp.sh chip_top`
   runs end-to-end: on the unrouted merge magic DRC 0, 25 nets, LVS DO NOT MATCH (missing metal).
 
-**ROUTING (rungs 3a/4a–4c) — 🟡 WIP (power + GND ring + ports + 3 signals; 6 nets left).**
+**CHIP LVS CLEAN — PHASE 7 ROUTING CLOSED (2026-08-20). 🟢** `verify_cp chip_top`: magic DRC 0,
+12 ports, **"match uniquely"**, zero property/port errors, PASS; 5-block regression all exit 0;
+KLayout signoff PASS (168 W4 waiver only); check_placement OK; die **522 × 309 µm**. All 12 nets
+connected — VDDA(CP+ibias+vco), VDDD(PFD+DIV2), ground ring, UP/DOWN/FB, VGP/VGN/IB_DIV2,
+VCO_OUTP/N — **all routed at chip level via clear M3/M4 columns above each pin; NO block layout
+edits needed** (the "buried pin" story was wrong once tapped-at-extent + clear-column). Grounds:
+13 pins incl VSSA/VSSD, one electrical net (substrate), one LVS ground port (VSSA) — A1b question
+for Bailey. 0/0 boundary added. Same-layer escape (extend a pin along its own axis, then via up)
+routed the tight std-cell pins. VCO_OUT pair length-mismatched (OUT_p 337 > OUT_n 268 µm) — connect
+OK, matching is a floorplan option (stack vco/DIV2, ~800 µm vertical headroom). See
+docs/layout-review-aug14.md Phase-7 closeout for the VCO load (~−5% pull) + DIV2 VDD/VSS EM notes.
+Remaining for tapeout: lvs_config repoint (Phase B), #143 area/pin update (Greg, browser).
+
+---
+HISTORY (pre-close WIP): **ROUTING (rungs 3a/4a–4c) — 🟡 WIP (power + GND ring + ports + 3 signals; 6 nets left).**
 - **SAME-LAYER ESCAPE (the technique that unblocked signals):** do NOT drop a via pad on a
   block pin (a 0.38 µm pad vs 0.28 µm pins at 0.28 µm pitch → M2.2a). Instead EXTEND the pin
   along its OWN axis at min width (no via, no enclosure → neighbour spacing stays as-drawn) out
