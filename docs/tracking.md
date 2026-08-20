@@ -179,7 +179,24 @@ phase at ~2.5 GHz is too fast for a monitor pad). Pins 12→10 (info.yaml + docs
 - **LVS harness** — `chip_top.abstract` (vco preload + inductor ignore). `verify_cp.sh chip_top`
   runs end-to-end: on the unrouted merge magic DRC 0, 25 nets, LVS DO NOT MATCH (missing metal).
 
-**ROUTING (rungs 3a/4a–4c) — 🟡 WIP (power + GND ring + ports done, signals blocked at pins).**
+**ROUTING (rungs 3a/4a–4c) — 🟡 WIP (power + GND ring + ports + 3 signals; 6 nets left).**
+- **SAME-LAYER ESCAPE (the technique that unblocked signals):** do NOT drop a via pad on a
+  block pin (a 0.38 µm pad vs 0.28 µm pins at 0.28 µm pitch → M2.2a). Instead EXTEND the pin
+  along its OWN axis at min width (no via, no enclosure → neighbour spacing stays as-drawn) out
+  into open space, THEN via up. **UP, DOWN, FB routed clean this way** (KLayout signoff PASS, magic
+  DRC 0, extraction-diff'd — no shorts): UP = PFD.UP=CP.UP; DOWN = PFD.DOWN=CP.DOWN; FB = PFD.FB=
+  DIV2.I_P=I_P. Gotchas handled: separate parallel M4 escapes in y (UP y271/DOWN y272); jog past
+  power risers (FB cleared PFD.VDD's M4 riser@x229.68); cross a block's M1 edge-guard on M4.
+- **6 nets remain, all needing BLOCK PIN ESCAPES (item-3 territory):** vco.VDD (M2 interleaved
+  with OUT active at 0.14 µm; OUT_p/n M5 fill x396-472), VGP (ibias.VGP 17 µm interior), VGN/
+  IB_DIV2 (ibias top-edge but CP-bottom/DIV2-deep 81 µm), VCO_OUTP/N (vco leads ↔ DIV2 interior,
+  337 µm diff pair). Each needs escape metal added inside the block to bring the net to an
+  accessible edge (authorized, Greg's call per rule 12) — a dedicated per-block pass.
+- **DIV2.VDD EM CORRECTED:** the 80 mA/µm was a single 0.28 µm M4 collector at the chip TAP, not
+  the block entry. DIV2's VDD is a distributed multi-layer mesh (798 M1 std-cell rails + M2/M3/M4);
+  the block simulated + signed off, so its internal VDD is fine. The chip-level fix is a
+  MULTI-POINT tap (spread 22.4 mA over N DIV2.VDD wires), not reopening DIV2.
+- Die grew **522 × 309 µm** (GND ring margin). LVS: DRC 0, 11 ports, DO NOT MATCH (6 nets).
 - **GND METAL RING built (correction):** GND is the substrate common (VSUBS), but that is a
   HIGH-impedance return for ~26 mA across 472 µm (hundreds of mV bounce). Added a 15 µm M5 GND
   ring in a 20 µm perimeter margin (channel budget: the band can't stack GND15+VDDD12+VDDA3 → GND
