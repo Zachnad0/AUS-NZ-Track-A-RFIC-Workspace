@@ -147,7 +147,9 @@ R.vwire(chip, ly, 2, 245.3, 240.0, 230.44, w=0.3)  # PFD.FB M2 down out of PFD i
 R.hwire(chip, ly, 2, 230.44, 232.5, 240.0, w=0.3)  # jog right in the gap, clear of PFD.VDD's M4 riser@229.68
 R.via_stack(chip, ly, 2, 4, 232.5, 240.0)
 R.hwire(chip, ly, 4, 232.5, 287.0, 240.0, w=0.6)   # M4 across (above CP) to x287
-R.vwire(chip, ly, 4, 240.0, 140.0, 287.0, w=0.6)   # M4 down the CP-right / DIV2-vco channel
+R.via_stack(chip, ly, 3, 4, 287.0, 240.0)          # -> M3 for the long vertical (so the VCO_OUT
+R.vwire(chip, ly, 3, 240.0, 140.0, 287.0, w=0.6)   #    M4 band lanes cross it on a different layer)
+R.via_stack(chip, ly, 3, 4, 287.0, 140.0)          # back to M4
 R.hwire(chip, ly, 4, 287.0, 235.5, 140.27, w=0.6)  # M4 left, OVER the DIV2 x237 VDD guard (M4 vs M1)
 R.via_stack(chip, ly, 1, 4, 235.5, 140.27)         # down onto DIV2.I_P M1 (x235.5, before the guard)
 
@@ -193,6 +195,18 @@ R.hwire(chip, ly, 4, 120.0, 142.2, 186.0, w=0.6)    # M4 across at y186 (clear o
 R.via_stack(chip, ly, 2, 3, 405.0, 74.85)         # vco.VDD M2 -> M3
 R.vwire(chip, ly, 3, 74.85, 199.0, 405.0, w=0.4)  # M3 up the clear column to the VDDA bus y
 R.via_stack(chip, ly, 3, 5, 405.0, 199.0)         # to M5 onto the VDDA bus (BUS_X VDDA ends at 405)
+
+# VCO_OUTP/N: the 337um differential pair. OUT_p/n leads at y94.5 escape UP on their M3 columns
+# (x401.8 / x398 clear y95-179; spiral is M5, the underpass bar is M4) to the band, M4 across to
+# the DIV2 CK/CKB M3 columns (x65 / x130 clear), down onto CK/CKB. Lanes y181 (OUT_p) / y184 (OUT_n).
+for outnet, xv, xd, ylane in [("OUT_p", 401.8, 65.0, 181.0), ("OUT_n", 398.0, 130.0, 184.0)]:
+    R.via_stack(chip, ly, 3, 5, xv, 94.5)             # tap the OUT lead (M5) -> M3
+    R.vwire(chip, ly, 3, 94.5, ylane, xv, w=0.4)      # M3 up the clear vco column into the band
+    R.via_stack(chip, ly, 3, 4, xv, ylane)            # -> M4 for the long band crossing
+    R.hwire(chip, ly, 4, xd, xv, ylane, w=0.4)        # M4 across the band (below the y188 bus) to DIV2
+    R.via_stack(chip, ly, 3, 4, xd, ylane)            # -> M3 at the DIV2 CK/CKB column
+    R.vwire(chip, ly, 3, ylane, 110.0, xd, w=0.4)     # M3 down the clear DIV2 column
+    R.via_stack(chip, ly, 2, 3, xd, 109.8)            # -> M2 onto DIV2.CK / CKB
 
 # --- 0/0 boundary at the true die extent (Bailey: determines size + available-block budget) ---
 bb = chip.dbbox()
