@@ -55,7 +55,5 @@ C {opin.sym} 760 -500 0 0 {name=P_I_P lab=I_P}
 C {opin.sym} 920 -500 0 0 {name=P_I_N lab=I_N}
 C {opin.sym} 1080 -500 0 0 {name=P_Q_P lab=Q_P}
 C {opin.sym} 1240 -500 0 0 {name=P_Q_N lab=Q_N}
-C {iopin.sym} 1400 -500 0 0 {name=P_VSSD lab=VSSD}
-C {ipin.sym} 1560 -500 0 0 {name=P_VDDD lab=VDDD}
-C {ipin.sym} 1720 -500 0 0 {name=P_REF_IN lab=REF_IN}
-C {lab_pin.sym} 1400 -500 0 0 {name=l_vssd lab=VSSA}
+C {ipin.sym} 1400 -500 0 0 {name=P_VDDD lab=VDDD}
+C {ipin.sym} 1560 -500 0 0 {name=P_REF_IN lab=REF_IN}

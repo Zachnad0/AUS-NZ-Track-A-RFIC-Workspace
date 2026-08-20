@@ -98,10 +98,12 @@ def port_label(name, x, y, m, patch=True):
 # VDDA/VDDD land on their own M5 buses (already top-level metal -> no patch).
 port_label("VDDA", 200.0, BUS["VDDA"], 5, patch=False)
 port_label("VDDD", 180.0, BUS["VDDD"], 5, patch=False)
-# VSSA/VSSD ground pads on the GND ring (M5, already metal). Two PADS, ONE net (shared
-# p-substrate; separates bond-wire L, not the net). Bailey 2026-08-20: pair power with ground.
-port_label("VSSA", 200.0, GY_BOT, 5, patch=False)   # quiet analog ground (bottom ring)
-port_label("VSSD", 200.0, GY_TOP, 5, patch=False)   # digital ground (top ring)
+# GND ring port label. GROUND is ONE electrical net (shared p-substrate), so LVS carries ONE
+# ground port = VSSA (bottom ring). The SECOND ground PAD, VSSD (info.yaml pad #11, Bailey's
+# power/ground pairing), bonds to the SAME ring at the top edge ~ (200, GY_TOP) -- a second bond
+# point, not a second net (separates only bond-wire L). It is not a distinct LVS port; giving it
+# its own label would create a netgen port error against the one-net golden. (A1b -> ask Bailey.)
+port_label("VSSA", 200.0, GY_BOT, 5, patch=False)   # the ground port (bottom ring)
 # block ports: patch on the port centerline (chip coords, port_map.py) + label.
 PORT_LABELS = [
     ("IBIAS",  71.30, 223.90, 2),   # ibias.IBIAS
@@ -145,11 +147,10 @@ R.hwire(chip, ly, 2, 273.3, 285.0, 214.8, w=0.28)  # extend CP.DOWN M2 right ont
 # channel. M4 for the long vertical run (power-free column).
 R.vwire(chip, ly, 2, 245.3, 240.0, 230.44, w=0.3)  # PFD.FB M2 down out of PFD into the gap
 R.hwire(chip, ly, 2, 230.44, 232.5, 240.0, w=0.3)  # jog right in the gap, clear of PFD.VDD's M4 riser@229.68
-R.via_stack(chip, ly, 2, 4, 232.5, 240.0)
-R.hwire(chip, ly, 4, 232.5, 287.0, 240.0, w=0.6)   # M4 across (above CP) to x287
-R.via_stack(chip, ly, 3, 4, 287.0, 240.0)          # -> M3 for the long vertical (so the VCO_OUT
-R.vwire(chip, ly, 3, 240.0, 140.0, 287.0, w=0.6)   #    M4 band lanes cross it on a different layer)
-R.via_stack(chip, ly, 3, 4, 287.0, 140.0)          # back to M4
+R.via_stack(chip, ly, 2, 3, 232.5, 240.0)          # -> M3 (whole FB run is M3 here, so it crosses
+R.hwire(chip, ly, 3, 232.5, 287.0, 240.0, w=0.6)   #   the UP/DOWN M4 verticals @x282/285 and the
+R.vwire(chip, ly, 3, 240.0, 140.0, 287.0, w=0.6)   #   VCO_OUT M4 band lanes on a DIFFERENT layer)
+R.via_stack(chip, ly, 3, 4, 287.0, 140.0)          # to M4 for the guard crossing
 R.hwire(chip, ly, 4, 287.0, 235.5, 140.27, w=0.6)  # M4 left, OVER the DIV2 x237 VDD guard (M4 vs M1)
 R.via_stack(chip, ly, 1, 4, 235.5, 140.27)         # down onto DIV2.I_P M1 (x235.5, before the guard)
 

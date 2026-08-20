@@ -1,5 +1,5 @@
 ** sch_path: /foss/designs/AUS-NZ-integration/team_src/xschem/chip_top/chip_top.sch
-**.subckt chip_top VSSA VDDA IBIAS ISS VTUNE CP_OUT I_P I_N Q_P Q_N VSSD VDDD REF_IN
+**.subckt chip_top VSSA VDDA IBIAS ISS VTUNE CP_OUT I_P I_N Q_P Q_N VDDD REF_IN
 *.iopin VSSA
 *.ipin VDDA
 *.ipin IBIAS
@@ -10,7 +10,6 @@
 *.opin I_N
 *.opin Q_P
 *.opin Q_N
-*.iopin VSSD
 *.ipin VDDD
 *.ipin REF_IN
 x_pfd_lib REF_IN I_P UP DOWN VDDD VSSA PFD_lib
