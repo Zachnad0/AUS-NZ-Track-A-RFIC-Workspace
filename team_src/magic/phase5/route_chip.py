@@ -85,5 +85,14 @@ PORT_LABELS = [
 for name, x, y, m in PORT_LABELS:
     port_label(name, x, y, m)
 
+# --- signals (rung 4b). Point-to-point: horizontal hops on M4, vertical risers on M3
+#     (different layers -> crossing-safe). Tap each end on its accessible extent. ---
+# UP (PFD.UP <-> CP.UP): connectivity PROVEN (a first cut extracted PFD.UP=CP.UP=one net with
+# no OUT short), but PFD's UP/DOWN std-cell pins are 0.28um wide and 0.28um-pitched, so a
+# 0.26um via + enclosure either bridges the neighbor (M2.2a) or misses the pin (disconnects).
+# Needs a minimal-enclosure via landed on the pin's exact centerline -- a per-pin precision
+# tweak, deferred. The route shape (H on M4 across the top, V on M3 down x282) is correct:
+#   via_stack(2,4, PFD.UP_center, ~266); hwire M4 -> x282.25; via_stack(3,4); vwire M3 -> CP.UP.
+
 ly.write(GDS)
-print("routed VDDA+VDDD (%d drops + 1 corridor tap) + 2 port labels; wrote %s" % (len(DROPS), GDS))
+print("routed power + 11 labels (UP deferred: tight PFD pin taps); wrote %s" % GDS)
