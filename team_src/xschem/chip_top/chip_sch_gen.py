@@ -48,18 +48,21 @@ DIRS = {  # pin directions (cosmetic in a black box, but set them sensibly)
 # changes the operating point, so ISS is brought out as a separate analog pad and the tail
 # current stays controllable off-chip. (vco.GND -- the nfet-bulk/substrate return -- stays GND.)
 NETMAP = {
-    "PFD_lib":      {"REF": "REF_IN", "FB": "I_P", "UP": "UP", "DOWN": "DOWN", "VDD": "VDDD", "VSS": "GND"},
-    "CP_v1":        {"UP": "UP", "DOWN": "DOWN", "CP_OUT": "CP_OUT", "VDD": "VDDA", "VSS": "GND", "VGP": "VGP", "VGN": "VGN"},
-    "ibias_gen_v1": {"IBIAS": "IBIAS", "VGP": "VGP", "VGN": "VGN", "IB_DIV2": "IB_DIV2", "VDD": "VDDA", "VSS": "GND"},
-    "DIV2_QUAD_v1": {"CK": "VCO_OUTP", "CKB": "VCO_OUTN", "IBIAS": "IB_DIV2", "I_P": "I_P", "I_N": "I_N", "Q_P": "Q_P", "Q_N": "Q_N", "VDD": "VDDD", "VSS": "GND"},
-    "vco_v1":       {"VDD": "VDDA", "OUT_p": "VCO_OUTP", "OUT_n": "VCO_OUTN", "GND": "GND", "TUNE": "VTUNE", "ISS": "ISS"},
+    "PFD_lib":      {"REF": "REF_IN", "FB": "I_P", "UP": "UP", "DOWN": "DOWN", "VDD": "VDDD", "VSS": "VSSA"},
+    "CP_v1":        {"UP": "UP", "DOWN": "DOWN", "CP_OUT": "CP_OUT", "VDD": "VDDA", "VSS": "VSSA", "VGP": "VGP", "VGN": "VGN"},
+    "ibias_gen_v1": {"IBIAS": "IBIAS", "VGP": "VGP", "VGN": "VGN", "IB_DIV2": "IB_DIV2", "VDD": "VDDA", "VSS": "VSSA"},
+    "DIV2_QUAD_v1": {"CK": "VCO_OUTP", "CKB": "VCO_OUTN", "IBIAS": "IB_DIV2", "I_P": "I_P", "I_N": "I_N", "Q_P": "Q_P", "Q_N": "Q_N", "VDD": "VDDD", "VSS": "VSSA"},
+    "vco_v1":       {"VDD": "VDDA", "OUT_p": "VCO_OUTP", "OUT_n": "VCO_OUTN", "GND": "VSSA", "TUNE": "VTUNE", "ISS": "ISS"},
 }
 
-# 10 pads: (net, kind)  kind: ipin (input/supply) or opin (output)
+# 13 pads (info.yaml order): kind ipin (supply/in) / opin (out) / iopin (ground).
+# VSSA is the quiet quadrant ground (index 0); VSSD is a second ground PAD on the SAME net
+# (all VSS ties to the shared p-substrate -> one net without deep-nwell; two pads separate
+# the bond-wire inductance). VSSD is merged into VSSA below.
 PADS = [
-    ("VDDA", "ipin"), ("IBIAS", "ipin"), ("ISS", "ipin"), ("VTUNE", "ipin"), ("CP_OUT", "opin"),
-    ("I_P", "opin"), ("I_N", "opin"), ("Q_P", "opin"), ("Q_N", "opin"),
-    ("VDDD", "ipin"), ("REF_IN", "ipin"),
+    ("VSSA", "iopin"), ("VDDA", "ipin"), ("IBIAS", "ipin"), ("ISS", "ipin"), ("VTUNE", "ipin"),
+    ("CP_OUT", "opin"), ("I_P", "opin"), ("I_N", "opin"), ("Q_P", "opin"), ("Q_N", "opin"),
+    ("VSSD", "iopin"), ("VDDD", "ipin"), ("REF_IN", "ipin"),
 ]
 
 PITCH = 40  # vertical pin pitch (grid-aligned)
@@ -125,12 +128,15 @@ def main():
             sch.append("C {lab_pin.sym} %g %g 0 0 {name=l%d lab=%s}" % (ax, ay, lab_id, net))
             lab_id += 1
 
-    # 10 pads across the top, as ports (ipin/opin)
+    # 13 pads across the top, as ports (ipin/opin/iopin)
     for j, (net, kind) in enumerate(PADS):
         px = j * 160 - 200
         py = -500
         rot = 0
         sch.append("C {%s.sym} %g %g %d 0 {name=P_%s lab=%s}" % (kind, px, py, rot, net, net))
+    # tie VSSD to VSSA (two ground pads, ONE net = shared p-substrate; separates only bond L).
+    vj = [j for j, (net, _) in enumerate(PADS) if net == "VSSD"][0]
+    sch.append("C {lab_pin.sym} %g %g 0 0 {name=l_vssd lab=VSSA}" % (vj * 160 - 200, -500))
 
     with open(os.path.join(HERE, "chip_top.sch"), "w", newline="\n") as f:
         f.write("\n".join(sch) + "\n")

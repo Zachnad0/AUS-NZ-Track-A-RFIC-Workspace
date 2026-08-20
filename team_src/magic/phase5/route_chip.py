@@ -98,6 +98,10 @@ def port_label(name, x, y, m, patch=True):
 # VDDA/VDDD land on their own M5 buses (already top-level metal -> no patch).
 port_label("VDDA", 200.0, BUS["VDDA"], 5, patch=False)
 port_label("VDDD", 180.0, BUS["VDDD"], 5, patch=False)
+# VSSA/VSSD ground pads on the GND ring (M5, already metal). Two PADS, ONE net (shared
+# p-substrate; separates bond-wire L, not the net). Bailey 2026-08-20: pair power with ground.
+port_label("VSSA", 200.0, GY_BOT, 5, patch=False)   # quiet analog ground (bottom ring)
+port_label("VSSD", 200.0, GY_TOP, 5, patch=False)   # digital ground (top ring)
 # block ports: patch on the port centerline (chip coords, port_map.py) + label.
 PORT_LABELS = [
     ("IBIAS",  71.30, 223.90, 2),   # ibias.IBIAS
@@ -155,5 +159,11 @@ R.via_stack(chip, ly, 1, 4, 235.5, 140.27)         # down onto DIV2.I_P M1 (x235
 # ibias pins escaped to an edge, or block pin escapes -- a dedicated pass. (LAYER PLAN for it:
 # power M4/M5, signals M2/M3, route in Band C x189-210 / the y180-205 band, never over a block.)
 
+# --- 0/0 boundary at the true die extent (Bailey: determines size + available-block budget) ---
+bb = chip.dbbox()
+chip.shapes(ly.layer(0, 0)).insert(pya.DBox(bb.left, bb.bottom, bb.right, bb.top))
+print("die boundary (0/0): (%.2f,%.2f)-(%.2f,%.2f)  %.1f x %.1f um"
+      % (bb.left, bb.bottom, bb.right, bb.top, bb.width(), bb.height()))
+
 ly.write(GDS)
-print("routed power + GND ring + 11 labels + VGP; wrote %s" % GDS)
+print("routed power + GND ring + 13 labels + boundary; wrote %s" % GDS)
