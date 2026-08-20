@@ -150,3 +150,34 @@ Currents: **VDDA 3.5, VDDD 22.9, GND 26.4, ISS 1.0 mA** (DIV2 22.4 on record; vc
 estimated from bias structure). **Band-fit:** GND15+VDDD12+VDDA3+spacing = 32 µm > the 25 µm
 band → **GND's 15 µm strap goes in a grown bottom margin** (DIV2.VSS reaches 6.4 µm from the
 bottom edge, taps straight down); VDDD12+VDDA3 stay in the y[180,205] band.
+
+---
+
+## SESSION 2026-08-20b: GND is free, power+ports routed, signal map
+
+**Biggest realization: GND needs NO routing.** Every block's VSS and vco.GND already extract as
+**VSUBS (substrate)** — the chip-wide common has no pad, so it is one net by construction. Power
+routing is only VDDA + VDDD.
+
+**Routed & DRC-clean (KLayout signoff PASS = W4 waiver only; magic DRC 0; check_placement OK):**
+- **VDDD = PFD.VDD + DIV2.VDD** COMPLETE. DIV2.VDD tapped on its M4 collector (x160 @ y137.5),
+  risen up the x160 M5-clear column.
+- **VDDA = CP.VDD + ibias.VDD** (2/3).
+- **11 port labels** (VDDA VDDD on buses; IBIAS VTUNE ISS CP_OUT I_P I_N Q_P Q_N REF_IN on the
+  block ports) → chip_top ports 0 → **11**.
+- Extraction diff'd every rung; **one silent short caught** (vco.VDD corridor riser touched the
+  OUT_p lead → OUT_p=VDDA) and backed out.
+
+**Signal-net accessibility (`sig_extent.py`, tap at extent):**
+| net | A (accessible?) | B (accessible?) | verdict |
+|---|---|---|---|
+| UP | PFD.UP top edge (0µm) | CP.UP right edge (1µm) | tractable |
+| DOWN | PFD.DOWN top edge | CP.DOWN 9.7µm from bottom | tractable |
+| FB=I_P | PFD.FB bottom edge (0µm) | DIV2.I_P right edge (1.2µm) | tractable, ~105µm span |
+| VGP | ibias.VGP 17µm up | CP.VGP top edge (0.1µm) | tractable |
+| VGN | ibias.VGN top edge (1.5µm) | CP.VGN bottom edge (1.3µm) | tractable |
+| IB_DIV2 | ibias.IB_DIV2 top edge | **DIV2.IBIAS 81.7µm deep** | hard |
+| VCO_OUTP/N | vco.OUT_p/n right edge | DIV2.CK/CKB interior, **337µm span** | hard (diff pair) |
+
+**Remaining for LVS match:** vco.VDD (a tap clear of the OUT_p lead), the 8 signal nets above,
+then `verify_cp chip_top` unique match. GND + ports + VDDD + 2/3 VDDA are done.
