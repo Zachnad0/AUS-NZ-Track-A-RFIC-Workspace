@@ -165,27 +165,31 @@ phase at ~2.5 GHz is too fast for a monitor pad). Pins 12→10 (info.yaml + docs
   port lists are VERBATIM from each block's signed-off golden `.subckt`. Black-box (not the
   committed block symbols) because **CP_v1.sym is STALE** (5 pins; its golden+layout have 7 —
   adds VGP/VGN) and **there is no PFD_lib.sym** (only PFD_v1.sym, right ports/wrong cell name).
-  No block .sch/.sym touched (rule 12). Netlist verified: chip_top(10 ports) + correct per-block
-  connectivity, FB=I_P, CP has VGP/VGN, **vco ISS→GND** (no on-chip tail source; sources-to-gnd,
-  reversible — flag for Greg).
+  No block .sch/.sym touched here (rule 12). **ISS UPDATE (11 pins):** chip_top.sch had tied
+  vco.ISS→GND; corrected — **vco ISS is now its own analog pad** (tail current stays off-chip
+  controllable; grounding it would move the operating point off the characterized 1 mA tail).
+  info.yaml 10→11 (VDDA IBIAS ISS VTUNE CP_OUT I_P I_N Q_P Q_N VDDD REF_IN). vco line:
+  `x_vco_v1 VDDA VCO_OUTP VCO_OUTN GND VTUNE ISS`.
 - **chip_top_golden.spice (`team_src/magic/`)** — GENERATED, not typed: `assemble_chip_golden.py`
-  takes the netlisted top from chip_top.sch and inlines the 5 signed-off block goldens as the
-  definitions. Verified: **115 devices** (7+8+17+75+8 block X-instances) = golden X(120) − 5 top
-  block instances; **10 ports** = info.yaml. Force-added (survives *.spice ignore).
-- **LVS harness** — `chip_top.abstract` (vco_varactors+vco_inductor_v2 preload, inductor
-  ignore-class, same as vco_v1). `verify_cp.sh chip_top` runs end-to-end on the UNROUTED merge:
-  **magic DRC 0, 25 nets, LVS DO NOT MATCH** (mismatch = missing inter-block metal only). The
-  golden is independent of the routing, so any route is checkable with one verify_cp run.
-- No pad/IO/ESD cells exist (organizer padframe); the 10 pads are die-edge port labels (rung 4c).
+  inlines the 5 signed-off block goldens under the netlisted top. Verified: **115 devices**
+  (7+8+17+75+8) = golden X(120) − 5; **11 ports** = info.yaml. Force-added.
+- **Block SYMBOLS fixed** (item 2, symbols not schematics): `CP_v1.sym` given its missing
+  VGP/VGN (now = golden order UP DOWN CP_OUT VDD VSS VGP VGN); **`PFD_lib.sym` created** (golden
+  order REF FB UP DOWN VDD VSS). chip_top still netlists identically (black boxes untouched).
+- **LVS harness** — `chip_top.abstract` (vco preload + inductor ignore). `verify_cp.sh chip_top`
+  runs end-to-end: on the unrouted merge magic DRC 0, 25 nets, LVS DO NOT MATCH (missing metal).
 
-**ROUTING (rungs 4a–4c) — 🟡 DEFERRED with an executable plan** in `docs/phase7-routing-plan.md`.
-The port work-list (chip coords, per net, from `phase5/port_map.py`), the layer discipline
-(H=M4 / V=M3, power on wide M2 straps, via3 at junctions — prevents the silent-short family),
-the free-space/margin routing (avoid vco's M5 spiral), and the WIP order are all specified. Not
-done blind in-script this session: a DRC-clean, short-free, LVS-matching route of ~11
-inter-block nets + power across the 472×270 die is a multi-hour iterative job (the project's
-silent-short failure mode) and over the 15-min-per-task budget. Most inter-block nets are
-same-layer **M2** (VGP/VGN/IB_DIV2/DOWN/VDDA), which simplifies execution.
+**ROUTING (rungs 3a–3c) — 🟡 WIP (started, partial).** Infra built + validated: `route_lib.py`
+DRC-clean primitives (via stacks M1–M5, wires; gf180 via 0.26 µm), `route_chip.py` adds
+top-level metal to the placed merge. **Power buses in the y[180,205] band** (verified clear of
+all blocks full-width). **SILENT SHORT found + fixed:** risers on M5 crossing an M5 bus merged
+GND into VDDD (PFD.VDD→VSUBS, DRC-legal/LVS-fatal) → **risers now M4, buses M5, via4 only at the
+target bus**. Connected so far (magic DRC 0, KLayout var-D 168): **VDDA = CP.VDD + ibias.VDD**
+(verified in extraction), GND bus on CP/ibias/PFD VSS, VDDD bus on PFD.VDD; no shorts. **Blocker
+— interior ports in dense metal:** vco (VDD/GND/ISS) and DIV2 (VDD/VSS, CK/CKB) sit deep in
+dense block metal; a via drop lands but the riser to a channel crosses dense metal and shorts —
+needs per-net threading. See `docs/phase7-routing-plan.md` PROGRESS+LESSONS. Remaining: those
+interior power terminals, all signal nets, and the 11 die-edge port labels; then LVS match.
 
 ### 7.3 lvs_config.json repoint (item 6) — ⏸ SPEC READY, NOT APPLIED (gated on chip LVS pass)
 
