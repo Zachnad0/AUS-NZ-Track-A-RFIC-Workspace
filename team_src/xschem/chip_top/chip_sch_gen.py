@@ -43,19 +43,21 @@ DIRS = {  # pin directions (cosmetic in a black box, but set them sensibly)
 }
 
 # block pin -> chip net.  I_P is shared: DIV2.I_P == I_P pad == PFD.FB (loop feedback).
-# vco ISS -> GND: no on-chip VCO tail-current source exists, and info.yaml is "common ground
-# everywhere"; the LC-VCO runs sources-to-ground on-chip (5.4 record: ISS is electrically gnd).
+# vco ISS -> its OWN pad (NOT GND): ISS is the LC-VCO tail node; the characterized band
+# (4.13-6.35 GHz) was simulated with a 1 mA tail mirror driving ISS. Grounding it on-chip
+# changes the operating point, so ISS is brought out as a separate analog pad and the tail
+# current stays controllable off-chip. (vco.GND -- the nfet-bulk/substrate return -- stays GND.)
 NETMAP = {
     "PFD_lib":      {"REF": "REF_IN", "FB": "I_P", "UP": "UP", "DOWN": "DOWN", "VDD": "VDDD", "VSS": "GND"},
     "CP_v1":        {"UP": "UP", "DOWN": "DOWN", "CP_OUT": "CP_OUT", "VDD": "VDDA", "VSS": "GND", "VGP": "VGP", "VGN": "VGN"},
     "ibias_gen_v1": {"IBIAS": "IBIAS", "VGP": "VGP", "VGN": "VGN", "IB_DIV2": "IB_DIV2", "VDD": "VDDA", "VSS": "GND"},
     "DIV2_QUAD_v1": {"CK": "VCO_OUTP", "CKB": "VCO_OUTN", "IBIAS": "IB_DIV2", "I_P": "I_P", "I_N": "I_N", "Q_P": "Q_P", "Q_N": "Q_N", "VDD": "VDDD", "VSS": "GND"},
-    "vco_v1":       {"VDD": "VDDA", "OUT_p": "VCO_OUTP", "OUT_n": "VCO_OUTN", "GND": "GND", "TUNE": "VTUNE", "ISS": "GND"},
+    "vco_v1":       {"VDD": "VDDA", "OUT_p": "VCO_OUTP", "OUT_n": "VCO_OUTN", "GND": "GND", "TUNE": "VTUNE", "ISS": "ISS"},
 }
 
 # 10 pads: (net, kind)  kind: ipin (input/supply) or opin (output)
 PADS = [
-    ("VDDA", "ipin"), ("IBIAS", "ipin"), ("VTUNE", "ipin"), ("CP_OUT", "opin"),
+    ("VDDA", "ipin"), ("IBIAS", "ipin"), ("ISS", "ipin"), ("VTUNE", "ipin"), ("CP_OUT", "opin"),
     ("I_P", "opin"), ("I_N", "opin"), ("Q_P", "opin"), ("Q_N", "opin"),
     ("VDDD", "ipin"), ("REF_IN", "ipin"),
 ]

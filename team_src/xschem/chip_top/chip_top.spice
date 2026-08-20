@@ -1,7 +1,8 @@
 ** sch_path: /foss/designs/AUS-NZ-integration/team_src/xschem/chip_top/chip_top.sch
-**.subckt chip_top VDDA IBIAS VTUNE CP_OUT I_P I_N Q_P Q_N VDDD REF_IN
+**.subckt chip_top VDDA IBIAS ISS VTUNE CP_OUT I_P I_N Q_P Q_N VDDD REF_IN
 *.ipin VDDA
 *.ipin IBIAS
+*.ipin ISS
 *.ipin VTUNE
 *.opin CP_OUT
 *.opin I_P
@@ -14,7 +15,7 @@ x_pfd_lib REF_IN I_P UP DOWN VDDD GND PFD_lib
 x_cp_v1 UP DOWN CP_OUT VDDA GND VGP VGN CP_v1
 x_ibias_gen_v1 IBIAS VGP VGN IB_DIV2 VDDA GND ibias_gen_v1
 x_div2_quad_v1 VCO_OUTP VCO_OUTN IB_DIV2 I_P I_N Q_P Q_N VDDD GND DIV2_QUAD_v1
-x_vco_v1 VDDA VCO_OUTP VCO_OUTN GND VTUNE GND vco_v1
+x_vco_v1 VDDA VCO_OUTP VCO_OUTN GND VTUNE ISS vco_v1
 **.ends
 
 * expanding   symbol:  PFD_lib.sym # of pins=6

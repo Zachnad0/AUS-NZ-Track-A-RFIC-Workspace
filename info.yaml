@@ -26,13 +26,20 @@ project:
 # RST_N and MON_OUT DROPPED 2026-08-20: DIV2_QUAD_v1 exposes no reset port (RST_N had
 # nowhere to land) and no block exposes a monitor tap (MON_OUT could only be a divider
 # phase at ~2.5 GHz, far too fast for a monitor pad). Dropping them avoids reopening any
-# signed-off block; 10 pins is well inside config B's 16.
-# Source of truth: docs/pins.md (analog 7, digital 1, power 2, ground 0 = 10).
+# signed-off block; well inside config B's 16.
+# ISS added 2026-08-20: the LC-VCO tail node. It must stay a SEPARATE pad (not tied to GND)
+# so the tail current stays controllable off-chip -- grounding it on-chip would change the
+# operating point away from the characterized 4.13-6.35 GHz band (simulated with a 1 mA tail
+# mirror driving ISS). Placed among the analog group so it lands on the analog rail.
+# Source of truth: docs/pins.md (analog 8, digital 1, power 2, ground 0 = 11).
 # ======================================================
 pins:
   - name: VDDA
     io_type: power
   - name: IBIAS
+    io_type: analog
+    secondary_esd: true
+  - name: ISS
     io_type: analog
     secondary_esd: true
   - name: VTUNE

@@ -18,7 +18,7 @@ to fit comfortably with real routing channels, not to squeeze.
   must NOT cross the VCO tank).
 - Signal chain REF_IN→PFD→CP→(off-chip loop filter)→VTUNE→vco→DIV2→PFD. CP_OUT & VTUNE
   go off-chip → near their pads. VCO OUT_p/OUT_n → DIV2 CK/CKB is the 5 GHz net → short.
-- All 12 pads sit in the upper-left quadrant (config B), clockwise from bottom-left.
+- All 11 pads sit in the upper-left quadrant (config B), clockwise from bottom-left.
 
 ## Proposed placement (getcell is LOWER-LEFT aligned; coords in µm, ×200 for iu)
 | block | LL (µm) | occupies (µm) |
@@ -30,7 +30,7 @@ to fit comfortably with real routing channels, not to squeeze.
 | PFD_lib | (210, 245) | (210,245) – (270, 269) — top-mid, far from vco |
 
 **Core bbox ≈ 472 × 270 µm = 127,400 µm².** Channels: 53 µm DIV2↔vco (5 GHz OUT→CK +
-isolation), ~31 µm DIV2↔ibias, ~12 µm CP↔PFD. Pad ring (12 pads, upper-left) sits
+isolation), ~31 µm DIV2↔ibias, ~12 µm CP↔PFD. Pad ring (11 pads, upper-left) sits
 outside this core; die grows to ~560–600 × 360–400 µm with the ring — still ~1/6 of the
 config-B allocation. Rationale: vco (bottom-right) is diagonally opposite PFD (top-mid)
 and only abuts DIV2 across a 53 µm channel carrying the one net that must be short.
@@ -43,7 +43,10 @@ and only abuts DIV2 across a 53 µm channel carrying the one net that must be sh
 - DIV2.I_P/I_N/Q_P/Q_N→I_P/I_N/Q_P/Q_N(pads).
 - ibias.IBIAS←IBIAS(pad) ; ibias.VGP/VGN→CP.VGP/VGN ; ibias.IB_DIV2→DIV2.IBIAS.
 - Power: VDDA(pad)→vco.VDD, CP.VDD, ibias.VDD ; VDDD(pad)→PFD.VDD, DIV2.VDD.
-- Ground: chip-wide common (no pin) — vco.GND/ISS-return, all blocks' VSS. Size rails
+- Ground: chip-wide common (no pin) — vco.GND, all blocks' VSS. Size rails
   for current (DIV2 ~22 mA); check SEGMENTS not just the trunk.
+- ISS(pad)→vco.ISS — the LC-VCO tail node is its OWN analog pad (NOT grounded), so the tail
+  current stays off-chip-controllable (characterized with a 1 mA tail mirror). Added 2026-08-20.
 - ~~RST_N(pad)→PFD/DIV2 reset ; MON_OUT(pad)→monitor tap~~ **DROPPED 2026-08-20** — no
-  block exposes a reset or monitor port; pins 12→10. PFD.FB now driven by DIV2 **I_P**.
+  block exposes a reset or monitor port. PFD.FB driven by DIV2 **I_P**. Net pin count 12→**11**
+  (−RST_N −MON_OUT +ISS).

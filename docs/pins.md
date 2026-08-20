@@ -23,7 +23,7 @@ Config totals (organizer proposal):
 
 ---
 
-## 1. Block signal interface (primary) — 10 pins
+## 1. Block signal interface (primary) — 11 pins
 
 Quadrature is padded to differential I/Q; **4 monitor-grade RF output buffers**
 (~2.4–3.2 GHz) drive `I_P/I_N/Q_P/Q_N` off-chip.
@@ -37,12 +37,19 @@ Quadrature is padded to differential I/Q; **4 monitor-grade RF output buffers**
 | 5 | **VTUNE** | in | analog | control voltage from off-chip loop filter |
 | 6 | **CP_OUT** | out | analog | charge-pump output to off-chip loop filter |
 | 7 | **IBIAS** | in | analog (DC) | chip-level bias reference (external 240 µA); on-chip bias generator fans out to CP (~50 µA) and DIV2 tails (2.4 mA/tail). Was `IBIAS_CP`; renamed 2026-08-04 — **one pad** |
-| 8 | **REF_IN** | in | digital | reference clock |
-| 9 | **VDDA** | — | power | analog supply |
-| 10 | **VDDD** | — | power | digital supply |
+| 8 | **ISS** | in | analog (DC) | LC-VCO tail node. Kept OFF-CHIP-drivable (not tied to GND) so the tail current stays controllable — the 4.13–6.35 GHz band was characterized with a 1 mA tail mirror on ISS; grounding it on-chip would move the operating point. |
+| 9 | **REF_IN** | in | digital | reference clock |
+| 10 | **VDDA** | — | power | analog supply |
+| 11 | **VDDD** | — | power | digital supply |
 
-**Tally:** analog **7** · digital **1** · power **2** · **ground 0** (chip-wide
-common). **Block pin total = 10.**
+**Tally:** analog **8** · digital **1** · power **2** · **ground 0** (chip-wide
+common). **Block pin total = 11.**
+
+> **ISS brought out to its own pad (2026-08-20).** chip_top.sch had transiently tied
+> vco_v1.ISS to GND; that reversed the 5.4 option-(b) decision (ISS a separate tail node)
+> and invalidated the characterization (the tail mirror set ~1 mA; grounded sources set the
+> current by sizing+supply, far above 1 mA — a different VCO). ISS is now an analog pad in
+> the analog group. `vco_v1.GND` (nfet-bulk/substrate return) stays on the common ground.
 
 > **RST_N and MON_OUT DROPPED (2026-08-20, Phase-7 integration).** Neither maps to a
 > real block port, so keeping them would have forced reopening a signed-off block:
@@ -76,23 +83,22 @@ VTUNE, CP_OUT, IBIAS (DC / low-freq) are insensitive. Verification item.
 
 ## 3. Config fit (against the real proposal totals)
 
-Block needs **10 pins** (analog 7 + digital 1 + power 2; ground is common, 0). The
+Block needs **11 pins** (analog 8 + digital 1 + power 2; ground is common, 0). The
 binding constraints are **total pin count** and **per-block power** — *not* an
 analog-pad budget (each project picks its own pad types within its total).
 
-| Config | Pin total | Fits (need 10)? | Spare | Verdict |
+| Config | Pin total | Fits (need 11)? | Spare | Verdict |
 |--------|----------:|-----------------|------:|---------|
-| A | 22 | ✓ | 12 | oversized for the block |
-| **B** | 16 | ✓ | **6** | **chosen fit** |
-| C | 6  | ✗ | −4 | too few pins |
-| D | 10 | ✓ (exact) | 0 | fits with zero spare |
-| E | 6  | ✗ | −4 | too few pins |
+| A | 22 | ✓ | 11 | oversized for the block |
+| **B** | 16 | ✓ | **5** | **chosen fit** |
+| C | 6  | ✗ | −5 | too few pins |
+| D | 10 | ✗ (11 > 10) | −1 | one pin short |
+| E | 6  | ✗ | −5 | too few pins |
 
-- **Primary: config B (16 pins) — fits the 10-pin block with 6 spare** (was 4 spare at
-  12 pins; RST_N/MON_OUT dropped 2026-08-20, see §1). Die ≈ 472 × 270 µm before routing
+- **Primary: config B (16 pins) — fits the 11-pin block with 5 spare** (RST_N/MON_OUT
+  dropped, ISS added, 2026-08-20, see §1). Die ≈ 472 × 270 µm before routing
   sits well inside B's 1/8 share (~624,000 µm²).
-- **Config D (10 pins)** now fits the block **exactly** (no reduction needed) — but with
-  zero spare it leaves no margin, so B stays primary.
+- **Config D (10 pins)** no longer fits — the 11-pin block is one over. Config B is the fit.
 
 ---
 
