@@ -154,43 +154,49 @@ Block bbox-LL (µm): **DIV2(0,0) · vco(290,0) · ibias(0,205) · CP(210,205) ·
   overlap/spacing violations at any point). Diagnosed by attributing KLayout markers to the
   gf180 std cells and diffing stub-.mag vs golden-GDS cell lists.
 
-### 7.2 chip_top ROUTING / LVS (rungs 2b–2d, item 3) — 🔴 GATED on a chip-top SCHEMATIC (Greg's task)
+### 7.2 chip_top SCHEMATIC + GOLDEN + LVS HARNESS — 🟢 DONE (2026-08-20)
 
-Routing and chip LVS cannot proceed on layout evidence alone — three top-level nets are
-**undefined at the block interface** and need a designer decision + a generated golden:
-- **`PFD.FB`** (PFD feedback input) — must tie to ONE divider phase; DIV2 exposes
-  I_P/I_N/Q_P/Q_N + internal OI/OIB/OQ/OQB. Which phase closes the loop is a design choice.
-- **`RST_N`** — pins.md calls it "divider active-low reset", but **DIV2_QUAD_v1 exposes NO
-  reset port** (labels: CK CKB IBIAS I_N I_P OI OIB OQ OQB Q_N Q_P VDD VSS). Either DIV2 must
-  be revised to bring reset out, or RST_N is NC for this tapeout.
-- **`MON_OUT`** — pins.md calls it "divided-down VCO monitor", but **no block exposes a monitor
-  output**; it would tap a divider phase (buffered) — undefined.
-No pad/IO/ESD cells exist in the design (organizer supplies the shared padframe), so the "12
-pads" are 12 **die-edge ports/labels** (rung 2d), not physical pad cells.
+The three design decisions were MADE by Greg (do not re-litigate): **PFD.FB ← DIV2 I_P**;
+**RST_N DROPPED** (DIV2 has no reset port); **MON_OUT DROPPED** (no monitor tap; a divider
+phase at ~2.5 GHz is too fast for a monitor pad). Pins 12→10 (info.yaml + docs/pins.md).
 
-**Item 3 — chip-level golden (proposed, NOT produced):** a chip golden must be GENERATED, not
-typed. Produce it by drawing `chip_top.sch` in xschem instancing the 5 existing block symbols
-+ the 12 die-edge ports, wiring the power/ground/signal map below and resolving the 3 nets
-above, then netlisting → `chip_top.spice`. Hierarchical LVS then black-boxes each block
-(EXTRACT_ABSTRACT) and matches instance-by-instance. **Drawing that schematic is Greg's task.**
+- **chip_top.sch (`team_src/xschem/chip_top/`)** — the ONE authorized new schematic. Generated
+  by `chip_sch_gen.py` (net-label connectivity). Instances 5 BLACK-BOX interface symbols whose
+  port lists are VERBATIM from each block's signed-off golden `.subckt`. Black-box (not the
+  committed block symbols) because **CP_v1.sym is STALE** (5 pins; its golden+layout have 7 —
+  adds VGP/VGN) and **there is no PFD_lib.sym** (only PFD_v1.sym, right ports/wrong cell name).
+  No block .sch/.sym touched (rule 12). Netlist verified: chip_top(10 ports) + correct per-block
+  connectivity, FB=I_P, CP has VGP/VGN, **vco ISS→GND** (no on-chip tail source; sources-to-gnd,
+  reversible — flag for Greg).
+- **chip_top_golden.spice (`team_src/magic/`)** — GENERATED, not typed: `assemble_chip_golden.py`
+  takes the netlisted top from chip_top.sch and inlines the 5 signed-off block goldens as the
+  definitions. Verified: **115 devices** (7+8+17+75+8 block X-instances) = golden X(120) − 5 top
+  block instances; **10 ports** = info.yaml. Force-added (survives *.spice ignore).
+- **LVS harness** — `chip_top.abstract` (vco_varactors+vco_inductor_v2 preload, inductor
+  ignore-class, same as vco_v1). `verify_cp.sh chip_top` runs end-to-end on the UNROUTED merge:
+  **magic DRC 0, 25 nets, LVS DO NOT MATCH** (mismatch = missing inter-block metal only). The
+  golden is independent of the routing, so any route is checkable with one verify_cp run.
+- No pad/IO/ESD cells exist (organizer padframe); the 10 pads are die-edge port labels (rung 4c).
 
-**Power/ground net map (from floorplan, ready for the schematic):**
-VDDA → vco.VDD, CP.VDD, ibias.VDD · VDDD → PFD.VDD, DIV2.VDD · GND (chip-wide common, no pin)
-→ vco.GND, vco.ISS, CP.VSS, ibias.VSS, PFD.VSS, DIV2.VSS.
-**Signal:** REF_IN→PFD.REF · PFD.UP/DOWN→CP.UP/DOWN · CP.CP_OUT→CP_OUT · VTUNE→vco.TUNE ·
-vco.OUT_p/OUT_n→DIV2.CK/CKB · DIV2.I_P/I_N/Q_P/Q_N→pads · IBIAS→ibias.IBIAS ·
-ibias.VGP/VGN→CP.VGP/VGN · ibias.IB_DIV2→DIV2.IBIAS · PFD.FB / RST_N / MON_OUT = TBD (above).
+**ROUTING (rungs 4a–4c) — 🟡 DEFERRED with an executable plan** in `docs/phase7-routing-plan.md`.
+The port work-list (chip coords, per net, from `phase5/port_map.py`), the layer discipline
+(H=M4 / V=M3, power on wide M2 straps, via3 at junctions — prevents the silent-short family),
+the free-space/margin routing (avoid vco's M5 spiral), and the WIP order are all specified. Not
+done blind in-script this session: a DRC-clean, short-free, LVS-matching route of ~11
+inter-block nets + power across the 472×270 die is a multi-hour iterative job (the project's
+silent-short failure mode) and over the 15-min-per-task budget. Most inter-block nets are
+same-layer **M2** (VGP/VGN/IB_DIV2/DOWN/VDDA), which simplifies execution.
 
-### 7.3 lvs_config.json repoint (item 4) — ⏸ SPEC READY, NOT APPLIED (blocked on the golden)
+### 7.3 lvs_config.json repoint (item 6) — ⏸ SPEC READY, NOT APPLIED (gated on chip LVS pass)
 
-`lvs/lvs_config.json` currently: `TOP_SOURCE=PFD_lib`, `LAYOUT_FILE=gds/PFD_lib.gds`,
-`LVS_VERILOG_FILES=[lvs/PFD_lib.nl.v]`. To repoint to the chip: set `TOP_SOURCE="chip_top"`
-(TOP_LAYOUT already `$TOP_SOURCE`, LAYOUT_FILE already `gds/$TOP_LAYOUT.gds` → resolves to the
-clean `gds/chip_top.gds`), and replace the source netlist with the chip golden
-(`LVS_SPICE_FILES=[.../chip_top.spice]` from xschem, or a structural `chip_top` Verilog), plus
-list the 5 blocks under `EXTRACT_ABSTRACT` for hierarchical LVS. **NOT applied yet: the layout
-(gds/chip_top.gds) exists and is clean, but the chip_top SOURCE netlist does NOT — repointing
-now would leave Bailey's LVS with a layout and no golden. Apply once 7.2's schematic exists.**
+`lvs/lvs_config.json` currently: `TOP_SOURCE=PFD_lib`, resolves `LAYOUT_FILE`→`gds/PFD_lib.gds`
+(EXISTS 57 KB), `LVS_VERILOG_FILES`→`lvs/PFD_lib.nl.v` (EXISTS 3 KB) — a PASSING block, safe to
+leave. Repoint (once routing makes `verify_cp chip_top` match): `TOP_SOURCE="chip_top"`
+(LAYOUT_FILE auto-resolves to `gds/chip_top.gds`, EXISTS 1.24 MB) and set the source to the chip
+golden `team_src/magic/chip_top_golden.spice` (EXISTS 10.5 KB) via `LVS_SPICE_FILES` (clear
+`LVS_VERILOG_FILES`), optionally list the 5 blocks under `EXTRACT_ABSTRACT`. **NOT applied: the
+layout+golden both exist, but the chip does not yet LVS-match (routing deferred); repointing now
+would hand Bailey a failing chip.** All proposed paths verified EXISTS.
 
 ### 5.2 Density check (drop-gate) — 2026-08-15
 

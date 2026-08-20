@@ -267,3 +267,25 @@ per-layer limits must come from that manual before sign-off. Against the rule of
 - Per-converter VSS ties are 0.28–0.56 µm carrying ~2.96 mA → **~5.3–10.6 mA/µm — well OVER**.
 **Fix = widen the plate to ~22 µm and every per-converter tie to ~3 µm** (M2/M3), then re-gate
 DIV2_QUAD_v1. This is a reliability fix on the VSS rail; the DRC/LVS/port sign-off is unaffected.
+
+---
+
+## Phase-7 chip-level result (added 2026-08-20)
+
+`chip_top` — all five signed-off blocks integrated. Image: `docs/img/chip_top_black.png`.
+
+- **Die bbox: 472.00 × 270.25 µm = 127,600 µm²** (measured on the merged GDS). This is the
+  honest declared area to use — the old **350 × 300 is STALE and short** (DIV2 237 + vco 182
+  side-by-side alone is 419 µm wide). Config B allots ~624,000 µm² (1/8 of 2235²), so the die
+  is ~20 % of the share — ample room for a routing margin. (Updating #143's area line and
+  Bailey's sheet is Greg's browser action.)
+- **DRC:** magic DRC 0 (abstract-aware); **KLayout var-D = 168 = W4 varactor waiver ONLY**
+  (84 PL.5a + 84 PL.5b, device-internal to nmoscap_3p3). Placement is overlap/spacing-clean.
+- **Deliverable GDS** built by `team_src/magic/phase5/chip_merge.py` (KLayout) — streams each
+  block's signed-off golden verbatim (no magic re-render, which perturbs foundry geometry).
+- **Chip golden** `team_src/magic/chip_top_golden.spice` — generated from `chip_top.sch`
+  (10 ports) + the 5 inlined block goldens (115 devices). `verify_cp.sh chip_top`: magic DRC 0,
+  LVS DO NOT MATCH on the UNROUTED merge (missing inter-block metal only).
+- **Pins reduced 12 → 10:** RST_N + MON_OUT dropped (no matching block port; see docs/pins.md).
+- **Remaining:** inter-block routing (rungs 4a–4c) per `docs/phase7-routing-plan.md`, then the
+  chip LVS match and the `lvs_config.json` repoint to `chip_top`.
