@@ -123,6 +123,9 @@ figure and pins the conversion):
 **Honest top-level number (CORRECTED 2026-08-17):** the four signed-off blocks measure
 **56,635 µm²** (PFD_lib 1,368 + CP_v1 2,059 + ibias_gen_v1 11,868 + DIV2_QUAD_v1 41,340). The
 **VCO block `vco_v1` MEASURED (2026-08-18): bbox 182 × 179.5 µm = ~32,700 µm²** (assembled + gated), NOT the earlier ~18,000 estimate — the active blocks are stacked BELOW the inductor so the block is ~179.5 µm tall (vs the inductor-only 84 µm); a tighter floorplan (active under the coil opening) could approach ~18k. So blocks ≈ **56,635 + 32,700 = ~89,300 µm²**;
+**[RESOLVED 2026-08-20 — FINAL routed die measured on the deliverable GDS = 522 × 309 µm =
+161,298 µm². The estimate below (≈440–500 × 270–330) predicted the growth; the die grew to 522×309
+after adding the perimeter GND ring. 350×300 is stale/short. This is the number for #143/Bailey.]**
 **PHASE-7 FLOORPLAN (2026-08-20, measured GDS bboxes): 350×300 does NOT fit.** Blocks: PFD_lib 60×24, CP_v1 73.5×28, ibias_gen_v1 181.8×65.25, DIV2_QUAD_v1 237.4×174.2, vco_v1 182×179.5 → SUM 89,366 µm² (85 % raw util of 350×300, before ANY routing/pads). The two biggest can't share the window: DIV2+vco_v1 side-by-side = **419.4 µm wide > 350**; stacked = **353.7 µm tall > 300**. Proposed floorplan (DIV2 + vco_v1 side-by-side, small blocks stacked in each column): **core 419.4 × 244.7 µm = 102,630 µm² abutted; ~439 × 266 µm with 20 µm channels; + a 12-pad ring on top.** **Honest die ≈ 440–500 × 270–330 µm — the declared 350 × 300 is ~69–90 µm too narrow.** LEVERS to shrink: a compact vco_v1 (active under the coil opening → ~182×84 not 182×179.5, saves ~95 µm of height but NOT width — the 419 width is set by DIV2 237 + vco 182), or stacking DIV2/vco vertically (353 tall, needs a >300 die). **Greg/Bailey decision — the die must grow or a block floorplan must change before allocation.** ---- HISTORY: add 30–50 % top-level routing/spacing → **~96,000–114,000 µm²**. The declared **350 × 300 =
 105,000 µm²** **STRADDLES** that range — **tight but plausible**, not "short by 40 %". The earlier
 "350×300 falls short / needs 370×390 or 400×400" conclusion was built on the guessed 43 k VCO
@@ -169,7 +172,8 @@ phase at ~2.5 GHz is too fast for a monitor pad). Pins 12→10 (info.yaml + docs
   vco.ISS→GND; corrected — **vco ISS is now its own analog pad** (tail current stays off-chip
   controllable; grounding it would move the operating point off the characterized 1 mA tail).
   info.yaml 10→11 (VDDA IBIAS ISS VTUNE CP_OUT I_P I_N Q_P Q_N VDDD REF_IN). vco line:
-  `x_vco_v1 VDDA VCO_OUTP VCO_OUTN GND VTUNE ISS`.
+  `x_vco_v1 VDDA VCO_OUTP VCO_OUTN GND VTUNE ISS`. **(Superseded: the VSSA quiet-ground pad was
+  then added → final pin count is 12; this "11" is the intermediate ISS-added state.)**
 - **chip_top_golden.spice (`team_src/magic/`)** — GENERATED, not typed: `assemble_chip_golden.py`
   inlines the 5 signed-off block goldens under the netlisted top. Verified: **115 devices**
   (7+8+17+75+8) = golden X(120) − 5; **11 ports** = info.yaml. Force-added.
@@ -185,12 +189,14 @@ KLayout signoff PASS (168 W4 waiver only); check_placement OK; die **522 × 309 
 connected — VDDA(CP+ibias+vco), VDDD(PFD+DIV2), ground ring, UP/DOWN/FB, VGP/VGN/IB_DIV2,
 VCO_OUTP/N — **all routed at chip level via clear M3/M4 columns above each pin; NO block layout
 edits needed** (the "buried pin" story was wrong once tapped-at-extent + clear-column). Grounds:
-13 pins incl VSSA/VSSD, one electrical net (substrate), one LVS ground port (VSSA) — A1b question
-for Bailey. 0/0 boundary added. Same-layer escape (extend a pin along its own axis, then via up)
-routed the tight std-cell pins. VCO_OUT pair length-mismatched (OUT_p 337 > OUT_n 268 µm) — connect
-OK, matching is a floorplan option (stack vco/DIV2, ~800 µm vertical headroom). See
-docs/layout-review-aug14.md Phase-7 closeout for the VCO load (~−5% pull) + DIV2 VDD/VSS EM notes.
-Remaining for tapeout: lvs_config repoint (Phase B), #143 area/pin update (Greg, browser).
+**12 pins**, one ground pin VSSA; one electrical ground net (shared substrate), one LVS ground port
+(VSSA) — a second isolated ground would need deep-nwell (open question for Bailey). 0/0 boundary
+added. Same-layer escape (extend a pin along its own axis, then via up) routed the tight std-cell
+pins. **DIV2 VDD chip tap re-done as a 40-point multi-tap (item 2): 80 → ~1 mA/µm on the collector,
+DRC 0 / LVS match uniquely. VCO_OUTP/N length-equalized (item 3): 12.7 % → ~0.2 % skew.** See
+docs/layout-review-aug14.md Phase-7 closeout for the VCO load pull (band shifts −4 to −7 % under the
+route load) + DIV2 VSS EM notes. Remaining for tapeout: **#143 area/pin update (Greg, browser)**
+(lvs_config repoint, item-2 VDD tap, item-3 length match all DONE this run).
 
 ---
 HISTORY (pre-close WIP): **ROUTING (rungs 3a/4a–4c) — 🟡 WIP (power + GND ring + ports + 3 signals; 6 nets left).**

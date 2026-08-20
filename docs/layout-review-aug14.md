@@ -274,11 +274,10 @@ DIV2_QUAD_v1. This is a reliability fix on the VSS rail; the DRC/LVS/port sign-o
 
 `chip_top` — all five signed-off blocks integrated. Image: `docs/img/chip_top_black.png`.
 
-- **Die bbox: 472.00 × 270.25 µm = 127,600 µm²** (measured on the merged GDS). This is the
-  honest declared area to use — the old **350 × 300 is STALE and short** (DIV2 237 + vco 182
-  side-by-side alone is 419 µm wide). Config B allots ~624,000 µm² (1/8 of 2235²), so the die
-  is ~20 % of the share — ample room for a routing margin. (Updating #143's area line and
-  Bailey's sheet is Greg's browser action.)
+- **[SUPERSEDED — see the CLOSED section below; the final die is 522 × 309 µm.]** Die bbox
+  472.00 × 270.25 µm was the pre-GND-ring extent; the final closed die grew to 522 × 309 µm for
+  the ring margin. The old **350 × 300 is STALE and short** (DIV2 237 + vco 182 side-by-side alone
+  is 419 µm wide). (Updating #143's area line and Bailey's sheet is Greg's browser action.)
 - **DRC:** magic DRC 0 (abstract-aware); **KLayout var-D = 168 = W4 varactor waiver ONLY**
   (84 PL.5a + 84 PL.5b, device-internal to nmoscap_3p3). Placement is overlap/spacing-clean.
 - **Deliverable GDS** built by `team_src/magic/phase5/chip_merge.py` (KLayout) — streams each
@@ -304,19 +303,34 @@ DIV2_QUAD_v1. This is a reliability fix on the VSS rail; the DRC/LVS/port sign-o
   chip level via clear M3/M4 columns above each pin — **no block layout edits were needed.**
 - **W4 waiver: 168 items** (84 PL.5a_LV + 84 PL.5b_LV) — nmoscap_3p3 gencell field-poly-to-guard,
   device-internal; `klayout_signoff.py chip_top` reports them WAIVED and PASSes.
-- **Grounds (Bailey req):** 13 pins incl VSSA (quiet quadrant ground, pin 0) + VSSD. They are ONE
-  electrical net (shared p-substrate, no deep-nwell); LVS carries one ground port (VSSA), the two
-  pads separate only bond-wire L. 0/0 boundary present at the die extent.
+- **Grounds (Bailey req):** **12 pins**, one ground pin **VSSA** (quiet quadrant ground, pin 0).
+  The layout has ONE ground electrical net (all VSS ties the shared p-substrate; no deep-nwell) →
+  ONE LVS ground port (VSSA), so a second VSSD pad was dropped (it would star as a missing port in
+  Bailey's audit). The die still bonds ground at more ring points — a bond/package detail, not a
+  second pin. 0/0 boundary present at the die extent. **(Open question for Bailey: whether a second
+  isolated ground is wanted — that requires deep-nwell to split the substrate return; see the
+  known-limitations list below.)**
 - **VCO output load (A5, estimate — NOT resized):** OUT_p route ~494 µm, OUT_n ~431 µm (0.4 µm
   M3/M4, ~0.08 fF/µm ⇒ ~40 / ~35 fF) + DIV2 CML input gate (W=40 ⇒ ~40–55 fF) ⇒ **~75–95 fF/side**.
   Against the ~844 fF tank that is Δf ≈ **−4 to −7 %** (f ∝ 1/√C): the characterized 4.13–6.35 GHz
   band shifts to ≈ 3.9–6.05 GHz, still covering the 4.8–5.0 GHz needed for the 2.4–2.5 GHz ÷2
   output. Retunable via VTUNE; no device change.
-- **DIV2 internal VSS EM:** unchanged from the Aug-14 note (per-converter VSS ties ~0.28–0.56 µm
-  carrying ~2.96 mA — over; fix = widen the plate/ties, a DIV2-internal reliability item, not a
-  chip-route issue). The DIV2 **VDD** chip tap is a single 0.28 µm M4 collector at 80 mA/µm — a
-  chip-level multi-point tap or a wider internal collector is the fix (Greg's call; not reopened).
-- **I/Q offset:** the divider I/Q phase target is 90° with a residual **~1.0° offset** (layout/route
-  asymmetry) — the VCO_OUTP/N pair is connected but length-mismatched (OUT_p ~337 µm > OUT_n ~268 µm,
-  ~69 µm); stacking vco above/below DIV2 (using the ~800 µm vertical headroom) would shorten and
-  match the pair — a floorplan option, Greg's call.
+- **DIV2 VDD chip tap — FIXED (Phase-7 item 2, 2026-08-20).** The old single 0.28 µm M4 collector
+  ran all ~22.4 mA at **80 mA/µm**. Replaced by a **multi-point tap**: 40 injection points on a
+  3 µm pitch across DIV2's two VDD collectors (24 on the y137.5 collector, 16 on y124), each a
+  0.4 µm M4 riser → via4 → 0.44 µm M5 hop to the VDDD bus. Per-wire peak now: collector-between-taps
+  ~0.97 mA/µm (was 80), riser stubs 1.27–1.40 mA/µm (0.56 mA each), VDDD M5 bus 1.9 mA/µm. DRC 0,
+  LVS match uniquely. (DIV2 was **not** reopened.)
+- **VCO_OUTP/N length match — FIXED (Phase-7 item 3, 2026-08-20).** Was OUT_p 494.3 µm vs OUT_n
+  431.5 µm (62.8 µm / 12.7 % skew). A ~64 µm M4 length-match notch on OUT_n (into the clear right
+  margin east of the VDDA bus) cut the residual to ~1.2 µm (~0.2 %). DRC 0, LVS match uniquely.
+- **DIV2 internal VSS EM — KNOWN, DEFERRED (DIV2-internal, not a chip-route item).** Per-converter
+  VSS 2.96 mA on 0.28–0.56 µm ties (~5.3–10.6 mA/µm); the root bottleneck is `ib_conv_v1`'s internal
+  0.6 µm M1 VSS bus carrying ~4.9 mA/µm; the 7.5 µm plate ~2.3–2.9 mA/µm. Note the ~1 mA/µm figure
+  is an **industry rule-of-thumb for ~0.5 µm Al**, NOT a GF180 PDK rule (the open PDK ships no EM
+  deck). Fix = widen the ib_conv bus to ~3 µm + stack the plate on M2/M3/M4 + widen ties, then
+  re-gate DIV2 — a reliability fix that does not affect DRC/LVS/port sign-off.
+- **I/Q offset:** the divider I/Q phase target is 90° with a residual **~1.0° static I-to-Q offset**
+  — the Q converters' input hauls run ~53 µm longer than the I converters' (~2.2 ps at the divider
+  output), common to Q_P/Q_N so it is a fixed offset, not an intra-pair duty error. It is the cost
+  of the stacked-below Q floorplan; unchanged by the item-3 VCO_OUTP/N equalization above.

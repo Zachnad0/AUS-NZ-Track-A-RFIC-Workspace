@@ -224,7 +224,9 @@ Derived bottom-up, not invented:
 > is inductor-dominated at **~18,000 µm²** (measured inductor 15,288 + ~2.7 k core). Measured
 > reality: 4 signed-off blocks = **56,635 µm²** + VCO ~18,000 = **~75,000 µm²** of blocks; with
 > 30–50 % top routing → **~96,000–114,000 µm²**. So **350×300 (105,000) STRADDLES the range —
-> tight but plausible**, NOT the "≈ 2× slack" this line claims. Final figure at Phase 7 assembly.
+> tight but plausible**, NOT the "≈ 2× slack" this line claims. **FINAL (Phase-7 assembly, routed + GND ring, measured on the deliverable
+> GDS): die = 522 × 309 µm = 161,298 µm² ≈ 0.161 mm² — the number to use.** The 350×300 estimate
+> above is stale/short; kept only as the bottoms-up record.
 
 **Slot fit:** the `slot_0p5x0p5` core is **1052 µm × 1647 µm** (from
 `librelane/slots/slot_0p5x0p5.yaml`, CORE_AREA [442,442,1494,2089]). The estimate
