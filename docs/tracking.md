@@ -179,11 +179,27 @@ phase at ~2.5 GHz is too fast for a monitor pad). Pins 12→10 (info.yaml + docs
 - **LVS harness** — `chip_top.abstract` (vco preload + inductor ignore). `verify_cp.sh chip_top`
   runs end-to-end: on the unrouted merge magic DRC 0, 25 nets, LVS DO NOT MATCH (missing metal).
 
-**ROUTING (rungs 3a/4a–4c) — 🟡 WIP (power + ports done, signals partial).**
-- **GND needs NO routing** — every block VSS + vco.GND already extract as **VSUBS (substrate)**;
-  the chip-wide common has no pad. Power = VDDA + VDDD only. (Big simplification; the earlier
-  "interior port" blocker was over-stated — nets are tapped at their METAL EXTENT, not the label:
-  `net_extent.py`/`corridor.py`/`sig_extent.py`.)
+**ROUTING (rungs 3a/4a–4c) — 🟡 WIP (power + GND ring + ports done, signals blocked at pins).**
+- **GND METAL RING built (correction):** GND is the substrate common (VSUBS), but that is a
+  HIGH-impedance return for ~26 mA across 472 µm (hundreds of mV bounce). Added a 15 µm M5 GND
+  ring in a 20 µm perimeter margin (channel budget: the band can't stack GND15+VDDD12+VDDA3 → GND
+  rides the perimeter). Taps: DIV2.VSS 23 µm (bottom), ibias.VSS 2 µm (left, VSS reaches x0.7),
+  PFD.VSS 2 µm (top). DRC-clean, extraction diff clean. CP.VSS/vco.GND taps deferred (mid-block /
+  deep). Die grew **472×270 → 522×309 µm**. (Nets are tapped at METAL EXTENT, not the label:
+  `net_extent.py`/`corridor.py`/`sig_extent.py`/`vss_extent.py`.)
+- **vco.VDD root-caused:** OUT_p/OUT_n M5 fill x[396,472]; the only M5-riser-able column x[388,394]
+  has vco.VDD's M2 interleaved with other-net active M2 at ~0.14 µm → no clean via. Needs a
+  vco-internal supply pin (block change). **UP root-caused:** connects, but PFD's UP/DOWN are
+  0.28 µm std-cell pins at 0.28 µm PITCH; min via pad 0.38 µm leaves 0.23 µm < 0.28 µm (M2.2a) —
+  same for DOWN/FB. **Analog signals (VGP/VGN/IB_DIV2):** wide pins but ibias.VGP/VGN interior
+  (~140 µm from edge) → any run crosses ibias's dense M2/M3. **All remaining signals need
+  channel-only routing (power M4/M5, signals M2/M3, in Band C / the band, never over a block)
+  with block pin-escapes — or small block-layout changes (Greg's call, rule 12).**
+- **DIV2.VDD EM (item 6):** the VDD tap is a single **0.28 µm** M4 collector → 22.4 mA / 0.28 =
+  **80 mA/µm** (80× over). Fix: widen DIV2's internal VDD (~22 µm, reopen DIV2) or a chip-level
+  multi-point VDD strap distributing the current. Not fixed here (do not reopen DIV2).
+- **GND needs NO LVS routing** — VSS + vco.GND extract as VSUBS (common, no pad); the ring metal
+  is for impedance, not LVS. Power (for LVS) = VDDA + VDDD only.
 - **VDDD = PFD.VDD + DIV2.VDD COMPLETE.** DIV2.VDD tapped on its M4 collector (x160 @ y137.5),
   risen up the x160 M5-clear column. **VDDA = CP.VDD + ibias.VDD (2/3)** — vco.VDD deferred (its
   M2 wire is in vco's congested right side; the corridor riser SILENTLY SHORTED OUT_p→VDDA, caught
