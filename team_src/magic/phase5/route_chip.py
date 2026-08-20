@@ -18,6 +18,33 @@ chip = ly.cell("chip_top")
 if chip is None:
     raise SystemExit("chip_top not found")
 
+# --- GND ring (M5, 15um) in a 20um margin around the die. Electrically GND is already the
+#     substrate common (VSUBS), but that is a HIGH-impedance return for ~26mA across 472um;
+#     the ring is a low-Z metal backbone. Channel-budget: the band cannot hold GND15+VDDD12+
+#     VDDA3, so GND rides the perimeter margin (top blocks tap up, DIV2 taps down, ibias left).
+GY_BOT, GY_TOP, GX_L, GX_R, RW = -10.0, 280.0, -10.0, 482.0, 15.0
+R.hwire(chip, ly, 5, GX_L - RW/2, GX_R + RW/2, GY_BOT, w=RW)   # bottom
+R.hwire(chip, ly, 5, GX_L - RW/2, GX_R + RW/2, GY_TOP, w=RW)   # top
+R.vwire(chip, ly, 5, GY_BOT, GY_TOP, GX_L, w=RW)              # left
+R.vwire(chip, ly, 5, GY_BOT, GY_TOP, GX_R, w=RW)              # right
+
+def gnd_tap(tx, ty, tm, direction, w):
+    """tap a VSS extent point, escape to M4, run to the M5 GND ring, via4 up onto it."""
+    R.via_stack(chip, ly, tm, 4, tx, ty)
+    if direction == "down":
+        R.vwire(chip, ly, 4, ty, GY_BOT, tx, w=w); R.via1_at(chip, ly, 4, 5, tx, GY_BOT)
+    elif direction == "up":
+        R.vwire(chip, ly, 4, ty, GY_TOP, tx, w=w); R.via1_at(chip, ly, 4, 5, tx, GY_TOP)
+    elif direction == "left":
+        R.hwire(chip, ly, 4, tx, GX_L, ty, w=w); R.via1_at(chip, ly, 4, 5, GX_L, ty)
+    elif direction == "right":
+        R.hwire(chip, ly, 4, tx, GX_R, ty, w=w); R.via1_at(chip, ly, 4, 5, GX_R, ty)
+
+# accessible taps (VSS extents from vss_extent.py), strap sized ~1mA/um for the block's share:
+gnd_tap(120.0, 8.0, 2, "down", 23.0)    # DIV2.VSS (22.4 mA) -> bottom ring
+gnd_tap(2.0, 209.5, 2, "left", 2.0)     # ibias.VSS (1 mA) reaches x0.7 -> left ring
+gnd_tap(233.0, 262.0, 4, "up", 2.0)     # PFD.VSS (0.5 mA) -> top ring
+
 # --- buses in the clear y[180,205] band (M5), EM-sized ---
 BUS = {"VDDA": 199.0, "VDDD": 188.0}
 BUS_W = {"VDDA": 3.0, "VDDD": 12.0}
