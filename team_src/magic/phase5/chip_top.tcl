@@ -14,7 +14,13 @@ load ib_conv_v1
 load DIV2_QUAD_v1
 load ibias_gen_v1
 load CP_v1
-load PFD_lib
+# PFD_lib.mag is a bare 5-logic-cell scaffold (no endcap/filltie/tieh) -> its rows have no
+# well/substrate ties and trip DF.13/14_MV (latch-up max-tap-distance) at chip level. The
+# SIGNED-OFF gds/PFD_lib.gds carries the full tie/fill/endcap ring and is clean. Stream THAT
+# as the master. (DIV2/ibias/CP .mags are full layouts = their goldens' source, so load-as-mag
+# is fine for them.) noduplicates keeps already-loaded masters when the stream shares subcells.
+gds noduplicates true
+gds read /foss/designs/AUS-NZ-integration/gds/PFD_lib.gds
 # ---- place ----
 cellname create chip_top ; load chip_top
 box values 0 0 0 0         ; getcell DIV2_QUAD_v1     ;# bottom-left  (0,0)-(237.4,174.2)
@@ -33,6 +39,11 @@ if {[drc list count total] > 0} {
     puts "WHY: [drc list why]"
     for {set i 0} {$i<16} {incr i} { drc find ; puts "EB: [box values]" }
 }
-save $OUT/chip_top
+save chip_top   ;# basename only (cwd = team_src/magic): an absolute path renames the topcell
+# NOTE: this magic flow produces chip_top.mag as the PLACEMENT RECORD + magic-DRC gate only.
+# The DELIVERABLE gds/chip_top.gds is built by phase5/chip_merge.py (KLayout), which streams
+# each block's SIGNED-OFF golden GDS verbatim -- a magic gds-read->gds-write roundtrip of
+# PFD_lib's foundry dualgate perturbs sub-grid geometry (spurious 0.68um DV.5 sliver), so
+# magic must NOT author the chip GDS. Do not `gds write` here.
 puts "CHIP_SAVED"
 quit -noprompt
