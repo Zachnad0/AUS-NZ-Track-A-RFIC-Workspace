@@ -179,17 +179,29 @@ phase at ~2.5 GHz is too fast for a monitor pad). Pins 12→10 (info.yaml + docs
 - **LVS harness** — `chip_top.abstract` (vco preload + inductor ignore). `verify_cp.sh chip_top`
   runs end-to-end: on the unrouted merge magic DRC 0, 25 nets, LVS DO NOT MATCH (missing metal).
 
-**ROUTING (rungs 3a–3c) — 🟡 WIP (started, partial).** Infra built + validated: `route_lib.py`
-DRC-clean primitives (via stacks M1–M5, wires; gf180 via 0.26 µm), `route_chip.py` adds
-top-level metal to the placed merge. **Power buses in the y[180,205] band** (verified clear of
-all blocks full-width). **SILENT SHORT found + fixed:** risers on M5 crossing an M5 bus merged
-GND into VDDD (PFD.VDD→VSUBS, DRC-legal/LVS-fatal) → **risers now M4, buses M5, via4 only at the
-target bus**. Connected so far (magic DRC 0, KLayout var-D 168): **VDDA = CP.VDD + ibias.VDD**
-(verified in extraction), GND bus on CP/ibias/PFD VSS, VDDD bus on PFD.VDD; no shorts. **Blocker
-— interior ports in dense metal:** vco (VDD/GND/ISS) and DIV2 (VDD/VSS, CK/CKB) sit deep in
-dense block metal; a via drop lands but the riser to a channel crosses dense metal and shorts —
-needs per-net threading. See `docs/phase7-routing-plan.md` PROGRESS+LESSONS. Remaining: those
-interior power terminals, all signal nets, and the 11 die-edge port labels; then LVS match.
+**ROUTING (rungs 3a/4a–4c) — 🟡 WIP (power + ports done, signals partial).**
+- **GND needs NO routing** — every block VSS + vco.GND already extract as **VSUBS (substrate)**;
+  the chip-wide common has no pad. Power = VDDA + VDDD only. (Big simplification; the earlier
+  "interior port" blocker was over-stated — nets are tapped at their METAL EXTENT, not the label:
+  `net_extent.py`/`corridor.py`/`sig_extent.py`.)
+- **VDDD = PFD.VDD + DIV2.VDD COMPLETE.** DIV2.VDD tapped on its M4 collector (x160 @ y137.5),
+  risen up the x160 M5-clear column. **VDDA = CP.VDD + ibias.VDD (2/3)** — vco.VDD deferred (its
+  M2 wire is in vco's congested right side; the corridor riser SILENTLY SHORTED OUT_p→VDDA, caught
+  by the per-rung extraction diff `chip_conn.py`, then backed out).
+- **11 die-edge port labels** → chip_top ports 0→**11** (`port_label()`; patch-on-centerline).
+- **EM sizing** computed (`em_sizing.py`): VDDA 3.5 / VDDD 22.9 / GND 26.4 / ISS 1.0 mA; buses
+  GND 15 / VDDD 12 / VDDA 3 µm, DIV2 risers 23 µm; band can't stack GND+VDDD+VDDA → GND in a
+  bottom margin (moot, GND=substrate). Current straps are connectivity-first; EM widening pending.
+- **W4 waiver mechanism** (`klayout_signoff.py` + per-cell `<cell>.waivers`): PL.5a/5b reported as
+  WAIVED, any other rule FAILs; tested exact-name granularity.
+- **SILENT-SHORT DISCIPLINE (9 so far, all one family):** horizontal buses M5, vertical risers
+  M4, via4 to M5 only at the target bus; **diff the extraction every rung** (`chip_conn.py`).
+- **Signals: UP proven** (a cut extracted PFD.UP=CP.UP, no OUT short) but PFD's 0.28 µm std-cell
+  pins at 0.28 µm pitch need a minimal-enclosure via on the exact centerline (per-pin precision,
+  deferred). Tractable next: DOWN, VGP, VGN, FB/I_P. Hard: IB_DIV2 (DIV2.IBIAS 81 µm deep),
+  VCO_OUTP/N (vco congested + 337 µm diff-pair span). See `phase7-routing-plan.md`.
+- **Gate NOW: KLayout signoff PASS (W4 waiver only), magic DRC 0, check_placement OK, 11 ports.**
+  LVS DO NOT MATCH — remaining: vco.VDD + 8 signal nets, then unique match.
 
 ### 7.3 lvs_config.json repoint (item 6) — ⏸ SPEC READY, NOT APPLIED (gated on chip LVS pass)
 
