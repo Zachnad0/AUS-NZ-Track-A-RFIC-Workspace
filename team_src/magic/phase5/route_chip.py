@@ -57,5 +57,33 @@ corridor_tap(160.0, 137.5, 4, 160.0, 4, "VDDD", 2.0)
 # a different tap -- vco.VDD's left reach or a lower-layer approach clear of the OUT_p lead.
 # corridor_tap(391.0, 74.85, 2, 382.0, 3, "VDDA", 2.0)
 
+# --- die-edge port labels (rung 4c). A top-level label needs top-level metal to land on:
+#     paint a small patch on the port's centerline (overlaps the block port -> connects) and
+#     drop a text on the metal LABEL datatype (10) so magic reads it as a chip_top port. ---
+def port_label(name, x, y, m, patch=True):
+    if patch:
+        p = 0.30
+        R.box(chip, ly, R.METAL[m], x - p, y - p, x + p, y + p)
+    lyr = ly.layer(R.METAL[m][0], 10)
+    chip.shapes(lyr).insert(pya.DText(name, pya.DTrans(pya.DVector(x, y))))
+
+# VDDA/VDDD land on their own M5 buses (already top-level metal -> no patch).
+port_label("VDDA", 200.0, BUS["VDDA"], 5, patch=False)
+port_label("VDDD", 180.0, BUS["VDDD"], 5, patch=False)
+# block ports: patch on the port centerline (chip coords, port_map.py) + label.
+PORT_LABELS = [
+    ("IBIAS",  71.30, 223.90, 2),   # ibias.IBIAS
+    ("VTUNE",  358.68, 66.70, 1),   # vco.TUNE
+    ("ISS",    395.84, 60.33, 2),   # vco.ISS
+    ("CP_OUT", 272.25, 215.41, 4),  # CP.CP_OUT
+    ("I_P",    235.18, 140.27, 1),  # DIV2.I_P
+    ("I_N",    2.18, 140.27, 1),    # DIV2.I_N
+    ("Q_P",    235.18, 51.92, 1),   # DIV2.Q_P
+    ("Q_N",    2.18, 51.92, 1),     # DIV2.Q_N
+    ("REF_IN", 210.28, 257.60, 3),  # PFD.REF
+]
+for name, x, y, m in PORT_LABELS:
+    port_label(name, x, y, m)
+
 ly.write(GDS)
-print("routed VDDA+VDDD (buses + %d above-band drops + 2 corridor taps); wrote %s" % (len(DROPS), GDS))
+print("routed VDDA+VDDD (%d drops + 1 corridor tap) + 2 port labels; wrote %s" % (len(DROPS), GDS))
