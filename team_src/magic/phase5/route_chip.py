@@ -214,6 +214,16 @@ for outnet, xv, xd, ylane in [("OUT_p", 401.8, 65.0, 181.0), ("OUT_n", 398.0, 13
     R.via_stack(chip, ly, 3, 5, xv, 94.5)             # tap the OUT lead (M5) -> M3
     R.vwire(chip, ly, 3, 94.5, ylane, xv, w=0.4)      # M3 up the clear vco column into the band
     R.via_stack(chip, ly, 3, 4, xv, ylane)            # -> M4 for the long band crossing
+    if outnet == "OUT_n":
+        # LENGTH-MATCH (item 3): OUT_n's path is 431.5um vs OUT_p's 494.3um -- 62.8um (12.7%) short.
+        # Add a ~64um M4 notch UP into the clear right margin: east of the VDDA bus (ends x405),
+        # west of the die edge (x423). All M4, same net; it crosses only the vco.VDD M3 column at
+        # x405 and OUT_p's M3 up-column at x401.8, both on a DIFFERENT layer (no short). The down
+        # leg at x398 stacks over OUT_n's own M3 column (same net). New OUT_n ~= 495.5um (Delta 0.2%).
+        R.hwire(chip, ly, 4, xv, 416.0, ylane, w=0.4)      # east  y184: 398 -> 416  (+18)
+        R.vwire(chip, ly, 4, ylane, 198.0, 416.0, w=0.4)   # up    x416: 184 -> 198  (+14, 1um below VDDA)
+        R.hwire(chip, ly, 4, 398.0, 416.0, 198.0, w=0.4)   # west  y198: 416 -> 398  (+18)
+        R.vwire(chip, ly, 4, 198.0, ylane, 398.0, w=0.4)   # down  x398: 198 -> 184  (+14)
     R.hwire(chip, ly, 4, xd, xv, ylane, w=0.4)        # M4 across the band (below the y188 bus) to DIV2
     R.via_stack(chip, ly, 3, 4, xd, ylane)            # -> M3 at the DIV2 CK/CKB column
     R.vwire(chip, ly, 3, ylane, 110.0, xd, w=0.4)     # M3 down the clear DIV2 column
