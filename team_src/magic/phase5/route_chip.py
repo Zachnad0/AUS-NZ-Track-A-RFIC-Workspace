@@ -136,6 +136,17 @@ R.vwire(chip, ly, 4, 272.0, 214.8, 285.0, w=0.6)   # M4 down in the CP<->vco gap
 R.via_stack(chip, ly, 2, 4, 285.0, 214.8)          # to M2 at the CP.DOWN escape (open gap)
 R.hwire(chip, ly, 2, 273.3, 285.0, 214.8, w=0.28)  # extend CP.DOWN M2 right onto the escape
 
+# FB: PFD.FB M2 (230.44,245, PFD bottom edge) -> DIV2.I_P M1 (235.18,140, DIV2 right edge) =
+# the I_P net (I_P pad is labelled there). Down the x287 column (right of CP) into the DIV2/vco
+# channel. M4 for the long vertical run (power-free column).
+R.vwire(chip, ly, 2, 245.3, 240.0, 230.44, w=0.3)  # PFD.FB M2 down out of PFD into the gap
+R.hwire(chip, ly, 2, 230.44, 232.5, 240.0, w=0.3)  # jog right in the gap, clear of PFD.VDD's M4 riser@229.68
+R.via_stack(chip, ly, 2, 4, 232.5, 240.0)
+R.hwire(chip, ly, 4, 232.5, 287.0, 240.0, w=0.6)   # M4 across (above CP) to x287
+R.vwire(chip, ly, 4, 240.0, 140.0, 287.0, w=0.6)   # M4 down the CP-right / DIV2-vco channel
+R.hwire(chip, ly, 4, 287.0, 235.5, 140.27, w=0.6)  # M4 left, OVER the DIV2 x237 VDD guard (M4 vs M1)
+R.via_stack(chip, ly, 1, 4, 235.5, 140.27)         # down onto DIV2.I_P M1 (x235.5, before the guard)
+
 # VGP/VGN/IB_DIV2 (analog signals): DEFERRED. The pins are wide (tappable), but ibias.VGP/VGN
 # sit INTERIOR to ibias (x48.9 / x82, ~140um from the right edge), so any run to CP crosses
 # ibias's dense internal metal (M2 92 / M3 30 / M4 7). Signal H-hops also must avoid the power
