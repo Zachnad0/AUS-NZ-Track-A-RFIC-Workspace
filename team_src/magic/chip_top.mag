@@ -1,0 +1,25 @@
+magic
+tech gf180mcuD
+magscale 1 5
+timestamp 1787189487
+use CP_v1  CP_v1_0
+timestamp 1786638579
+transform 1 0 23725 0 1 22801
+box -2725 -2301 4625 501
+use DIV2_QUAD_v1  DIV2_QUAD_v1_0
+timestamp 1786974267
+transform 1 0 6500 0 1 10500
+box -6500 -10500 17236 6917
+use ibias_gen_v1  ibias_gen_v1_0
+timestamp 1786733427
+transform 1 0 766 0 1 20910
+box -766 -410 17410 6115
+use PFD_lib  PFD_lib_0
+timestamp 0
+transform 1 0 21043 0 1 24543
+box -43 -43 4579 435
+use vco_v1  vco_v1_0
+timestamp 1787188195
+transform 1 0 40200 0 1 11948
+box -4500 -11948 2137 520
+<< end >>
