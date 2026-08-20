@@ -1,0 +1,3 @@
+PRELOAD=vco_varactors vco_inductor_v2
+PRELOAD_PATH=/foss/designs/AUS-NZ-integration/team_src/magic /foss/designs/AUS-NZ-integration/team_src/magic/vco_inductor_v2
+IGNORE=vco_inductor_v2
