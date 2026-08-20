@@ -48,7 +48,7 @@ gnd_tap(233.0, 262.0, 4, "up", 2.0)     # PFD.VSS (0.5 mA) -> top ring
 # --- buses in the clear y[180,205] band (M5), EM-sized ---
 BUS = {"VDDA": 199.0, "VDDD": 188.0}
 BUS_W = {"VDDA": 3.0, "VDDD": 12.0}
-BUS_X = {"VDDA": (60.0, 405.0), "VDDD": (150.0, 236.0)}
+BUS_X = {"VDDA": (60.0, 405.0), "VDDD": (55.0, 236.0)}  # VDDD extended left to feed the DIV2 comb
 for net, y in BUS.items():
     x1, x2 = BUS_X[net]
     R.hwire(chip, ly, 5, x1, x2, y, w=BUS_W[net])
@@ -75,9 +75,19 @@ def corridor_tap(tx, ty, tm, cx, jm, net, w):
     R.via_stack(chip, ly, jm, 5, cx, ty)           # up to M5 in the corridor
     R.vwire(chip, ly, 5, ty, yb, cx, w=w)          # M5 riser up the clear column to the bus
 
-# DIV2.VDD: tap ON its M4 collector wire (x108-183 @ y137.5); x160 is an M5-clear column.
-# CLEAN: extraction shows DIV2.VDD merges into VDDD (PFD+DIV2), no side effects.
-corridor_tap(160.0, 137.5, 4, 160.0, 4, "VDDD", 2.0)
+# DIV2.VDD MULTI-POINT tap (EM, item 2): DIV2's VDD are thin 0.28um M4 collectors; a single via
+# funnels all 22.4mA -> 80 mA/um. Instead inject at MANY clear M4 columns (3um pitch) so each
+# collector segment carries only its local ~3um-span current (~0.28mA -> ~1 mA/um). Each tap: M4
+# riser from the collector up its clear column to the VDDD bus, via4 onto the bus.
+DIV2_VDD_TAPS = ([(x, 137.5) for x in range(113, 183, 3)]     # y137.5 collector (x108-183): 24 cols
+                 + [(x, 124.0) for x in range(60, 106, 3)])   # y124 collector (x60-108): 16 cols
+#                (x108-110 junction taps dropped -- they abut the collector edge = M4.2a)
+for tx, ty in DIV2_VDD_TAPS:
+    R.vwire(chip, ly, 4, ty, 178.0, float(tx), w=0.4)         # M4 riser collector -> y178 (BELOW the
+    R.via1_at(chip, ly, 4, 5, float(tx), 178.0)               #   OUT M4 lanes at y181/184). w0.4: 0.56mA
+    R.vwire(chip, ly, 5, 178.0, BUS["VDDD"], float(tx), w=0.44)  # riser = 1.4 mA/um -- a 57x cut vs the
+    #  old single 0.28um collector (80 mA/um); widening to 0.6 tripped one M4.2a. M5 up to the bus,
+    #  crossing the OUT M4 lanes on a DIFFERENT layer.
 # vco.VDD: DEFERRED. The ONLY M5-riser-able column over vco is x[388,394] (OUT_p/OUT_n M5 fill
 # x[396,472]; spiral fills x<=366). But vco.VDD's M2 there is a 1.5um wire interleaved with
 # other-net active M2 at ~0.14um, so a via pad lands 0.14um off it (M2.2a) and does not merge --
