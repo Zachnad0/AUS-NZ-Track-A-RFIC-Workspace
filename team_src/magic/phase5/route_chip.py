@@ -159,6 +159,18 @@ R.via_stack(chip, ly, 1, 4, 235.5, 140.27)         # down onto DIV2.I_P M1 (x235
 # ibias pins escaped to an edge, or block pin escapes -- a dedicated pass. (LAYER PLAN for it:
 # power M4/M5, signals M2/M3, route in Band C x189-210 / the y180-205 band, never over a block.)
 
+# VGP: ibias.VGP M2 (x44.9-52.9 @ y222) via up the CLEAR M4 column at x48 to the top margin,
+# across, down Band C (x189-210, free) to CP.VGP (x210-262 @ y224-233). No block edit -- the
+# M3/M4 column above VGP is clear to the ibias top edge.
+R.via_stack(chip, ly, 2, 4, 48.9, 222.1)          # VGP tap up to M4 (no M2 neighbour within 1um)
+R.vwire(chip, ly, 4, 222.1, 271.0, 48.9, w=0.6)   # M4 up the clear column, out the ibias top
+R.hwire(chip, ly, 4, 48.9, 200.0, 271.0, w=0.6)   # M4 across the top margin to Band C
+R.vwire(chip, ly, 4, 271.0, 228.0, 200.0, w=0.6)  # M4 down Band C to CP.VGP's vertical-wire y
+R.hwire(chip, ly, 4, 200.0, 205.0, 228.0, w=0.6)  # M4 right into Band C, clear of CP
+R.via_stack(chip, ly, 2, 4, 205.0, 228.0)         # down to M2 in Band C (open)
+R.hwire(chip, ly, 2, 205.0, 210.5, 228.0, w=0.28)  # extend CP.VGP left-edge vertical (x210.5) left,
+#                                                     y228 clear of the CP.VDD M2 rail @ y231.6
+
 # --- 0/0 boundary at the true die extent (Bailey: determines size + available-block budget) ---
 bb = chip.dbbox()
 chip.shapes(ly.layer(0, 0)).insert(pya.DBox(bb.left, bb.bottom, bb.right, bb.top))
