@@ -188,6 +188,12 @@ R.via_stack(chip, ly, 2, 4, 120.0, 268.5)           # ibias.IB_DIV2 up to M4 (wi
 R.vwire(chip, ly, 4, 268.5, 186.0, 120.0, w=0.6)    # M4 down the clear column into the band
 R.hwire(chip, ly, 4, 120.0, 142.2, 186.0, w=0.6)    # M4 across at y186 (clear of VGN's y183, below y188 bus)
 
+# vco.VDD: M2 wire x390-410. Via up at x405 (M3 column clear y76-179; OUT_p/n M5 and the M4 bar
+# are on OTHER layers) and rise M3 straight to the VDDA bus at its x405 right end.
+R.via_stack(chip, ly, 2, 3, 405.0, 74.85)         # vco.VDD M2 -> M3
+R.vwire(chip, ly, 3, 74.85, 199.0, 405.0, w=0.4)  # M3 up the clear column to the VDDA bus y
+R.via_stack(chip, ly, 3, 5, 405.0, 199.0)         # to M5 onto the VDDA bus (BUS_X VDDA ends at 405)
+
 # --- 0/0 boundary at the true die extent (Bailey: determines size + available-block budget) ---
 bb = chip.dbbox()
 chip.shapes(ly.layer(0, 0)).insert(pya.DBox(bb.left, bb.bottom, bb.right, bb.top))
