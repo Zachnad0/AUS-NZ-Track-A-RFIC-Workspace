@@ -126,6 +126,16 @@ R.vwire(chip, ly, 4, 271.0, 238.0, 282.25, w=0.6)  # M4 down (same net -> its ow
 R.via_stack(chip, ly, 3, 4, 282.25, 238.0)         # to M3 at the CP.UP escape (above CP, open)
 R.vwire(chip, ly, 3, 238.0, 228.0, 282.25, w=0.28) # extend CP.UP M3 (x282.11-282.39 pin) down onto it
 
+# DOWN: PFD.DOWN M2 pin (label x247.24) up-escape; CP.DOWN M2 (x270-273 @ y214.8) extend RIGHT
+# along its own axis into the CP<->vco gap (x283.5-290, free), then rise. M4 riser at x285.
+DNX = 247.24
+R.vwire(chip, ly, 2, 268.0, 272.0, DNX, w=0.3)     # PFD.DOWN M2 stub up out of PFD (clear of UP)
+R.via_stack(chip, ly, 2, 4, DNX, 272.0)
+R.hwire(chip, ly, 4, DNX, 285.0, 272.0, w=0.6)     # M4 across at y272 (0.4um clear of UP's y271 M4)
+R.vwire(chip, ly, 4, 272.0, 214.8, 285.0, w=0.6)   # M4 down in the CP<->vco gap
+R.via_stack(chip, ly, 2, 4, 285.0, 214.8)          # to M2 at the CP.DOWN escape (open gap)
+R.hwire(chip, ly, 2, 273.3, 285.0, 214.8, w=0.28)  # extend CP.DOWN M2 right onto the escape
+
 # VGP/VGN/IB_DIV2 (analog signals): DEFERRED. The pins are wide (tappable), but ibias.VGP/VGN
 # sit INTERIOR to ibias (x48.9 / x82, ~140um from the right edge), so any run to CP crosses
 # ibias's dense internal metal (M2 92 / M3 30 / M4 7). Signal H-hops also must avoid the power
