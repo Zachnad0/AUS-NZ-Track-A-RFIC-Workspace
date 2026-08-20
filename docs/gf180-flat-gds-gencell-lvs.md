@@ -78,7 +78,11 @@ Two possible hooks for `extra_be_checks`, either would fix it generically:
    they should touch. P&R blocks are origin-normalized so this never bites them;
    **hand-drawn analog cells with a non-zero native origin do.** Origin-
    normalizing the abstracted cell (or having `run_extract` compensate the LEF
-   ORIGIN on read) closes this.
+   ORIGIN on read) closes this. **We have origin-normalized our VCO cell** (its
+   frame is shifted so bbox-LL = (0,0) inside the chip GDS; absolute geometry is
+   unchanged, flat XOR = 0), which makes the LEF `ORIGIN` 0 and the abstract pins
+   land correctly — so a `run_extract` that compensated the ORIGIN would help any
+   team that hasn't normalized, but is not required for ours.
 
 Happy to share the exact reproduction scripts (a faithful two-pass local
 reproduction of `run_extract`) if useful.

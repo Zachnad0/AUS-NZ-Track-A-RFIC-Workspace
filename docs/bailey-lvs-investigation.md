@@ -53,19 +53,29 @@ Bailey-flow reproduction on the current GDS (no abstract):
   Bailey's flow is built for P&R blocks whose origin is at (0,0); a hand-drawn
   analog block with a non-zero native origin trips this.
 
-## Options to finish (need a decision)
+## Resolution
 
-1. **Origin-normalize the abstracted cell(s).** Regenerate `vco_v1.gds` (or the
-   two child GDS) shifted so LL = (0,0), and compensate the placement in
-   `chip_merge.py` so the ABSOLUTE deliverable geometry is byte-identical. This is
-   a rigid frame shift, not a device/wire move — but it does touch block GDS, a
-   rule-12 gray area, and cannot be fully verified without Bailey's tool.
-2. **Verify against the real `extra_be_checks`.** Rule 1 forbids installing it
-   here. If it is available on another machine, run the abstract config there to
-   confirm alignment before committing.
-3. Keep the device-aware `chip_top.abstract` as our internal signoff and document
-   for Bailey that the VCO tank (nmoscap varactors + spiral) needs device-aware
-   handling / an origin-normalized abstract in the signoff LVS.
+**Origin-normalization DONE (commit `item1`).** `chip_merge.py` now shifts
+vco_v1's frame so its bbox-LL is (0,0) and places it directly at the floorplan
+target — the shift and placement cancel, so a flat XOR of `chip_top.gds` before
+vs after is **0 polygons** (absolute geometry byte-identical). `gds/vco_v1.gds`
+is untouched. Re-test: PASS-1 `lef write` now emits **`ORIGIN 0.000 0.000`** (was
+112 119.48), and in the two-pass reproduction the vco_v1 abstract's
+**TUNE/ISS/OUT_p/OUT_n pins now land on the chip nets** (VTUNE/ISS/DIV2.CK/CKB)
+instead of isolated locals. Invariants all held (verify_cp chip_top + vco_v1
+match uniquely, KLayout 168 W4, check_placement CONSISTENT, boundary 522×309,
+5-block regression clean).
 
-No LVS-affecting change was committed; `verify_cp chip_top` still PASSES
-(DRC 0, match uniquely) and the on-main chip is untouched.
+**Still open (deferred — "config on faith", unverifiable without the real tool):**
+- Two pins still need connecting for a full abstract match: **VDD** (chip taps
+  the vco.VDD M2 wire mid-run at x405, but the abstract pin sits at x397.5 — add
+  a VDD port label at x405) and **GND** (no routed tap — either abstract the two
+  *children* instead of vco_v1 so GND stays connected via the substrate, or add a
+  chip GND tap to the vco.GND pin).
+- Setting `EXTRACT_ABSTRACT` in `lvs_config.json` + a black-box golden, and
+  converting our `verify_cp` to the same abstract, would complete it — but that
+  cannot be confirmed to pass Bailey's real flow here (rule 1), so it is left for
+  a machine with `extra_be_checks` or coordination with Bailey.
+
+No regression: `verify_cp chip_top` PASSES (DRC 0, match uniquely); the on-main
+chip is untouched.
