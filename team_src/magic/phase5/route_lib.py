@@ -110,12 +110,13 @@ def route_path(cell, ly, m, pts, w=None):
     return path_length(pts)
 
 
-def meander_points(x0, x1, y, extra, w, m):
-    """Orthogonal polyline from (x0,y) to (x1,y) whose length exceeds the straight
-    span by `extra` um, via upward fingers. Finger count is chosen so every leg keeps
-    >= w+MINSP clearance; finger height is then solved to hit `extra` exactly.
-    Returns the point list (draw with route_path). Raises if the span is too short to
-    absorb `extra` at the min finger height."""
+def meander_points(x0, x1, y, extra, w, m, amp=3.0):
+    """Orthogonal polyline from (x0,y) to (x1,y) whose length exceeds the straight span
+    by `extra` um, via upward fingers of target height ~`amp`. n fingers = extra/(4*amp);
+    if the span cannot hold that many at min pitch, n is capped to the span and the finger
+    height grows to still hit `extra` (a taller meander for a short lane). The caller must
+    ensure the finger height fits the available channel. Returns the point list.
+    Raises only if a single finger at min pitch already overshoots `extra`."""
     span = abs(x1 - x0)
     d = 1.0 if x1 >= x0 else -1.0
     if extra <= 1e-6 or span <= 1e-6:
@@ -123,16 +124,15 @@ def meander_points(x0, x1, y, extra, w, m):
     sp = MINSP[m]
     half_pitch_min = w + sp + 0.10          # min leg-to-leg pitch (up-leg to down-leg)
     amp_min = (w + sp + 0.10) / 2.0         # min finger height so top/bottom legs clear
-    if extra < 4.0 * amp_min:               # one min finger already adds 4*amp_min
-        raise ValueError("meander: extra %.2fum below one min finger (%.2fum); the "
-                         "caller should set target >= max_base + %.2f" % (extra, 4.0 * amp_min, 4.0 * amp_min))
+    amp = max(amp, amp_min)
+    if extra < 4.0 * amp_min:               # even one minimum finger overshoots
+        raise ValueError("meander: extra %.2fum below one min finger (%.2fum); set "
+                         "target >= max_base + %.2f" % (extra, 4.0 * amp_min, 4.0 * amp_min))
     n_fit = max(1, int(span / (2.0 * half_pitch_min)))   # max fingers the span allows
-    # FLOOR so amp = extra/(4n) stays >= amp_min (ceil could nudge it under the floor)
-    n = max(1, int(extra / (4.0 * amp_min)))
+    n = max(1, int(round(extra / (4.0 * amp))))          # from target amplitude
     if n > n_fit:
-        raise ValueError("meander: span %.1fum too short to absorb %.1fum extra "
-                         "(need %d fingers, fits %d)" % (span, extra, n, n_fit))
-    amp = extra / (4.0 * n)                 # exact; >= amp_min by construction
+        n = n_fit                                        # span-limited: fewer, taller fingers
+    amp = extra / (4.0 * n)                               # exact; height grows if n capped
     p = span / (2.0 * n)                    # half-pitch
     pts = [(x0, y)]
     cx = x0

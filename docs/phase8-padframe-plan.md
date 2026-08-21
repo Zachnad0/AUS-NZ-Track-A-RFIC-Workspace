@@ -534,7 +534,81 @@ DEF and the confirmed clear-column map next session.
 
 ---
 
-## 5. Regression baseline (re-run 2026-08-21, three sessions)
+## 3h. In-context rehearsal + VTUNE shielding (2026-08-21, 4th session)
+
+### The isolated dry run proved less than it looked (Item 1)
+Rebuilt the rehearsal WITH the five blocks present — `chip_top` instanced at
+dx=200/dy=200 in a throwaway cell (`analysis/phase8_incontext.py`; all masters present,
+confirmed by the 84 varactor-PL.5a baseline). Two corrections to last session:
+- **The 331.760 µm match was the CONFLICTING route.** Jogging the right risers into the
+  clear x381–404 (ibias↔CP) gap lengthens them, so the true matched length after the
+  jog is **~458 µm** (Q_P is the longest; the shorter three pad up to it).
+- **The matched quad does NOT drop in DRC-clean in context.** `reh_base` (blocks only) =
+  84 (varactor); `reh_phase8` (with routes) = 86 — the routes add **M3.2a**:
+  - **Left risers (Q_N/I_N)** are squeezed between the **GND ring** (die x197.5) and DIV2
+    (die x200) — a ~2.5 µm slot; a riser there collides (M3.2a) with the ring-area M3.
+  - **Matching serpentine** (~130–166 µm, from the routing spread) does **not** fit the
+    channel — M3.2a at both dy=200 (60 µm) AND dy=180 (80 µm).
+  - Right risers (I_P/Q_P) escape east into the DIV2↔vco gap, rise to the vco-top/CP-
+    bottom window (crossing the M5 band on M3 — benign), jog into the x381–404 gap, and
+    rise past CP — that base geometry is workable.
+- Extraction: the 0.28 µm M3.2a are near-shorts (spacing), not overlaps, so **no merges**.
+- **Verdict:** phase 8 converges but is a **hand-tuned routing job, not a drop-in
+  primitive**. The left risers need the ring pulled off DIV2 (a few µm more dx margin, or
+  a ring notch) to open their slot; the matching serpentine must go in the **wide empty
+  side regions** (x0–175 west, x697–1110 east; 588 µm) — **not** the 60–80 µm channel.
+  The primitives length-match exactly; the escape/serpentine PLACEMENT is the build work.
+
+### dy=180 does not rescue the serpentine (Item 3)
+The serpentine budget is set by the routing spread (~130–166 µm), not by dy. It needs
+~12 µm-tall fingers × 4 stacked lanes → more than either 60 µm (dy200) or 80 µm (dy180)
+holds (M3.2a at both). **So the channel holds the four lanes + pad landing only; the
+matching serpentine relocates to the side regions regardless of dy.** dy=200 therefore
+stands for the lanes; dy is not the serpentine lever — the side regions are.
+
+### VTUNE / ISS coupling: a quantified nothing (Item 2)
+- **KVCO = 822 MHz/V** (band 4.13–6.35 GHz over VTUNE 0.3–3.0 V, on record).
+- **Coupling caps (magic tech):** M2–M2 sidewall **0.047 fF/µm** (parallel, min spacing);
+  crossover (different layers) ~0.005 fF each.
+- **The 15 kΩ tune resistor** (golden `XR2 TUNE cap_bias 15kΩ`) sits between the 774 µm
+  routing and the varactor and **low-passes the routing coupling**.
+- **Concrete worst case:** a 50 µm inadvertent parallel run with a 0.5 V, 2.5 GHz
+  aggressor → Cc ≈ 2.35 fF → ~18 mV on the routing node → filtered by the 15 kΩ +
+  varactor to **~0.37 mV at the varactor → 0.3 MHz FM → ≈ −84 dBc** spur at 2.5 GHz
+  offset. The natural geometry (VTUNE runs west, the I/Q outputs and CML clocks run
+  north — perpendicular crossovers, ~0.005 fF) gives **< 0.1 mV → negligible**.
+- **Mitigations & cost:** grounded guard trace ± (~1550 µm² over 774 µm, ~10× reduction);
+  ground plane under (~465 µm² + ties); reroute perpendicular / avoid parallel runs
+  (0 area); accept.
+- **Recommendation:** **routing discipline** — keep VTUNE (and ISS) perpendicular to the
+  switching aggressors and off parallel runs; the 15 kΩ tune resistor already shields the
+  routing. No dedicated guard/plane needed (≈ −84 dBc worst-case, negligible in practice).
+  ISS is milder still (low-impedance tail node, AM-to-PM). A quantified nothing.
+
+### Fourteen-net crossing table (Item 4, from the occupancy map, dx200/dy200)
+
+| net | layer | crosses | same/inter | resolution |
+|-----|-------|---------|------------|------------|
+| Q_N, I_N | M3 riser | GND ring M3 region (die x182.5–197.5) | **same** | thread the 2.5 µm ring↔DIV2 slot; widen it with a few µm dx or a ring notch |
+| I_P, Q_P | M3 riser | CP.M3 + PFD.M3 at x235 | **same** | jog into the x381–404 ibias↔CP gap (validated in the rehearsal) |
+| I_P, Q_P | M3 riser | M5 power band (y182–200) | inter | benign (M3 over M5) |
+| ISS, VTUNE | M2/M3 | the 4 north I/Q risers | inter | keep perpendicular (they run N, VTUNE runs W) |
+| ISS, VTUNE | M2/M3 | M5 power band | inter | benign |
+| VSSA | M5 | — (perimeter ring spur) | — | clear, ~175 µm west spur |
+| VDDA | M5 bus | signal risers | inter | benign (M5 over M2/M3) |
+| VDDD | M4/M5 | signal risers | inter | benign |
+| IBIAS | M2 | own-block escape then clear west region | — | minor |
+| CP_OUT | M2/M3 | ibias body (if routed over it) | **same** if over ibias | route via the x181–204 clear column / top band |
+| REF_IN | M2/M3 | digital-island region (north) | minor | local, north |
+| REF_IN_PU/PD | M2 | — (short rail ties: PU→ring, PD→VDDD) | — | trivial |
+
+The **only same-layer (real) conflicts** are the four I/Q risers (resolved: right→gap,
+left→ring slot) and CP_OUT-over-ibias (resolved via the clear column). Everything else is
+inter-layer (power on M4/M5 over signals on M2/M3) or perimeter — benign.
+
+---
+
+## 5. Regression baseline (re-run 2026-08-21, four sessions)
 
 `verify_cp` re-run, all exit 0 (unchanged — the ground/ordering/RF-loading analysis,
 the matched-quad dry-run, and the docs made no geometry/schematic/flow change;
