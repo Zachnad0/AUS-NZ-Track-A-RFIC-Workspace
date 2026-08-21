@@ -121,29 +121,42 @@ inputs).
 - PDK **CDL** `in_c`: PU/PD are ESD-diode-protected control-gate inputs feeding
   level-shift logic that drives a **~100 kΩ poly-resistor ladder pull** on PAD
   (R196–R211 through node n15).
-- **Polarity — authoritative, from the PDK Verilog of the sibling bidirectional
-  cell `gf180mcu_fd_io__bi_t`** (same PU/PD architecture), which *does* model it:
-  ```
-  rnmos #1 (PAD, gnd, ~OE && ~PU && PD);   // pull-DOWN when PU=0, PD=1
-  rnmos #1 (PAD, pwr, ~OE && PU && ~PD);   // pull-UP   when PU=1, PD=0
-  ```
-  So **PU and PD are active-high enables**: `PU=1,PD=0`→pull-up to DVDD;
-  `PU=0,PD=1`→pull-down to DVSS; **`PU=0,PD=0`→no pull (high-Z)**.
+- **Polarity — now CONFIRMED for in_c (2026-08-21), not just inferred.** The
+  official PDK page **"4.1 Digital I/O Cell Control Pins"** gives the truth table
+  for the digital I/O pads' pull control (in_c is a digital input pad) verbatim:
+
+  | PU | PD | Resistive Pulling |
+  |----|----|-------------------|
+  | 0 | 0 | Normal CMOS (no pull) |
+  | 0 | 1 | **Pull Down** |
+  | 1 | 0 | Pull Up |
+  | 1 | 1 | Normal CMOS (no pull) |
+
+  So **PU/PD are active-high enables**: `PU=1,PD=0`→pull-up, `PU=0,PD=1`→pull-down,
+  `PU=0,PD=0` (or `1,1`)→no pull. This **agrees with** last session's inference from
+  the sibling `bi_t` Verilog (`rnmos(PAD,gnd,~OE&&~PU&&PD)` /
+  `rnmos(PAD,pwr,~OE&&PU&&~PD)`) — that analogy is now backed by an in_c-applicable
+  source, superseding the earlier "inferred by analogy, never confirmed" caveat.
+  Source: <https://gf180mcu-pdk.readthedocs.io/en/latest/IPs/IO/gf180mcu_fd_io/digital.html>.
 
 **Options for an externally-driven reference clock:**
 
 | PU | PD | effect | consequence |
 |----|----|--------|-------------|
-| **0** | **0** | **no pull (high-Z)** — **recommended** | pad presents no on-chip pull; nothing loads or DC-biases the external clock; cleanest threshold/duty. Requires the board to always drive REF_IN. |
-| 0 | 1 | weak pull-**down** (~100 kΩ) | defines REF_IN=0 if the board leaves it open (defensive against a floating clock input), at a negligible ~100 kΩ DC load on the driven clock. Reasonable fallback. |
-| 1 | 0 | weak pull-up | pulls the idle clock high; uncommon for a clock. |
-| float | — | **NOT acceptable** | PU/PD are CMOS control-gate inputs (LEF INPUT). Floating → pull state indeterminate (could enable an unwanted pull), and a floating CMOS gate can drift near threshold, draw crowbar current, and pick up noise. Both **must** be driven to fixed levels. |
+| 0 | 0 | no pull (high-Z) | nothing loads/biases a driven clock; but a *disconnected* clock floats. |
+| **0** | **1** | **weak pull-down (~100 kΩ) — DECISION** | REF_IN parks at a clean logic 0 when the bench clock is disconnected; ~100 kΩ is negligible against a 50 Ω generator when driven. |
+| 1 | 0 | weak pull-up | idle high; uncommon for a clock. |
+| float | — | **NOT acceptable** | CMOS control-gate inputs; floating → indeterminate pull, drift near threshold, crowbar current, noise pickup. Both **must** be driven. |
 
-**Recommendation (Greg to finalize once, post-Friday):** tie **REF_IN_PU = 0 and
-REF_IN_PD = 0 (both to VSS/ground)** for a clean high-Z reference input — unless
-the board might leave REF_IN unconnected, in which case `PU=0, PD=1` (weak
-pull-down) keeps the PLL reference at a defined 0. Do **not** leave either floating.
-No `chip_top.sch`/`info.yaml` edit made this session.
+**DECISION (Greg, 2026-08-21 — overrides last session's PU=0/PD=0):** tie
+**REF_IN_PU = 0 (→VSS) and REF_IN_PD = 1 (→VDD)** = **Pull Down**. Reasoning: on a
+bench part the reference clock is often disconnected, and a floating CMOS receiver
+input can oscillate and draw crowbar current; a pull-down instead gives a clean
+logic 0 so the PFD sees *no reference* and the VCO parks at a band edge —
+deterministic and diagnosable. The 100 kΩ pull is negligible against a 50 Ω
+generator when the clock IS driven. Do **not** leave either floating. No
+`chip_top.sch`/`info.yaml` edit this session — the pin list may change after Friday,
+so the tie is recorded here to make the call once.
 
 ---
 
@@ -181,6 +194,95 @@ ground; VSSA can itself be down-bonded. The RF-output routing penalty in BV
 the actual deliverable than the incremental ground-inductance gain of a second
 fixed bond. And the Friday VSSD decision may add a dedicated ground regardless,
 eroding BV's W12 edge. **Revisit after the regenerated DEF.**
+
+---
+
+## 3b. I/Q length matching & core placement (2026-08-21)
+
+### The padframe REINTRODUCES the I/Q mismatch — a designed-in requirement
+Phase 7 length-matched `VCO_OUTP/N` inside chip_top. The BH padframe undoes that at
+the top level: the four divider outputs land at fixed north pads **I_P x145, I_N
+x245, Q_P x345, Q_N x445 — 100 µm apart, a 300 µm x-spread** — while all four
+originate from adjacent DIV2 converters (taps at x2.18 / x235.18). The Q hauls run
+further and pass over the vco. **This is inherent to the pad pitch, not the pin
+ordering, and BV is worse — so it is not an argument against BH.** It must be
+designed in from the start of phase-8 routing (a matched-length quad router, §4),
+**not** patched late as VCO_OUTP/N was.
+
+### Output taps (Item 2a — the real net metal, tap-the-extent)
+From `port_map.py` + measured M1 in `gds/chip_top.gds` (current chip frame). Each
+output escapes to a DIV2 edge as a **0.60 × 0.60 µm M1** port pad:
+
+| net | DIV2 tap (chip µm) | M1 pad extent |
+|-----|--------------------|---------------|
+| I_P | (235.18, 140.27) | (234.88,139.97)–(235.48,140.57) |
+| I_N | (2.18, 140.27) | (1.88,139.97)–(2.48,140.57) |
+| Q_P | (235.18, 51.92) | (234.88,51.62)–(235.48,52.22) |
+| Q_N | (2.18, 51.92) | (1.88,51.62)–(2.48,52.22) |
+
+I/Q at two x-extremes (I_P/Q_P right x235, I_N/Q_N left x2) and two y-levels (I
+y140, Q y52). Because the pads increase left→right (I_P<I_N<Q_P<Q_N) while the taps
+alternate right/left, **I_P↔I_N and Q_P↔Q_N cross** — a layer-managed crossing the
+quad router must handle.
+
+### Haul lengths & padding (Items 2b–2c)
+Placement assumption: chip_top's core (boundary −25..497 × −21.5..287.5) placed in
+the 1110×550 DIEAREA by an offset (dx,dy); tap_die = tap + (dx,dy). Fit ⇒ dx∈[25,613],
+dy∈[21.5,262.5]. Manhattan haul tap→pad, per placement (µm):
+
+| placement (dx,dy) | I_P | I_N | Q_P | Q_N | max | spread | matched(4×max) | total pad |
+|-------------------|-----|-----|-----|-----|-----|--------|----------------|-----------|
+| bottom-left (25, 21.5) | 480 | 628 | 583 | 916 | 916 | 436 | 3664 | 1670 |
+| top-left (25, 262.5) | 239 | 387 | 342 | 675 | 675 | 436 | 2700 | 1057 |
+| top dx200 (200, 262.5) | 414 | 212 | 302 | 500 | 500 | 288 | 2000 | 572 |
+| **top dx243 (243, 262.5)** | 457 | 169 | 345 | 457 | **457** | 288 | **1828** | **400** |
+
+Matching pads the three shorter hauls up to the longest, so the cost of matching is
+**4 × (longest haul)** and the serpentine budget is `total pad`. Moving the core to
+the **top** (dy 262.5, DIV2 nearest the north pads) roughly halves everything vs
+bottom-left; shifting **right** (dx→243) balances the left/right crossing so the max
+haul bottoms out at **457 µm** with only **400 µm** of total serpentine.
+
+### Does the padding fit? (Item 2d)
+Yes. At dx≈200–243 the 522-wide core leaves **~415–588 µm of empty die width**
+(x0–175 west + x697–1110 east) plus the vertical clear columns — ample room for
+horizontal serpentine meanders. The **y[180,205] power band** is crossed on M2/M3
+(signals) vs M4/M5 (power) — not blocked. The serpentine stays inside the 20 µm GND
+perimeter margin. The tight spot is the ≤~60 µm between the core top (y550 at
+dy262.5) and the north pads; land the hauls in the core's clear columns and route
+the matching meanders in the empty side regions, not that gap.
+
+### Core placement recommendation (Item 3)
+Evaluated at dy=262.5 (core at top — the I/Q, CP_OUT, VDDD, REF_IN all land north, so
+minimizing their vertical haul dominates) across dx, plus a bottom baseline:
+
+vco→pad columns use the vco's own taps (ISS (395.84,60.33), TUNE (358.68,66.70),
+VDD (397.44,74.83)); GND→VSSA = the horizontal gap the perimeter GND ring must span
+from the core's left edge (x = −25+dx) out to the west VSSA pad at x0.
+
+| placement | I/Q spread | I/Q matched | total→14 pins | vco→ISS / VTUNE / VDDA | GND→VSSA |
+|-----------|-----------:|------------:|--------------:|------------------------|----------|
+| bottom-left (25,21.5) | 436 | 3664 | 6493 | 721 / 777 / 508 | 0 (core at x0) |
+| top-left (25,262.5) | 436 | 2700 | **4972** | **480 / 536 / 577** | 0 (core at x0) |
+| **top dx200 (200,262.5)** | **288** | 2000 | 5458 | 655 / 711 / 752 | ring extends 175 |
+| top dx243 (243,262.5) | 288 | **1828** | 5630 | 698 / 754 / 795 | ring extends 218 |
+
+**Recommendation: core at top, dx = 200, dy = 262.5 — boundary x[175, 697],
+y[241, 550].** It gives the minimum I/Q spread (288 µm) and near-minimum matched
+length (2000 µm) with only 572 µm of serpentine — the RF outputs are the deliverable
+— while keeping the vco's DC/bias hauls (ISS 655, VTUNE 711 µm — both DC/high-Z,
+haul-tolerant) and the power hauls (VDDA 585 µm, bus-distributed) acceptable. dx can
+be pushed to 243 for the absolute-shortest matched I/Q (1828 µm, 400 µm serpentine)
+at ~40 µm more vco DC haul.
+
+**Strongest argument against it:** **top-left (dx=25)** has ~10 % lower total haul
+(4972 vs 5458), the shortest vco→ISS/VTUNE (480 / 536 µm), and puts the whole core
+hard against the west edge so the VDDA/VSSA pads sit right on the bus/ring — which
+favors supply/ground integrity — for an LC-VCO, IR drop and ground bounce feed
+phase noise. It loses only because VDDA/VSSA are wide bus/ring-distributed (low-R,
+haul-tolerant) whereas the I/Q are thin RF signals where length directly costs
+loss/mismatch — so the I/Q-optimal dx wins. If Friday's regenerated DEF moves the
+pad map, re-run this sweep before committing a placement.
 
 ---
 
@@ -255,9 +357,10 @@ Friday's VSSD/pin-list decision.
 
 ---
 
-## 5. Regression baseline (this session)
+## 5. Regression baseline (re-run 2026-08-21)
 
-`verify_cp` re-run, all exit 0:
+`verify_cp` re-run, all exit 0 (unchanged — this session added only route_lib
+primitives + docs + file moves, no geometry/flow change):
 
 | cell | DRC | LVS |
 |------|-----|-----|
@@ -268,5 +371,21 @@ Friday's VSSD/pin-list decision.
 | DIV2_QUAD_v1 | 0 | match uniquely |
 | vco_v1 | 0 | match uniquely |
 
-Known-good — the next session starts from here. No geometry, schematic, config, or
-deliverable-GDS change was made this session (analysis + docs only).
+Known-good — the next session starts from here.
+
+---
+
+## 6. Housekeeping (2026-08-21)
+
+Off-flow analysis/diagnostic scripts were moved out of `team_src/magic/` into
+**`team_src/magic/analysis/`** (with a README) so nobody mistakes them for flow
+scripts — they are NOT run by the tapeout flow:
+- the **bailey_* LVS-flow reproduction** (evidence for the flat-GDS gencell finding,
+  `docs/gf180-flat-gds-gencell-lvs.md`) — kept, not deleted;
+- this session's **DEF/haul/placement parsers** (`parse_def.py`, `iq_haul.py`,
+  `core_placement.py`) that produced §1–§3b.
+
+**Phase-8 haul primitives** were added to `route_lib.py` (length-matched quad
+router, def-pin lander, per-net length accounting) with a committed self-test —
+built and DRC-gated in isolation, **not** wired into `chip_merge.py`/`route_chip.py`.
+See `route_selftest` for the gate results.
