@@ -5,6 +5,7 @@
 # M1 0.23, M2-M4 0.28, M5 0.44; M5 min area 0.5625 um2. Via metal-overlap >= 0.06 (V*.3d/4c),
 # and metal landing >= 0.34 wide to dodge the <0.34um end-of-line via rules.
 import pya
+import math
 
 DB = 1000  # KLayout DBU per um is set on the layout; we pass um via DVector/DBox helpers.
 
@@ -76,3 +77,122 @@ def via_stack_small(cell, ly, m_from, m_to, x, y, pad=0.38):
     lo, hi = (m_from, m_to) if m_from <= m_to else (m_to, m_from)
     for m in range(lo, hi):
         via1_small(cell, ly, m, m + 1, x, y, pad)
+
+
+# ---------------------------------------------------------------------------
+# Phase-8 haul infrastructure: length accounting, serpentine matching, def-pin
+# landing. Parameterized primitives -- built & DRC-gated in isolation
+# (route_selftest_phase8.py), NOT wired into chip_merge.py / route_chip.py.
+# ---------------------------------------------------------------------------
+MINSP = {1: 0.23, 2: 0.28, 3: 0.28, 4: 0.28, 5: 0.28}  # min same-layer spacing (gf180 M*.2)
+LABEL_DT = 10                                            # port labels on datatype 10
+
+
+def path_length(pts):
+    """Manhattan length of an orthogonal polyline (== true length when axis-aligned)."""
+    return sum(abs(pts[i + 1][0] - pts[i][0]) + abs(pts[i + 1][1] - pts[i][1])
+               for i in range(len(pts) - 1))
+
+
+def route_path(cell, ly, m, pts, w=None):
+    """Draw an orthogonal polyline on metal m; return its routed length (length
+    accounting). Each consecutive pair must be axis-aligned."""
+    w = w or MINW[m]
+    for (xa, ya), (xb, yb) in zip(pts, pts[1:]):
+        if abs(ya - yb) < 1e-9 and abs(xa - xb) > 1e-9:
+            hwire(cell, ly, m, xa, xb, ya, w)
+        elif abs(xa - xb) < 1e-9 and abs(ya - yb) > 1e-9:
+            vwire(cell, ly, m, ya, yb, xa, w)
+        elif abs(xa - xb) < 1e-9 and abs(ya - yb) < 1e-9:
+            continue  # zero-length hop
+        else:
+            raise ValueError("route_path: non-axis-aligned segment %r->%r" % ((xa, ya), (xb, yb)))
+    return path_length(pts)
+
+
+def meander_points(x0, x1, y, extra, w, m):
+    """Orthogonal polyline from (x0,y) to (x1,y) whose length exceeds the straight
+    span by `extra` um, via upward fingers. Finger count is chosen so every leg keeps
+    >= w+MINSP clearance; finger height is then solved to hit `extra` exactly.
+    Returns the point list (draw with route_path). Raises if the span is too short to
+    absorb `extra` at the min finger height."""
+    span = abs(x1 - x0)
+    d = 1.0 if x1 >= x0 else -1.0
+    if extra <= 1e-6 or span <= 1e-6:
+        return [(x0, y), (x1, y)]
+    sp = MINSP[m]
+    half_pitch_min = w + sp + 0.10          # min leg-to-leg pitch (up-leg to down-leg)
+    amp_min = (w + sp + 0.10) / 2.0         # min finger height so top/bottom legs clear
+    if extra < 4.0 * amp_min:               # one min finger already adds 4*amp_min
+        raise ValueError("meander: extra %.2fum below one min finger (%.2fum); the "
+                         "caller should set target >= max_base + %.2f" % (extra, 4.0 * amp_min, 4.0 * amp_min))
+    n_fit = max(1, int(span / (2.0 * half_pitch_min)))   # max fingers the span allows
+    # FLOOR so amp = extra/(4n) stays >= amp_min (ceil could nudge it under the floor)
+    n = max(1, int(extra / (4.0 * amp_min)))
+    if n > n_fit:
+        raise ValueError("meander: span %.1fum too short to absorb %.1fum extra "
+                         "(need %d fingers, fits %d)" % (span, extra, n, n_fit))
+    amp = extra / (4.0 * n)                 # exact; >= amp_min by construction
+    p = span / (2.0 * n)                    # half-pitch
+    pts = [(x0, y)]
+    cx = x0
+    for _ in range(n):
+        pts.append((cx, y + 2 * amp))       # up
+        cx += d * p
+        pts.append((cx, y + 2 * amp))       # across top
+        pts.append((cx, y))                 # down
+        cx += d * p
+        pts.append((cx, y))                 # across bottom to next finger
+    if abs(cx - x1) > 1e-6:
+        pts.append((x1, y))
+    return pts
+
+
+def matched_route(cell, ly, m, nets, ych_base, lane_pitch, target=None, w=None):
+    """Length-matched N-net (pair/quad) router. `nets` = list of (name, x0,y0, x1,y1)
+    endpoints (tap -> pad). Net i routes: vertical tap->its own channel lane
+    (ych_base + i*lane_pitch), horizontal across (serpentine-padded to `target`),
+    vertical lane->pad. Own lane per net => no self-short. If `target` is None it is
+    the max base length. Returns (lengths dict, target)."""
+    w = w or MINW[m]
+    base = {}
+    lanes = {}
+    for i, (name, x0, y0, x1, y1) in enumerate(nets):
+        ych = ych_base + i * lane_pitch
+        lanes[name] = ych
+        base[name] = abs(ych - y0) + abs(x1 - x0) + abs(ych - y1)
+    if target is None:
+        target = max(base.values())
+    out = {}
+    for (name, x0, y0, x1, y1) in nets:
+        ych = lanes[name]
+        extra = target - base[name]
+        pts = [(x0, y0), (x0, ych)]                       # tap up to lane
+        pts += meander_points(x0, x1, ych, extra, w, m)[1:]  # meandered horizontal
+        pts += [(x1, ych), (x1, y1)]                      # lane down to pad
+        out[name] = route_path(cell, ly, m, pts, w)
+    return out, target
+
+
+def land_on_pin(cell, ly, m, approach, pin_rect, label=None, w=None):
+    """Land a haul arriving at `approach`=(x,y) on metal m onto a DEF pin rectangle
+    `pin_rect`=(x0,y0,x1,y1) um (Metal2, at the die edge). Fills the pin rect on M2,
+    stacks m<->M2 at the pin centre if m!=2, L-routes `approach`->pin on m, and drops
+    a port `label` on M2 datatype 10. Returns the pin centre."""
+    w = w or MINW[m]
+    x0, y0, x1, y1 = pin_rect
+    cx, cy = (x0 + x1) / 2.0, (y0 + y1) / 2.0
+    # fill the def pin rect on M2, padded to >= M2 min width in each axis (centred) so a
+    # sub-min-width DEF pin (e.g. the ~0.38um in_c pins) still lands DRC-clean.
+    mw = MINW[2]
+    fx0, fx1 = (x0, x1) if (x1 - x0) >= mw else (cx - mw / 2.0, cx + mw / 2.0)
+    fy0, fy1 = (y0, y1) if (y1 - y0) >= mw else (cy - mw / 2.0, cy + mw / 2.0)
+    box(cell, ly, METAL[2], fx0, fy0, fx1, fy1)           # fill the def pin rect (M2)
+    if m != 2:
+        via_stack(cell, ly, 2, m, cx, cy)                 # tie haul layer to the M2 pin
+    ax, ay = approach
+    route_path(cell, ly, m, [(ax, ay), (ax, cy), (cx, cy)], w)  # L: vert then horiz
+    if label:
+        cell.shapes(ly.layer(METAL[2][0], LABEL_DT)).insert(
+            pya.DText(label, pya.DTrans(pya.DVector(cx, cy))))
+    return (cx, cy)
