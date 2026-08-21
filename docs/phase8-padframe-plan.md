@@ -369,6 +369,78 @@ existing VCO load-pull, I/Q offset, and DIV2 EM items.
 
 ---
 
+## 3f. Channel map + dy sweep → recommended placement dx=200, **dy=200** (2026-08-21)
+
+Built the per-layer occupancy map (`docs/phase8-channel-map.md`,
+`analysis/channel_map.py`) and swept dy against it (`analysis/dy_sweep.py`,
+`analysis/phase8_dryrun.py`).
+
+**dy sweep** (dx=200, proposed order; matched haul vs the clear channel above the core,
+DIEAREA y[287.5+dy, 549]):
+
+| dy | matched | per-output | clear channel | lanes+serpentine fit? |
+|----|--------:|-----------:|--------------:|-----------------------|
+| 262.5 | 1077 | 269 | −2 µm | **NO** (last-session problem: core reaches the pad row) |
+| 240 | 1167 | 292 | 20 µm | NO |
+| 220 | 1247 | 312 | 40 µm | tight |
+| **200** | **1327** | **332** | **60 µm** | **yes** |
+| 180 | 1407 | 352 | 80 µm | yes (comfortable) |
+| 160 | 1487 | 372 | 100 µm | yes |
+
+**Recommended: dy = 200** — the highest dy (shortest haul, matched 1327 µm =
+332 µm/output) that still opens a ≥60 µm clear channel above the core for the four
+horizontal lanes + the 58 µm serpentine + pad landing. **Cost vs dy=262.5:**
++250 µm total, +63 µm/output (269→332 µm). **Conflict flag (Item 2b):** dy ≥ ~215
+forces the lanes over the top blocks (M3-on-M3 silent shorts) — avoid. **Strongest
+argument against dy=200:** its 60 µm channel is *marginal* — if the 4-lane + serpentine
+stack does not fit, drop to **dy=180** (+80 µm total haul, +20 µm channel headroom).
+
+**Dry-run at dy=200 (Item 3, `analysis/phase8_dryrun.py`, throwaway cell):**
+- length matching **EXACT** — all four to **331.760 µm** (<1e-3 µm); **magic DRC 0**,
+  **KLayout signoff PASS**; the four routes extract as separate nets (own lanes → no
+  merges, DRC-0 spacing confirms no touching).
+- lanes land at **y≈490 in the clear channel** (y[487.5,549]) — clear, as designed.
+- overlap check of the route's straight M3 risers vs the block metal (DIEAREA frame):
+  benign M3-over-**M2** crossings of ibias/CP/DIV2 (different layer, no short), but
+  **real M3-on-M3 conflicts:** the **right risers (I_P/Q_P at x235) cross CP.M3 and
+  PFD.M3**, and the tap escape crosses DIV2.M3. **Resolution (per the map):** the
+  right risers must **jog to the x288–397 clear column** before rising, and the taps
+  escape on their own layer/axis (phase-7 technique). The left risers (Q_N/I_N at
+  x2.18) are already left of ibias's M3 — clear.
+- **Verdict:** phase 8 at dy=200 is a **routing job** — the lane channel is clear and
+  the primitives match exactly; the remaining work is the DIV2-output riser escapes
+  via the mapped clear columns. It converges; it is not a floorplan wall.
+
+## 3g. The other ten pins at dx=200/dy=200 (Item 4)
+
+| pad | source | edge | haul (µm) | path |
+|-----|--------|------|----------:|------|
+| VSSA | GND ring | west | ~175 (spur) | ring extends to the west edge — clear, low-R |
+| VDDA | VDDA bus | west | ~175–260 (bus) | bus extends west — clear (the 522 point-figure overstates it) |
+| IBIAS | ibias.IBIAS | west | 412 | exits ibias west into the empty region — clear |
+| **ISS** | vco.ISS | west | **717** | **LONG** — vco(right)→west pad, full-die crossing; DC/high-Z, clear band at y≈378 |
+| **VTUNE** | vco.TUNE | west | **774** | **LONG** — same; DC tune, clear band at y≈480 |
+| CP_OUT | CP.CP_OUT | north | 538 | up-and-left; low-freq analog |
+| VDDD | PFD.VDD | north | 230 | up-and-right — clear |
+| REF_IN | PFD.REF | north | 348 | up-and-right — clear |
+| REF_IN_PU | tie→VSS | north | short | tie to the ground ring (pull-down, §2) |
+| REF_IN_PD | tie→VDD | north | short | tie to the VDDD bus (pull-down, §2) |
+
+**Flags (Item 4b):** every pin has a clear path; **ISS (717) and VTUNE (774) are the
+materially-long ones** — the vco sits on the right and both pads are on the west edge,
+so they cross the full die. Both are **DC/high-Z** (tail node, tune voltage), so the
+length costs only resistance (negligible), and the clear M2/M3 bands at y≈378 / y≈480
+provide the crossing lane. No pin is unroutable.
+
+**VSSD implication (Item 4c, analysis only — do NOT add):** VDDD and REF_IN sit in the
+north **digital island** (x531–699). A VSSD pad, if Friday requires one, would land in
+that island (north, near VDDD x531) and draw its ground from the **digital VSS taps**
+— PFD.VSS (die ≈x433,y457) or DIV2.VSS (die ≈x353,y279) — a moderate up-and-right haul
+like VDDD. It would NOT come from the analog VSSA ring; keeping the digital return
+local to that island is the point of the padring's VDDD/REF_IN break.
+
+---
+
 ### DIEAREA & pin rects → `chip_merge.py` frame
 - **DBU already matches.** `chip_merge` sets `master.dbu = 0.005` (200/µm); the DEF
   is 200/µm. So DEF coordinates map **1:1** into chip_merge's frame — integration is
@@ -462,7 +534,7 @@ DEF and the confirmed clear-column map next session.
 
 ---
 
-## 5. Regression baseline (re-run 2026-08-21, twice)
+## 5. Regression baseline (re-run 2026-08-21, three sessions)
 
 `verify_cp` re-run, all exit 0 (unchanged — the ground/ordering/RF-loading analysis,
 the matched-quad dry-run, and the docs made no geometry/schematic/flow change;
