@@ -286,7 +286,88 @@ pad map, re-run this sweep before committing a placement.
 
 ---
 
-## 4. Phase-8 top-level expansion plan (plan only — nothing built)
+## 3c. Ground-return quantification (2026-08-21, Item 1)
+
+The dx=200 pick was made on I/Q spread alone; here is the ground side, measured.
+
+**Ring, measured (not assumed):** the GND ring is a **15 µm-wide M5 (layer 81)**
+loop around the core (four segments, each 15 µm thick — queried from `chip_top.gds`).
+Under BH the ring must span the gap from the core's west edge (x = −25+dx) to the
+VSSA pad at x0; that spur carries the chip's entire ~26 mA to its single ground pad:
+
+| dx | spur length | squares (÷15 µm) | R (M5 40 mΩ/□) | IR @26 mA | L (~1 pH/µm)† | XL @5 GHz |
+|----|-------------|------------------|-----------------|-----------|---------------|-----------|
+| 25 | 0 | 0 | 0 | 0 mV | 0 | 0 |
+| 200 | 175 µm | 11.7 | 0.47 Ω | **12.1 mV** | 175 pH | 5.5 Ω |
+| 243 | 218 µm | 14.5 | 0.58 Ω | 15.1 mV | 218 pH | 6.9 Ω |
+
+- **M5 sheet resistance 40 mΩ/□** (typ; 31 / 49 in the fast/slow corners) — source
+  `/foss/pdks/gf180mcuD/libs.tech/magic/gf180mcuD.tech`, `resist (allm5)/metal5`.
+- †**Inductance is a rule of thumb** (~1 pH/µm ≈ 1 nH/mm partial self-inductance of an
+  on-chip/package wire) — stated as such, not extracted.
+
+**What it means for the VCO (Item 1d).** The tail current (~1 mA) returns through
+**ISS**, not GND, so the VCO's own GND current is small (bulk/well leakage +
+displacement); the 12 mV is essentially a **common-mode** shift of the shared on-chip
+ground, which the differential tank (472–568 mV) rejects to first order. As a DC bias
+shift on the varactor reference it moves the frequency ~10 MHz (0.2 %), retunable via
+VTUNE. The 175 pH / 5.5 Ω of added return reactance is **common-mode** and, crucially,
+is dwarfed by the unavoidable **VSSA bond-wire inductance** (~1 nH → ~31 Ω @5 GHz — the
+on-chip spur is <20 % of it).
+
+**Verdict (Item 1e): the ground penalty at dx=200 does NOT change the placement.**
+12 mV DC IR and 175 pH are small absolutely, common-mode to the differential VCO, and
+a minor fraction of the bond inductance. If even 12 mV is unwanted, widening the west
+ground spur to ~30 µm (or stacking M4+M5) halves it to ~6 mV — trivial. **dx=200
+stands.** The honest, boring conclusion: ground does not materially decide this.
+
+## 3d. Pad ordering — a better assignment exists (Item 2)
+
+info.yaml's pin ORDER sets which output lands on which north slot (x145/245/345/445),
+and it is ours to choose. Sweeping all 24 orderings at dx=200/dy=262.5 (taps: I_N/Q_N
+left x2.18, I_P/Q_P right x235.18):
+
+| order @ x145,245,345,445 | I/Q spread | matched (4×max) | total | crossings |
+|--------------------------|-----------:|----------------:|------:|-----------|
+| I_P,I_N,Q_P,Q_N (current) | 288 | 2000 | 1428 | 3 |
+| **Q_N,I_N,I_P,Q_P (proposed)** | **58** | **1077** | **962** | **0** |
+| Q_N,I_P,I_N,Q_P | 47 | 1256 | 1162 | 1 |
+| I_P,Q_P,Q_N,I_N | 14 (min) | 1656 | 1628 | 4 |
+
+**Proposed reorder: Q_N, I_N, I_P, Q_P** (left-taps → left-pads). It nearly **halves
+the matched wire (2000 → 1077 µm)**, cuts spread 288 → 58, and **removes all three
+crossings** — the left/right tap order now matches the pad order. Rail-break rule
+holds: all four stay in the analog north slots between CP_OUT and VDDD. **Cost
+(Item 2b):** it splits the differential Q pair to opposite ends (Q_N x145, Q_P x445),
+but these are **single-ended monitor outputs** (each buffered into its own 1 kΩ→50 Ω
+instrument), measured individually — so adjacency is an organizational nicety, not an
+electrical cost, and length-matching (which the reorder improves) is what preserves
+quadrature accuracy. The min-spread ordering (I_P,Q_P,Q_N,I_N, spread 14) is rejected:
+it needs ~1656 µm of matched wire (more loss) and 4 crossings.
+
+**PROPOSED info.yaml change (record for after Friday — NOT edited): reorder the four
+outputs to Q_N, I_N, I_P, Q_P across the north analog slots.** Re-confirm against the
+regenerated DEF's slot map first.
+
+## 3e. RF loading the outputs will actually see (Item 3)
+
+Length-matching gives each output on-chip wire that no sim included. Added
+capacitance, using the VCO-load figure **0.08 fF/µm for a 0.4 µm wire** (assumed
+**M3**, the signal haul layer):
+- current ordering, ~500 µm matched → **40 fF/output**;
+- **proposed reorder, ~269 µm matched → ~21.5 fF/output.**
+
+Effect on the recorded **157 mVpp** monitor (1 kΩ R_SER into 50 Ω, 300 fF pad C): the
+added C shunts the pad node, but 50 Ω dominates the load there, so at 3 GHz
+(VCO ÷2 upper band) |Z_load| falls only 48.1 → 47.6 Ω with +40 fF — a **~1 % amplitude
+drop (157 → ~155 mVpp)**; with the reorder's +21.5 fF it is **~0.6 %** (~156 mVpp).
+**The outputs remain usable** for divide-ratio (amplitude essentially unchanged) and
+quadrature accuracy (the matched length holds the I-to-Q skew). **Characterized
+limitation:** on-chip routing adds ~40 fF (~21.5 fF reordered) per output, ~1 %
+(~0.6 %) monitor-amplitude loss at 3 GHz — negligible, recorded here alongside the
+existing VCO load-pull, I/Q offset, and DIV2 EM items.
+
+---
 
 ### DIEAREA & pin rects → `chip_merge.py` frame
 - **DBU already matches.** `chip_merge` sets `master.dbu = 0.005` (200/µm); the DEF
@@ -355,12 +436,37 @@ Roughly **6–8 rungs** — a phase comparable in effort to phase-7 routing, dom
 by rung 4 (RF haul routing) and rung 7 (padframe-level LVS). Several are gated on
 Friday's VSSD/pin-list decision.
 
+### Matched-quad dry-run at real coordinates (2026-08-21, Item 4)
+
+Rehearsed `route_lib.matched_route` on the four real taps, the four BH pad rects, the
+chosen placement (dx=200/dy=262.5), and the **proposed** ordering (§3d), in a
+throwaway cell (`team_src/magic/analysis/phase8_dryrun.py`):
+- **Length matching EXACT** — all four routed to **269.260 µm** (err < 1e-3 µm).
+- **magic DRC 0; KLayout signoff PASS (0 violations)** on the throwaway cell.
+- Route bbox (167,314)–(468,549) µm **overlaps** both the y[180,205] power band
+  (DIEAREA y421.5–446.5) and the top blocks ibias/CP/PFD (DIEAREA y466.5–534.5).
+
+**Verdict: phase 8 is a ROUTING job, not a floorplan-impossible one — with one
+placement caveat.** The primitives produce exact, DRC-clean matched routes; the
+proposed reorder makes the hauls **mostly vertical risers** (taps ≈ under their pads)
+with only ~58 µm of serpentine. The band overlap is benign — the M3 signal hauls cross
+the M5 band on a **different layer** (no short, the phase-7 discipline). The real
+constraint is that the risers must thread **clear columns** between the top blocks
+(as phase 7 did), and at **dy=262.5 the core is packed to the north edge**, leaving no
+clear horizontal channel — the lanes/serpentine land over the top blocks. **Refinement:
+lower the core (~dy 160–180) to open an ~80–110 µm clear channel above it** for the
+horizontal lanes + serpentine + pad landing, at the cost of ~80–110 µm of extra
+(still-matched) haul each. So the placement is a joint optimum of I/Q haul length **and**
+haul-channel room, not haul length alone — settle the exact dy against the regenerated
+DEF and the confirmed clear-column map next session.
+
 ---
 
-## 5. Regression baseline (re-run 2026-08-21)
+## 5. Regression baseline (re-run 2026-08-21, twice)
 
-`verify_cp` re-run, all exit 0 (unchanged — this session added only route_lib
-primitives + docs + file moves, no geometry/flow change):
+`verify_cp` re-run, all exit 0 (unchanged — the ground/ordering/RF-loading analysis,
+the matched-quad dry-run, and the docs made no geometry/schematic/flow change;
+route_lib was exercised, not modified):
 
 | cell | DRC | LVS |
 |------|-----|-----|
