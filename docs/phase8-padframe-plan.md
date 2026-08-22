@@ -731,6 +731,53 @@ routing style (which is now fixed).
 
 ---
 
+## 3l. The in-context extraction works — and it caught a tap-to-block short in the "closed" quad (2026-08-22, 6th session)
+
+§3j claimed a full in-context extract was impossible (flat extract shorts the inductor).
+**That was wrong** — the repo already had the mechanism: `chip_top.abstract` +
+`verify_extract.tcl` preload the `vco_varactors` + `vco_inductor_v2` abstracts with
+`gds noduplicates true`, so `gds read` keeps the geometry-free abstract instead of traversing
+the spiral. `reh_phase8.gds` instances that same `chip_top` cell (subhierarchy intact —
+verified with `cell_list.py`), so the identical preload extracts the rehearsal **in full
+context** without the inductor merging OUT_p/OUT_n. Harness: `analysis/reh_ctx_extract.tcl`.
+
+**It immediately caught a real short the routes-only gate (§3i) had declared clean.** Extract
+the same `chip_top` cell in two contexts and compare its exposed ports:
+- `reh_base` (no routes): chip_top → **12 clean ports** (`… I_P I_N Q_P Q_N …`).
+- `reh_phase8` (with the §3i routes): chip_top → **14 ports** — the two
+  `DIV2_QUAD_v1_0/ib_conv_v1_{0,3}/a_8764_6964#` internal **bias nodes** exposed and **bridged
+  to `I_P` / `Q_P`**. The chip_top instance line tied both port 9 (`a_8764#`) and port 10
+  (`I_P`) to net `I_P`, and both port 11 and port 13 to `Q_P`.
+
+The geometry is identical between the two runs; the only difference is the four routes, so the
+**I_P and Q_P hauls shorted the DIV2 output to an ib_conv bias node.** Cause: I_P/Q_P escaped
+on an **M1 hwire** running east from the tap, straight across the `a_8764_6964#` M1 node. Q_N/I_N
+(M3-at-pin escape, no M1 hwire) were clean. This is invisible to DRC (an *overlap* leaves no
+spacing gap) and to the routes-only extract (`a_8764#` lives inside chip_top, absent from
+`reh_routes`). It reconciles with §3i rather than overturning it: the §3i four-part gate passed
+*as stated*, but its part 3 (routes-only extraction) was explicitly flagged as unable to see
+tap-to-block shorts — this harness is exactly the tool that closes that gap.
+
+**Fix (both right nets):**
+- **I_P/Q_P → M3-at-pin escape** (`escl=3`, no M1 hwire) removes the bias-node bridge.
+- **I_P `novia=True`:** the I_P output pin is a **full via stack** (M1→via1→M2→via2→M3→via3→M4;
+  `_iqtaps.py`), so adding our own via1/via2 tripped **V1.2a/V2.2a** against the pin's vias.
+  Instead the M3 route **lands on the pin's existing M3** (its eastward first segment overlaps
+  it) with no new via. Q_P/Q_N/I_N pins are **M1-only**, so they keep the via_stack (collision-free).
+
+**The corrected quad gate (dx200/dy200), now five parts:**
+| gate part | reh_base | reh_phase8 | verdict |
+|-----------|----------|------------|---------|
+| magic DRC total | 84 | **84** | 0 added |
+| KLayout signoff variant-D | PASS, 168 waived | PASS, **168** | identical |
+| routes-only extraction | 0 nodes | **4 nodes** | +4 nets |
+| **full in-context** chip_top ports | 12 clean | **12 clean** | no bias node exposed |
+| **full in-context** output→net map | — | I_P→I_P, Q_N→Q_N, I_N→I_N, Q_P→Q_P | **each distinct from every block net** |
+
+Matched length unchanged at **433.76 µm** (all four, err 0.0000). **Lesson recorded:** the
+in-context extraction is now the real distinctness gate; the routes-only extract is necessary
+but not sufficient. Every subsequent haul (Items below) is gated with `reh_ctx_extract.tcl`.
+
 ## 5. Regression baseline (re-run 2026-08-21, five sessions)
 
 `verify_cp` re-run 5th session, all exit 0 / RESULT PASS. This session touched only

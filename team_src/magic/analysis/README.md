@@ -42,8 +42,18 @@ gates it four ways. NOT the flow — a sandbox to de-risk the escape/serpentine 
   the left DIV2-output risers to clear DIV2's M1 frame).
 - `reh_drc.tcl` / `reh_why.tcl` — magic DRC of a reh cell (env `REH_CELL`); `reh_why.tcl` dumps
   per-rule violation boxes in µm. Gate: reh_phase8 == reh_base == 84 (the vco PL.5a baseline).
-- `reh_extract.tcl` — extracts `reh_routes.gds` → node count + `.subckt` ports (the distinct-net
-  proof; it caught a DRC-clean silent short, §3i).
+- `reh_extract.tcl` — extracts `reh_routes.gds` (routes only) → node count + `.subckt` ports.
+  Necessary but NOT sufficient: it cannot see a haul shorting to a *block* net (§3l).
+- `reh_ctx_extract.tcl` — FULL in-context extraction using the SAME abstract preload as
+  `chip_top.abstract` (`gds noduplicates true` + `load vco_varactors vco_inductor_v2`), so the
+  spiral is black-boxed and the extract sees haul nets AND block nets. Compare chip_top's exposed
+  ports vs `reh_base`: a haul that bridges a block internal node shows up as that node exposed +
+  tied to the haul (this is how the I_P/Q_P → `a_8764_6964#` short was caught, §3l). Env
+  REH_CELL, CTX_OUT. **This is the real distinct-net gate.**
+- `cell_list.py` — prints a GDS's cell hierarchy (env GDSF); verify the abstract subcells survive
+  before trusting an abstract-preload extract.
+- `iq_tap_layers.py` — pin-layer stack at each of the 4 I/Q taps (I_P is a full via stack up to
+  M4 → land on its M3, `novia`; the other three are M1-only → via_stack).
 - `ring_corridor.py` — every layer in the GND-ring left segment + the escape corridors west of
   DIV2 (proved the ring is M5-only and the "2.5 µm slot" is an artifact, §3i, Item 1).
 - `tap_layers.py` — pin layer present at each block tap (VDDA/IBIAS/ISS/VTUNE/CP_OUT/VDDD/REF_IN).

@@ -35,8 +35,11 @@ PLAN = {   # escl = escape layer (3 = via at the M1 pin then escape ON M3, past 
  "I_N": dict(esc=-2.3,  escl=3, jog=None,             lane=d(0,300)[1]),   # M3 esc west, riser die 199.9 (EAST)
  # Q_N riser MUST be west of I_N's: I_N's escape (higher y) sweeps west to its riser and would
  # cross-and-SHORT Q_N's riser if Q_N sat east of it (DRC-clean overlap, caught only by extraction).
- "I_P": dict(esc=+11.0, escl=1, jog=(385.0, d(0,190)[1]), lane=d(0,308)[1]),  # LOW jog y390, WEST col 385, lane 508
- "Q_P": dict(esc=+17.0, escl=1, jog=(400.0, d(0,198)[1]), lane=d(0,316)[1]),  # HIGH jog y398, EAST col 400, lane 516
+ "I_P": dict(esc=+11.0, escl=3, novia=True, jog=(385.0, d(0,190)[1]), lane=d(0,308)[1]),  # LOW jog y390, WEST col 385, lane 508 -- pin is a full via stack (land on its M3)
+ "Q_P": dict(esc=+17.0, escl=3, jog=(400.0, d(0,198)[1]), lane=d(0,316)[1]),  # HIGH jog y398, EAST col 400, lane 516
+ # I_P/Q_P escl=3 (M3 at the pin, no M1 escape hwire): the M1 hwire ran east across the
+ # ib_conv_v1_0/_3 a_8764_6964# bias node and SHORTED it to the output -- a tap-to-block short
+ # invisible to DRC and to the routes-only extract, caught only by the in-context extraction (§3l).
 }
 
 def m3_pts(net, ser_extra):
@@ -75,8 +78,11 @@ for net in PAD:
     tx, ty = TAP[net]; px = PAD[net]; p = PLAN[net]
     ser = 0.0 if NOSER else (target - base[net])
     pts, esc_x = m3_pts(net, ser)
-    if p["escl"] == 3:
-        R.via_stack(top, ly, 1, 3, tx, ty)              # M1 pin -> M3 AT the tap (no M1 near DIV2 frame)
+    if p.get("novia"):
+        pass  # tap pin already reaches M3 (full via stack): land the M3 route on it, add NO
+              # via1/via2 of our own -- a duplicate via stack trips V1.2a/V2.2a against the pin's.
+    elif p["escl"] == 3:
+        R.via_stack(top, ly, 1, 3, tx, ty)              # M1-only pin -> M3 AT the tap
     else:
         R.hwire(top, ly, 1, tx, esc_x, ty, w=0.4)       # M1 escape
         R.via_stack(top, ly, 1, 3, esc_x, ty)
