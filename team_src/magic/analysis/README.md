@@ -31,3 +31,23 @@ and `gds/chip_top.gds`. Produce the numbers in `docs/phase8-padframe-plan.md`.
   the Manhattan hauls to the BH north pads for a given core placement (Item 2).
 - `core_placement.py` — sweeps the core offset (dx,dy) inside the BH 1110×550
   DIEAREA → I/Q spread, matched length, serpentine budget, vco→pad hauls (§3b/Item 3).
+
+## Phase-8 in-context rehearsal + gate (§3h/§3i/§3j, 4th–5th session)
+The rehearsal instances `chip_top` in a throwaway cell and routes the matched I/Q quad, then
+gates it four ways. NOT the flow — a sandbox to de-risk the escape/serpentine geometry.
+- `phase8_incontext.py` — builds `gds/reh_phase8.gds` (chip_top + 4 routes), `gds/reh_base.gds`
+  (blocks only), and `gds/reh_routes.gds` (the 4 routes with NO instance, for a clean
+  routes-only extraction). Env: `PHASE8_DY` (default 200), `PHASE8_NOSER` (base lengths only).
+  `PLAN[*]["escl"]` picks the escape layer (3 = via at the M1 pin then escape on M3, used for
+  the left DIV2-output risers to clear DIV2's M1 frame).
+- `reh_drc.tcl` / `reh_why.tcl` — magic DRC of a reh cell (env `REH_CELL`); `reh_why.tcl` dumps
+  per-rule violation boxes in µm. Gate: reh_phase8 == reh_base == 84 (the vco PL.5a baseline).
+- `reh_extract.tcl` — extracts `reh_routes.gds` → node count + `.subckt` ports (the distinct-net
+  proof; it caught a DRC-clean silent short, §3i).
+- `ring_corridor.py` — every layer in the GND-ring left segment + the escape corridors west of
+  DIV2 (proved the ring is M5-only and the "2.5 µm slot" is an artifact, §3i, Item 1).
+- `tap_layers.py` — pin layer present at each block tap (VDDA/IBIAS/ISS/VTUNE/CP_OUT/VDDD/REF_IN).
+- `vco_tap_escape.py` — scans upward from the vco TUNE/ISS taps → the inductor M5 enclosure that
+  blocks a clean escape (§3j, why Item 3 stops at VTUNE).
+- Waivers `reh_base.waivers` / `reh_phase8.waivers` (one dir up) mirror `chip_top.waivers`
+  (PL.5a_LV/PL.5b_LV) for the KLayout signoff gate.

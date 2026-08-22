@@ -608,20 +608,143 @@ inter-layer (power on M4/M5 over signals on M2/M3) or perimeter — benign.
 
 ---
 
-## 5. Regression baseline (re-run 2026-08-21, four sessions)
+## 3i. Ring characterized, quad closes to a clean gate (2026-08-21, 5th session)
 
-`verify_cp` re-run, all exit 0 (unchanged — the ground/ordering/RF-loading analysis,
-the matched-quad dry-run, and the docs made no geometry/schematic/flow change;
-route_lib was exercised, not modified):
+The 4th-session §3h "2.5 µm slot / M3.2a against the ring" conclusion was **wrong about the
+mechanism** and is superseded here. Characterizing the ring layer stack and running the
+actual gate (not inferring it) both changed the answer.
 
-| cell | DRC | LVS |
-|------|-----|-----|
-| chip_top | 0 | match uniquely |
-| PFD_lib | 0 | match uniquely |
-| CP_v1 | 0 | match uniquely |
-| ibias_gen_v1 | 0 | match uniquely |
-| DIV2_QUAD_v1 | 0 | match uniquely |
-| vco_v1 | 0 | match uniquely |
+### The GND ring is M5-only — the "2.5 µm slot" is an artifact (Item 1)
+Queried every layer in the ring's left segment and at the M3.2a corner
+(`analysis/ring_corridor.py`, chip coords):
+- **At the ring corner (chip x[−12,2], y[262,285]): only M5 (layer 81) + the 0/0 boundary.**
+  No M1/M2/M3/M4, no vias. The ring is a plain 15 µm M5 loop (chip x −17.5…−2.5).
+- **West of DIV2 (chip x<0) is empty on M1–M4** except that M5 ring. DIV2's edge M1 frame
+  starts at chip x0.18; its only M2/M3 is a single via stack **at** the tap (chip y≈49),
+  none west of it.
+- Therefore a riser on M1/M2/M3 sits freely anywhere west of DIV2's M1 (>0.28 µm clear) out
+  over the M5 ring — **M3-vs-M5 has no spacing rule.** The left riser was never boxed into a
+  2.5 µm slot; it was **escaping on M1 hard against DIV2's M1 frame** (the real M1.2a).
+
+### What the rehearsal actually violated, and the fix (Item 1b)
+With the map-derived escapes, `reh_phase8` = 87 (84 baseline **+3**), all route-vs-route,
+**none against the ring**:
+- **M1.2a** at die (200.2, 252): the Q_N tap-escape M1 pad abutting DIV2's M1 frame. →
+  **Fix:** via M1→M3 **at the tap pin** and escape on **M3** (past the frame; no M1 painted
+  near it). `PLAN[*]["escl"]=3` for the two left nets.
+- **M3.2a** at die (388, 508): my own I_P lane crossing my own Q_P riser at the right jog. →
+  **Fix:** reorder the two jogs — I_P low-jog + west column (x385, lane 508), Q_P high-jog +
+  east column (x400, lane 516) — so no lane crosses a riser.
+
+### The extraction earned its keep — a DRC-clean silent short (Item 2c)
+"M3.2a is a spacing rule, so no merge" was **sound reasoning and still wrong** — so we ran
+the diff. Extracting the **routes-only** cell (`reh_routes.gds` = the top-cell shapes = the
+4 hauls, no instance; `analysis/reh_extract.tcl`) first gave **3 nodes**, ports
+`Q_N I_P Q_P` — **I_N had merged into Q_N.** The two left escapes *overlapped* (0 gap →
+no M3.2a spacing violation, same layer → no width violation) where I_N's higher-y escape
+swept west across Q_N's riser. **Fix:** order the left risers **west-to-east** (Q_N riser
+west of I_N's) so neither escape crosses the other's riser.
+
+### The clean gate (all four parts, dx=200/dy=200)
+| gate part | reh_base (blocks only) | reh_phase8 (+4 hauls) | verdict |
+|-----------|------------------------|-----------------------|---------|
+| magic DRC total (`reh_drc.tcl`) | 84 (all PL.5a in vco_varactors) | **84** | **0 added** |
+| KLayout signoff variant-D (`klayout_signoff.py`) | PASS, 168 waived (84 PL.5a_LV+84 PL.5b_LV) | PASS, **168** waived | identical |
+| extraction node count, routes-only | 0 | **4** | diff = +4 nets |
+| distinct nets (`.subckt` ports) | — | `Q_N I_N I_P Q_P` | **4 distinct** |
+
+The quad **closes to a clean gate in context.** The escape/jog placement is the build work;
+the length-matching primitive is exact (all four = **433.76 µm**, error 0.0000).
+
+### Extending to the other hauls — where the rehearsal stops (Item 3)
+Order attempted: VTUNE, ISS, IBIAS, CP_OUT, VDDD, REF_IN(+PU/PD), VSSA, VDDA. **It stops
+at the first one, VTUNE — and the reason is structural, not a routing tweak.**
+
+**Why the IQ quad closed and these do not:** the four IQ taps sit at block *edges* — Q_N/I_N
+at chip x2.18 are west of ibias's M3 (x14.8), so they escape west on M3 into open die; I_P/Q_P
+jog out of CP into the validated x381–404 gap. The remaining hauls originate **inside** their
+blocks. Measured escapes (`analysis/vco_tap_escape.py`, `tap_layers.py`, chip coords):
+- **VTUNE** tap chip(358.68,66.70), M1: **enclosed by the vco inductor** — M5 spiral fills
+  y90–186 above it, vco M3 reaches up to y≈89 and the OUT-lead M5 to x472; the tap x is
+  inside vco M3 (x358.5–419.8). Any riser at the tap crosses live vco M5/M3, and a westward
+  exit at the tap's low y (66.7) crosses DIV2 M3 (x2–235.4) — there is **no clear band at
+  y≈66**; the clear bands are all at y174–287.5, above the block bodies. A coupling-safe
+  VTUNE (KVCO 822 MHz/V, §3h) must *not* rise through the inductor at all.
+- **ISS** tap chip(395.84,60.33): same inductor enclosure (M5 y92–196).
+- **IBIAS** chip(71.30,223.90) and **VDDA** chip(74.16,231.60): inside the ibias body;
+  a drop on M3 at the tap x crosses ibias M3 (x14.8–177.8).
+
+**The escape from a block-interior tap needs the block's port/net context** — to tell a
+same-net touch (safe: it *is* the TUNE/ISS/IBIAS net) from a cross-net short. The generic
+rehearsal router does not encode that. §3g already showed each of these has a clear *path*
+once escaped (open west/north die); turning the escape itself into DRC-clean, short-free
+geometry is **per-block build work**, not a sandbox primitive.
+
+**A second, independent limit:** the rehearsal's verification is a **routes-only** extraction
+(the 4 hauls with no chip_top instance). That proves the *routes* don't merge each other, but
+it **cannot** catch a haul shorting to a *block* net — and same-layer overlap is invisible to
+DRC (only spacing/width fire). Catching tap-to-block distinctness needs the **full LVS-abstract
+flow** (the Bailey LEF-abstract extraction, `analysis/bailey_pass2_extract.tcl`), because a
+flat full-cell extraction shorts the inductor's OUT_p/OUT_n. So the honest gate for the
+single-net hauls is LVS-in-context, not the routes-only rehearsal.
+
+**Verdict (Item 3d — do not force it):** the rehearsal closes the hard, matched, RF-critical
+IQ quad with a real four-part gate. The remaining eight single-net hauls are each a
+block-edge-escape problem that belongs in the real build (with block ports + LVS-in-context),
+and §3g establishes their paths are clear. The rehearsal has done its job — it de-risked the
+one case that genuinely needed geometry (the quad) and *measured* exactly what the others need.
+
+## 3k. What survives a pin-list change, and what must be redone (Item 4)
+
+Two things are still BLOCKED upstream (not this session's to decide): whether **VSSD** is
+required, and the **final pin list / order**. This records which phase-8 results survive a
+pin-list change and which must be regenerated.
+
+| result | survives a pin-list change? | why |
+|--------|:--:|-----|
+| **Core placement dx=200 / dy=200** | **SURVIVES** | set by block-to-die-edge clearance + the ground-return budget (§3c) + the clear-column geometry (§3f), none of which depends on which signal lands on which pad. A VSSD pad lands in the north digital island (§3g) without moving the core. |
+| **BH variant choice (1110×550)** | **SURVIVES** | driven by usable area + padring breaks (§1, §3), pin-list-independent. |
+| **Ground-return quantification (§3c)** | **SURVIVES** | M5 ring/spur R is a function of placement, not pinout. |
+| **RF output loading (§3e, ~40 fF/1%)** | **SURVIVES** | a property of the pad+ESD+haul length for an I/Q output; survives as long as I/Q stay on N-edge pads at similar haul length. |
+| **VTUNE/ISS coupling analysis (§3h)** | **SURVIVES** | depends on KVCO, the 15 kΩ tune R, and perpendicular routing discipline — not on pin assignment. Re-check only if VTUNE/ISS move to an edge that forces a parallel run past the aggressors. |
+| **The routing primitives (`route_lib.py`)** | **SURVIVES** | parameterized (endpoints in, length-matched path out); pin-list-independent by construction. |
+| **The escape *technique* per tap** (M3-at-pin for the DIV2 outputs; jog-into-gap for CP; the west-to-east left-riser ordering) | **SURVIVES** | a property of each *block tap's* local layer stack, which does not change when the pad it targets changes. |
+| **Matched length 433.76 µm** | **REDO** | it is `max(base)` over the four IQ nets for *this* pad assignment (Q_N→x167.5 … Q_P→x467.5) at dx200/dy200. Reorder the pads (e.g. the proposed Q_N,I_N,I_P,Q_P north order, §3d) and the per-net base lengths — hence the target — change. The *method* survives; the *number* is provisional. History: 269→332→458→433.76. |
+| **Per-net escape *coordinates* / lane assignment** | **REDO** | which lane (490/500/508/516) and which pad-x each net targets is pin-list-specific. |
+| **The channel/crossing budget (§3h table)** | **PARTIAL** | the clear columns/bands (§3f, from the blocks) survive; which net occupies which is redone. |
+| **Pad reorder proposal (§3d)** | **REDO/CONFIRM** | it *is* a pin-list proposal; it stands or is replaced when Friday fixes the pin list. |
+| **A VSSD haul** | **NEW if required** | not routed; §3g pre-analyzed its source (digital VSS taps, north island) so adding it is additive, not a re-baseline. |
+
+**One-line rule:** everything set by *placement + block geometry* survives; everything set by
+*which signal goes to which pad* is provisional. The rehearsal was built so the survivors are
+the expensive parts (geometry, primitives, technique) and the redo parts are cheap (re-run the
+matcher with the new endpoints).
+
+### Provisional matched length: 433.76 µm
+Down from the 4th-session ~458 µm because the left risers now escape M1→M3 **at the tap**
+(no M1 escape leg + shorter path) rather than an M1 escape then via. History:
+269 → 332 → 458 → **433.76**. It would move again if: core placement dx/dy changes; the pad
+reorder changes which physical pad each net targets; or the currently-longest net (Q_P base
+433.8, the pad target) changes. All four are padded to the longest base with serpentine in
+the clear side regions, so the **number is provisional on placement + pin list**, not on the
+routing style (which is now fixed).
+
+---
+
+## 5. Regression baseline (re-run 2026-08-21, five sessions)
+
+`verify_cp` re-run 5th session, all exit 0 / RESULT PASS. This session touched only
+`analysis/` scripts, `.waivers` for the throwaway reh cells, and docs — **route_lib.py was
+NOT modified**, and no block layout/schematic/flow file was touched:
+
+| cell | DRC | devices (LVS) | LVS |
+|------|-----|---------------|-----|
+| chip_top | 0 | 5 | match uniquely |
+| PFD_lib | 0 | 7 (+18 fill/decap) | match uniquely |
+| CP_v1 | 0 | 38 | match uniquely |
+| ibias_gen_v1 | 0 | 228 | match uniquely |
+| DIV2_QUAD_v1 | 0 | 149 | match uniquely |
+| vco_v1 | 0 | 4 | match uniquely |
 
 Known-good — the next session starts from here.
 
