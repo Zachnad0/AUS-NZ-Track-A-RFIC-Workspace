@@ -838,6 +838,106 @@ Matched length unchanged at **433.76 µm** (all four, err 0.0000). **Lesson reco
 in-context extraction is now the real distinctness gate; the routes-only extract is necessary
 but not sufficient. Every subsequent haul (Items below) is gated with `reh_ctx_extract.tcl`.
 
+## 3m. VTUNE is boxed; and the .ext trap that was quietly corrupting the baseline (2026-08-22, tapeout drive)
+
+### VTUNE: the tap is reachable, the rise is not (Item 2d)
+`phase8_incontext.py`'s `HAUL` table cited a section 3m that had never been written. Recording it:
+
+- **The TUNE tap IS accessible.** The gate pad sits *inside* the varactor comp ring, so a
+  lateral M1 escape shorts the ring to VSSA (caught by the in-context extract). Via **up**
+  (M1 -> M3) at the pad, then M3 west over the ring into the DIV2<->vco gap, is clean.
+- **The rise to the west pad is boxed.** The only M2/M3-clear rise columns are **x181-204**,
+  unreachable at low y because DIV2 blocks x<235.4, and **x288-397**, which sits under the
+  inductor spiral (M5 x290-472). The sole column clear of *both* is **x288-290** - about
+  2 um, 1 um off the spiral - i.e. a ~96 um M3 run beside the live inductor. Section 3h's
+  coupling work forbids exactly that for the tune node (KVCO 822 MHz/V).
+
+So the `VTUNE_tap` entry documents clean tap access only; the haul itself is unsolved and is
+**T3's hardest single-net route**, not a routing tweak. ISS is the same enclosure but is a DC
+tail node, so rising under the spiral is acceptable for it.
+
+### The `.ext` trap - same failure class as the silent I_N/Q_N short
+`team_src/magic/vco_inductor_v2/vco_inductor_v2.ext` is tracked and carries the **real**
+inductor extraction (`device rsubckt tm11k`, ports PORT1/PORT2). It was found modified in
+the working tree at the start of this drive, overwritten by a **geometry-free abstract** -
+no device, plus a new `GND` port.
+
+**It was not a one-off from an analysis script.** `verify_cp.sh` - the flow gate itself -
+reproduced the corruption on its very next run. The mechanism: **magic writes each cell's
+`.ext` beside the file that cell was loaded from, not to the current directory.** Both
+`verify_extract.tcl` and `reh_ctx_extract.tcl` `addpath` into the source tree to preload the
+abstracts, so `extract all` writes back into `team_src/magic/vco_inductor_v2/`.
+`reh_ctx_extract.tcl` already had a `cd /tmp` with a comment claiming it kept `.ext` files
+out of the repo - **`cd` does not do it**, which is why the comment was there and the file
+was corrupted anyway.
+
+This corrupts **in the direction that hides shorts**: the abstract drops the device and adds
+a port, so a later extraction diff compares against a baseline that has fewer things in it
+than the real cell. Same class as the DRC-clean I_N/Q_N merge in section 3i - a check that
+looks green because the thing it would have caught was silently removed from what it
+compares to.
+
+**Fix:** `extract path [pwd]` before `extract all` in both scripts, pinning the output
+directory. Verified: `verify_cp.sh chip_top` returns byte-identical results (DRC 0, 5
+devices, 12 ports, 21 nets, match uniquely) and the tracked `.ext` sha256 is **unchanged**
+across the run.
+
+### Regression (2026-08-22) - two cells, not six
+Only two cells had a reason to have moved, so only two were run. `PFD_lib`, `CP_v1`,
+`ibias_gen_v1` and `DIV2_QUAD_v1` were untouched and their section 5 results stand.
+
+| cell | DRC | devices | ports | nets | LVS | wall |
+|------|----:|--------:|------:|-----:|-----|-----:|
+| chip_top | 0 | 5 | 12 | 21 | match uniquely | 14.6 s |
+| vco_v1 | 0 | 4 | 6 | 11 | match uniquely | 11.2 s |
+
+`vco_v1` was re-run because its `.ext` had been disturbed and restored, so its last result
+was not trustworthy. Both match section 5.
+
+### **T4 baseline: chip_top blocks-only magic DRC = 84** (2026-08-22)
+Measured with `analysis/reh_drc.tcl` at `REH_CELL=chip_top` - full geometry, **no** abstract
+preload, which is the same rule set the phase-8 gate uses:
+
+```
+==== chip_top  TOTAL 84 ====
+  84  chip_top / vco_v1 / vco_varactors   (the same 84 counted hierarchically)
+```
+
+All 84 are the known `PL.5a` in `vco_varactors`. This is **identical to `reh_base`'s 84**, so
+the two baselines agree. **Every phase-8 DRC number is a delta against 84, never an
+absolute.** Note that `verify_cp.sh chip_top` reports **DRC 0** for the same GDS - it
+preloads the `vco_varactors` abstract, so the PL.5a geometry is not traversed. Two different
+numbers, two different rule sets; do not compare across them.
+
+*(Minor, unfixed: `reh_drc.tcl`'s per-rule printer has its `lindex` indices swapped - it
+prints the count where the rule name belongs - and its violation-box loop aborts on a
+non-numeric operand. The TOTAL is correct; the breakdown is mislabelled.)*
+
+### Break-before-VSSD is settled
+Confirmed from `padframe/A01/project_defs/BH/A01_BH_pad_map.yaml`:
+
+```yaml
+breaks:
+- instance: BRK_BEFORE_N06
+  reason: additional_power_ground_set
+  before_slot: N06        # = VDDD's slot in the 12-pin issue
+- instance: BRK_AFTER_BH
+  reason: project_boundary
+  after_slot: N07
+```
+
+BV shows the same pattern (`before_slot: N01`, `after_slot: N02`). The reason is
+`additional_power_ground_set` - the break fires before a power/**ground** *set*, not before a
+lone power pad - and Bailey approved an `info.yaml` whose digital group runs DVSS, signals,
+DVDD, which only validates under that reading. With VSSD inserted it becomes the set's first
+member, so the break should move to VSSD's slot.
+
+**Still verify when the regenerated DEF lands:** `breaks[0].before_slot` must name **VSSD's**
+slot, not VDDD's. If it names VDDD, VSSD is outside the digital island and must move to
+*after* VDDD. `in_c` landing at N08 remains genuinely open.
+
+---
+
 ## 5. Regression baseline (re-run 2026-08-21, five sessions)
 
 `verify_cp` re-run 5th session, all exit 0 / RESULT PASS. This session touched only

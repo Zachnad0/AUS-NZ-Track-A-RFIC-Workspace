@@ -42,6 +42,13 @@ set drccount [drc list count total]
 puts "VERIFY_DRC_COUNT=$drccount"
 
 # ---- Extract device-level netlist for LVS (no parasitics) ----
+# magic writes each cell's .ext BESIDE the file that cell was loaded from -- not to the
+# current directory. So an abstract preload that `addpath`s into the source tree makes
+# `extract all` overwrite TRACKED .ext files there, and it overwrites them with the
+# geometry-free abstract: the device (rsubckt tm11k) is dropped and a GND port appears.
+# That corrupts the baseline in the direction that HIDES shorts. Pin the output directory
+# instead; `cd` alone does not do it.
+extract path [pwd]
 extract all
 ext2spice lvs
 ext2spice -o $outsp
