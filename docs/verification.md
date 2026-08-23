@@ -733,3 +733,75 @@ Full analysis in `docs/div2-debug.md` (2026-08-10 section). Summary:
   caught only by dumping the waveform.
 
 DIV2 remains **CUT from the Aug-14 scope**; this is an Aug-21 item.
+
+---
+
+## 8. Chip-level DRC baseline (phase 8) — compare BOX SETS, not totals
+
+### 8.1 The rule
+**magic's `drc list count total` is frame-dependent and is NOT a valid gate across a frame
+change.** Seating `chip_top` inside the A01_BH DIEAREA on 2026-08-22 was a pure +200/+200
+translation — no geometry created, moved relative to anything, or deleted — yet the reported
+total went **84 → 106**. The violations themselves were bit-identical: **252 boxes on both
+sides, 0 added, 0 removed**, one rule (`PL.5a`, poly spacing to diffusion < 20). Magic
+re-attributes errors per cell when the parent frame moves.
+
+Proven three ways, not assumed:
+1. Three throwaway variants of the seated GDS through the same deck — 0/0 boundary layer
+   deleted → still 106; boundary restored at the old core extent → still 106; core
+   translated back −200/−200 → **84**. It tracks absolute position, not the boundary.
+2. Box-set multiset comparison after normalising the shift → **0 added, 0 removed**.
+3. KLayout, the actual signoff deck, reports **84 PL.5a_LV + 84 PL.5b_LV before and after** —
+   unchanged.
+
+> **A phase-8 "zero added violations" gate must compare the box set. A gate comparing totals
+> would have read this as 22 new violations and sent someone hunting a bug that does not
+> exist.**
+
+### 8.2 The committed baseline
+`team_src/magic/chip_top.drcbase` — the seated `chip_top` box set, regenerate with
+`analysis/drc_boxset.tcl`:
+
+| figure | value | frame |
+|--------|-------|-------|
+| magic total | **106** | seated (die frame, boundary 0,0–1110,550) |
+| violation boxes | **252** | seated |
+| rules | 1 — `Poly spacing to diffusion < 20 (PL.5a)` | — |
+| per-cell attribution | `vco_v1` 84, `vco_varactors` 84, `chip_top` 106 | seated |
+| magic total | **84** — **PRE-SEAT ONLY, do not compare against a seated run** | core frame (boundary −25,−21.5–497,287.5) |
+
+All 252 are the device-internal `nmoscap_3p3` errors inside `vco_varactors` — the same
+population as the **W4** KLayout waiver (168 = 84 PL.5a_LV + 84 PL.5b_LV).
+
+### 8.3 The tools
+- **`team_src/magic/analysis/drc_boxset.tcl`** — env `GDSF` (required), `CELL` (default
+  `chip_top`). Emits `TOTAL`, `CELLCOUNT <cell> <n>`, `RULE <n> <text>`, and one
+  `B x0 y0 x1 y1` per violation box in magic internal units (1 iu = 1 GDS dbu = 0.005 µm).
+- **`team_src/magic/analysis/drc_delta.py <baseline> <candidate> [--shift DX_IU DY_IU]`** —
+  compares the two dumps as **multisets**. `--shift` offsets the baseline so a core-frame
+  dump can be compared against a die-frame one (the +200/+200 seat is `--shift 40000 40000`).
+  Exit 0 iff the candidate adds no box; it also reports boxes that vanished, since that is a
+  change worth seeing too.
+
+Reference run reproducing §8.1:
+```
+$ drc_delta.py preseat.dump seated.dump --shift 40000 40000
+baseline : TOTAL=84   boxes=252  (shift +40000,+40000 iu applied)
+candidate: TOTAL=106  boxes=252
+NOTE: totals differ (84 -> 106). That alone means nothing ...
+ADDED   (in candidate, not in baseline): 0
+REMOVED (in baseline, not in candidate): 0
+RESULT: PASS -- no violation box in the candidate that the baseline lacks.
+```
+
+### 8.4 Do not compare across rule sets
+Three different chip-level DRC numbers exist for the same GDS and they are not
+interchangeable:
+
+| what | number | why it differs |
+|------|--------|----------------|
+| `verify_cp.sh chip_top` (magic) | **0** | preloads the `vco_varactors` + `vco_inductor_v2` abstracts, so the PL.5a geometry is never traversed |
+| `drc_boxset.tcl` (magic, full geometry) | **106 / 252 boxes** seated | no preload — this is the phase-8 haul gate |
+| `klayout_signoff.py chip_top` | **PASS, 168 waived** | the signoff deck; W4 waiver = 84 PL.5a_LV + 84 PL.5b_LV |
+
+A number from one row means nothing against a number from another.

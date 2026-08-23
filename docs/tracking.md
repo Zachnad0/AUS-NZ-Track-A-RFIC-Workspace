@@ -137,9 +137,18 @@ edited** (browser action, Greg's to hand-update).
 
 All 5 closed blocks instanced into `chip_top`; floorplan `docs/phase7-floorplan.md`.
 Block bbox-LL (µm): **DIV2(0,0) · vco(290,0) · ibias(0,205) · CP(210,205) · PFD(210,245)**.
-**Die bbox 472.00 × 270.25 µm** (matches floorplan). **magic DRC 0** (`chip_top.mag`);
+**Block-merge bbox 472.00 × 270.25 µm** (matches floorplan). **magic DRC 0** (`chip_top.mag`);
 **KLayout var-D (flat) = 168 = 84 PL.5a_LV + 84 PL.5b_LV = the W4 varactor waiver ONLY**;
 23 cells, top=chip_top, all 5 blocks + vco sub-hier + 12 gf180 std-cell leaves.
+
+> **SUPERSEDED BY PHASE 8 (2026-08-22) for the DELIVERABLE extent.** `route_chip.py` now
+> seats the core inside the A01_BH DIEAREA, so `gds/chip_top.gds` is **1110 × 550 µm**
+> with the core at (175.00,178.50)–(697.00,487.50). The 472 × 270.25 above is the
+> block-merge extent before the GND ring and boundary, and the 522 × 309 quoted elsewhere
+> is chip_top's standalone outline; both are **pre-seat** figures. Likewise any bare
+> **magic chip-level DRC total of 84 is PRE-SEAT ONLY** — the seated baseline is **106
+> total / 252 boxes**, and a zero delta means the same 252 boxes, not the same total.
+> See `docs/verification.md` §8 and `team_src/magic/chip_top.drcbase`.
 
 **KEY BUILD FACTS (locked in):**
 - **The deliverable `gds/chip_top.gds` is built by `team_src/magic/phase5/chip_merge.py`
