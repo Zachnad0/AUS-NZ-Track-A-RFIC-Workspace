@@ -1262,6 +1262,104 @@ raised as a question about vco_v1, not a finding.
 
 ---
 
+## 3q. EM limit looked up; allocation checked by tool, not by eye (2026-08-23)
+
+### The gf180 EM limit, and the ISS strap's margin
+The **open PDK ships no EM data** - no current-density table anywhere under
+`/foss/pdks/gf180mcuD/`, and the KLayout DRC decks are geometric only. The authoritative
+source is the GF180MCU design manual, **DRM 14.2 Electro-migration**
+(<https://gf180mcu-pdk.readthedocs.io/en/latest/physical_verification/design_manual/drm_14_2.html>),
+targeting T0.1 > 100 kHours at 85 C junction.
+
+**Metal 1 - (Top Metal - 1)**, i.e. M1-M4 in this stack, mA per um of drawn width:
+
+| junction T | unidirectional | bi-directional |
+|---|---:|---:|
+| 85 C | **2.09** | 3.14 |
+| 110 C | **1.00** | 1.50 |
+| 125 C | **0.67** | 1.00 |
+
+Contacts/vias, mA per cut: Via1-5 **0.58 / 0.28 / 0.18** at 85 / 110 / 125 C.
+
+**The vco_v1 ISS strap: 0.40 um M2 carrying up to 1.57 mA.** Tail current is DC, so the
+**unidirectional** column applies.
+
+| tap point | current in the strap | density | vs 85 C (2.09) | vs 110 C (1.00) | vs 125 C (0.67) |
+|-----------|---------------------:|--------:|---------------:|----------------:|----------------:|
+| one end (full current) | 1.57 mA | **3.93 mA/um** | **1.88x OVER** | 3.93x OVER | 5.87x OVER |
+| **midpoint** (x~600, the 6.6 um gap between the two 6-finger clusters) | 0.785 mA | **1.96 mA/um** | **passes, 6 % margin** | 1.96x OVER | 2.93x OVER |
+
+Width required for the full 1.57 mA: **0.751 um** at 85 C, 1.57 um at 110 C, **2.34 um** at
+125 C. The strap is 0.40 um.
+
+**Everything else in the ISS path passes:** the 12 via1 cuts carry 0.131 mA each against a
+0.18 mA limit at 125 C (27 % margin); the 12 M1 source fingers run 0.344 mA/um against 0.67
+(49 % margin at 125 C); and our own haul at 8-10 um is 0.157-0.196 mA/um, two decades clear.
+**The 0.40 um M2 strap is the sole violator.**
+
+Two things follow, neither acted on yet (Greg, 2026-08-23: report the limit, do not act):
+- **Tapping the strap at its midpoint is worth ~2x** and is free - it is where our haul attaches,
+  and the 6.6 um gap between the finger clusters is the natural landing anyway. That alone
+  clears 85 C.
+- **The fix, if the junction spec is 110 or 125 C, is widening ONE shape** in `vco_v1` from
+  0.40 um to ~1.6-2.4 um - a one-shape edit plus a re-gate of vco_v1 and chip_top, **not** the
+  3-5 day block redesign of 3p option (C). Feasibility of widening (which way the strap can grow
+  past the M1 fingers at y260.13-265.32) has not been checked.
+
+### The allocation is now checked by a tool
+Greg caught an **M5-on-M5 short in 3p's own re-allocation**: VSSA descending on M5 at
+x112.5-127.5 y82.5-190 and the ISS south lane on M5 at y135-145 overlap at
+x112.5-127.5, y135-145. It was real. It is the third time this class of bug has appeared
+(3i I_N/Q_N, 3l I_P/Q_P, now this) and the second time in a plan written to prevent it.
+
+`analysis/lane_conflicts.py` now holds the allocation **as data** and checks it two ways:
+1. **net vs net**, every pair of segments on the same layer, rectangle overlap;
+2. **net vs existing chip geometry**, on that segment's **own layer only** - a different-layer
+   crossing is benign, a same-layer one is a short.
+
+Same-layer overlap at zero gap is invisible to DRC (no gap, no spacing violation), which is
+exactly why both earlier shorts passed a clean DRC. This runs before metal is cut.
+
+**Result on the corrected allocation: 0 net-vs-net overlaps; 1 net-vs-chip same-layer touch,
+and that one is VSSA's M5 extension meeting the GND ring - same net, intended.** Every other
+segment is clear on its own layer.
+
+### Corrected allocation (supersedes 3o's ISS lane and 3p's first attempt)
+The insight that resolves it: **VSSA descends left-and-down while ISS rises left-and-up, so on a
+single layer they must cross exactly once.** Rather than move them apart - which the geometry
+does not allow, since any ISS riser west of x175 must cross VSSA's path somewhere - **ISS hops to
+M4 for 20 um across VSSA's descent** and returns to M5. That crossing costs 2 squares of M4,
+0.18 ohm.
+
+| net | layer | segment (die um) | width |
+|-----|-------|------------------|------:|
+| VTUNE | M3 | (558.68,266.70)->(465,266.70)->(465,165)->(10,165)->(10,482.5) | 0.4 |
+| | M2 | ->(0.5,482.5); stub y460.34-504.66 | 0.4 / 1.0 |
+| IBIAS | M3 | (271.30,423.90)->(34,423.90)->(34,282.5) | 0.4 |
+| | M2 | ->(0.5,282.5); stub y260.34-304.66 | 0.4 / 1.0 |
+| VDDA | M4 | (256,399)->(46,399)->(46,205) | 3.0 |
+| | M2 | ->(0.5,205); stub y146.36-218.64 | 3.0 / 1.0 |
+| VSSA | M5 | (175,190)->(120,190)->(120,82.5)->(16,82.5) | 15 / 15 / 9.5 |
+| | M2 | ->(0.5,82.5); stub y46.36-118.64 | 9.5 / 1.0 |
+| **ISS** | M2 | (587.04,260.33)->(490,260.33) escape west | **8.0** |
+| | M4 | ->(455,260.33)->(455,140) gap descent, M4 **through the ring band** | 10.0 |
+| | M5 | ->(130,140) south lane | 10.0 |
+| | **M4** | ->(110,140) **the one deliberate crossing, over VSSA's descent** | 10.0 |
+| | M5 | ->(90,140)->(90,382.5)->(16,382.5) riser west of VSSA | 10.0 |
+| | M2 | ->(0.5,382.5); stub y360.34-404.66 | 10.0 / 1.0 |
+
+The **8 um ISS escape is measured M2-clear** for the full 97 um from x490 to x587.04 - so the
+escape does not have to be a 0.4 um thread either.
+
+### T6 candidate (NOT this week): a tail decap from ISS to VSSA
+Shunting 2f0 locally makes the ~876 pH haul inductance far less consequential, and MOS-cap or
+MIM area in the free die adds comp/poly/metal coverage against the density floors that are still
+unsolved - two problems, one structure. It needs a **golden-netlist change**, so it cannot ride
+this week's push. Recorded here as a final-data candidate alongside the secondary-ESD clamps and
+density fill.
+
+---
+
 ## 4. T2 DONE - the core is seated in the A01_BH DIEAREA (2026-08-22)
 
 `gds/chip_top.gds` now **is** the padframe block: boundary exactly `(0,0)-(1110,550) um` =
