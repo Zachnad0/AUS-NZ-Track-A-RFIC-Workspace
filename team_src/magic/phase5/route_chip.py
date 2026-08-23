@@ -302,6 +302,142 @@ err = max(iq_final.values()) - min(iq_final.values())
 print("IQ matched: all four %.3f um, spread %.4f um" % (IQ_TARGET, err))
 assert err < 1e-3, "I/Q length matching broke: spread %.4f um" % err
 
+# --- PHASE 8 (b): VSSA -- extend the GND ring west to the W18 pad ----------------------------
+# CORE coords (die = core + 200). The ring's own bottom segment already reaches core x-25, so
+# the spur starts there and is the SAME net -- the one intended same-layer touch in the
+# allocation. M5 the whole way (40 mohm/sq, the chip's entire ~26 mA ground returns here),
+# dropping to M2 only for the pad itself, because the pin rectangles are Metal2.
+# The pad landing is a BAR across the whole finger column, not a drop at the slot centre:
+# W18 is 6 dvss fingers x 9.5 um spanning die y46.36-118.64, and the centre y82.500 sits in a
+# 3.28 um GAP between fingers 3 and 4 (plan doc 3s). A centre drop touches nothing, DRC-clean
+# and LVS-clean.
+VSSA_Y   = -10.0        # core y of the ring bottom centreline (die 190)
+VSSA_XW  = -80.0        # core x where the spur turns south (die 120)
+VSSA_YP  = -117.5       # core y of the pad approach (die 82.5)
+VSSA_XV  = -184.0       # core x of the M5->M2 via (die 16)
+R.hwire(chip, ly, 5, -25.0, VSSA_XW, VSSA_Y,  w=15.0)          # ring bottom -> west
+R.vwire(chip, ly, 5, VSSA_YP, VSSA_Y, VSSA_XW, w=15.0)         # south to the pad row
+R.hwire(chip, ly, 5, VSSA_XV, VSSA_XW, VSSA_YP, w=9.5)         # west to the via column
+# One M2 PLATE from the via column out to the die edge, covering the whole finger column.
+# NOT an hwire + a separate bar: R.hwire extends half its width past each endpoint, so an
+# hwire ending at core x-199.5 (die 0.5) reached die -4.25 -- outside the DIEAREA.
+R.via_stack(chip, ly, 2, 5, VSSA_XV - 2.0, VSSA_YP)            # via INSIDE the plate (x<XV)
+R.box(chip, ly, (36, 0), -200.0, -153.64, VSSA_XV, -81.36)     # die x0-16, y46.36-118.64
+chip.shapes(ly.layer(36, 10)).insert(pya.DText("VSSA", pya.DTrans(pya.DVector(-199.5, VSSA_YP))))
+print("(b) VSSA: ring spur %.1f um M5 + %.1f um M2 to the W18 finger bar (die y46.36-118.64)"
+      % (abs(-25.0 - VSSA_XW) + abs(VSSA_Y - VSSA_YP) + abs(VSSA_XW - VSSA_XV), abs(VSSA_XV + 199.5)))
+
+# --- PHASE 8 (c): VTUNE -- route (a), out of the core SOUTH and round through free die -------
+# CORE coords. Plan doc 3n: 3m called this "boxed", which was true only while chip_top was
+# 522 x 309. Seated, the DIV2<->vco gap (die x437.36-490, 52.6 um) is open all the way down and
+# the die south of y178.5 and west of x175 is empty. The route crosses NOTHING but the GND ring
+# on M5, and M3-vs-M5 has no spacing rule.
+# The tap sits INSIDE the varactor comp ring, so it escapes by via UP at the gate pad, never
+# laterally on M1 -- a lateral M1 escape shorts the ring to VSSA.
+# The riser is held at core x-190 (die 10), NOT at the pad column: the west pin rectangles all
+# sit at die x[0,1], so a riser run up the pad column would short VTUNE to IBIAS, ISS, VDDA and
+# VSSA on the way past (plan doc 3o).
+VT_TAP  = (358.68, 66.70)      # die (558.68, 266.70), M1
+VT_PTS  = [VT_TAP, (265.0, 66.70), (265.0, -35.0), (-190.0, -35.0), (-190.0, 282.5)]
+R.via_stack(chip, ly, 1, 3, VT_TAP[0], VT_TAP[1])              # M1 -> M3 AT the gate pad
+R.route_path(chip, ly, 3, VT_PTS, w=0.4)
+R.via_stack(chip, ly, 2, 3, -190.0, 282.5)
+R.box(chip, ly, (36, 0), -200.0, 260.34, -186.0, 304.66)       # W22 finger-column plate
+chip.shapes(ly.layer(36, 10)).insert(pya.DText("VTUNE", pya.DTrans(pya.DVector(-199.5, 282.5))))
+print("(c) VTUNE: %.2f um M3, crossings = GND ring M5 only" % R.path_length(VT_PTS))
+
+# --- PHASE 8 (d): VDDA on M4, IBIAS on M3 with an M4 hop -------------------------------------
+# VDDA leaves its own M5 bus and goes west on M4, NOT M5: the GND ring's left segment is M5 at
+# die x182.50-197.50 spanning the full height, so an M5 run west at die y399 would short VDDA to
+# GND. Measured, not assumed (plan doc 3o).
+# The VDDA M5 bus spans die x258.5-606.5 (core 58.5-406.5). 3o said to tap it at die x256 --
+# which is 2.5 um WEST of the bus end, so the via landed on nothing and the whole VDDA haul
+# extracted as a disconnected node (VDDA_uq0). Tap at core x60 (die 260), inside the bus.
+R.via_stack(chip, ly, 4, 5, 60.0, 199.0)                       # onto the VDDA M5 bus, die (260,399)
+R.hwire(chip, ly, 4, -154.0, 60.0, 199.0, w=3.0)               # west across the ring on M4
+R.vwire(chip, ly, 4, 5.0, 199.0, -154.0, w=3.0)                # south to the pad row
+# MSLOT.1 caps metal at 30 um wide without slotting, and it is measured in BOTH axes. A plate
+# spanning the 72.28 um finger column AND reaching the via at core x-154 would be 48 x 72.28
+# and violates. KLayout signoff caught it; magic did not. Plate stays 18 um wide and a 3 um
+# feeder reaches the via.
+R.via_stack(chip, ly, 2, 4, -154.0, 5.0)
+R.hwire(chip, ly, 2, -184.0, -154.0, 5.0, w=3.0)               # feeder, plate -> via
+R.box(chip, ly, (36, 0), -200.0, -53.64, -182.0, 18.64)        # W19 finger-column plate, 18 um
+chip.shapes(ly.layer(36, 10)).insert(pya.DText("VDDA", pya.DTrans(pya.DVector(-199.5, 5.0))))
+print("(d) VDDA: %.2f um M4 west+down, crosses the GND ring left segment on M4" % (210.0 + 194.0))
+
+# IBIAS escapes on M3 at its OWN tap y (die 423.90): that line carries M2 x11, M1 x2, M4 x1,
+# M5 x3 westward but NO M3, so an M3 escape crosses only other layers. The cleaner-looking
+# die y450 line is NOT M3-clear -- layer-specific clearance decides, not total clutter.
+# The escape must then cross the Q_N (die x198.58) and I_N (die x199.88) M3 risers: IBIAS's tap
+# is east of them and its pad is west, so no re-route avoids it. M4 is clear at die x193-206,
+# so it hops M3 -> M4 -> M3 across that span. Found by analysis/lane_conflicts.py BEFORE this
+# metal existed, as two 0.40 x 0.40 um M3-on-M3 overlaps.
+IB_TAP = (71.30, 223.90)       # die (271.30, 423.90), M2
+R.via_stack(chip, ly, 2, 3, IB_TAP[0], IB_TAP[1])              # M2 pin -> M3 at the tap
+R.hwire(chip, ly, 3, 4.0, IB_TAP[0], IB_TAP[1], w=0.4)         # M3 west to die x204
+R.via_stack(chip, ly, 3, 4, 4.0, IB_TAP[1])
+R.hwire(chip, ly, 4, -7.0, 4.0, IB_TAP[1], w=0.4)              # M4 hop over the two quad risers
+R.via_stack(chip, ly, 3, 4, -7.0, IB_TAP[1])
+R.route_path(chip, ly, 3, [(-7.0, IB_TAP[1]), (-166.0, IB_TAP[1]), (-166.0, 82.5)], w=0.4)
+R.via_stack(chip, ly, 2, 3, -166.0, 82.5)
+R.hwire(chip, ly, 2, -184.0, -166.0, 82.5, w=2.0)              # feeder, plate -> via (MSLOT.1)
+R.box(chip, ly, (36, 0), -200.0, 60.34, -182.0, 104.66)        # W20 finger-column plate, 18 um
+chip.shapes(ly.layer(36, 10)).insert(pya.DText("IBIAS", pya.DTrans(pya.DVector(-199.5, 82.5))))
+print("(d) IBIAS: %.2f um, M4 hop x193-204 over the Q_N/I_N risers"
+      % (IB_TAP[0] - 4.0 + 11.0 + (4.0 + 166.0 - 7.0) + (IB_TAP[1] - 82.5)))
+
+# --- PHASE 8 (e): ISS -- the VCO TAIL RETURN, so a bus, not a signal thread ------------------
+# ISS is the common source of the cross-coupled nfet pair (golden: XM1/XM4 "OUT_p OUT_n ISS
+# GND"), i.e. the tail node, carrying 1.24-1.57 mA DC plus the 2f0 component -- NOT a bias
+# reference. At 0.4 um the ~876 um haul would be 191 ohm and drop 300 mV. Built per Greg's
+# option A: >=10 um M5, ~3.4 ohm, ~5 mV. The ~876 pH of added tail inductance is recorded as a
+# characterized limitation whose SIGN IS UNESTABLISHED -- there is no PSS/HB in the open flow.
+# M4 wherever it must cross M5: the gap descent crosses the GND ring band, and the west run
+# crosses VSSA's own M5 descent. VSSA goes left-and-down while ISS goes left-and-up, so on one
+# layer they must cross exactly once; no spatial separation avoids it (plan doc 3q).
+# The escape is 5.0 um centred core y61.8 (die 261.8), NOT 8.0 um centred on the strap. There
+# is an OTHER-NET M2 rail 1.16 um below the strap -- die y258.69-258.97, x587.10-612.77 -- and
+# an 8 um bus centred on the strap spans die y256.33-264.33, straight through it. That merged
+# ISS into the chip ground: LVS went 21 nets -> 20 and netgen showed the layout's ISS net
+# carrying PFD_lib/VSS, vco_v1/GND, ibias/VSS, DIV2/VSS and CP/VSS. DRC-clean, because a merge
+# leaves no gap to space against. The 5 um bus sits between that rail (0.33 um clearance) and
+# the next M2 north at die y266.12 (1.79 um), still overlaps the strap at y260.13-260.53, and
+# at 0.314 mA/um is two decades inside the EM limit.
+# EM WIDEN of the vco_v1 ISS strap, done at TOP LEVEL rather than by editing vco_v1.
+# The strap is 0.40 um M2 carrying up to 1.57 mA = 3.93 mA/um, against a DRM 14.2
+# unidirectional limit of 2.09 / 1.00 / 0.67 mA/um at 85 / 110 / 125 C -- over at every
+# temperature. Painting M2 over it at chip level merges with it on the same layer and widens
+# the same conductor, which is electrically identical to editing the cell but does NOT touch
+# gds/vco_v1.gds, so vco_v1 keeps its sign-off and chip_top.drcbase needs no re-baseline.
+# Window measured first: nearest other-net M2 is y258.97 below and y266.12 above, and there
+# are ZERO via2 in the window; the 12 via1 at y260.20-260.46 are ISS's own and stay covered.
+# 3.0 um -> 0.523 mA/um: 4.0x margin at 85 C, 1.91x at 110 C, 1.28x at 125 C.
+R.box(chip, ly, (36, 0), 387.04, 59.9, 412.83, 62.9)           # die x587.04-612.83, 3.0 um
+R.hwire(chip, ly, 2, 290.0, 387.04, 61.8, w=5.0)               # M2 escape west out of the vco
+R.via_stack(chip, ly, 2, 4, 290.0, 61.8)
+R.hwire(chip, ly, 4, 255.0, 290.0, 61.8, w=10.0)               # into the DIV2<->vco gap
+R.vwire(chip, ly, 4, -60.0, 61.8, 255.0, w=10.0)               # descent -- M4 THROUGH the ring
+R.via_stack(chip, ly, 4, 5, 255.0, -60.0)
+# R.hwire EXTENDS HALF ITS WIDTH past each endpoint. At w=10 that is 5 um, so an M5 lane
+# nominally ending at die x130 actually reaches x125 -- inside VSSA's M5 descent at die
+# x112.5-127.5 -- and merges ISS into the whole ground ring. DRC-clean (a merge leaves no gap
+# to space against); caught by the LVS port/net count, 21 nets -> 20. The M5 ends are pulled
+# back so the EXTENDED ends clear VSSA's descent by >=0.3 um on both sides: east M5 stops at
+# die x135 (reaches 130), west M5 starts at die x105 (reaches 110), M4 spans 135 -> 105.
+R.hwire(chip, ly, 5, -65.0, 255.0, -60.0, w=10.0)              # south lane, die y135-145
+R.via_stack(chip, ly, 4, 5, -65.0, -60.0)
+R.hwire(chip, ly, 4, -95.0, -65.0, -60.0, w=10.0)              # hop over VSSA's M5 descent
+R.via_stack(chip, ly, 4, 5, -95.0, -60.0)
+R.hwire(chip, ly, 5, -110.0, -95.0, -60.0, w=10.0)
+R.vwire(chip, ly, 5, -60.0, 182.5, -110.0, w=10.0)             # riser, die x85-95
+R.hwire(chip, ly, 5, -186.0, -110.0, 182.5, w=10.0)
+R.via_stack(chip, ly, 2, 5, -186.0, 182.5)
+R.box(chip, ly, (36, 0), -200.0, 160.34, -182.0, 204.66)       # W21 finger-column plate
+chip.shapes(ly.layer(36, 10)).insert(pya.DText("ISS", pya.DTrans(pya.DVector(-199.5, 182.5))))
+print("(e) ISS: %.2f um bus (M2 8um / M4 10um / M5 10um), one M4 hop over VSSA's descent"
+      % (97.04 + 35.0 + 120.33 + 325.0 + 20.0 + 20.0 + 242.5 + 76.0))
+
 # --- PHASE 8 FRAME: seat the core in the padframe DIEAREA and draw the 0/0 boundary AT it ---
 # Bailey, 2026-08-21: "the width and the height should be the exact size of the block size
 # specified for the pad frame blocks." A01_BH.def (padframe/A01/project_defs/BH/) says

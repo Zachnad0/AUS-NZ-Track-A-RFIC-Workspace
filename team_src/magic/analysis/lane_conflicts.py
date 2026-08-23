@@ -51,7 +51,7 @@ SEG = [
     # ---- VSSA : M5 spur off the ring bottom ----
     ("VSSA",  "M5", 175.00, 190.00, 120.00, 190.00, 15.0),
     ("VSSA",  "M5", 120.00, 190.00, 120.00,  82.50, 15.0),
-    ("VSSA",  "M5", 120.00,  82.50,  16.00,  82.50, 9.5),
+    ("VSSA",  "M5", 120.00,  82.50,  14.00,  82.50, 9.5),
     ("VSSA",  "M2",  16.00,  82.50,   0.50,  82.50, 9.5),
     ("VSSA",  "M2",   0.50,  46.36,   0.50, 118.64, 1.0),
 
@@ -59,12 +59,12 @@ SEG = [
     ("ISS",   "M2", 587.04, 260.33, 490.00, 260.33, 8.0),   # escape west out of the vco
     ("ISS",   "M4", 490.00, 260.33, 455.00, 260.33, 10.0),  # into the gap
     ("ISS",   "M4", 455.00, 260.33, 455.00, 140.00, 10.0),  # gap descent -- M4 THROUGH the ring band
-    ("ISS",   "M5", 455.00, 140.00, 130.00, 140.00, 10.0),  # south lane, M5
-    ("ISS",   "M4", 130.00, 140.00, 110.00, 140.00, 10.0),  # <-- the ONE deliberate crossing:
+    ("ISS",   "M5", 455.00, 140.00, 135.00, 140.00, 10.0),  # south lane, M5
+    ("ISS",   "M4", 135.00, 140.00, 105.00, 140.00, 10.0),  # <-- the ONE deliberate crossing:
                                                             #     hop to M4 across VSSA's M5 descent
-    ("ISS",   "M5", 110.00, 140.00,  90.00, 140.00, 10.0),
+    ("ISS",   "M5", 105.00, 140.00,  90.00, 140.00, 10.0),
     ("ISS",   "M5",  90.00, 140.00,  90.00, 382.50, 10.0),  # riser, west of VSSA's descent
-    ("ISS",   "M5",  90.00, 382.50,  16.00, 382.50, 10.0),
+    ("ISS",   "M5",  90.00, 382.50,  14.00, 382.50, 10.0),
     ("ISS",   "M2",  16.00, 382.50,   0.50, 382.50, 10.0),
     ("ISS",   "M2",   0.50, 360.34,   0.50, 404.66, 1.0),
 
@@ -76,13 +76,13 @@ SEG = [
     # ordering buys. Model them honestly so the checker can see that.
     ("Q_N", "M3", 202.18, 251.92, 198.58, 251.92, 0.4),    # escape, M3 at the pin
     ("Q_N", "M3", 198.58, 251.92, 198.58, 490.00, 0.4),    # riser (WEST of I_N's -- 3i)
-    ("Q_N", "M3", 198.58, 490.00, 167.50, 490.00, 12.4),   # lane + serpentine envelope
+    ("Q_N", "M3", 198.58, 490.00, 167.50, 490.00, 12.4, 0.2),   # lane + serpentine envelope
     ("Q_N", "M2", 167.50, 490.00, 167.50, 549.00, 0.4),
     ("Q_N", "M2", 145.34, 549.00, 189.66, 549.00, 1.0),    # N02 finger-row landing bar
 
     ("I_N", "M3", 202.18, 340.27, 199.88, 340.27, 0.4),
     ("I_N", "M3", 199.88, 340.27, 199.88, 500.00, 0.4),    # riser (EAST of Q_N's)
-    ("I_N", "M3", 199.88, 500.00, 267.50, 500.00, 12.4),
+    ("I_N", "M3", 199.88, 500.00, 267.50, 500.00, 12.4, 0.2),
     ("I_N", "M2", 267.50, 500.00, 267.50, 549.00, 0.4),
     ("I_N", "M2", 245.34, 549.00, 289.66, 549.00, 1.0),    # N03
 
@@ -90,7 +90,7 @@ SEG = [
     ("I_P", "M3", 446.18, 340.27, 446.18, 390.00, 0.4),    #  pin's own M3, no via1/via2 of ours)
     ("I_P", "M3", 446.18, 390.00, 385.00, 390.00, 0.4),    # LOW jog -> west column
     ("I_P", "M3", 385.00, 390.00, 385.00, 508.00, 0.4),
-    ("I_P", "M3", 385.00, 508.00, 367.50, 508.00, 12.4),
+    ("I_P", "M3", 385.00, 508.00, 367.50, 508.00, 12.4, 0.2),
     ("I_P", "M2", 367.50, 508.00, 367.50, 549.00, 0.4),
     ("I_P", "M2", 345.34, 549.00, 389.66, 549.00, 1.0),    # N04
 
@@ -121,10 +121,21 @@ SEG = [
 ]
 
 
-def rect(x0, y0, x1, y1, w):
-    if abs(y1 - y0) > abs(x1 - x0):          # vertical
-        return pya.DBox(min(x0, x1) - w / 2, min(y0, y1), max(x0, x1) + w / 2, max(y0, y1))
-    return pya.DBox(min(x0, x1), min(y0, y1) - w / 2, max(x0, x1), max(y0, y1) + w / 2)
+def rect(x0, y0, x1, y1, w, ext=None):
+    """The rectangle R.hwire/R.vwire actually paint for this centreline.
+
+    THEY EXTEND HALF THE WIDTH PAST EACH ENDPOINT, not just to the sides. `ext` overrides that
+    for the serpentine ENVELOPE bands, whose 12.4 um height is the meander excursion but whose
+    metal is still a 0.4 um trace -- so they extend 0.2 um at the ends, not 6.2. Modelling only the
+    sides is what let the ISS south lane merge into VSSA's M5 descent: nominally it ended at
+    die x130, clear of VSSA at x112.5-127.5, but at w=10 it really reached x125. DRC-clean,
+    because a merge leaves no gap to space against; caught only by the LVS net count.
+    """
+    h = w / 2.0
+    e = h if ext is None else ext          # end extension, separate from side half-width
+    if abs(y1 - y0) > abs(x1 - x0):        # vertical run: ends are top/bottom
+        return pya.DBox(min(x0, x1) - h, min(y0, y1) - e, max(x0, x1) + h, max(y0, y1) + e)
+    return pya.DBox(min(x0, x1) - e, min(y0, y1) - h, max(x0, x1) + e, max(y0, y1) + h)
 
 
 print("=== (1) NET vs NET, same layer ===")

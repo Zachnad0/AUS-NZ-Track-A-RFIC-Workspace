@@ -1462,6 +1462,123 @@ six numbers verified against the regenerated DEF before anything lands on them.
 
 ---
 
+## 3t. (b)-(e) BUILT: VSSA, VTUNE, VDDA, IBIAS, ISS - and the four bugs they exposed (2026-08-23)
+
+All five west nets are routed into `chip_top` and the assembled chip passes every gate. **Four
+real defects surfaced during the build; none of them was found by magic DRC.** They are recorded
+in full because each is a distinct trap.
+
+### Final state
+| net | route | length |
+|-----|-------|-------:|
+| VSSA | M5 ring-bottom spur west, south at die x120, M2 plate on the W18 finger column | 266.5 M5 + plate |
+| VTUNE | via up at the gate pad, M3 west, south through the gap, west at die y165, riser die x10 | **967.88** |
+| VDDA | via4 onto the M5 bus at die x260, M4 west across the ring, M4 down, M2 feeder + plate | 404.0 |
+| IBIAS | M3 at the tap y423.90, M4 hop over the quad risers, M3 west + down, M2 feeder + plate | 382.7 |
+| ISS | 5 um M2 escape, 10 um M4 gap descent, 10 um M5 lane/riser, M4 hop over VSSA | 935.9 |
+
+### Gate on the assembled chip
+| check | result |
+|-------|--------|
+| magic DRC box set vs `chip_top.drcbase` | 106 / 252 boxes, **0 added, 0 removed** |
+| KLayout signoff | **PASS**, 168 waived (84 PL.5a_LV + 84 PL.5b_LV) |
+| extraction devices / **ports** / nets | 5 / **12** / 21 |
+| LVS | **match uniquely**, zero disconnected nodes |
+| `check_placement` | CONSISTENT |
+| `analysis/lane_conflicts.py` | 0 net-vs-net same-layer overlaps |
+
+### Bug 1 - `R.hwire` extends half its width past each endpoint
+Not documented anywhere, and it bites in proportion to wire width. The **VSSA** M2 leg nominally
+ending at die x0.5 actually reached **x-4.25**, outside the DIEAREA. The **ISS** M5 south lane
+nominally ending at die x130, clear of VSSA's descent at x112.5-127.5, actually reached **x125**
+and **merged ISS into the entire ground ring**: LVS 21 nets -> 20, with netgen showing the
+layout's `ISS` net carrying `PFD_lib/VSS`, `vco_v1/GND`, `ibias/VSS`, `DIV2/VSS`, `CP/VSS`.
+DRC-clean, because a merge leaves no gap to space against.
+
+**`analysis/lane_conflicts.py` did not catch it either** - it modelled centrelines with a side
+width but no end extension. Fixed: `rect()` now extends by `w/2` on all four sides, with a
+separate `ext` override for the serpentine envelope bands (their 12.4 um height is meander
+excursion, but the metal is still a 0.4 um trace, so they extend 0.2 um at the ends, not 6.2).
+
+### Bug 2 - the ISS escape ran through an other-net M2 rail
+There is an **other-net M2 rail 1.16 um below the ISS strap** (die y258.69-258.97,
+x587.10-612.77). The first escape was 8.0 um centred on the strap, spanning die y256.33-264.33 -
+straight through it. Second merge of ISS into ground, same signature. **Fix:** 5.0 um centred
+die y261.8, sitting between that rail (0.93 um clear) and the next M2 north at y266.12 (3.22 um
+clear), still overlapping the strap. At 0.314 mA/um it is two decades inside the EM limit.
+
+### Bug 3 - two landing misses, exactly the 3s failure family
+Both showed up as **extra ports**, 12 -> 13, with netgen reporting `disconnected node`:
+- **`VSSA_uq0`** - the via to the pad plate sat at `VSSA_XV + 2.0`, i.e. **2 um outside** the
+  plate (which ends at `VSSA_XV`). Sign error. The plate connected to nothing.
+- **`VDDA_uq0`** - 3o said to tap the VDDA M5 bus at die x256. **The bus starts at x258.5.** The
+  via4 landed 2.5 um short of it and the whole VDDA haul extracted as a floating node.
+
+Both DRC-clean. Both caught only by the port count, which is why it is the distinctness check.
+3s generalised "the centre of a pin is a gap"; this generalises further: **any landing whose
+coordinate was taken from a plan rather than measured off the target is suspect.**
+
+### Bug 4 - MSLOT.1, caught by KLayout and invisible to magic
+**Maximum metal width without slotting is 30 um, measured in BOTH axes.** The first VDDA pad
+plate was 48 x 72.28 um and the IBIAS plate 36 x 44.32 um; both violate. magic DRC reported
+**zero** added violations for the same geometry - this is a KLayout-signoff-only rule. **Fix:**
+plates capped at **18 um** wide across the finger column, with a narrow M2 feeder out to the via.
+**Rule for anything built later: no pad plate wider than 30 um in both axes.**
+
+### The EM widen, done at top level instead of inside vco_v1
+The strap is 0.40 um M2 carrying up to 1.57 mA = **3.93 mA/um**, over the DRM 14.2
+unidirectional limit at **every** temperature (2.09 / 1.00 / 0.67 at 85 / 110 / 125 C).
+
+It is widened to **3.0 um by painting M2 over it from `route_chip.py`**, not by editing
+`vco_v1`. Same-layer paint merges with the strap and widens the same conductor, so the fix is
+electrically identical - but `gds/vco_v1.gds` is untouched, **vco_v1 keeps its sign-off, and
+`chip_top.drcbase` needs no re-baseline**, which is the whole reason the widen was scheduled as
+its own step. Measured before painting: nearest other-net M2 at y258.97 below and y266.12 above,
+**zero via2 in the window**, and the 12 via1 at y260.20-260.46 are ISS's own and stay covered.
+
+At 3.0 um the density is **0.523 mA/um**: **4.0x** margin at 85 C, **1.91x** at 110 C, **1.28x**
+at 125 C. Note the ISS bus already merges with the strap west of die x592.04, so only the
+eastern span needed the patch.
+
+**Residual, recorded not hidden:** `vco_v1` **standalone** still contains a 0.40 um ISS strap.
+That is only correct in the chip_top context, where the overlay exists. If vco_v1 is ever
+re-released as a standalone block the strap must be widened in the cell itself.
+
+---
+
+## 3u. BUILD LIST for VDDD, REF_IN and the PU/PD ties (blocked on the 13-pin DEF)
+
+Deliberately not started. This is a **build list, not a re-derivation** - every input below is
+already fixed, so when the DEF lands the only new work is drawing it.
+
+**Verify first (padframe/README.md), before drawing anything:**
+1. `A01_selected_variants.json` still offers **BH/BV**, not A. Layer 0/0 now reads exactly
+   1110 x 550, and an allocator using a strict inequality rather than "fits" could bump an
+   exact-size project a config. This is the expensive one.
+2. `A01_BH_pad_map.yaml` `breaks[0].before_slot` names **VSSD's** slot, not VDDD's.
+3. `in_c` lands at **N08**.
+4. The six predicted coordinates in 3s.
+
+**Then build:**
+| net | source | predicted landing | notes |
+|-----|--------|-------------------|-------|
+| VSSD | digital VSS taps - PFD.VSS die ~(433,457) or DIV2.VSS die ~(353,279) | N06 `dvss`, bar die x531.36-603.64, **centre +/- 36.14 um** | do NOT draw it from the VSSA ring; keeping the digital return local to that island is the point of the break (3g) |
+| VDDD | the M5 VDDD bus, die y382-394 x249-442 | N07 `dvdd`, bar die x631.36-703.64 | tap the bus **inside** its x range - bug 3 was exactly this mistake on VDDA |
+| REF_IN (Y) | PFD.REF, die (410.28,457.60) M3 | N08 `in_c`, **single 0.38 um finger** at die x733.76-734.14 | precision landing, no row to bar across |
+| REF_IN_PD | tie to **VDDD** (pull-down enable = 1) | single 0.38 um finger, die x794.29-794.67 | 2 |
+| REF_IN_PU | tie to **VSSD** (pull-up disable = 0) | single 0.38 um finger, die x798.65-799.03 | 2 |
+
+Notes: (1) `PU=0, PD=1` = weak pull-down, decided 2026-08-21 and re-confirmed against the PDK
+truth table (2). Both terminals must be driven - a floating CMOS control gate is not acceptable.
+**PD ties to VDDD and PU ties to VSSD**, the digital island's ground, **not VSSA**.
+(2) The in_c landings are the highest-risk geometry in the design: three separate pins in one
+slot, one 0.38 um shape each, and a 0.4 um wire centred 0.2 um off misses entirely while
+looking perfectly routed. Land them by measuring the finger, not by computing a slot centre.
+
+Every one of these gets a `lane_conflicts.py` segment before the metal is cut.
+
+---
+
 ## 4. T2 DONE - the core is seated in the A01_BH DIEAREA (2026-08-22)
 
 `gds/chip_top.gds` now **is** the padframe block: boundary exactly `(0,0)-(1110,550) um` =

@@ -805,3 +805,21 @@ interchangeable:
 | `klayout_signoff.py chip_top` | **PASS, 168 waived** | the signoff deck; W4 waiver = 84 PL.5a_LV + 84 PL.5b_LV |
 
 A number from one row means nothing against a number from another.
+
+### 8.5 Baseline status after the phase-8 west routing (2026-08-23)
+
+`team_src/magic/chip_top.drcbase` is **unchanged** and still valid, from the commit that created
+it. It was scheduled to be re-based after the ISS EM widen, on the expectation that widening the
+strap meant editing `gds/vco_v1.gds` and therefore re-merging a changed block into `chip_top`.
+
+**It did not need re-basing.** The widen was done by painting M2 over the strap from
+`route_chip.py` at top level: same-layer paint merges with the strap and widens the same
+conductor, so the fix is electrically identical to editing the cell, but no block GDS changed
+and the block-level box set is untouched. All of (a)-(e) plus the widen report **0 added, 0
+removed** against the existing baseline.
+
+Re-base only when a **block** GDS changes. Adding top-level metal does not require it - that is
+precisely the delta the gate is meant to measure.
+
+**Residual:** `vco_v1` standalone still has a 0.40 um ISS strap; only the chip_top context
+carries the overlay. Widen it in the cell if vco_v1 is ever re-released standalone.
