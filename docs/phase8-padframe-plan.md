@@ -101,6 +101,66 @@ which it did not. **Flag:** re-point the generator's `source_gds`/`top_cell` at
 `chip_top` before any future fit-check or a regenerated DEF, so the recorded
 project size is the real 522×309.
 
+### 1e. REGENERATED DEF package received 2026-08-22 (`A01.def (1).tgz`) — supersedes §1a–1d where they differ
+
+Greg supplied a **newer** package than the one §1 was written from. Extracted to the
+session scratchpad (analysis only, still not committed). What changed and what is now exact:
+
+- **§1d's stale-60×24 flag is RESOLVED.** `A01_selected_variants.json` and the interface
+  yamls now carry `source_gds .../gds/A01/chip_top.gds`, `top_cell: chip_top`,
+  `rectangle_dbu [-5000, -4300, 99400, 57500]` → **522 × 309 µm**. The generator is sized
+  from the real block. No action left on that flag.
+- **BH DIEAREA is exact:** `DIEAREA ( 0 0 ) ( 222000 110000 ) ;` at `UNITS DISTANCE MICRONS 200`
+  → **1110.000 × 550.000 µm**. `usable_area: 610500`, `origin_microns: [350, 2035]`,
+  **`vss_fixed: []`**, `blockages: []`, `routing_blockage_layers: Metal1…Metal5`.
+- **§1's pin table gave BOUNDING BOXES. The real pin rects are multi-finger** — this is a
+  routing fact, not a formatting detail. A haul must land on a finger, not on the bbox.
+
+| pin | slot | cell | fingers | finger w × h (µm) | bbox `translated_user` (µm) |
+|-----|------|------|--------:|-------------------|------------------------------|
+| VSSA | W18 | dvss | 6 | 1.000 × 9.500 | x0.00–1.00 y46.36–118.64 |
+| VDDA | W19 | dvdd | 6 | 1.000 × 9.500 | x0.00–1.00 y146.36–218.64 |
+| IBIAS | W20 | asig_5p0 | 8 | 1.000 × 2.540 | x0.00–1.00 y260.34–304.66 |
+| ISS | W21 | asig_5p0 | 8 | 1.000 × 2.540 | x0.00–1.00 y360.34–404.66 |
+| VTUNE | W22 | asig_5p0 | 8 | 1.000 × 2.540 | x0.00–1.00 y460.34–504.66 |
+| CP_OUT | N01 | asig_5p0 | 8 | 2.540 × 1.000 | x45.34–89.66 y549.00–550.00 |
+| I_P | N02 | asig_5p0 | 8 | 2.540 × 1.000 | x145.34–189.66 y549.00–550.00 |
+| I_N | N03 | asig_5p0 | 8 | 2.540 × 1.000 | x245.34–289.66 y549.00–550.00 |
+| Q_P | N04 | asig_5p0 | 8 | 2.540 × 1.000 | x345.34–389.66 y549.00–550.00 |
+| Q_N | N05 | asig_5p0 | 8 | 2.540 × 1.000 | x445.34–489.66 y549.00–550.00 |
+| VDDD | N06 | dvdd | 6 | 9.500 × 1.000 | x531.36–603.64 y549.00–550.00 |
+| REF_IN (Y) | N07 | in_c | 1 | 0.380 × 1.000 | x633.76–634.14 y549.00–550.00 |
+| REF_IN_PD | N07 | in_c | 1 | 0.380 × 1.000 | x694.29–694.67 y549.00–550.00 |
+| REF_IN_PU | N07 | in_c | 1 | 0.380 × 1.000 | x698.65–699.03 y549.00–550.00 |
+
+  All rects are **Metal2**, and each is only **1 µm deep** into the project (west pins
+  x[0,1]; north pins y[549,550]). The north slot pitch is **100 µm**; N01–N05 centres are
+  **67.5 / 167.5 / 267.5 / 367.5 / 467.5**, which is exactly what `phase8_incontext.py`
+  already targets. REF_IN's three fingers are **0.38 µm** wide — the narrowest landing in
+  the design.
+- **The padring `.cfg` fixes the slot CELL TYPES, and A01_BH owns 16 slots: W18–W22 +
+  N01–N11** (`user_slot_count: 16`; the 12-pin issue populates W18–W22 + N01–N07 only).
+  The generator assigns pins to slots **in info.yaml order** and derives each slot's cell
+  from `io_type` — W18 `dvss`←VSSA(ground), W19 `dvdd`←VDDA(power), N06 `dvdd`←VDDD,
+  N07 `in_c`←REF_IN. The two BREAKs in `A01_BH_padring.cfg` sit **immediately before N06
+  and immediately after N07**, which is the digital island §1c described.
+
+**VSSD lands cleanly, and it does NOT move the RF work (2026-08-22).** Inserting VSSD at
+pin index 10 (immediately before VDDD) makes it **N06 `dvss`** and pushes VDDD→N07,
+REF_IN→N08 — still inside A01's 16-slot allocation, 3 spare. Two consequences:
+- **N01–N05 do not move.** CP_OUT and the four I/Q pads keep x67.5/167.5/267.5/367.5/467.5
+  at y549–550, so the matched-quad geometry, the escapes, the lane assignment and the
+  provisional 433.76 µm are **unaffected by VSSD**. Only the VDDD and REF_IN hauls shift
+  **+100 µm east** (VDDD centre 567.5 → 667.5; REF_IN Y 633.76 → ~733.8).
+- **Why immediately-before-VDDD is the right slot:** Bailey's audit flags
+  `A01: group 2 missing ground: VDDD REF_IN` but does *not* flag group 1, and group 1's
+  ground (VSSA) is its **first** pin. VSSD placed first in group 2 reproduces exactly the
+  arrangement the audit already accepts.
+
+**Still to confirm against a regenerated DEF** (do not treat as settled): that the
+generator emits the BREAK *before* VSSD rather than between VSSD and VDDD, and that it
+emits `in_c` at N08. Both follow from the observed ordering rule, neither is proven.
+
 ---
 
 ## 2. REF_IN needs three connections (in_c PU/PD) — findings

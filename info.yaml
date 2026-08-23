@@ -19,10 +19,12 @@ project:
   lvs_config: "lvs/lvs_config.json"
 
 # ======================================================
-# Pad / pin list  (config B: 1/8 die, 16-pin total, 10 used, 6 spare)
-# Order = CLOCKWISE from bottom-left in the upper-left quadrant. VDDA first so all
-# seven analog pads sit on the analog rail; VDDD breaks the power ring so the digital
-# pad lands on the digital rail. Ground is a single chip-wide common (no pin).
+# Pad / pin list  (config B: 1/8 die, 16-pin total, 13 used, 3 spare)
+# SLOT VARIANT: BH -- 1110 x 550 um landscape (Greg 2026-08-22). Slots W18-W22 (west) +
+# N01-N08 (north). Order = CLOCKWISE from bottom-left. VSSA first so all the analog pads
+# sit on the analog rail (one padring island, VSSA+VDDA); VSSD/VDDD/REF_IN sit in the
+# north digital island behind the padring BREAK.
+#
 # RST_N and MON_OUT DROPPED 2026-08-20: DIV2_QUAD_v1 exposes no reset port (RST_N had
 # nowhere to land) and no block exposes a monitor tap (MON_OUT could only be a divider
 # phase at ~2.5 GHz, far too fast for a monitor pad). Dropping them avoids reopening any
@@ -31,13 +33,24 @@ project:
 # so the tail current stays controllable off-chip -- grounding it on-chip would change the
 # operating point away from the characterized 4.13-6.35 GHz band (simulated with a 1 mA tail
 # mirror driving ISS). Placed among the analog group so it lands on the analog rail.
-# GROUND PAD REQUIRED (Bailey 2026-08-20): "the first quadrant pin is a fixed down-bonded quiet
-# ground." VSSA (index 0) is that quiet ground. A second ground pad VSSD was considered, but the
-# layout has ONE ground net (all VSS ties to the shared p-substrate; no deep-nwell) and therefore
-# ONE ground PORT -- so the pin list is 12 to match the 12 layout ports exactly (an extra VSSD pin
-# would star as a missing port in Bailey's audit). The die still bonds ground at more than one ring
-# point; that is a bond/package detail, not a second pin here.
-# Source of truth: docs/pins.md (analog 8, digital 1, power 2, ground 1 = 12).
+# VSSA (index 0) is the quiet ground for the analog island (Bailey 2026-08-20: "the first
+# quadrant pin is a fixed down-bonded quiet ground").
+# VSSD added 2026-08-22: the padring's digital-domain BREAK isolates a VDDD-powered island
+# containing VDDD + REF_IN, and that island had NO ground pad -- Bailey's audit flags it as
+# "A01: group 2 missing ground: VDDD REF_IN". VSSD is placed immediately before VDDD so it
+# lands inside that island and supplies its ESD/return path locally. Electrically VSSA and
+# VSSD are ONE node on-chip (single p-substrate, no deep-nwell) and are shorted again
+# through the padring/substrate (Bailey 2026-08-21); the separation buys noise and
+# bond-inductance isolation, not DC isolation. The chip LVS golden therefore ties both
+# ports to a single internal node -- one net carrying two port labels.
+# I/Q PAD ORDER Q_N, I_N, I_P, Q_P (Greg 2026-08-22, docs/phase8-padframe-plan.md 3d):
+# left taps -> left pads. Matched wire 2000 -> ~1077 um, I/Q spread 288 -> 58 um, and all
+# three route crossings removed.
+# secondary_esd FALSE on the eight analog pins (Greg 2026-08-22) per Bailey: "Set the
+# secondary_esd to false, and then add it yourself to the circuit and layout." The eight
+# CDM clamps (diode perimeter > 25 um + > 50 ohm series poly R) are ours to add and are a
+# FINAL-data item, not an Aug 28 gate item.
+# Source of truth: docs/pins.md (analog 8, digital 1, power 2, ground 2 = 13).
 # ======================================================
 pins:
   - name: VSSA
@@ -46,28 +59,30 @@ pins:
     io_type: power
   - name: IBIAS
     io_type: analog
-    secondary_esd: true
+    secondary_esd: false
   - name: ISS
     io_type: analog
-    secondary_esd: true
+    secondary_esd: false
   - name: VTUNE
     io_type: analog
-    secondary_esd: true
+    secondary_esd: false
   - name: CP_OUT
     io_type: analog
-    secondary_esd: true
-  - name: I_P
-    io_type: analog
-    secondary_esd: true
-  - name: I_N
-    io_type: analog
-    secondary_esd: true
-  - name: Q_P
-    io_type: analog
-    secondary_esd: true
+    secondary_esd: false
   - name: Q_N
     io_type: analog
-    secondary_esd: true
+    secondary_esd: false
+  - name: I_N
+    io_type: analog
+    secondary_esd: false
+  - name: I_P
+    io_type: analog
+    secondary_esd: false
+  - name: Q_P
+    io_type: analog
+    secondary_esd: false
+  - name: VSSD
+    io_type: ground
   - name: VDDD
     io_type: power
   - name: REF_IN
