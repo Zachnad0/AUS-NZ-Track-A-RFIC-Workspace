@@ -101,6 +101,23 @@ SEG = [
     ("Q_P", "M3", 400.00, 516.00, 467.50, 516.00, 0.4),    # sets the target -> no serpentine
     ("Q_P", "M2", 467.50, 516.00, 467.50, 549.00, 0.4),
     ("Q_P", "M2", 445.34, 549.00, 489.66, 549.00, 1.0),    # N05
+
+    # ---- LANDING SHAPES for pins not yet routed. Segments too, not just routes (Greg
+    # 2026-08-23), so that whatever is routed later is checked against the metal that will
+    # have to exist at the pad. The gap test (analysis/pin_landings.py) says the nominal slot
+    # centre is in an inter-finger gap for ALL ELEVEN multi-finger pins -- so every one of
+    # these bars is load-bearing, not cosmetic. A bare drop at the centre touches nothing and
+    # is clean under both DRC and LVS.
+    ("CP_OUT", "M2",  45.34, 549.00,  89.66, 549.00, 1.0),   # N01, from the issued DEF
+
+    # PREDICTED positions -- the 13-pin DEF has not been issued. Verify before landing.
+    ("VSSD",   "M2", 531.36, 549.00, 603.64, 549.00, 1.0),   # N06, takes VDDD's present slot
+    ("VDDD",   "M2", 631.36, 549.00, 703.64, 549.00, 1.0),   # N07 (+100 um)
+    # in_c: THREE separate pins in one slot, ONE 0.38 um finger each. No row to bar across --
+    # these are precision landings, and a 0.4 um wire centred 0.2 um off misses entirely.
+    ("REF_IN",    "M2", 733.95, 549.00, 733.95, 550.00, 0.38),
+    ("REF_IN_PD", "M2", 794.48, 549.00, 794.48, 550.00, 0.38),
+    ("REF_IN_PU", "M2", 798.84, 549.00, 798.84, 550.00, 0.38),
 ]
 
 

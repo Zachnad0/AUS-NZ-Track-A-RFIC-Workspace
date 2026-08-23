@@ -1410,6 +1410,58 @@ class has been caught before the metal existed rather than after.
 
 ---
 
+## 3s. THE SLOT CENTRE IS ALWAYS IN A GAP - all eleven multi-finger pins (2026-08-23)
+
+3r found this on one pin and filed it as a quad fix. It is not. `analysis/pin_landings.py`
+runs the test on every pin in the issued DEF:
+
+> **All ELEVEN multi-finger pins have their nominal slot centre inside an inter-finger gap.
+> Not one is on metal.** A bare drop at the centre touches **nothing** - and that is
+> **DRC-clean** (nothing to space against), **LVS-clean** (the net still reaches its label), and
+> **dead on silicon**. Same failure family as the silent short: the check that would catch it is
+> not the check being run.
+
+It is systematic, not luck. The generator lays an **even** number of fingers symmetrically about
+the slot centre, so the centre is always the midpoint of the central gap.
+
+| pin | slot | cell | fingers | centre | gap it lands in |
+|-----|------|------|--------:|-------:|-----------------|
+| VSSA | W18 | dvss | 6 x 9.50 | y82.500 | **3.28 um** (80.860-84.140) |
+| VDDA | W19 | dvdd | 6 x 9.50 | y182.500 | **3.28 um** (180.860-184.140) |
+| IBIAS | W20 | asig | 8 x 2.54 | y282.500 | **5.16 um** (279.920-285.080) |
+| ISS | W21 | asig | 8 x 2.54 | y382.500 | **5.16 um** (379.920-385.080) |
+| VTUNE | W22 | asig | 8 x 2.54 | y482.500 | **5.16 um** (479.920-485.080) |
+| CP_OUT | N01 | asig | 8 x 2.54 | x67.500 | **5.16 um** (64.920-70.080) |
+| I_P | N02 | asig | 8 x 2.54 | x167.500 | **5.16 um** (164.920-170.080) |
+| I_N | N03 | asig | 8 x 2.54 | x267.500 | **5.16 um** (264.920-270.080) |
+| Q_P | N04 | asig | 8 x 2.54 | x367.500 | **5.16 um** (364.920-370.080) |
+| Q_N | N05 | asig | 8 x 2.54 | x467.500 | **5.16 um** (464.920-470.080) |
+| VDDD | N06 | dvdd | 6 x 9.50 | x567.500 | **3.28 um** (565.860-569.140) |
+| REF_IN_PU / _PD / Y | N07 | in_c | 1 x 0.38 each | on the finger | - (single shape) |
+
+### The three landing rules
+1. **`asig_5p0` - 10 pins.** 8 fingers x 2.54 um, pitch 5.68, one 5.16 um gap dead centre.
+   **One M2 bar across the row, centre +/- 22.16 um**, tying all 8. Already built for the quad.
+2. **`dvss` / `dvdd` - 3 pins** (VSSA, VDDD, and VSSD when issued). 6 fingers x 9.50 um, pitch
+   12.40, one 3.28 um gap dead centre. **One M2 bar, centre +/- 36.14 um.**
+3. **`in_c` - REF_IN, and it is the dangerous one.** Y, PU and PD are **three separate pins in
+   one slot**, each a **single 0.38 um finger** - Y at x633.76-634.14, PD at x694.29-694.67,
+   PU at x698.65-699.03 in the present issue. **There is no row to bar across.** Each is a
+   precision landing on one 0.38 um shape, and a 0.4 um wire centred 0.2 um off misses it
+   entirely while looking perfectly routed. Flagged now; built when the DEF lands.
+
+**Every landing shape is now a segment in `analysis/lane_conflicts.py`**, including the pins not
+yet routed, so anything routed later is checked against the metal that will have to exist at the
+pad rather than against empty space.
+
+### 13-pin regeneration - predicted, and to be verified not assumed
+N01-N05 and W18-W22 do not move. **VSSD -> N06** `dvss` x531.36-603.64 (takes VDDD's present
+slot geometry - `dvss` and `dvdd` share the 6 x 9.5 finger pattern); **VDDD -> N07**
+x631.36-703.64; **REF_IN -> N08**, Y x733.76-734.14, PD x794.29-794.67, PU x798.65-799.03. All
+six numbers verified against the regenerated DEF before anything lands on them.
+
+---
+
 ## 4. T2 DONE - the core is seated in the A01_BH DIEAREA (2026-08-22)
 
 `gds/chip_top.gds` now **is** the padframe block: boundary exactly `(0,0)-(1110,550) um` =
