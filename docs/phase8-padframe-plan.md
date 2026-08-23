@@ -938,6 +938,92 @@ slot, not VDDD's. If it names VDDD, VSSD is outside the digital island and must 
 
 ---
 
+## 4. T2 DONE - the core is seated in the A01_BH DIEAREA (2026-08-22)
+
+`gds/chip_top.gds` now **is** the padframe block: boundary exactly `(0,0)-(1110,550) um` =
+`(0,0)-(222000,110000)` dbu, the A01_BH `DIEAREA` verbatim.
+
+### How
+A final step in `route_chip.py`, after all routing, replacing the old
+"0/0 boundary at the true die extent" code:
+
+```python
+DX, DY = 200.0, 200.0            # core offset inside the die (3f)
+DIE_W, DIE_H = 1110.0, 550.0     # A01_BH DIEAREA, exact
+chip.transform(pya.DTrans(DX, DY))
+ly.clear_layer(ly.layer(0, 0))   # exactly one boundary, whatever was there before
+chip.shapes(ly.layer(0, 0)).insert(pya.DBox(0.0, 0.0, DIE_W, DIE_H))
+```
+
+Seating here rather than offsetting `chip_merge.py`'s `BLOCKS` table means **every routing
+coordinate above it stays core-frame and unchanged**, and `check_placement.py` keeps
+comparing core-frame to core-frame - verified still `PLACEMENT CONSISTENT`, exit 0, **no
+re-baseline needed**. A guard raises if the cell already looks seated (bbox LL x >= 0), so
+running `route_chip.py` twice cannot silently double-shift the core.
+
+### Measured, verified independently in KLayout
+```
+core frame  : (-25.00,-21.50)-(497.00,287.50)  522.0 x 309.0 um
+seated      : core occupies (175.00,178.50)-(697.00,487.50)
+top bbox    : (0,0)-(222000,110000) dbu   = (0.000,0.000)-(1110.000,550.000) um
+layer 0/0   : exactly 1 shape in chip_top, 0 in every other cell
+```
+The old 522 x 309 rectangle is **gone**, not coexisting - `clear_layer` guarantees it. dbu is
+0.005 um on both sides, so this was a pure translation, no scaling.
+
+### The four-part gate on the reframed cell
+
+| gate part | before reframe | after reframe | verdict |
+|-----------|----------------|---------------|---------|
+| KLayout signoff (the real signoff DRC) | PASS, 168 waived (84 PL.5a_LV + 84 PL.5b_LV) | PASS, **168 waived**, same split | **identical** |
+| `verify_cp.sh chip_top` DRC | 0 | **0** | identical |
+| extraction: devices / ports / nets | 5 / 12 / 21 | **5 / 12 / 21** | identical |
+| LVS | match uniquely | **match uniquely** | identical |
+| `check_placement.py` | CONSISTENT | **CONSISTENT** | identical |
+| magic hierarchical DRC count | 84 | **106** | **disagreed - investigated below** |
+
+### The magic 84 -> 106 count is an artifact. The violations did not change.
+Reported rather than papered over, because a DRC number disagreeing with a baseline is
+exactly the thing that must not be waved through. Three independent checks:
+
+1. **Isolation.** Three throwaway variants of the reframed GDS, same DRC deck:
+   - 0/0 boundary layer deleted entirely -> **106**
+   - 0/0 boundary put back at the old core extent -> **106**
+   - core translated back by -200/-200 -> **84**
+
+   So it is not the boundary rectangle at all. It tracks the **absolute position** of the
+   core, which cannot create or destroy a poly-to-diffusion spacing violation.
+
+2. **The violation set is bit-identical.** Dumped every error box from `drc listall why` for
+   the seated and the unseated cell, added +40000 dbu to each unseated coordinate, and
+   compared as multisets: **252 boxes both sides, 0 extra, 0 missing.** Same violations,
+   same places, same multiplicities.
+
+3. **KLayout agrees with the baseline, not with magic.** The signoff deck reports
+   **84 PL.5a_LV + 84 PL.5b_LV before and after** - unchanged.
+
+All 106 are the single known rule `PL.5a` (poly spacing to diffusion < 20), the device-internal
+`vco_varactors` errors that are waived at signoff. Magic's per-cell attribution shifts
+(`vco_varactors` 84, `vco_v1` 84, `chip_top` 84 -> **106**) when the parent frame moves; the
+hierarchical *count* is frame-dependent, the *box set* is not.
+
+**Consequence for T4 - use the box set, not the count.** `drc list count total` is not a safe
+invariant across a frame change. The T4 magic-DRC baseline at the seated frame is:
+
+> **chip_top seated, blocks only: magic total 106, 252 error boxes, all PL.5a in
+> vco_varactors.** Every phase-8 haul is a delta against **that**, and a delta of zero must
+> mean *the same 252 boxes*, not merely the same total.
+
+The pre-seat figure of 84 stays valid only for the pre-seat frame; do not compare across.
+
+### Not done here, deliberately
+The GND ring still stops at the old core perimeter (die x157.5-689.5). Extending it west to
+the DIEAREA edge for VSSA is **T3**, not T2. Pin labels are still at their block-tap
+positions; relocating them onto the DEF pin fingers is also T3, and waits on the regenerated
+DEF because VDDD and REF_IN move +100 um east.
+
+---
+
 ## 5. Regression baseline (re-run 2026-08-21, five sessions)
 
 `verify_cp` re-run 5th session, all exit 0 / RESULT PASS. This session touched only

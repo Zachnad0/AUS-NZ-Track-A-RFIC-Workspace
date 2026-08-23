@@ -9,6 +9,13 @@
 # right of the real 182x179.5 footprint LL, so chip_top.tcl deliberately offsets vco's box by
 # +13400iu. The checker subtracts that KNOWN offset and then every block's reconciled real LL
 # must equal chip_merge.py's target. Any other divergence -> FAIL LOUDLY (exit 1).
+#
+# PHASE-8 FRAME NOTE (2026-08-22): route_chip.py now seats the whole core inside the A01_BH
+# DIEAREA with a final +200/+200 translation, so the DELIVERABLE gds/chip_top.gds is in the
+# DIE frame while chip_top.tcl's placement record stays in the CORE frame. This checker is
+# unaffected and needs NO re-baseline: it compares chip_merge.py's BLOCKS table against
+# chip_top.tcl's getcell boxes -- both core-frame, and the seat is applied after both. Do not
+# "fix" it by adding 200 to either side; that would break the comparison it exists to make.
 import re, sys
 
 HERE = "/foss/designs/AUS-NZ-integration/team_src/magic/phase5"

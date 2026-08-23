@@ -18,7 +18,14 @@ import pya, sys, os
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "phase5"))
 import route_lib as R
 
-DX = 200.0
+# CORE->DIE offset. Since 2026-08-22 route_chip.py SEATS the core inside the A01_BH DIEAREA
+# itself (chip_top.gds is now in the die frame, core at (175,178.5)-(697,487.5) inside
+# (0,0)-(1110,550)), so the chip_top INSTANCE below must be placed at the origin -- placing it
+# at (200,200) again would double-shift every block by 200 um. d() still converts the
+# core-frame tap coordinates used throughout this file into die coordinates, so every other
+# number here is unchanged.
+INST_DX, INST_DY = 0.0, 0.0     # where the (already-seated) chip_top instance goes
+DX = 200.0                      # core->die offset baked into chip_top.gds by route_chip.py
 DY = float(os.environ.get("PHASE8_DY", "200"))
 def d(cx, cy): return (cx + DX, cy + DY)
 CHIP = "/foss/designs/AUS-NZ-integration/gds/chip_top.gds"
@@ -72,7 +79,7 @@ print("dy=%.1f  base lengths: %s  -> target %.3f (pad %s to it)"
 
 ly = pya.Layout(); ly.read(CHIP)
 src = ly.cell("chip_top"); top = ly.create_cell("reh_phase8")
-top.insert(pya.DCellInstArray(src.cell_index(), pya.DCplxTrans(1.0,0.0,False,DX,DY)))
+top.insert(pya.DCellInstArray(src.cell_index(), pya.DCplxTrans(1.0,0.0,False,INST_DX,INST_DY)))
 final = {}
 for net in PAD:
     tx, ty = TAP[net]; px = PAD[net]; p = PLAN[net]

@@ -229,11 +229,48 @@ for outnet, xv, xd, ylane in [("OUT_p", 401.8, 65.0, 181.0), ("OUT_n", 398.0, 13
     R.vwire(chip, ly, 3, ylane, 110.0, xd, w=0.4)     # M3 down the clear DIV2 column
     R.via_stack(chip, ly, 2, 3, xd, 109.8)            # -> M2 onto DIV2.CK / CKB
 
-# --- 0/0 boundary at the true die extent (Bailey: determines size + available-block budget) ---
-bb = chip.dbbox()
-chip.shapes(ly.layer(0, 0)).insert(pya.DBox(bb.left, bb.bottom, bb.right, bb.top))
-print("die boundary (0/0): (%.2f,%.2f)-(%.2f,%.2f)  %.1f x %.1f um"
-      % (bb.left, bb.bottom, bb.right, bb.top, bb.width(), bb.height()))
+# --- PHASE 8 FRAME: seat the core in the padframe DIEAREA and draw the 0/0 boundary AT it ---
+# Bailey, 2026-08-21: "the width and the height should be the exact size of the block size
+# specified for the pad frame blocks." A01_BH.def (padframe/A01/project_defs/BH/) says
+#   DIEAREA ( 0 0 ) ( 222000 110000 ) ;   UNITS DISTANCE MICRONS 200 ;
+# = 1110.000 x 550.000 um. This layout is also 200 dbu/um (master.dbu = 0.005 in
+# chip_merge.py), so seating the core in the die frame is a PURE TRANSLATION -- no scaling.
+#
+# The 0/0 boundary REPLACES the old core-extent rectangle; the two do not coexist. There is
+# exactly one 0/0 shape in the deliverable and it IS the DIEAREA. (The old rectangle tracked
+# chip.dbbox(), i.e. the metal extent -25,-21.5 .. 497,287.5 = 522 x 309 -- chip_top's
+# STANDALONE die outline, which the padframe supersedes.)
+#
+# Everything above is written in the CORE frame; this final step shifts the whole cell into
+# the die frame. Doing it here rather than offsetting chip_merge.py's BLOCKS table keeps every
+# routing coordinate above unchanged, and keeps check_placement.py's core-frame comparison
+# (chip_merge BLOCKS vs chip_top.tcl getcell boxes) valid without a re-baseline -- the
+# block-relative placement does not move, only the whole core does.
+DX, DY = 200.0, 200.0            # core offset inside the die (docs/phase8-padframe-plan.md 3f)
+DIE_W, DIE_H = 1110.0, 550.0     # A01_BH DIEAREA, exact
+
+core = chip.dbbox()
+# The core frame reaches negative x (the GND ring sits at -17.5); the die frame never does.
+# If this is already non-negative the cell has been seated once -- running route_chip.py twice
+# would double-shift it and silently move every block 200 um.
+if core.left >= 0.0:
+    raise SystemExit("route_chip: chip_top already looks seated in the DIE frame (bbox LL "
+                     "x=%.2f >= 0). Re-run chip_merge.py first; routing twice double-shifts."
+                     % core.left)
+chip.transform(pya.DTrans(DX, DY))
+ly.clear_layer(ly.layer(0, 0))   # exactly one boundary, whatever was there before
+chip.shapes(ly.layer(0, 0)).insert(pya.DBox(0.0, 0.0, DIE_W, DIE_H))
+
+seated = chip.dbbox()
+print("core frame  : (%.2f,%.2f)-(%.2f,%.2f)  %.1f x %.1f um"
+      % (core.left, core.bottom, core.right, core.top, core.width(), core.height()))
+print("seated at dx=%.1f dy=%.1f -> core occupies (%.2f,%.2f)-(%.2f,%.2f)"
+      % (DX, DY, core.left + DX, core.bottom + DY, core.right + DX, core.top + DY))
+print("die boundary (0/0): (0.00,0.00)-(%.2f,%.2f)  %.1f x %.1f um  [= A01_BH DIEAREA]"
+      % (DIE_W, DIE_H, DIE_W, DIE_H))
+print("DIEAREA_dbu=(0,0)-(%d,%d)" % (round(DIE_W / ly.dbu), round(DIE_H / ly.dbu)))
+assert abs(seated.left) < 1e-9 and abs(seated.bottom) < 1e-9, seated
+assert abs(seated.width() - DIE_W) < 1e-9 and abs(seated.height() - DIE_H) < 1e-9, seated
 
 ly.write(GDS)
-print("routed power + GND ring + 13 labels + boundary; wrote %s" % GDS)
+print("routed power + GND ring + labels + DIEAREA boundary; wrote %s" % GDS)
