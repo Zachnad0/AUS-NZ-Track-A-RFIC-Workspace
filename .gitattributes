@@ -5,3 +5,8 @@
 *.tcl text eol=lf
 *.sch text eol=lf
 *.sym text eol=lf
+
+# Organizer-issued padframe package: third-party artifacts, kept byte-exact.
+# -text disables ALL eol conversion so a Windows checkout cannot rewrite them
+# and make a hash/diff against a future re-issue meaningless.
+padframe/** -text

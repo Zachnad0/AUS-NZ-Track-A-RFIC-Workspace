@@ -1,4 +1,4 @@
-import yaml, sys
+import yaml, sys, os
 
 DBU = 200.0  # padframe dbu per micron (5 nm)
 
@@ -6,7 +6,12 @@ def edge_of(slot):
     return {"W": "west", "N": "north", "E": "east", "S": "south"}.get(slot[0], "?")
 
 def load(variant):
-    p = "/tmp/a01/project_defs/%s/A01_%s_interface.yaml" % (variant, variant)
+    # The package is committed at padframe/A01/project_defs/ (2026-08-22). It used to be
+    # read from a /tmp working dir, which is why it was lost once. PADFRAME_ROOT overrides.
+    root = os.environ.get("PADFRAME_ROOT",
+                          os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                                       "..", "..", "..", "padframe", "A01", "project_defs"))
+    p = os.path.join(root, variant, "A01_%s_interface.yaml" % variant)
     with open(p) as f:
         return yaml.safe_load(f)
 

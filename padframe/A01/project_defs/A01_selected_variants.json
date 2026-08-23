@@ -1,0 +1,22 @@
+{
+  "project_size": {
+    "source_gds": "/Users/kanobailey/chipathon/2026/gds/A01/chip_top.gds",
+    "top_cell": "chip_top",
+    "layer": 0,
+    "datatype": 0,
+    "layout_dbu_microns": 0.005,
+    "rectangle_dbu": [
+      -5000,
+      -4300,
+      99400,
+      57500
+    ],
+    "width_microns": "522",
+    "height_microns": "309"
+  },
+  "participant_pin_count": 12,
+  "selected_variants": [
+    "BV",
+    "BH"
+  ]
+}

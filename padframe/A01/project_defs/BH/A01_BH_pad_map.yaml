@@ -1,0 +1,112 @@
+spec_blob_sha: 7398a4da36e4d6ad9f9b76c06813b073c9c0ed2f
+source_info: info/A01_info.yaml
+source_template: /Users/kanobailey/chipathon/2026/padring/chipathon2026-system/padring_template.cfg
+block: BH
+team_code: A01_BH
+design_name: A01_BH_padring
+pin_count: 12
+user_slot_count: 16
+pads:
+- pin_index: 0
+  pin_name: VSSA
+  slot: W18
+  instance: W18
+  io_type: ground
+  cell: gf180mcu_fd_io__dvss
+- pin_index: 1
+  pin_name: VDDA
+  slot: W19
+  instance: W19
+  io_type: power
+  cell: gf180mcu_fd_io__dvdd
+- pin_index: 2
+  pin_name: IBIAS
+  slot: W20
+  instance: W20
+  io_type: analog
+  cell: gf180mcu_fd_io__asig_5p0
+  secondary_esd: true
+- pin_index: 3
+  pin_name: ISS
+  slot: W21
+  instance: W21
+  io_type: analog
+  cell: gf180mcu_fd_io__asig_5p0
+  secondary_esd: true
+- pin_index: 4
+  pin_name: VTUNE
+  slot: W22
+  instance: W22
+  io_type: analog
+  cell: gf180mcu_fd_io__asig_5p0
+  secondary_esd: true
+- pin_index: 5
+  pin_name: CP_OUT
+  slot: N01
+  instance: N01
+  io_type: analog
+  cell: gf180mcu_fd_io__asig_5p0
+  secondary_esd: true
+- pin_index: 6
+  pin_name: I_P
+  slot: N02
+  instance: N02
+  io_type: analog
+  cell: gf180mcu_fd_io__asig_5p0
+  secondary_esd: true
+- pin_index: 7
+  pin_name: I_N
+  slot: N03
+  instance: N03
+  io_type: analog
+  cell: gf180mcu_fd_io__asig_5p0
+  secondary_esd: true
+- pin_index: 8
+  pin_name: Q_P
+  slot: N04
+  instance: N04
+  io_type: analog
+  cell: gf180mcu_fd_io__asig_5p0
+  secondary_esd: true
+- pin_index: 9
+  pin_name: Q_N
+  slot: N05
+  instance: N05
+  io_type: analog
+  cell: gf180mcu_fd_io__asig_5p0
+  secondary_esd: true
+- pin_index: 10
+  pin_name: VDDD
+  slot: N06
+  instance: N06
+  io_type: power
+  cell: gf180mcu_fd_io__dvdd
+- pin_index: 11
+  pin_name: REF_IN
+  slot: N07
+  instance: N07
+  io_type: input_cmos
+  cell: gf180mcu_fd_io__in_c
+- slot: N08
+  instance: N08
+  generated: true
+  cell: gf180mcu_fd_io__asig_5p0
+- slot: N09
+  instance: N09
+  generated: true
+  cell: gf180mcu_fd_io__asig_5p0
+- slot: N10
+  instance: N10
+  generated: true
+  cell: gf180mcu_fd_io__asig_5p0
+- slot: N11
+  instance: N11
+  generated: true
+  cell: gf180mcu_fd_io__asig_5p0
+breaks:
+- instance: BRK_BEFORE_N06
+  reason: additional_power_ground_set
+  before_slot: N06
+- instance: BRK_AFTER_BH
+  reason: project_boundary
+  after_slot: N07

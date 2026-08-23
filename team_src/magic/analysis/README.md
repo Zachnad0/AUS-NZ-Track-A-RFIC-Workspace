@@ -22,11 +22,13 @@ Run in-container against `gds/chip_top.gds` with env `LAYOUT_FILE/TOP/ABSTRACT_C
 FLATGLOB_CELLS/EXT_DIR/OUTSP/DRCOUT` (see the tcl headers).
 
 ## Phase-8 padframe DEF analysis
-Inputs: the organizer's `A01.def.tgz` (extracted to a working dir — not committed)
-and `gds/chip_top.gds`. Produce the numbers in `docs/phase8-padframe-plan.md`.
+Inputs: the organizer's padframe package, now **committed at `padframe/A01/project_defs/`**
+(it used to live in an uncommitted working dir, which is how it got lost once — see
+`padframe/README.md`), and `gds/chip_top.gds`. Produce the numbers in
+`docs/phase8-padframe-plan.md`.
 - `parse_def.py` — parses BV/BH `*_interface.yaml` → per-variant pin tables (name,
   slot, cell, use, dir, edge, `translated_user` rects in µm) + pin-rect spans
-  (Item 1). Expects the DEF files under `/tmp/a01/project_defs/<variant>/`.
+  (Item 1). Reads `padframe/A01/project_defs/<variant>/` by default; `PADFRAME_ROOT` overrides.
 - `iq_haul.py` — measures the four DIV2 I/Q output tap M1 pads in `chip_top.gds` and
   the Manhattan hauls to the BH north pads for a given core placement (Item 2).
 - `core_placement.py` — sweeps the core offset (dx,dy) inside the BH 1110×550
