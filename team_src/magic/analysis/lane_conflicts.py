@@ -17,7 +17,9 @@ import pya
 REPO = "/foss/designs/AUS-NZ-integration"
 LAYER = {"M1": 34, "M2": 36, "M3": 42, "M4": 46, "M5": 81}
 
-# --- THE ALLOCATION (plan doc 3o as revised by 3p). die coords, um. ---
+# --- THE ALLOCATION: ALL NETS, not just the west five (Greg 2026-08-23 -- the checker is
+# only as good as its coverage, and the quad is the exact net class this bug already bit twice).
+# plan doc 3o as revised by 3p/3q. die coords, um. ---
 # (net, layer, x0, y0, x1, y1, width)  -- a segment is the swept rectangle of a centreline.
 SEG = [
     # ---- VTUNE : route (a), approved ----
@@ -29,7 +31,13 @@ SEG = [
     ("VTUNE", "M2",   0.50, 460.34,   0.50, 504.66, 1.0),   # pad stub over the 8 fingers
 
     # ---- IBIAS ----
-    ("IBIAS", "M3", 271.30, 423.90,  34.00, 423.90, 0.4),
+    # The escape must CROSS the Q_N (x198.58) and I_N (x199.88) M3 risers -- IBIAS's tap is east
+    # of them and its pad is west, so no re-routing avoids it. Found by this checker before any
+    # IBIAS metal was cut, as two 0.40 x 0.40 um M3-on-M3 overlaps. M4 is CLEAR at x193-206
+    # y422.4-425.4 (measured), so IBIAS hops M3->M4->M3 across the pair: 11 um of M4, 2 vias.
+    ("IBIAS", "M3", 271.30, 423.90, 204.00, 423.90, 0.4),
+    ("IBIAS", "M4", 204.00, 423.90, 193.00, 423.90, 0.4),
+    ("IBIAS", "M3", 193.00, 423.90,  34.00, 423.90, 0.4),
     ("IBIAS", "M3",  34.00, 423.90,  34.00, 282.50, 0.4),
     ("IBIAS", "M2",  34.00, 282.50,   0.50, 282.50, 0.4),
     ("IBIAS", "M2",   0.50, 260.34,   0.50, 304.66, 1.0),
@@ -59,6 +67,40 @@ SEG = [
     ("ISS",   "M5",  90.00, 382.50,  16.00, 382.50, 10.0),
     ("ISS",   "M2",  16.00, 382.50,   0.50, 382.50, 10.0),
     ("ISS",   "M2",   0.50, 360.34,   0.50, 404.66, 1.0),
+
+    # ---- I/Q matched quad (phase 8 (a), BUILT). die coords = core + 200. ----
+    # The lane runs carry the matching serpentine (meander_points amp=6.0), so each is modelled
+    # as a BAND of width 2*6.0 + 0.4 = 12.4 um centred on its lane y -- the serpentine's real
+    # envelope, not its centreline. The four bands DO overlap in y (490/500/508/516 with +/-6.2)
+    # and are kept apart purely by having disjoint x spans, which is what the west-to-east riser
+    # ordering buys. Model them honestly so the checker can see that.
+    ("Q_N", "M3", 202.18, 251.92, 198.58, 251.92, 0.4),    # escape, M3 at the pin
+    ("Q_N", "M3", 198.58, 251.92, 198.58, 490.00, 0.4),    # riser (WEST of I_N's -- 3i)
+    ("Q_N", "M3", 198.58, 490.00, 167.50, 490.00, 12.4),   # lane + serpentine envelope
+    ("Q_N", "M2", 167.50, 490.00, 167.50, 549.00, 0.4),
+    ("Q_N", "M2", 145.34, 549.00, 189.66, 549.00, 1.0),    # N02 finger-row landing bar
+
+    ("I_N", "M3", 202.18, 340.27, 199.88, 340.27, 0.4),
+    ("I_N", "M3", 199.88, 340.27, 199.88, 500.00, 0.4),    # riser (EAST of Q_N's)
+    ("I_N", "M3", 199.88, 500.00, 267.50, 500.00, 12.4),
+    ("I_N", "M2", 267.50, 500.00, 267.50, 549.00, 0.4),
+    ("I_N", "M2", 245.34, 549.00, 289.66, 549.00, 1.0),    # N03
+
+    ("I_P", "M3", 435.18, 340.27, 446.18, 340.27, 0.4),    # escape east (novia: lands on the
+    ("I_P", "M3", 446.18, 340.27, 446.18, 390.00, 0.4),    #  pin's own M3, no via1/via2 of ours)
+    ("I_P", "M3", 446.18, 390.00, 385.00, 390.00, 0.4),    # LOW jog -> west column
+    ("I_P", "M3", 385.00, 390.00, 385.00, 508.00, 0.4),
+    ("I_P", "M3", 385.00, 508.00, 367.50, 508.00, 12.4),
+    ("I_P", "M2", 367.50, 508.00, 367.50, 549.00, 0.4),
+    ("I_P", "M2", 345.34, 549.00, 389.66, 549.00, 1.0),    # N04
+
+    ("Q_P", "M3", 435.18, 251.92, 452.18, 251.92, 0.4),
+    ("Q_P", "M3", 452.18, 251.92, 452.18, 398.00, 0.4),
+    ("Q_P", "M3", 452.18, 398.00, 400.00, 398.00, 0.4),    # HIGH jog -> east column
+    ("Q_P", "M3", 400.00, 398.00, 400.00, 516.00, 0.4),
+    ("Q_P", "M3", 400.00, 516.00, 467.50, 516.00, 0.4),    # sets the target -> no serpentine
+    ("Q_P", "M2", 467.50, 516.00, 467.50, 549.00, 0.4),
+    ("Q_P", "M2", 445.34, 549.00, 489.66, 549.00, 1.0),    # N05
 ]
 
 
@@ -92,8 +134,16 @@ REG = {}
 for nm, num in LAYER.items():
     REG[nm] = pya.Region(top.begin_shapes_rec(ly.layer(num, 0)))
 
+# Nets already cut into gds/chip_top.gds. Check (2) would just re-detect their own metal, so it
+# is skipped for them -- their real gate is drc_delta + verify_cp, both of which they passed.
+BUILT = {"Q_N", "I_N", "I_P", "Q_P"}
+
 hits = 0
 for net, lay, *g in SEG:
+    if net in BUILT:
+        print("  %-6s %s (%7.2f,%7.2f)-(%7.2f,%7.2f) w%.1f : BUILT -- skipped (would self-detect)"
+              % (net, lay, g[0], g[1], g[2], g[3], g[4]))
+        continue
     r = rect(*g)
     clash = REG[lay].interacting(pya.Region(r.to_itype(ly.dbu)))
     n = clash.count()

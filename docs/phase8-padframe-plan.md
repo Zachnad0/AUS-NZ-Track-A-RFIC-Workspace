@@ -1360,6 +1360,56 @@ density fill.
 
 ---
 
+## 3r. (a) I/Q QUAD BUILT into chip_top - clean gate (2026-08-23)
+
+Ported from `analysis/phase8_incontext.py`'s throwaway cell into `phase5/route_chip.py`, in
+**core** coordinates, ahead of the seat step. All four escapes, the west-to-east left-riser
+ordering, I_P's `novia`, and the low-jog/high-jog split are carried over verbatim - each of them
+fixes a specific silent short (3i, 3l) and none is cosmetic.
+
+**Matched length RE-DERIVED on the seated frame, not carried across** (Greg: it has moved four
+times, 269 -> 332 -> 458 -> 433.76). Base lengths in the core frame: **Q_N 331.76, I_N 278.65,
+I_P 298.41, Q_P 433.76**; Q_P sets the target; all four routed to **433.760 um, spread
+0.0000 um**. The figure is unchanged from pre-seat, and that is the expected result rather than
+a coincidence - the seat is a pure translation and the taps and the pads move together - but it
+is now a derived number.
+
+### Landing: the slot centre is a GAP between fingers
+A 0.4 um drop at the slot centre would have touched **nothing**. Each `asig_5p0` pin is 8
+separate 2.54 um Metal2 fingers; for N02 they sit at x145.34-147.88, 151.02-153.56,
+156.70-159.24, 162.38-164.92, 170.08-172.62, ... - and the centre, **x167.50, falls in the gap
+between the 4th and 5th**. Each net now lands with one M2 bar across its whole finger row
+(centre +/- 22.16 um at y549-550), tying all 8 fingers, which is what the pin is.
+
+### The gate
+| part | baseline | with the quad | verdict |
+|------|----------|---------------|---------|
+| magic DRC **box set** vs `chip_top.drcbase` | 106 / 252 boxes | 106 / **252** | **0 added, 0 removed** |
+| KLayout signoff | PASS, 168 waived | PASS, **168** | identical |
+| extraction devices / ports / nets | 5 / 12 / 21 | **5 / 12 / 21** | identical |
+| LVS | match uniquely | **match uniquely** | identical |
+
+Ports staying at **12** is the distinctness result: 3l's tap-to-block short showed up precisely
+as 12 -> 14 ports. Seated extent is now (145.34,178.50)-(697.00,550.00) inside the DIEAREA.
+
+### The checker immediately caught a short in a net not yet drawn
+Adding the quad to `analysis/lane_conflicts.py` (Greg: all-nets, not west-five) turned up **two
+real M3-on-M3 overlaps** at once: **IBIAS's planned escape at y423.90 crosses the Q_N riser
+(x198.58) and the I_N riser (x199.88)**, 0.40 x 0.40 um each. 3o had checked IBIAS against
+VTUNE (x10) and ISS (x22) and found it turned down at x34, east of both - but the quad risers
+sit at x198.58/199.88, *between* IBIAS's tap at x271.30 and that turn, and the quad was not in
+the checker at the time.
+
+IBIAS's tap is east of the risers and its pad is west, so **no re-route avoids the crossing** -
+it has to change layer. **M4 is clear at x193-206, y422.4-425.4** (measured), so IBIAS hops
+**M3 -> M4 -> M3 across x193-204**: 11 um of M4 and two via stacks. Along the rest of the
+escape M4 is occupied only at x248.60-405.30, east of the hop.
+
+**0 net-vs-net overlaps across all nine nets** after the fix. This is the first time this bug
+class has been caught before the metal existed rather than after.
+
+---
+
 ## 4. T2 DONE - the core is seated in the A01_BH DIEAREA (2026-08-22)
 
 `gds/chip_top.gds` now **is** the padframe block: boundary exactly `(0,0)-(1110,550) um` =

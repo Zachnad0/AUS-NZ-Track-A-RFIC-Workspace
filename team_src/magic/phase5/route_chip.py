@@ -229,6 +229,79 @@ for outnet, xv, xd, ylane in [("OUT_p", 401.8, 65.0, 181.0), ("OUT_n", 398.0, 13
     R.vwire(chip, ly, 3, ylane, 110.0, xd, w=0.4)     # M3 down the clear DIV2 column
     R.via_stack(chip, ly, 2, 3, xd, 109.8)            # -> M2 onto DIV2.CK / CKB
 
+# --- PHASE 8 (a): the matched I/Q quad to the north pads -------------------------------------
+# Ported from analysis/phase8_incontext.py, whose five-part in-context gate this geometry
+# already passed (plan doc 3l). CORE coordinates here: everything below the frame step is
+# core-frame, and the seat translates it. die = core + 200 on both axes.
+#
+# Escapes are NOT arbitrary -- each one fixes a specific silent short that DRC could not see:
+#   * all four escape on M3 VIA-AT-THE-PIN (escl 3). An M1 escape hwire out of Q_N/I_N hits
+#     DIV2's M1 frame (M1.2a), and out of I_P/Q_P it runs east across the ib_conv_v1
+#     a_8764_6964# bias node and SHORTS the output to it -- invisible to DRC (an overlap
+#     leaves no spacing gap) and invisible to a routes-only extract (3l).
+#   * the left risers run WEST-TO-EAST (Q_N's riser west of I_N's) so neither escape sweeps
+#     across the other's riser. That overlap is DRC-clean and merged I_N into Q_N (3i).
+#   * I_P carries novia: its pin is already a full M1-via1-M2-via2-M3-via3-M4 stack, so adding
+#     our own via1/via2 trips V1.2a/V2.2a against the pin's. The M3 route lands on the pin's
+#     existing M3 instead. Q_N/I_N/Q_P pins are M1-only and take the via stack.
+#   * I_P low-jog into the west column, Q_P high-jog into the east column, so no lane crosses
+#     a riser (M3.2a).
+IQ_TAP  = {"Q_N": (2.18, 51.92), "I_N": (2.18, 140.27),
+           "I_P": (235.18, 140.27), "Q_P": (235.18, 51.92)}
+IQ_PAD  = {"Q_N": -32.5, "I_N": 67.5, "I_P": 167.5, "Q_P": 267.5}   # core x of N02..N05 centres
+IQ_PADY = 349.0                                                     # core y of the north pin row
+IQ_PLAN = {
+    "Q_N": dict(esc=-3.6, jog=None,           lane=290.0),
+    "I_N": dict(esc=-2.3, jog=None,           lane=300.0),
+    "I_P": dict(esc=+11.0, jog=(185.0, 190.0), lane=308.0, novia=True),
+    "Q_P": dict(esc=+17.0, jog=(200.0, 198.0), lane=316.0),
+}
+
+def iq_pts(net, ser_extra):
+    tx, ty = IQ_TAP[net]; px = IQ_PAD[net]; pl = IQ_PLAN[net]
+    ex = tx + pl["esc"]
+    pts = [(tx, ty), (ex, ty)]                       # escape on M3, from the via at the pin
+    if pl["jog"] is None:
+        pts += [(ex, pl["lane"])]
+    else:
+        jx, jy = pl["jog"]
+        pts += [(ex, jy), (jx, jy), (jx, pl["lane"])]
+    if ser_extra > 1e-6:
+        pts += R.meander_points(pts[-1][0], px, pl["lane"], ser_extra, 0.4, 3, amp=6.0)[1:]
+    else:
+        pts += [(px, pl["lane"])]
+    return pts
+
+def iq_len(net, ser_extra):
+    return R.path_length(iq_pts(net, ser_extra)) + abs(IQ_PADY - IQ_PLAN[net]["lane"])
+
+iq_base = {n: iq_len(n, 0.0) for n in IQ_PAD}
+IQ_TARGET = max(iq_base.values())
+print("IQ base lengths (core frame): %s" % {n: round(iq_base[n], 2) for n in IQ_PAD})
+print("IQ matched target %.3f um (set by %s)" % (IQ_TARGET, max(iq_base, key=iq_base.get)))
+
+iq_final = {}
+for net in IQ_PAD:
+    tx, ty = IQ_TAP[net]; px = IQ_PAD[net]; pl = IQ_PLAN[net]
+    pts = iq_pts(net, IQ_TARGET - iq_base[net])
+    if not pl.get("novia"):
+        R.via_stack(chip, ly, 1, 3, tx, ty)          # M1-only pin -> M3 AT the tap
+    R.route_path(chip, ly, 3, pts, w=0.4)            # M3 haul + matching serpentine
+    R.via_stack(chip, ly, 2, 3, px, pl["lane"])      # down to M2 for the pad drop
+    R.vwire(chip, ly, 2, pl["lane"], IQ_PADY, px, w=0.4)
+    # Land on the DEF pin FINGERS, not on the slot centre. Each asig_5p0 pin is 8 separate
+    # 2.54 um Metal2 fingers spanning +/-22.16 um about the slot centre (plan doc 1e); the
+    # centre itself falls in a GAP between fingers, so a bare 0.4 um drop would touch nothing.
+    # One M2 bar across the whole finger row ties all 8 -- they are the same pin.
+    R.box(chip, ly, (36, 0), px - 22.16, IQ_PADY, px + 22.16, IQ_PADY + 1.0)
+    chip.shapes(ly.layer(36, 10)).insert(pya.DText(net, pya.DTrans(pya.DVector(px, IQ_PADY + 0.5))))
+    iq_final[net] = R.path_length(pts) + abs(IQ_PADY - pl["lane"])
+    print("  %-4s core tap (%7.2f,%7.2f) -> pad x%7.2f  lane %5.1f  len %8.3f um"
+          % (net, tx, ty, px, pl["lane"], iq_final[net]))
+err = max(iq_final.values()) - min(iq_final.values())
+print("IQ matched: all four %.3f um, spread %.4f um" % (IQ_TARGET, err))
+assert err < 1e-3, "I/Q length matching broke: spread %.4f um" % err
+
 # --- PHASE 8 FRAME: seat the core in the padframe DIEAREA and draw the 0/0 boundary AT it ---
 # Bailey, 2026-08-21: "the width and the height should be the exact size of the block size
 # specified for the pad frame blocks." A01_BH.def (padframe/A01/project_defs/BH/) says
