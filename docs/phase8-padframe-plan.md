@@ -838,7 +838,7 @@ Matched length unchanged at **433.76 µm** (all four, err 0.0000). **Lesson reco
 in-context extraction is now the real distinctness gate; the routes-only extract is necessary
 but not sufficient. Every subsequent haul (Items below) is gated with `reh_ctx_extract.tcl`.
 
-## 3m. VTUNE is boxed; and the .ext trap that was quietly corrupting the baseline (2026-08-22, tapeout drive)
+## 3m. VTUNE "boxed" (WITHDRAWN, see 3n); and the .ext trap that was quietly corrupting the baseline (2026-08-22, tapeout drive)
 
 ### VTUNE: the tap is reachable, the rise is not (Item 2d)
 `phase8_incontext.py`'s `HAUL` table cited a section 3m that had never been written. Recording it:
@@ -853,7 +853,13 @@ but not sufficient. Every subsequent haul (Items below) is gated with `reh_ctx_e
   coupling work forbids exactly that for the tune node (KVCO 822 MHz/V).
 
 So the `VTUNE_tap` entry documents clean tap access only; the haul itself is unsolved and is
-**T3's hardest single-net route**, not a routing tweak. ISS is the same enclosure but is a DC
+**T3's hardest single-net route**, not a routing tweak.
+
+> **SUPERSEDED THE SAME DAY - see 3n.** This "boxed" conclusion was reached while chip_top
+> was still 522 x 309. Once T2 seated the core inside the 1110 x 550 DIEAREA there was free
+> die south of it, and a west-then-**south** exit through the 52.6 um DIV2<->vco gap crosses
+> nothing but the GND ring. VTUNE is not boxed. The column analysis above is also wrong on a
+> detail: x288-290 is not M4-clear. ISS is the same enclosure but is a DC
 tail node, so rising under the spiral is acceptable for it.
 
 ### The `.ext` trap - same failure class as the silent I_N/Q_N short
@@ -935,6 +941,87 @@ member, so the break should move to VSSD's slot.
 **Still verify when the regenerated DEF lands:** `breaks[0].before_slot` must name **VSSD's**
 slot, not VDDD's. If it names VDDD, VSSD is outside the digital island and must move to
 *after* VDDD. `in_c` landing at N08 remains genuinely open.
+
+---
+
+## 3n. VTUNE is NOT boxed - 3m's premise died when the core was seated (2026-08-22)
+
+Section 3m concluded VTUNE was boxed. **That conclusion is withdrawn.** It was reached while
+chip_top was 522 x 309 and every route had to win an internal column; T2 seated the core at
+(175.00,178.50)-(697.00,487.50) inside a 1110 x 550 die, which created free die **south of
+y178.5, west of x175, east of x697 and north of y487.5** that did not exist when 3m was
+written. Re-measured against the real geometry with `analysis/vtune_routes.py` (occupancy scan
+per segment, seated GDS, writes nothing).
+
+### Where the tap actually is, and which way it faces
+- **VTUNE tap: die (558.68, 266.70) on M1** (= core (358.68, 66.70)), read from the `L34/10
+  VTUNE` label in the seated GDS - not from memory.
+- Block extents, die coords: `DIV2 (200.00,200.00)-(437.36,374.17)`,
+  `vco_v1 (490.00,200.00)-(672.00,379.48)`, `ibias (200,405)-(381.76,470.25)`,
+  `CP (410,405)-(483.50,433.02)`, `PFD (410,445)-(466.99,469.00)`.
+- **The DIV2<->vco gap is die x437.36-490.00 - 52.6 um wide**, not the ~2 um 3m implied. 3m's
+  "x288-290" came from the channel map's *clear columns*, which were computed for
+  **y[175,287.5] core** - the band a NORTH-bound riser crosses. Nobody had measured the gap at
+  the tap's own y, going SOUTH, because before T2 there was nothing south to go to.
+- **East is genuinely blocked** (measured): 141 um east of the tap crosses M1 x6, M2 x6, M3 x5,
+  M4 x2, M5 x6, comp x5, poly x6 and 11 vias - it is the vco interior. The tap faces **west**.
+
+### The three candidates, measured
+
+| route | length | what it crosses |
+|-------|-------:|-----------------|
+| **(a) west into the gap, SOUTH out of the core, west through free die, north up the west strip** | **977.38 um** | tap escape (M1/comp/cont/poly x1 - the tap's own comp ring, handled by the 3m via-up-at-the-pad); **M5 x4** = the GND ring only. The 455 um west lane at y165, the 317.5 um riser at x10 and the 9.5 um pad jog are **CLEAR on every layer**. |
+| (d) 3m's die-x489 column, north past the spiral | 798.98 um | **M5 x18 + M4 x2** on the riser - i.e. roughly half the 228 um rise sits over spiral turns |
+| (a-north) north exit through the gap at die x486 | 798.98 um | M3 x18, M4 x14, M5 x4, M2, v2, v3 - the CP/PFD/ibias region, and it lands in the same 60 um channel the I/Q quad needs |
+
+**772 of route (a)'s 977 um is virgin die with nothing on any layer.**
+
+**A correction to 3m while we are here:** the "x288-290" column is **not M4-clear**. Measured at
+die y290-386: x486 M4, x487 M3+M4+v3, x488 M4, x489 M4, x490 M4+M5, x491 M4+M5. The channel
+map's columns were "clear of M2 AND M3" only; M4 was never in that criterion.
+
+### One trap worth recording
+The west riser must be held **inboard at x~10, never at the pad column x0.5**. The west pin
+rectangles all sit at x[0,1] - VSSA y46.36-118.64, VDDA y146.36-218.64, IBIAS y260.34-304.66,
+ISS y360.34-404.66 - so a riser run up x0.5 to reach VTUNE at y460-505 would short VTUNE to
+IBIAS, ISS, VDDA and VSSA at the padring. Approach inboard, jog west onto the fingers at the
+target y only.
+
+### Costing the four options
+
+| | route | length | coupling | what it invalidates | effort |
+|-|-------|-------:|----------|---------------------|--------|
+| **(a)** | around the core through free die | **977 um** (+178 vs the alternatives) | **~ -107 dBc**: nearest aggressor is DIV2 metal 35 um from the y165 lane; ~0.17 fF over 455 um -> ~1.4 mV on the routing node -> /48.6 through the 15k -> 0.028 mV -> 0.023 MHz | **nothing** | **2-3 h** |
+| (b) | re-place blocks inside the core | n/a | n/a | matched-quad length (433.76), lane assignment, every per-net escape coordinate, the 3f dy sweep, the 3h crossing table, the channel map, the 3c ground-return numbers, the check_placement baseline; re-gate everything | 2-3 days |
+| (c) | re-open vco_v1 to bring TUNE to an edge | shortest possible | best | vco_v1's sign-off (DRC 0 / LVS match uniquely / KLayout 168=W4) and chip_top's; touches the one cell carrying the inductor abstract **and** the W4 waiver | 3-5 days, and it re-opens a signed-off block six days before the gate |
+| (d) | accept the die-x489 run | 799 um | **~ -78 dBc** capacitive, **magnetic term unquantified** | nothing, but see below | 1-2 h |
+
+**(d)'s number, by the 3h method, and why it should not be trusted at face value.** 18 of 38
+riser segments over M5 ~ 108 um of overlap. Using the recorded 0.047 fF/um -> Cc ~ 5.08 fF;
+against the node C ~ 63 fF implied by 3h's own calibration point (2.35 fF, 0.5 V -> 18 mV) the
+divider is 0.0747, so a ~2 Vpp-se tank (verification.md 3.2: "near rail-to-rail single-ended")
+puts ~149 mVpp on the routing node; the 15 kohm tune R low-passes it (~/97 at 5 GHz) to
+~1.54 mV -> x822 MHz/V -> 1.27 MHz -> **-78 dBc**. Two reasons that is optimistic:
+1. **0.047 fF/um is a sidewall figure being applied to an overlap geometry.** M3 running under
+   M5 plate is not two coplanar M2 wires at minimum spacing.
+2. **It captures no magnetic coupling.** The spiral is an inductor; the trace forms a loop in
+   its field. That is the actual reason for the never-route-under-the-spiral rule, and
+   quantifying it needs EM (`team_src/em/extract_inductor.py` / openEMS), not a cap-per-um.
+
+The 3h calibration is reproduced exactly by this method (0.3 MHz at 2.5 GHz -> -84.4 dBc vs the
+recorded -84 dBc), so the arithmetic is sound; it is the model's *scope* that does not cover (d).
+
+### Recommendation: **(a)**
+Route (a) buys a route that crosses nothing but the GND ring, on a different layer with no
+applicable rule, for **+178 um on a DC node** whose series 15 kohm makes the added resistance
+irrelevant. It invalidates nothing, needs no block re-opened, and it puts VTUNE on the opposite
+side of the die from the I/Q RF hauls instead of alongside them. (d) saves 178 um and buys an
+unquantified magnetic risk on the most phase-noise-sensitive node in the design. (b) and (c)
+are large, and neither is necessary once the south exit is on the table.
+
+Secondary benefit: the same south corridor is the natural path for **ISS** (die tap
+(595.84,260.33), same vco enclosure, DC tail node), so solving VTUNE this way likely solves ISS
+too - to be confirmed when it is routed, not assumed here.
 
 ---
 
