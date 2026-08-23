@@ -1150,6 +1150,118 @@ reserved and must not be reused, but ISS is not solved and should not be quoted 
 
 ---
 
+## 3p. ISS is the VCO TAIL RETURN, and that invalidates its 3o lane (2026-08-23)
+
+3o reserved ISS a 0.4 um M3 riser and called its escape "unsolved". **Both halves of that were
+wrong**, in opposite directions. From the golden netlist and the tech file, not the layout.
+
+### What ISS actually carries
+`team_src/magic/chip_top_golden.spice`, inlined `vco_v1` golden:
+```
+.subckt vco_v1 VDD OUT_p OUT_n GND TUNE ISS
+XM1 OUT_p OUT_n ISS GND nfet_03v3 L=0.28u W=40u nf=1
+XM4 OUT_n OUT_p ISS GND nfet_03v3 L=0.28u W=40u nf=1
+```
+nfet terminal order is D G S B, so **ISS is the common SOURCE of both cross-coupled nfets - the
+tail node** - and the bulks go to a separate GND. There is no on-chip current mirror: the mirror
+is in the testbench (`XM1 net3 vsg GND GND nfet_03v3 W=100u` + `I0 GND vsg 1m`). So ISS is
+**not** a bias reference. It is the entire return path of the VCO core to the outside world, and
+being the common-source node of a cross-coupled pair it carries the **2f0 component (~9.5 GHz)**
+as well as DC.
+
+**DC current, measured (verification.md 3.2):** core I(ISS) = **1.24-1.57 mA** across corners
+(1.38 mA TT27).
+
+**3c already said this and then did not follow it up.** Its words: *"The tail current (~1 mA)
+returns through ISS, not GND, so the VCO's own GND current is small"*. 3c used that to dismiss
+the **GND** budget - correctly - and nobody ever budgeted **ISS**. That is the gap.
+
+### The ISS net inside vco_v1, traced (analysis/iss_net.py, flood-fill from the ISS label)
+| layer | shapes | extent, die coords |
+|-------|-------:|--------------------|
+| M2 | 1 | x587.04-612.83, y260.13-260.53 - **a single 25.78 x 0.40 um strap** |
+| v1 | 12 | x588.30-611.57 |
+| M1 | 12 | 0.38 x 5.19 um source fingers down to the nfets |
+
+Distance from that net to each vco_v1 edge: **east 59.17**, south 60.13, west 97.05, north
+114.16 um. It reaches no edge.
+
+### Escape: 3o's "blocked at every y" was a net-context artifact
+The 3o sweep started at x592 and probed 2 um wide, so it was **counting the ISS net's own M2
+strap and source fingers as obstacles** - precisely the false positive 3g warned about ("the
+escape from a block-interior tap needs the block's port/net context to tell a same-net touch
+from a cross-net short"). Re-probed from the strap's real ends at 1 um:
+
+| direction | span | crossings |
+|-----------|------|-----------|
+| **east**, from x613 | 87 um to x700 | **M5 x6 only** (the vco OUT leads + GND ring right) - benign on M2/M3 |
+| **west**, from x586 | 98 um to x488 | **M1 x2, comp x2, cont x2, poly x1 - and NO M2, NO M3** |
+| south, from the strap | 63 um to y196 | dirty at every x (11-19 M1, 11-19 comp/cont, 18 poly) |
+
+**So ISS escapes cleanly WEST on M2 or M3** - nothing on its own layer for the whole 98 um to
+the gap. The escape is not the problem. **The problem is width and length.**
+
+### The impedance budget (the acceptance criterion, per Greg 2026-08-23)
+Sheet resistances from `/foss/pdks/gf180mcuD/libs.tech/magic/gf180mcuD.tech`: **M1-M4 90 mohm/sq,
+M5 40 mohm/sq**. Inductance at the same ~1 pH/um rule of thumb 3c used.
+
+Route west to W21 at the 3o allocation: internal strap 25.78 + escape 97 + gap descent 88.3 +
+south lane 433 + riser 210.5 + approach 21.5 = **~876 um**.
+
+| conductor | R | IR at 1.57 mA | verdict |
+|-----------|--:|--------------:|---------|
+| **3o as written: 0.4 um M3** | 2126 sq x 90 mohm = **191 ohm** | **300 mV** | **unusable** |
+| 5 um M5 | 170 sq x 40 mohm = 6.8 ohm | 10.7 mV | marginal |
+| **10 um M5** | 85 sq x 40 mohm = **3.4 ohm** | **5.3 mV** | meets a 5 mV-class budget |
+| internal 0.4 um strap (25.78 um) | 64.5 sq x 90 mohm = **5.80 ohm** | 9.1 mV | **fixed unless vco_v1 is re-opened** |
+
+**DC is solvable by width. Inductance is not solvable by width - only by length.** At ~1 pH/um a
+876 um haul is **~876 pH = ~52 ohm at 2f0 (9.5 GHz)**, against a bond wire of ~1 nH = ~60 ohm.
+The on-chip haul is **~85 % of the bond**, i.e. it nearly **doubles** the tail inductance.
+
+**This is exactly where 3c's dismissal does not transfer.** For GND, 3c's spur was 175 pH,
+*under 20 %* of the bond, and it was common-mode to a differential tank. For ISS the haul is
+~85 % of the bond and it is the tail, not a common-mode reference. Applying 3c's own 20 %
+yardstick to ISS gives a budget of **<= 200 pH, i.e. a haul <= ~200 um** - **not achievable to
+any pad A01 owns.** The nearest alternative, a north slot at N06 (die x567.5, y549), is ~290 um
+from the strap and the path crosses the inductor spiral.
+
+**We cannot close this by simulation.** Phase noise is already a recorded toolchain gap - no
+PSS/HB in the open-source flow (tracking.md, condition 5). The 2f0 tail-impedance term can be
+budgeted and minimised but not verified here.
+
+### Consequences - decisions for Greg, not for this document
+- **(A) Build it wide and record the limitation.** >=10 um M5, ~5 mV DC IR, ~876 pH added tail
+  inductance. Costs a re-allocation of the west strip and south corridor (below). No block
+  re-opened. The added inductance goes on the record beside the existing phase-noise gap.
+- **(B) Move ISS to a north pad** (info.yaml pin-order change, ISS before VSSD so it stays on
+  the analog rail = N06). ~290 um instead of ~876. But the escape then crosses the spiral, which
+  is forbidden for VTUNE and merely *uncharacterised* for a node that already carries 2f0.
+- **(C) Re-open vco_v1** to widen the internal 0.4 um strap and bring ISS out at an edge. Only
+  this fixes the internal 5.80 ohm. 3-5 days, re-opens the block carrying the inductor abstract
+  and the W4 waiver.
+
+### 3o's ISS lane is superseded - what must change before a, b, c, d are drawn
+A >=10 um M5 bus is not a 0.4 um riser and does not fit the 3o slots. Re-allocate **now**, so the
+earlier nets are not drawn into a strip that has to be re-cut:
+- **VSSA**: shorten the M5 ring-bottom west extension to **x175 -> x120** (not x58) and descend at
+  **x120** (x112.5-127.5). This clears the whole strip west of x112 for other M5.
+- **ISS**: **10 um M5 bus centred x90** (x85-95), west of the VSSA extension, so the two never
+  share a layer at a crossing.
+- **ISS south lane**: **10 um centred y140** (y135-145), using the corridor's ~120 um of spare
+  instead of squeezing against VTUNE's y165 and the core's M4 at y178.5.
+- **ISS gap descent**: must cross the GND ring bottom (M5, y182.5-197.5), so it descends the gap
+  **on M4** (10 um over ~88 um = 0.79 ohm, negligible) and vias to M5 below the ring. An M5
+  descent there would short ISS to GND - the same trap as VDDA.
+
+### Flag, not an assertion: the internal strap's current density
+The 0.4 um strap carries up to 1.57 mA = **3.9 mA/um**. Elsewhere this design sized a chip-level
+VSS tap at 23 um for 22.4 mA (~1 mA/um, route_chip.py `gnd_tap`). That is a ~4x difference in
+density inside a signed-off block. **I have not looked up the gf180 M2 EM limit** - this is
+raised as a question about vco_v1, not a finding.
+
+---
+
 ## 4. T2 DONE - the core is seated in the A01_BH DIEAREA (2026-08-22)
 
 `gds/chip_top.gds` now **is** the padframe block: boundary exactly `(0,0)-(1110,550) um` =
