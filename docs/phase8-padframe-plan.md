@@ -1025,6 +1025,131 @@ too - to be confirmed when it is routed, not assumed here.
 
 ---
 
+## 3o. WEST-STRIP + SOUTH-CORRIDOR LANE ALLOCATION - all five west nets at once (2026-08-23)
+
+Allocated **before** any metal is cut, for all five west-edge nets together, because routing
+them one at a time is exactly how 3m happened: a lane looks clear until the net that needed it
+is routed third. Measured with `analysis/lane_map.py` on the seated GDS.
+
+**Every scan below tests ALL layers (M1-M5, comp, poly, cont, vias), not just M2/M3.** The
+channel map's "clear columns" were computed as *clear of M2 AND M3 only* - which is how 3m came
+to call die x489 a clear column when it has M4 in it. Nothing in this allocation relies on that
+map; every lane here was re-measured on every layer.
+
+### The layer rule that makes the strip work
+- **Vertical risers in the west strip: M3.** **Horizontal pad approaches: M2**, with a via at
+  the turn. Then a riser crossing another net's approach is a benign different-layer crossing.
+  Without this, VTUNE's riser at x10 and ISS's pad approach at y382.5 are a same-layer short.
+- **Power keeps the phase-7 discipline:** VSSA on M5, VDDA on M4. **VDDA MUST NOT run west on
+  M5** - the GND ring's left segment is M5 at x182.50-197.50 y182.50-487.50, so an M5 run west
+  at y399 shorts VDDA to GND. Measured, not assumed.
+
+### GND ring, exact (M5, from the seated GDS)
+```
+bottom  x175.00-697.00  y182.50-197.50      left   x182.50-197.50  y182.50-487.50
+top     x175.00-697.00  y472.50-487.50      right  x674.50-689.50  y182.50-487.50
+```
+
+### West strip - x column allocation (die x0 to 182.5)
+
+| x band | owner | layer | note |
+|--------|-------|-------|------|
+| **x0-1** | **PAD FINGERS ONLY - NO THROUGH-ROUTING** | M2 | the shorting hazard, see below |
+| x2-8 | pad-approach jog zone | M2 | per-net, at that net's pad y only |
+| **x10** | **VTUNE riser** | M3 | reserved |
+| x16 | VSSA via-down column | M5->M2 | |
+| **x22** | **ISS riser** | M3 | reserved, escape UNSOLVED |
+| **x34** | **IBIAS riser** | M3 | |
+| **x46** | **VDDA descent** | M4 | |
+| x57.5-72.5 | VSSA M5 descent (15 um wide) | M5 | |
+| x76-172 | **unallocated spare (~96 um)** | - | future nets / fill |
+| x175-182.5 | ring fringe - M5 present | - | do not put M5 here |
+
+Measured CLEAR on **every layer**, full height y40-510, at x = 2, 6, 10, 16, 22, 28, 34, 40,
+46, 52, 65, 90, 130, 160. First occupancy is at **x175** (M5 x3 = the ring). So the whole strip
+x0-172 is virgin die.
+
+**The pad column is a shorting hazard for every west net, not just VTUNE.** The west pin rects
+all sit at x[0,1]: VSSA y46.36-118.64, VDDA y146.36-218.64, IBIAS y260.34-304.66, ISS
+y360.34-404.66, VTUNE y460.34-504.66. Any riser run up x0.5 shorts its net to every pad it
+passes. **All risers inboard of x>=10; approach the fingers horizontally at the target y only.**
+
+### South corridor - y band allocation (die y0 to 178.5, x5 to 470)
+
+| y band | owner | layer | note |
+|--------|-------|-------|------|
+| y40-160 | **unallocated spare (~120 um)** | - | |
+| **y165** | **VTUNE east-west lane** | M3 | x465 -> x10 |
+| **y172** | **ISS east-west lane** | M3 | reserved; x455 -> x22. 7 um north of VTUNE's lane so VTUNE's lane never meets ISS's riser |
+| (west strip only) y77.75-87.25, x0.5-65 | VSSA M5 approach | M5 | does not enter the corridor proper |
+
+Measured CLEAR on every layer at y = 40, 60, 80, 100, 120, 135, 150, 165, 172 across
+x470 -> x5. The core's lowest metal is M4 at y178.5, so y172 keeps 6.5 um.
+
+**Gap descents** (the DIV2<->vco gap, die x437.36-490.00, 52.6 um wide): **x465 = VTUNE**,
+**x455 = ISS (reserved)**. Both cross only the GND ring bottom on M5 - M3-vs-M5 has no spacing
+rule.
+
+### Per-net routes and lengths
+
+| net | route | length |
+|-----|-------|-------:|
+| **VTUNE** | via M1->M3 at tap (558.68,266.70); M3 W to (465,266.70) 93.68; M3 S to (465,165) 101.70 *[ring M5 x4]*; M3 W to (10,165) 455.00; M3 N to (10,482.5) 317.50; via M3->M2, M2 W to (0.5,482.5) 9.50; M2 stub y460.34-504.66 over all 8 fingers | **977.38** |
+| **IBIAS** | via M2->M3 at tap (271.30,423.90); M3 W to (34,423.90) 237.30; M3 S to (34,282.5) 141.40; via M3->M2, M2 W to (0.5,282.5) 33.50 | **412.20** |
+| **VDDA** | via4 M5->M4 at (256,399); M4 W to (46,399) 210.00 *[ring M5 x3 - M4 is mandatory here]*; M4 S to (46,205) 194.00; via M4->M2, M2 W to (0.5,205) 45.50 | **449.50** |
+| **VSSA** | M5 ring-bottom west extension x175->58 at y182.5-197.5, 117.00; M5 S at x65 to y82.5, 107.50; M5 W to x16, 49.00; via stack M5->M2, M2 W to (0.5,82.5) 15.50; M2 stub y46.36-118.64 | **~289** |
+| **ISS** | riser x22 / lane y172 / gap x455 / approach y382.5 **RESERVED - escape unsolved** | - |
+
+**IBIAS's 412.20 um independently reproduces 3g's recorded "IBIAS 412"** by a different method
+(3g measured a Manhattan haul; this is the actual allocated polyline). Worth noting because
+most of 3g's other figures have not been re-derived since the seat.
+
+**IBIAS escapes on M3 at its own tap y**, not at the cleaner-looking y450. The y423.90 line
+carries M2 x11, M1 x2, M4 x1, M5 x3 westward but **no M3 at all**, so an M3 escape crosses only
+other layers - the same via-at-the-pin technique that fixed the I/Q taps in 3i. The y450 line
+looks cleaner overall (M3 x2, M4 x3, M5 x5) but is *not* M3-clear, so it is the worse choice
+for an M3 escape. Layer-specific clearance, not total clutter, is what decides.
+
+### ISS: measured, and it does NOT get the corridor for free
+Item 6 asked for confirmation by measurement rather than assumption. **The measurement says no.**
+Sweeping a west exit from the ISS tap (die 595.84, 260.33) across the vco at every y from 236 to
+284:
+
+| y | crossings, x592 -> x492 |
+|---|---|
+| 236.00 | M1 x4, M2 x4, comp x4, cont x4, poly x4, v1 x2 |
+| 242.00 | M1 x4, M2 x4, comp x4, cont x4, poly x4 |
+| 248.00 | M1 x4, M2 x4, comp x4, cont x4, poly x4, v1 x2 |
+| 254.00 | M1 x6, M2 x2, M3 x9, comp x6, cont x6, poly x5, v1 x2, v2 x2 |
+| **260.33 (tap)** | M1 x3, M2 x2, comp x2, cont x2, poly x2, v1 x1 |
+| 266.70 | M1 x4, M2 x2, M3 x1, comp x2, cont x3, poly x3, v1 x1, v2 x1 |
+| 272.00 | M1 x1, M3 x2, M4 x1, comp x1, cont x1 |
+| 278.00 | M1 x1, M3 x1, M4 x1, comp x1, cont x1, poly x1 |
+| 284.00 | M1 x1, M3 x1, M4 x1, comp x1, cont x1, poly x1 |
+
+Every line crosses device geometry; a south drop inside the vco is worse still (x594-600, y258
+-> y196: 11-15 M1, 14-15 M2, 14 poly, plus M5). ISS sits deeper into the vco than VTUNE - x595.84
+vs x558.68 - and VTUNE's west escape was clear precisely because its tap is already west of the
+dense active.
+
+**The lightest lines are y272-284** (roughly one obstacle cluster in 100 um), so an escape there
+looks jog-able - but that is per-tap build work needing the block's port/net context to tell a
+same-net touch from a short, exactly as 3g said. **So: the corridor is budgeted for TWO nets and
+one of them is not proven.** VTUNE is routed on it now; ISS's lane, riser and gap column are
+reserved and must not be reused, but ISS is not solved and should not be quoted as solved.
+
+### Conflicts this allocation resolves (each was a real same-layer crossing)
+1. VTUNE riser x10 (y165-482.5) vs ISS/IBIAS/VDDA pad approaches at y382.5/282.5/205 -> risers
+   M3, approaches M2.
+2. VTUNE lane y165 vs ISS riser x22 -> ISS's lane sits at y172 and its riser starts there, north
+   of VTUNE's lane, so the two never meet.
+3. VDDA west run vs the GND ring left segment -> VDDA on M4, not M5.
+4. VSSA M5 west extension (y182.5-197.5) vs VDDA's pad approach -> VDDA lands at y205, above the
+   extension, and on M2 anyway.
+5. IBIAS horizontal at y423.90 vs the VTUNE/ISS risers -> IBIAS turns down at x34, east of both.
+
+---
+
 ## 4. T2 DONE - the core is seated in the A01_BH DIEAREA (2026-08-22)
 
 `gds/chip_top.gds` now **is** the padframe block: boundary exactly `(0,0)-(1110,550) um` =
