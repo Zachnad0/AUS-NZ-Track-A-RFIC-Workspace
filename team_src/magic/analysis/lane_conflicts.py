@@ -108,7 +108,17 @@ SEG = [
     # centre is in an inter-finger gap for ALL ELEVEN multi-finger pins -- so every one of
     # these bars is load-bearing, not cosmetic. A bare drop at the centre touches nothing and
     # is clean under both DRC and LVS.
-    ("CP_OUT", "M2",  45.34, 549.00,  89.66, 549.00, 1.0),   # N01, still unrouted
+    # ---- CP_OUT, N01. Layer per segment is forced by what is already built: BOTH M3 and M4
+    # are occupied at die y505 (REF_IN's M3 lane x405-734 and VDDD's M4 lane x408-667), so the
+    # haul goes WEST of x405 before rising. The M4 horizontals at die y470.7-472.3 x445-485 are
+    # the gnd_tap M4 escape to the ring, so the riser leaves M4 at y460, below them.
+    ("CP_OUT", "M4", 472.25, 415.41, 472.25, 460.00, 0.6),   # up the tap's own 0.6 um M4 stub
+    ("CP_OUT", "M3", 472.25, 460.00, 472.25, 495.00, 0.4),   # above the M3 horizontal at y440
+    ("CP_OUT", "M2", 392.00, 495.00, 472.25, 495.00, 0.4),   # M2 west: clears Q_P x400 + REF_IN x405
+    ("CP_OUT", "M3", 392.00, 495.00, 392.00, 530.00, 0.4),   # between I_P's lane and Q_P's
+    ("CP_OUT", "M3",  67.50, 530.00, 392.00, 530.00, 0.4),   # above every quad lane (max y516)
+    ("CP_OUT", "M2",  67.50, 530.00,  67.50, 549.50, 0.4),   # drop INTO the bar, not up to it
+    ("CP_OUT", "M2",  45.34, 549.00,  89.66, 549.00, 1.0),   # N01 finger-row bar
 
     # ---- VSSD / VDDD / REF_IN + the PU/PD ties, BUILT against the 13-pin DEF ----
     # PU and PD carry no net of their own: PD IS VDDD's net and PU IS VSSD's, by the

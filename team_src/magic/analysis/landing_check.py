@@ -52,11 +52,14 @@ SEED = {
     "VDDD":      (380.00, 388.00, "M5", "VDDD M5 bus"),
     "VSSA":      (400.00, 190.00, "M5", "GND ring, bottom segment"),
     "REF_IN":    (410.28, 457.60, "M3", "PFD REF pin"),
+    "CP_OUT":    (472.25, 415.41, "M4", "CP_v1 CP_OUT M4 stub"),
 }
 # Nets that share another net's flood (same electrical node) -- checked against that flood.
 ALIAS = {"VSSD": "VSSA", "REF_IN_PU": "VSSA", "REF_IN_PD": "VDDD"}
-# Declared but not yet routed -- reported, not failed.
-UNROUTED = {"CP_OUT"}
+# NO "unrouted, excused" set. The pin list comes from the DEF -- the CONTRACT -- and every pin
+# in it must have a seed and must be covered. An earlier version carried CP_OUT in an UNROUTED
+# escape hatch, which meant the tool kept reporting PASS after CP_OUT had actually been built:
+# it counted the work, not the contract. A pin with no seed is a FAIL, not a note.
 
 
 def load_targets():
@@ -87,11 +90,11 @@ def main():
 
     floods = {}
     fails = 0
-    for net in sorted(set(list(SEED) + list(ALIAS) + list(UNROUTED))):
-        if net in UNROUTED:
-            print("%-10s NOT ROUTED YET -- %d target finger(s) unserved"
-                  % (net, len(targets.get(net, []))))
-            continue
+    # Iterate the DEF's pin list, not the seed table: count from the contract.
+    for net in sorted(targets):
+        if net not in SEED and net not in ALIAS:
+            print("%-10s *** NO SEED DEFINED *** %d target finger(s) unverifiable"
+                  % (net, len(targets[net]))); fails += 1; continue
         src = ALIAS.get(net, net)
         if src not in floods:
             sx, sy, sl, what = SEED[src]

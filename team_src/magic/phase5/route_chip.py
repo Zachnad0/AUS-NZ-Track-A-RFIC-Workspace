@@ -511,6 +511,31 @@ R.via_stack(chip, ly, 2, 4, 367.5, 328.0)                      # joins VSSD -- s
 chip.shapes(ly.layer(36, 10)).insert(pya.DText("REF_IN_PU", pya.DTrans(pya.DVector(598.845, 349.5))))
 print("(f) VSSD/VDDD/REF_IN + PU->VSSD, PD->VDDD landed on the 13-pin DEF fingers")
 
+# --- PHASE 8 (g): CP_OUT to N01 ---------------------------------------------------------------
+# The last declared pin. Found MISSING by analysis/landing_check.py: CP_OUT was declared in
+# info.yaml as pin 6 / slot N01 and had NO metal, which a port count can never catch because an
+# unrouted net has no label to be missing from a list.
+# Route derived on the SEATED frame, not from 3g. Layer per segment is forced by what is already
+# built: BOTH M3 and M4 are taken at die y505 -- REF_IN's M3 lane (x405-734) and VDDD's M4 lane
+# (x408-667) -- so the haul goes WEST of x405 before it rises. It leaves M4 at die y460 because
+# the M4 horizontals at y470.7-472.3, x445-485 are gnd_tap's escape to the ring, and it crosses
+# y495 on M2 because Q_P's riser (x400) and REF_IN's riser (x405) both sit on M3 there.
+CPO_X = 272.25          # die 472.25 -- the tap's own 0.6 um M4 stub, die y406.20-424.62
+R.vwire(chip, ly, 4, 215.41, 260.0, CPO_X, w=0.6)              # up the stub to die y460
+R.via_stack(chip, ly, 3, 4, CPO_X, 260.0)
+R.vwire(chip, ly, 3, 260.0, 295.0, CPO_X, w=0.4)               # above the M3 horizontal at y440
+R.via_stack(chip, ly, 2, 3, CPO_X, 295.0)
+R.hwire(chip, ly, 2, 192.0, CPO_X, 295.0, w=0.4)               # M2 west across x405 and x400
+R.via_stack(chip, ly, 2, 3, 192.0, 295.0)
+R.vwire(chip, ly, 3, 295.0, 330.0, 192.0, w=0.4)               # between I_P's lane and Q_P's
+R.hwire(chip, ly, 3, -132.5, 192.0, 330.0, w=0.4)              # die y530, above every quad lane
+R.via_stack(chip, ly, 2, 3, -132.5, 330.0)
+R.vwire(chip, ly, 2, 330.0, 349.5, -132.5, w=0.4)              # drops INTO the bar, not up to it
+R.box(chip, ly, (36, 0), -154.66, 349.0, -110.34, 350.0)       # N01 finger-row bar
+chip.shapes(ly.layer(36, 10)).insert(pya.DText("CP_OUT", pya.DTrans(pya.DVector(-132.5, 349.5))))
+print("(g) CP_OUT: %.2f um to N01 (die x45.34-89.66)"
+      % (44.59 + 35.0 + 80.25 + 35.0 + 324.5 + 19.5))
+
 # --- PHASE 8 FRAME: seat the core in the padframe DIEAREA and draw the 0/0 boundary AT it ---
 # Bailey, 2026-08-21: "the width and the height should be the exact size of the block size
 # specified for the pad frame blocks." A01_BH.def (padframe/A01/project_defs/BH/) says
