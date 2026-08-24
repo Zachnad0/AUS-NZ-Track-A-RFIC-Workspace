@@ -20,7 +20,7 @@ except ImportError:
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.environ.get("PADFRAME_ROOT",
-                      os.path.join(HERE, "..", "..", "..", "padframe", "A01", "project_defs"))
+                      os.path.join(HERE, "..", "..", "..", "padframe", "A01", "project_defs_13pin"))
 DBU = 200.0
 SLOT_PITCH = 100.0          # um, north slots
 

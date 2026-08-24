@@ -1432,10 +1432,16 @@ the slot centre, so the centre is always the midpoint of the central gap.
 | ISS | W21 | asig | 8 x 2.54 | y382.500 | **5.16 um** (379.920-385.080) |
 | VTUNE | W22 | asig | 8 x 2.54 | y482.500 | **5.16 um** (479.920-485.080) |
 | CP_OUT | N01 | asig | 8 x 2.54 | x67.500 | **5.16 um** (64.920-70.080) |
-| I_P | N02 | asig | 8 x 2.54 | x167.500 | **5.16 um** (164.920-170.080) |
-| I_N | N03 | asig | 8 x 2.54 | x267.500 | **5.16 um** (264.920-270.080) |
-| Q_P | N04 | asig | 8 x 2.54 | x367.500 | **5.16 um** (364.920-370.080) |
-| Q_N | N05 | asig | 8 x 2.54 | x467.500 | **5.16 um** (464.920-470.080) |
+| **Q_N** | N02 | asig | 8 x 2.54 | x167.500 | **5.16 um** (164.920-170.080) |
+| **I_N** | N03 | asig | 8 x 2.54 | x267.500 | **5.16 um** (264.920-270.080) |
+| **I_P** | N04 | asig | 8 x 2.54 | x367.500 | **5.16 um** (364.920-370.080) |
+| **Q_P** | N05 | asig | 8 x 2.54 | x467.500 | **5.16 um** (464.920-470.080) |
+
+> **CORRECTED 2026-08-23.** This table originally listed I_P/I_N/Q_P/Q_N against N02-N05 -
+> the **old 12-pin** package's assignment, transcribed before the reorder was regenerated.
+> The **13-pin DEF** puts **Q_N N02, I_N N03, I_P N04, Q_P N05**, which is what `info.yaml`
+> declares and what the built metal targets (verified by measuring the landing bars in
+> `chip_top.gds`, not by reading this table). The gap geometry per slot is unchanged.
 | VDDD | N06 | dvdd | 6 x 9.50 | x567.500 | **3.28 um** (565.860-569.140) |
 | REF_IN_PU / _PD / Y | N07 | in_c | 1 x 0.38 each | on the finger | - (single shape) |
 
@@ -1576,6 +1582,105 @@ slot, one 0.38 um shape each, and a 0.4 um wire centred 0.2 um off misses entire
 looking perfectly routed. Land them by measuring the finger, not by computing a slot centre.
 
 Every one of these gets a `lane_conflicts.py` segment before the metal is cut.
+
+---
+
+## 3v. 13-PIN DEF ARRIVED, and (f) VSSD / VDDD / REF_IN / PU / PD BUILT (2026-08-23)
+
+`A01.def (2).tgz` (sha256 `45d2fb85...`), extracted to **`padframe/A01/project_defs_13pin/`
+alongside** the 12-pin package, which is kept for diffing.
+
+### The three arrival checks - all pass
+1. `selected_variants` = **BH only**, `participant_pin_count` **13**. **Not** bumped to another
+   config. BV is no longer offered - we chose BH, so that costs nothing. And `project_size` now
+   reads **1110 x 550, rectangle_dbu [0,0,222000,110000]**: the generator has picked up our
+   seated 0/0 boundary.
+2. `breaks`: `BRK_BEFORE_BH before W18`, **`BRK_BEFORE_N06` reason
+   `additional_power_ground_set`** - firing before **VSSD's** slot, not VDDD's, exactly as 3q
+   predicted - and `BRK_AFTER_BH after_slot N08`.
+3. `in_c` lands at **N08**. Confirmed.
+
+Slot map: VSSA W18, VDDA W19, IBIAS W20, ISS W21, VTUNE W22, CP_OUT N01, **Q_N N02, I_N N03,
+I_P N04, Q_P N05**, VSSD N06, VDDD N07, REF_IN N08. **Every one of 3s's predicted coordinates is
+confirmed exactly**, including the three in_c fingers.
+
+### The built quad was verified by MEASUREMENT, not by reading the plan
+| built label | die x of its landing bar | 13-pin DEF slot there |
+|---|---|---|
+| Q_N | 145.34-189.66 (c 167.50) | **Q_N, N02** |
+| I_N | 245.34-289.66 (c 267.50) | **I_N, N03** |
+| I_P | 345.34-389.66 (c 367.50) | **I_P, N04** |
+| Q_P | 445.34-489.66 (c 467.50) | **Q_P, N05** |
+
+**Correct - no rebuild.** The build took its pad x from the reordered `info.yaml`, which is what
+the 13-pin DEF implements. **3s's table was the hazard**: transcribed from the *old* 12-pin
+package, so it documented the old assignment while the metal followed the new one. Corrected in
+place with a note.
+
+### Why the base-length spread is 155 um and not 3d's predicted 58
+Bases: Q_N 331.76, I_N 278.65, I_P 298.41, Q_P 433.76 - spread **155.11 um**. 3d predicted 58.
+**3d is stale, not wrong at the time**, for two reasons:
+- It was swept at **dy=262.5**, before 3f moved the core to dy=200. That shifts all four equally
+  (+62.5), moving the mean and not the spread - 3f's own table shows the matched target going
+  269 -> 332 from dy alone.
+- **3d swept pure Manhattan hauls, before the escape/jog geometry existed.** The jogs added in
+  3f/3i/3l - to clear the M3-on-M3 conflicts and the I_P/Q_P tap-to-block short - are
+  asymmetric, and Q_P takes the worst: east escape, north to y398, **west** to x400, north to
+  the lane, then **east** to the pad. That backtracking costs ~102 um a straight riser does not
+  pay, and Q_P sets the target.
+
+**Consequence for 3e, recorded rather than left stale:** the matched haul is 433.76 um, not 269,
+so the added load is **~34.7 fF/output** at 0.08 fF/um, not ~21.5. By 3e's own method that is a
+**~0.9 %** monitor-amplitude drop at 3 GHz rather than 0.6 % - still negligible, but 34.7 fF is
+the figure on record now. The reorder's **crossing** benefit (3 -> 0) is untouched; its length
+benefit is smaller than 3d advertised once the real escape geometry is included.
+
+### (f) built
+| net | route | landing |
+|-----|-------|---------|
+| **VSSD** | M4 riser off the **GND ring TOP** at die x567.5, y480 -> 547 | N06 bar x531.36-603.64 |
+| **VDDD** | via4 onto the M5 bus at die x408 (inside x249-442), M4 riser to y505, east with an **M5 hop over VSSD's M4 riser**, M4 riser at x667 | N07 bar x631.36-703.64 |
+| **REF_IN** | PFD.REF die (410.28,457.60), escape **west** off PFD's own edge, north, east at y505, north at x734 | **single 0.38 um Y finger** |
+| **REF_IN_PD** | M2 at y540 west to VDDD's riser - **PD -> VDDD** | single 0.38 um finger |
+| **REF_IN_PU** | M2 at y528 west to VSSD's riser - **PU -> VSSD**, the digital island's ground | single 0.38 um finger |
+
+VSSD is taken from the ring **top** segment because that is where `gnd_tap(233,262,4,"up")`
+already lands PFD.VSS - so it is the digital VSS by the shortest path, not a spur off the analog
+side. PU and PD carry no net of their own: PD **is** VDDD's net and PU **is** VSSD's.
+
+Two more landing misses were caught, both by the port count:
+- the two w=3 M2 drops extended 1.5 um past their endpoints and pushed the die extent to
+  **y551**, outside the DIEAREA;
+- **REF_IN's Y landing box started at die y549.0 while its via2 M2 pad ended at y548.75** - a
+  **0.25 um** gap, extracted as `REF_IN` + `REF_IN_uq0`. The box now reaches down to y548.3.
+
+### Gate
+| check | result |
+|-------|--------|
+| magic DRC box set | 252 boxes, **0 added, 0 removed** |
+| KLayout signoff | **PASS**, 168 waived |
+| extraction devices / ports / nets | 5 / **12** / 21, **zero disconnected nodes** |
+| LVS topology | **"Netlists match uniquely"** - 5 devices, 19 nets both sides |
+| LVS pin match | **fails on one name** - below |
+| `check_placement` | CONSISTENT |
+| `lane_conflicts`, all 12 nets | **0** net-vs-net same-layer overlaps |
+
+### THE ONE OPEN ITEM: VSSA vs VSSD in the golden
+netgen reports *"Netlists match uniquely"*, then *"Top level cell failed pin matching"* on
+exactly one pin - layout **`VSSD`** against golden **`VSSA`**. Every other pin matches.
+
+**This is not a layout defect.** VSSA and VSSD **are one electrical node** on-chip (shared
+p-substrate, no deep nwell; Bailey confirmed 2026-08-21 that the user grounds are shorted
+through the padring and substrate anyway), so magic emits **one** name for the net and picked
+VSSD. The layout cannot present two ports for one net.
+
+**The fix is the T6 item verbatim: "the golden should tie both ports to a single internal node;
+expect one net carrying two port labels."** That means `chip_top.sch` gains a VSSD label on the
+same wire as VSSA and the golden is re-netlisted. **That is a schematic change and Greg's call**,
+and the Aug 28 gate does not require LVS, so it is not on this week's critical path.
+
+Until then the distinctness evidence is: 12 ports with exactly the expected names, **zero**
+disconnected nodes, **zero** `_uq0` duplicates, 21 nets, and a topology that matches uniquely.
 
 ---
 

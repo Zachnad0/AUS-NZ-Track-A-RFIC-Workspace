@@ -108,16 +108,35 @@ SEG = [
     # centre is in an inter-finger gap for ALL ELEVEN multi-finger pins -- so every one of
     # these bars is load-bearing, not cosmetic. A bare drop at the centre touches nothing and
     # is clean under both DRC and LVS.
-    ("CP_OUT", "M2",  45.34, 549.00,  89.66, 549.00, 1.0),   # N01, from the issued DEF
+    ("CP_OUT", "M2",  45.34, 549.00,  89.66, 549.00, 1.0),   # N01, still unrouted
 
-    # PREDICTED positions -- the 13-pin DEF has not been issued. Verify before landing.
-    ("VSSD",   "M2", 531.36, 549.00, 603.64, 549.00, 1.0),   # N06, takes VDDD's present slot
-    ("VDDD",   "M2", 631.36, 549.00, 703.64, 549.00, 1.0),   # N07 (+100 um)
-    # in_c: THREE separate pins in one slot, ONE 0.38 um finger each. No row to bar across --
-    # these are precision landings, and a 0.4 um wire centred 0.2 um off misses entirely.
-    ("REF_IN",    "M2", 733.95, 549.00, 733.95, 550.00, 0.38),
-    ("REF_IN_PD", "M2", 794.48, 549.00, 794.48, 550.00, 0.38),
-    ("REF_IN_PU", "M2", 798.84, 549.00, 798.84, 550.00, 0.38),
+    # ---- VSSD / VDDD / REF_IN + the PU/PD ties, BUILT against the 13-pin DEF ----
+    # PU and PD carry no net of their own: PD IS VDDD's net and PU IS VSSD's, by the
+    # PU=0 / PD=1 pull-down tie. They are named for their net here so the deliberate
+    # junction is not reported as a short.
+    ("VSSD", "M4", 567.50, 480.00, 567.50, 547.00, 3.0),     # riser off the GND ring top
+    ("VSSD", "M2", 567.50, 547.00, 567.50, 548.00, 3.0),
+    ("VSSD", "M2", 531.36, 549.00, 603.64, 549.00, 1.0),     # N06 finger-row bar
+    ("VSSD", "M2", 798.845, 528.00, 798.845, 549.00, 1.0),   # PU drop
+    ("VSSD", "M2", 567.50, 528.00, 798.845, 528.00, 1.0),    # PU tie west to VSSD
+    ("VSSD", "M2", 798.40, 549.00, 799.30, 549.00, 1.0),     # PU 0.38 um finger landing
+
+    ("VDDD", "M4", 408.00, 388.00, 408.00, 505.00, 3.0),     # riser off the VDDD M5 bus
+    ("VDDD", "M4", 408.00, 505.00, 560.00, 505.00, 3.0),
+    ("VDDD", "M5", 560.00, 505.00, 575.00, 505.00, 3.0),     # M5 hop over VSSD's M4 riser
+    ("VDDD", "M4", 575.00, 505.00, 667.00, 505.00, 3.0),
+    ("VDDD", "M4", 667.00, 505.00, 667.00, 547.00, 3.0),
+    ("VDDD", "M2", 667.00, 547.00, 667.00, 548.00, 3.0),
+    ("VDDD", "M2", 631.36, 549.00, 703.64, 549.00, 1.0),     # N07 finger-row bar
+    ("VDDD", "M2", 794.48, 540.00, 794.48, 549.00, 1.0),     # PD drop
+    ("VDDD", "M2", 667.00, 540.00, 794.48, 540.00, 1.0),     # PD tie west to VDDD
+    ("VDDD", "M2", 794.00, 549.00, 794.96, 549.00, 1.0),     # PD 0.38 um finger landing
+
+    ("REF_IN", "M3", 405.00, 457.60, 410.28, 457.60, 0.4),   # escape west out of PFD
+    ("REF_IN", "M3", 405.00, 457.60, 405.00, 505.00, 0.4),
+    ("REF_IN", "M3", 405.00, 505.00, 734.00, 505.00, 0.4),
+    ("REF_IN", "M3", 734.00, 505.00, 734.00, 548.50, 0.4),
+    ("REF_IN", "M2", 733.95, 548.30, 733.95, 550.00, 0.9),   # Y 0.38 um finger landing
 ]
 
 

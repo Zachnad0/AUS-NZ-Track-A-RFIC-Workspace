@@ -438,6 +438,79 @@ chip.shapes(ly.layer(36, 10)).insert(pya.DText("ISS", pya.DTrans(pya.DVector(-19
 print("(e) ISS: %.2f um bus (M2 8um / M4 10um / M5 10um), one M4 hop over VSSA's descent"
       % (97.04 + 35.0 + 120.33 + 325.0 + 20.0 + 20.0 + 242.5 + 76.0))
 
+# --- PHASE 8 (f): VSSD, VDDD, REF_IN and the PU/PD ties -------------------------------------
+# Built against the 13-PIN DEF (padframe/A01/project_defs_13pin/), whose slot map was verified
+# first: VSSD N06, VDDD N07, REF_IN N08, and BRK_BEFORE_N06 reason additional_power_ground_set
+# firing before VSSD's slot -- not VDDD's. All coordinates measured off that DEF.
+# CORE coords throughout (die = core + 200).
+
+# VSSD -- N06, die x531.36-603.64. Taken from the GND ring TOP segment (M5, die y472.5-487.5)
+# directly beneath the pad. That ring top is where PFD.VSS already lands via route_chip's own
+# gnd_tap(233,262,4,"up"), so this IS the digital VSS, reached by the shortest path; it is not
+# a spur off the analog VSSA side of the ring. On-chip VSSA and VSSD are one node (shared
+# p-substrate, no deep nwell); the padring break isolates the RAILS, so what VSSD buys is a
+# local bond for the digital island's return, which is exactly what a short vertical gives.
+R.via_stack(chip, ly, 4, 5, 367.5, 280.0)                      # onto the ring top, die (567.5,480)
+R.vwire(chip, ly, 4, 280.0, 347.0, 367.5, w=3.0)               # M4 riser, die y480 -> 547
+R.via_stack(chip, ly, 2, 4, 367.5, 347.0)
+R.vwire(chip, ly, 2, 347.0, 348.0, 367.5, w=3.0)   # w=3 extends 1.5: must not pass die y550
+R.box(chip, ly, (36, 0), 331.36, 349.0, 403.64, 350.0)         # N06 finger-row bar, 72.28 x 1.0
+chip.shapes(ly.layer(36, 10)).insert(pya.DText("VSSD", pya.DTrans(pya.DVector(367.5, 349.5))))
+
+# VDDD -- N07, die x631.36-703.64, off the M5 VDDD bus (die x249-442, y382-394).
+# Tapped at die x408, INSIDE the bus -- 3o's "tap at x256" for VDDA was 2.5 um outside its bus
+# and produced a floating node, so every bus tap here is measured against the bus extent.
+# The rise column die x408 is the ibias(<=381.76) / CP(>=410) gap and carries NO M4 (measured).
+# The east lane at die y505 must cross VSSD's M4 riser at die x567.5 -- same layer, different
+# net -- so it hops to M5 for 30 um. M5 is free there, above the ring top at die y487.5.
+R.via_stack(chip, ly, 4, 5, 208.0, 188.0)                      # onto the VDDD bus, die (408,388)
+R.vwire(chip, ly, 4, 188.0, 305.0, 208.0, w=3.0)               # M4 riser, die y388 -> 505
+R.hwire(chip, ly, 4, 208.0, 360.0, 305.0, w=3.0)
+R.via_stack(chip, ly, 4, 5, 360.0, 305.0)
+R.hwire(chip, ly, 5, 360.0, 375.0, 305.0, w=3.0)               # M5 hop over VSSD's M4 riser
+R.via_stack(chip, ly, 4, 5, 375.0, 305.0)
+R.hwire(chip, ly, 4, 375.0, 467.0, 305.0, w=3.0)
+R.vwire(chip, ly, 4, 305.0, 347.0, 467.0, w=3.0)               # M4 riser, die x667
+R.via_stack(chip, ly, 2, 4, 467.0, 347.0)
+R.vwire(chip, ly, 2, 347.0, 348.0, 467.0, w=3.0)   # ditto
+R.box(chip, ly, (36, 0), 431.36, 349.0, 503.64, 350.0)         # N07 finger-row bar
+chip.shapes(ly.layer(36, 10)).insert(pya.DText("VDDD", pya.DTrans(pya.DVector(467.0, 349.5))))
+
+# REF_IN -- N08 in_c. THREE separate pins in one slot, ONE 0.38 um finger each, no row to bar
+# across (plan doc 3s): Y die x733.76-734.14, PD x794.29-794.67, PU x798.655-799.035. Each is
+# landed on its OWN measured finger; a 0.4 um wire centred 0.2 um off misses entirely while
+# looking perfectly routed.
+# Y comes from PFD.REF, die (410.28,457.60) on M3, which sits on PFD's west edge (x410), so it
+# escapes WEST into the ibias/PFD gap rather than crossing the block.
+R.hwire(chip, ly, 3, 205.0, 210.28, 257.6, w=0.4)              # escape west out of PFD
+R.vwire(chip, ly, 3, 257.6, 305.0, 205.0, w=0.4)               # north, crossing the ring on M3
+R.hwire(chip, ly, 3, 205.0, 534.0, 305.0, w=0.4)               # east at die y505 (measured clear)
+R.vwire(chip, ly, 3, 305.0, 348.5, 534.0, w=0.4)
+R.via_stack(chip, ly, 2, 3, 534.0, 348.5)
+# The box must reach DOWN to the via2 M2 pad (die y548.25-548.75), not start at the finger
+# edge: at y349.0 (die 549.0) it cleared the pad by 0.25 um and REF_IN extracted as two
+# disconnected labels (REF_IN + REF_IN_uq0). Same landing-miss family as VSSA_uq0/VDDA_uq0.
+R.box(chip, ly, (36, 0), 533.5, 348.3, 534.4, 350.0)           # lands ON the Y finger
+chip.shapes(ly.layer(36, 10)).insert(pya.DText("REF_IN", pya.DTrans(pya.DVector(533.95, 349.5))))
+
+# PU/PD: decided 2026-08-21 and confirmed against the PDK truth table -- PU=0, PD=1 = weak
+# pull-down, so REF_IN parks at a clean logic 0 when the bench clock is disconnected. Both
+# terminals MUST be driven; a floating CMOS control gate is not acceptable.
+#   PD -> VDDD   PU -> VSSD (the DIGITAL island's ground, NOT VSSA)
+# Both ties run on M2 so they cross REF_IN's M3 riser and each other's risers on other layers.
+R.box(chip, ly, (36, 0), 594.0, 349.0, 594.96, 350.0)          # lands ON the PD finger
+R.vwire(chip, ly, 2, 340.0, 349.0, 594.48, w=1.0)
+R.hwire(chip, ly, 2, 467.0, 594.48, 340.0, w=1.0)              # west to VDDD's riser
+R.via_stack(chip, ly, 2, 4, 467.0, 340.0)                      # joins VDDD -- same net
+chip.shapes(ly.layer(36, 10)).insert(pya.DText("REF_IN_PD", pya.DTrans(pya.DVector(594.48, 349.5))))
+
+R.box(chip, ly, (36, 0), 598.4, 349.0, 599.3, 350.0)           # lands ON the PU finger
+R.vwire(chip, ly, 2, 328.0, 349.0, 598.845, w=1.0)
+R.hwire(chip, ly, 2, 367.5, 598.845, 328.0, w=1.0)             # west to VSSD's riser
+R.via_stack(chip, ly, 2, 4, 367.5, 328.0)                      # joins VSSD -- same net
+chip.shapes(ly.layer(36, 10)).insert(pya.DText("REF_IN_PU", pya.DTrans(pya.DVector(598.845, 349.5))))
+print("(f) VSSD/VDDD/REF_IN + PU->VSSD, PD->VDDD landed on the 13-pin DEF fingers")
+
 # --- PHASE 8 FRAME: seat the core in the padframe DIEAREA and draw the 0/0 boundary AT it ---
 # Bailey, 2026-08-21: "the width and the height should be the exact size of the block size
 # specified for the pad frame blocks." A01_BH.def (padframe/A01/project_defs/BH/) says

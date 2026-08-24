@@ -1,0 +1,103 @@
+{
+  "project_size": {
+    "source_gds": "/Users/kanobailey/chipathon/2026/gds/A01/chip_top.gds",
+    "top_cell": "chip_top",
+    "layer": 0,
+    "datatype": 0,
+    "layout_dbu_microns": 0.005,
+    "rectangle_dbu": [
+      0,
+      0,
+      222000,
+      110000
+    ],
+    "width_microns": "1110",
+    "height_microns": "550",
+    "top_cell_text": [
+      {
+        "text": "VTUNE",
+        "layer": 34,
+        "datatype": 10
+      },
+      {
+        "text": "I_P",
+        "layer": 34,
+        "datatype": 10
+      },
+      {
+        "text": "I_N",
+        "layer": 34,
+        "datatype": 10
+      },
+      {
+        "text": "Q_P",
+        "layer": 34,
+        "datatype": 10
+      },
+      {
+        "text": "Q_N",
+        "layer": 34,
+        "datatype": 10
+      },
+      {
+        "text": "IBIAS",
+        "layer": 36,
+        "datatype": 10
+      },
+      {
+        "text": "ISS",
+        "layer": 36,
+        "datatype": 10
+      },
+      {
+        "text": "Q_N",
+        "layer": 36,
+        "datatype": 10
+      },
+      {
+        "text": "I_N",
+        "layer": 36,
+        "datatype": 10
+      },
+      {
+        "text": "I_P",
+        "layer": 36,
+        "datatype": 10
+      },
+      {
+        "text": "Q_P",
+        "layer": 36,
+        "datatype": 10
+      },
+      {
+        "text": "REF_IN",
+        "layer": 42,
+        "datatype": 10
+      },
+      {
+        "text": "VDDA",
+        "layer": 81,
+        "datatype": 10
+      },
+      {
+        "text": "VDDD",
+        "layer": 81,
+        "datatype": 10
+      },
+      {
+        "text": "VSSA",
+        "layer": 81,
+        "datatype": 10
+      },
+      {
+        "text": "CP_OUT",
+        "layer": 46,
+        "datatype": 10
+      }
+    ]
+  },
+  "participant_pin_count": 13,
+  "selected_variants": [
+    "BH"
+  ]
+}

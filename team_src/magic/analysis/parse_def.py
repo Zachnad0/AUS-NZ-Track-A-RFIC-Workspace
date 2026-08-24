@@ -10,7 +10,7 @@ def load(variant):
     # read from a /tmp working dir, which is why it was lost once. PADFRAME_ROOT overrides.
     root = os.environ.get("PADFRAME_ROOT",
                           os.path.join(os.path.dirname(os.path.abspath(__file__)),
-                                       "..", "..", "..", "padframe", "A01", "project_defs"))
+                                       "..", "..", "..", "padframe", "A01", "project_defs_13pin"))
     p = os.path.join(root, variant, "A01_%s_interface.yaml" % variant)
     with open(p) as f:
         return yaml.safe_load(f)
