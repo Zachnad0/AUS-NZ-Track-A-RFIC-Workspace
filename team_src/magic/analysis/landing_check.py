@@ -1,0 +1,144 @@
+#!/usr/bin/env python3
+# landing_check.py -- assert that every haul actually REACHES its target, with a measured margin.
+#
+# WHY THIS IS A SEPARATE TOOL FROM lane_conflicts.py
+# ---------------------------------------------------
+# lane_conflicts detects nets that DO touch and should not. This detects nets that do NOT touch
+# and should. They are opposite defects and no single check finds both.
+#
+# Five landing defects have now been found, every one DRC-clean and every one caught only after
+# the fact by an LVS port count:
+#   1. Q_N/I_N/I_P/Q_P drops aimed at the slot CENTRE, which is an inter-finger gap on all
+#      twelve multi-finger pins -- a bare drop touches nothing (plan doc 3s);
+#   2. VSSA_uq0  -- the pad-plate via placed 2.0 um OUTSIDE the plate (sign error);
+#   3. VDDA_uq0  -- the via4 placed 2.5 um short of the M5 bus, which starts at die x258.5
+#      and not the x256 the plan said;
+#   4. REF_IN_uq0 -- the Y landing box starting at die y549.0 while its via2 M2 pad ended at
+#      y548.75: a 0.25 um gap;
+#   5. the w=3 M2 drops overshooting the DIEAREA by 1.0 um at the other end.
+# DRC cannot see any of these: not touching is not a rule violation.
+#
+# HOW IT WORKS
+# ------------
+# For each net, flood-fill the connected metal from a seed on the net's BLOCK-SIDE source, then
+# assert the flood covers every target shape -- the DEF pin fingers, taken from the committed
+# DEF, not from a plan. Seeding at the block side means the flood has to traverse the whole haul
+# to reach the pad, so a break anywhere along it shows up as an uncovered target.
+#
+# Run: klayout -b -r team_src/magic/analysis/landing_check.py
+# Exit status is printed, not returned (klayout -b swallows it). Writes nothing.
+import pya
+import os
+
+REPO = "/foss/designs/AUS-NZ-integration"
+DEF_ROOT = os.environ.get("PADFRAME_ROOT", REPO + "/padframe/A01/project_defs_13pin")
+MIN_MARGIN = 0.28          # um -- one minimum feature; anything less is not a connection
+
+MET = {"M1": 34, "M2": 36, "M3": 42, "M4": 46, "M5": 81}
+VIA = {"v1": 35, "v2": 38, "v3": 40, "v4": 41}
+STACK = ["M1", "v1", "M2", "v2", "M3", "v3", "M4", "v4", "M5"]
+
+# net -> (seed x, seed y, seed layer, what the seed is)
+# Seeds are on the BLOCK side so the flood must traverse the haul to reach the pad.
+SEED = {
+    "Q_N":       (202.18, 251.92, "M1", "DIV2 Q_N output tap"),
+    "I_N":       (202.18, 340.27, "M1", "DIV2 I_N output tap"),
+    "I_P":       (435.18, 340.27, "M1", "DIV2 I_P output tap"),
+    "Q_P":       (435.18, 251.92, "M1", "DIV2 Q_P output tap"),
+    "VTUNE":     (558.68, 266.70, "M1", "vco TUNE gate pad"),
+    "ISS":       (595.84, 260.33, "M2", "vco ISS tail strap"),
+    "IBIAS":     (271.30, 423.90, "M2", "ibias IBIAS tap"),
+    "VDDA":      (400.00, 399.00, "M5", "VDDA M5 bus"),
+    "VDDD":      (380.00, 388.00, "M5", "VDDD M5 bus"),
+    "VSSA":      (400.00, 190.00, "M5", "GND ring, bottom segment"),
+    "REF_IN":    (410.28, 457.60, "M3", "PFD REF pin"),
+}
+# Nets that share another net's flood (same electrical node) -- checked against that flood.
+ALIAS = {"VSSD": "VSSA", "REF_IN_PU": "VSSA", "REF_IN_PD": "VDDD"}
+# Declared but not yet routed -- reported, not failed.
+UNROUTED = {"CP_OUT"}
+
+
+def load_targets():
+    """pin -> list of Metal2 target rects (um), straight from the committed DEF."""
+    import yaml
+    with open(os.path.join(DEF_ROOT, "BH", "A01_BH_interface.yaml")) as f:
+        d = yaml.safe_load(f)
+    out = {}
+    for p in d["pins"]:
+        rs = [pya.DBox(q["translated_user"][0] / 200.0, q["translated_user"][1] / 200.0,
+                       q["translated_user"][2] / 200.0, q["translated_user"][3] / 200.0)
+              for q in p["rectangles"]]
+        out.setdefault(p["project_pin"], []).extend(rs)
+    return out
+
+
+def main():
+    ly = pya.Layout(); ly.read(REPO + "/gds/chip_top.gds")
+    top = ly.cell("chip_top"); top.flatten(-1, True)
+    R = {}
+    for nm, l in list(MET.items()) + list(VIA.items()):
+        R[nm] = pya.Region(top.begin_shapes_rec(ly.layer(l, 0)))
+
+    targets = load_targets()
+    print("=== landing_check: does every haul REACH its pin? ===")
+    print("targets from %s" % DEF_ROOT)
+    print("minimum acceptable overlap on a finger: %.2f um in both axes\n" % MIN_MARGIN)
+
+    floods = {}
+    fails = 0
+    for net in sorted(set(list(SEED) + list(ALIAS) + list(UNROUTED))):
+        if net in UNROUTED:
+            print("%-10s NOT ROUTED YET -- %d target finger(s) unserved"
+                  % (net, len(targets.get(net, []))))
+            continue
+        src = ALIAS.get(net, net)
+        if src not in floods:
+            sx, sy, sl, what = SEED[src]
+            seed = pya.Region(pya.DBox(sx - 0.05, sy - 0.05, sx + 0.05, sy + 0.05).to_itype(ly.dbu))
+            cur = {k: pya.Region() for k in R}
+            cur[sl] = R[sl].interacting(seed)
+            if cur[sl].count() == 0:
+                print("%-10s *** SEED MISSES *** no %s under the %s at (%.2f,%.2f)"
+                      % (src, sl, what, sx, sy)); fails += 1; floods[src] = cur; continue
+            for _ in range(40):
+                grew = False
+                for i, nm in enumerate(STACK):
+                    acc = pya.Region()
+                    for nb in ([STACK[i - 1]] if i else []) + ([STACK[i + 1]] if i < len(STACK) - 1 else []):
+                        if cur[nb].count():
+                            acc += R[nm].interacting(cur[nb])
+                    before = cur[nm].count()
+                    cur[nm] = (cur[nm] + acc); cur[nm].merge()
+                    if cur[nm].count() != before:
+                        grew = True
+                if not grew:
+                    break
+            floods[src] = cur
+        m2 = floods[src]["M2"]
+        tg = targets.get(net, [])
+        if not tg:
+            print("%-10s no target rects in the DEF" % net); continue
+        covered, worst = 0, None
+        for t in tg:
+            ov = m2 & pya.Region(t.to_itype(ly.dbu))
+            if ov.is_empty():
+                worst = (0.0, 0.0); continue
+            b = ov.bbox()
+            w, h = b.width() * ly.dbu, b.height() * ly.dbu
+            if min(w, h) >= MIN_MARGIN:
+                covered += 1
+            if worst is None or min(w, h) < min(worst):
+                worst = (w, h)
+        ok = covered == len(tg)
+        if not ok:
+            fails += 1
+        print("%-10s %s  %d/%d fingers covered   worst overlap %.3f x %.3f um   [flood seeded at %s]"
+              % (net, "OK  " if ok else "FAIL", covered, len(tg), worst[0], worst[1],
+                 ALIAS.get(net, net)))
+
+    print("\n%d net(s) failed to reach every target finger." % fails)
+    print("RESULT: %s" % ("PASS" if fails == 0 else "FAIL"))
+
+
+main()
