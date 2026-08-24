@@ -1674,13 +1674,57 @@ p-substrate, no deep nwell; Bailey confirmed 2026-08-21 that the user grounds ar
 through the padring and substrate anyway), so magic emits **one** name for the net and picked
 VSSD. The layout cannot present two ports for one net.
 
-**The fix is the T6 item verbatim: "the golden should tie both ports to a single internal node;
-expect one net carrying two port labels."** That means `chip_top.sch` gains a VSSD label on the
-same wire as VSSA and the golden is re-netlisted. **That is a schematic change and Greg's call**,
-and the Aug 28 gate does not require LVS, so it is not on this week's critical path.
+**RESOLVED 2026-08-23 with no schematic change - see 3w.**
 
 Until then the distinctness evidence is: 12 ports with exactly the expected names, **zero**
 disconnected nodes, **zero** `_uq0` duplicates, 21 nets, and a topology that matches uniquely.
+
+---
+
+## 3w. The ground port name, resolved without touching the golden (2026-08-23)
+
+3v left LVS failing pin matching on one name: layout `VSSD` against golden `VSSA`. The proposed
+fix was a schematic change. **It is not needed.**
+
+### The mechanism, from the magic tech file
+```
+ layer MET2     allm2          layer MET2TXT
+        labels  allm2 noport          labels  allm2 port
+        calma   36 0                  calma   36 10
+```
+Every metal has the same pair: text on **`<layer>/10` becomes a PORT**, text on **`<layer>/0`
+becomes a plain LABEL that magic never promotes to a port**. VSSA and VSSD are one electrical
+net, magic emits one name for it, and with both texts on /10 it was picking VSSD.
+
+**Fix: the VSSD text goes on 36/0 instead of 36/10.** It is still in the GDS; it simply never
+competes for the port name.
+
+| | before | after |
+|---|---|---|
+| extracted ports | 12 | 12 |
+| ground port name | **VSSD** | **VSSA** |
+| nets | 21 | 21 |
+| LVS | *"Netlists match uniquely"* then **failed pin matching** | **match uniquely, RESULT PASS** |
+
+`.subckt chip_top VTUNE I_P I_N Q_P Q_N IBIAS ISS **VSSA** VDDA VDDD REF_IN CP_OUT`
+
+The golden, `chip_top.sch` and `chip_sch_gen.py` are all **untouched**.
+
+### Why this is safe for Bailey's audit - and the one thing still unverified
+His `top_cell_text` scrape of our GDS (in `A01_selected_variants.json` and the interface yaml)
+reports **each text with its layer AND datatype**, and lists **duplicates separately** - Q_N,
+I_N, I_P and Q_P each appear twice, once on 34/10 at the block tap and once on 36/10 at the pad.
+So the audit is a plain text scrape and does not care whether a text is a magic port.
+
+**Unverified:** every text in the GDS he scraped happened to be on `/10`, so that evidence
+cannot tell us whether his scraper collects **all** text or filters to datatype 10. Reporting
+the datatype per entry suggests it collects all text - a /10-only filter would make the field
+redundant - but that is inference, not proof. **It is settled by his next regeneration:** if
+`VSSD` appears in `top_cell_text`, this is done. If it does not, the fallback is to rename the
+golden's ground port to VSSD, which we know works because that was the state before this change.
+
+Current text state in the GDS: `VSSD` 36/0 at die (567.50,549.50); `VSSA` 36/10 at (0.50,82.50)
+and 81/10 at (400.00,190.00).
 
 ---
 

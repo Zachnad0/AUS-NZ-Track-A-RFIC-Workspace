@@ -455,7 +455,13 @@ R.vwire(chip, ly, 4, 280.0, 347.0, 367.5, w=3.0)               # M4 riser, die y
 R.via_stack(chip, ly, 2, 4, 367.5, 347.0)
 R.vwire(chip, ly, 2, 347.0, 348.0, 367.5, w=3.0)   # w=3 extends 1.5: must not pass die y550
 R.box(chip, ly, (36, 0), 331.36, 349.0, 403.64, 350.0)         # N06 finger-row bar, 72.28 x 1.0
-chip.shapes(ly.layer(36, 10)).insert(pya.DText("VSSD", pya.DTrans(pya.DVector(367.5, 349.5))))
+# VSSD text on 36/0, NOT 36/10. The magic tech maps `calma 36 10 -> labels allm2 port` and
+# `calma 36 0 -> labels allm2 noport`, so a text on /0 is a label magic never promotes to a
+# port. VSSA and VSSD are ONE electrical net, magic emits ONE name for it, and on /10 it was
+# picking VSSD -- which broke pin matching against a golden whose ground port is VSSA. On /0
+# the VSSD text is still in the GDS (Bailey's top_cell_text scrape reports each text with its
+# layer and datatype) but never competes for the port name.
+chip.shapes(ly.layer(36, 0)).insert(pya.DText("VSSD", pya.DTrans(pya.DVector(367.5, 349.5))))
 
 # VDDD -- N07, die x631.36-703.64, off the M5 VDDD bus (die x249-442, y382-394).
 # Tapped at die x408, INSIDE the bus -- 3o's "tap at x256" for VDDA was 2.5 um outside its bus
