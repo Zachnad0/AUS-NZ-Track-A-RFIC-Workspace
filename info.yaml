@@ -53,37 +53,37 @@ project:
 # Source of truth: docs/pins.md (analog 8, digital 1, power 2, ground 2 = 13).
 # ======================================================
 pins:
-  - name: VSSA
-    io_type: ground
-  - name: VDDA
-    io_type: power
-  - name: IBIAS
-    io_type: analog
-    secondary_esd: false
-  - name: ISS
-    io_type: analog
-    secondary_esd: false
-  - name: VTUNE
-    io_type: analog
-    secondary_esd: false
-  - name: CP_OUT
-    io_type: analog
-    secondary_esd: false
-  - name: Q_N
-    io_type: analog
-    secondary_esd: false
-  - name: I_N
-    io_type: analog
-    secondary_esd: false
-  - name: I_P
-    io_type: analog
-    secondary_esd: false
-  - name: Q_P
-    io_type: analog
-    secondary_esd: false
-  - name: VSSD
-    io_type: ground
-  - name: VDDD
-    io_type: power
-  - name: REF_IN
-    io_type: input_cmos
+- name: VSSA
+  io_type: ground
+- name: VDDA
+  io_type: power
+- name: IBIAS
+  io_type: analog
+  secondary_esd: false
+- name: ISS
+  io_type: analog
+  secondary_esd: false
+- name: VTUNE
+  io_type: analog
+  secondary_esd: false
+- name: CP_OUT
+  io_type: analog
+  secondary_esd: false
+- name: Q_N
+  io_type: analog
+  secondary_esd: false
+- name: I_N
+  io_type: analog
+  secondary_esd: false
+- name: I_P
+  io_type: analog
+  secondary_esd: false
+- name: Q_P
+  io_type: analog
+  secondary_esd: false
+- name: VSSD
+  io_type: ground
+- name: VDDD
+  io_type: power
+- name: REF_IN
+  io_type: input_cmos

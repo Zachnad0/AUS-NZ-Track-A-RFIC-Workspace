@@ -759,29 +759,120 @@ Proven three ways, not assumed:
 > exist.**
 
 ### 8.2 The committed baseline
-`team_src/magic/chip_top.drcbase` — the seated `chip_top` box set, regenerate with
-`analysis/drc_boxset.tcl`:
 
-| figure | value | frame |
-|--------|-------|-------|
-| magic total | **106** | seated (die frame, boundary 0,0–1110,550) |
-| violation boxes | **252** | seated |
-| rules | 1 — `Poly spacing to diffusion < 20 (PL.5a)` | — |
-| per-cell attribution | `vco_v1` 84, `vco_varactors` 84, `chip_top` 106 | seated |
-| magic total | **84** — **PRE-SEAT ONLY, do not compare against a seated run** | core frame (boundary −25,−21.5–497,287.5) |
+`team_src/magic/chip_top.drcbase` — the seated `chip_top` box set. Re-captured 2026-08-25
+(see §8.5); the 252 `B` lines are **byte-identical** to the 2026-08-22 capture.
+
+#### The three figures are three different things — do not conflate them
+
+This is the single most important thing in §8. The same geometry yields three numbers:
+
+| figure | value | what it actually is | invariant? |
+|--------|-------|---------------------|------------|
+| **emitted boxes** | **252** | **maximal horizontal strips** of DRC error paint, one per `B` line. This is what the dump contains and what the gate compares. | **YES** — across hierarchy level, frame, and every layout edit to date |
+| **connected regions** | **84** | the **physical violation count**, obtained by merging the 252 strips (252 = 84 × 3). Cross-confirmed independently by KLayout's waiver population: **84 PL.5a_LV**. | **YES** |
+| `TOTAL` | 84 or 108 | magic's **frame-dependent re-tiling** of the same paint. Reads **84** from `vco_varactors` or `vco_v1` and **108** from `chip_top` — same GDS, same run. | **NO — never gate on it** |
+
+Measured 2026-08-25, one invocation, three `CELL` values against the identical GDS:
+
+```
+CELL=chip_top         TOTAL=108   boxes=252   merged_regions=84
+CELL=vco_v1           TOTAL=84    boxes=252   merged_regions=84
+CELL=vco_varactors    TOTAL=84    boxes=252   merged_regions=84
+```
+
+`TOTAL` is emitted for reporting only. It is neither the strip count nor the region count, and
+it changes with the cell you view from. **The box set is the gate.**
+
+#### The current baseline
+
+| field | value |
+|-------|-------|
+| `GDSBLOB` | `a79e48d2929613f4b41827316aa9a234a526183b` |
+| `SRCCOMMIT` | `f31d5941ddc9bd6db3a2de29b467697de39df526` |
+| violation boxes | **252** (= 84 regions × 3 strips) |
+| rules | 1 — `Poly spacing to diffusion < 20 (PL.5a)` |
+| `TOTAL` | 108 — *reporting only, not a gate* |
+| per-cell attribution | `vco_v1` 84, `vco_varactors` 84, `chip_top` 108 |
+| `SELFCHECK` | `OK rules=1/1 boxes=252/252` |
+| frame | seated (die frame, boundary 0,0–1110,550) |
+
+Historical: the pre-seat core-frame run reported `TOTAL` **84** with the same 252 boxes. Never
+compare a pre-seat total against a seated one.
 
 All 252 are the device-internal `nmoscap_3p3` errors inside `vco_varactors` — the same
 population as the **W4** KLayout waiver (168 = 84 PL.5a_LV + 84 PL.5b_LV).
 
+#### THE INVARIANCE RESULT — preserved here because the re-capture would otherwise erase it
+
+The 2026-08-22 baseline was dumped from `gds/chip_top.gds` blob `a774ef36` at commit `94f2822`.
+Between that commit and `f31d594`, **five commits modified `gds/chip_top.gds`** — the entire
+phase-8 routing build:
+
+`3707129` (I/Q quad) → `585c408` (VSSA, VTUNE, VDDA, IBIAS, ISS) → `019c3a8` (VSSD, VDDD,
+REF_IN, PU/PD) → `d7c510d` (CP_OUT) → `f31d594` (ground-port label datatype).
+
+Dumping the `94f2822` GDS and the `f31d594` GDS through the **same** invocation and comparing:
+
+```
+baseline (94f2822 gds a774ef36): TOTAL=106  boxes=252
+candidate (f31d594 gds a79e48d2): TOTAL=108  boxes=252
+ADDED   (in candidate, not in baseline): 0
+REMOVED (in baseline, not in candidate): 0
+```
+
+**The 252-box multiset has been invariant across the whole phase-8 routing build.** Every haul,
+every via stack, every landing bar added zero DRC violation boxes. That is a real result about
+the layout, not a property of the baseline file, and it is recorded here because a re-captured
+baseline can no longer demonstrate it — the old dump was the only artifact that still held the
+`94f2822` state.
+
+`TOTAL` moved 106 → 108 across those same commits. It is the *only* figure that moved, and it
+moved for the reason in the table above: added top-level metal changes how magic re-tiles the
+error paint at `chip_top`, while the errors themselves — all of them inside `vco_varactors` —
+never changed.
+
+#### Provenance rule
+
+**A `.drcbase` is only meaningful against the GDS it was dumped from.** The 106 → 108 above was
+invisible for three days precisely because nothing recorded which layout the baseline came from;
+the only symptom was a `TOTAL` that no one reads, in a file whose whole point is that `TOTAL` is
+not the gate. Since 2026-08-25 every dump carries `GDSF`, `GDSBLOB` and `SRCCOMMIT` in its
+header, and `drc_delta.py` reports a `GDSBLOB` mismatch **loudly** instead of leaving it to
+surface as a total. A dump with no provenance header predates the format and is reported as
+such.
+
 ### 8.3 The tools
 - **`team_src/magic/analysis/drc_boxset.tcl`** — env `GDSF` (required), `CELL` (default
-  `chip_top`). Emits `TOTAL`, `CELLCOUNT <cell> <n>`, `RULE <n> <text>`, and one
-  `B x0 y0 x1 y1` per violation box in magic internal units (1 iu = 1 GDS dbu = 0.005 µm).
+  `chip_top`). Emits a `GDSF`/`GDSBLOB`/`SRCCOMMIT` provenance header, then `TOTAL`,
+  `CELLCOUNT <cell> <n>`, `RULE <n> <text>`, one `B x0 y0 x1 y1` per violation box in magic
+  internal units (1 iu = 1 GDS dbu = 0.005 µm), and finally `SELFCHECK OK|FAIL`.
+  **`SELFCHECK` asserts the dump is COMPLETE**: an independent `foreach {why boxes}` traversal
+  counts every pair `drc listall why` returned, and the emit loop must match it on both pair
+  count and box count. A mismatch prints a FATAL banner to stderr and **exits 1**. The check is
+  deliberately not accumulated by the emit loop itself, which would be circular and would miss
+  a truncated walk — the exact defect `reh_drc.tcl` shipped. Failure path verified by
+  injecting a one-box truncation: `rc=1`, `SELFCHECK FAIL rules=1/1 boxes=251/252`.
+
+  **Exact capture command** (in-container; the invocation the committed baseline was produced
+  with, recorded so future runs compare like-for-like):
+
+  ```
+  GDSF=/foss/designs/AUS-NZ-integration/gds/chip_top.gds CELL=chip_top   magic -dnull -noconsole     -rcfile /foss/pdks/gf180mcuD/libs.tech/magic/gf180mcuD.magicrc     team_src/magic/analysis/drc_boxset.tcl > raw 2> err
+  grep -E "^(GDSF|GDSBLOB|SRCCOMMIT|TOTAL|CELLCOUNT|RULE|B|SELFCHECK) " raw > chip_top.drcbase
+  ```
+
+  The `grep` strips magic's startup banner; the baseline holds record lines only. Note the bare
+  `-rcfile` — no `$PDK` environment is needed for DRC, only the tech file.
 - **`team_src/magic/analysis/drc_delta.py <baseline> <candidate> [--shift DX_IU DY_IU]`** —
   compares the two dumps as **multisets**. `--shift` offsets the baseline so a core-frame
   dump can be compared against a die-frame one (the +200/+200 seat is `--shift 40000 40000`).
   Exit 0 iff the candidate adds no box; it also reports boxes that vanished, since that is a
-  change worth seeing too.
+  change worth seeing too. **Exit 3** if either dump reports `SELFCHECK FAIL` — it refuses
+  to compare an incomplete dump rather than returning a false PASS. (A short dump *is* a false
+  PASS: drop boxes from the candidate and the `added` set is empty, so the gate returns 0 while
+  reporting the missing boxes only as `REMOVED`, which does not fail the gate.) It also prints
+  each side's `GDSBLOB`/`SRCCOMMIT` and shouts **PROVENANCE MISMATCH** when they differ.
 
 Reference run reproducing §8.1:
 ```
@@ -801,7 +892,7 @@ interchangeable:
 | what | number | why it differs |
 |------|--------|----------------|
 | `verify_cp.sh chip_top` (magic) | **0** | preloads the `vco_varactors` + `vco_inductor_v2` abstracts, so the PL.5a geometry is never traversed |
-| `drc_boxset.tcl` (magic, full geometry) | **106 / 252 boxes** seated | no preload — this is the phase-8 haul gate |
+| `drc_boxset.tcl` (magic, full geometry) | **252 boxes = 84 regions** seated (`TOTAL` 108, reporting only) | no preload — this is the phase-8 haul gate |
 | `klayout_signoff.py chip_top` | **PASS, 168 waived** | the signoff deck; W4 waiver = 84 PL.5a_LV + 84 PL.5b_LV |
 
 A number from one row means nothing against a number from another.
@@ -823,3 +914,33 @@ precisely the delta the gate is meant to measure.
 
 **Residual:** `vco_v1` standalone still has a 0.40 um ISS strap; only the chip_top context
 carries the overlay. Widen it in the cell if vco_v1 is ever re-released standalone.
+
+### 8.6 Baseline RE-CAPTURED (2026-08-25) - and why, and what did not change
+
+The 2026-08-22 baseline was still **passing** the gate against the current layout (0 added,
+0 removed) and was never wrong. It was re-captured for one reason: its header advertised
+`TOTAL 106`, a figure from a GDS five routing commits old, and 8.2 published that 106 as the
+current value. A run against the current layout reports 108, and reconciling that cost a full
+investigation cycle - the failure mode the provenance header now prevents.
+
+**What changed in `chip_top.drcbase`** - six lines:
+
+```
++GDSF /foss/designs/AUS-NZ-integration/gds/chip_top.gds
++GDSBLOB a79e48d2929613f4b41827316aa9a234a526183b
++SRCCOMMIT f31d5941ddc9bd6db3a2de29b467697de39df526
+-TOTAL 106                 +TOTAL 108
+-CELLCOUNT chip_top 106    +CELLCOUNT chip_top 108
++SELFCHECK OK rules=1/1 boxes=252/252
+```
+
+**What did not change:** all **252 `B` lines, byte-identical**. Verified two ways - `cmp` on the
+extracted `B` lines, and `drc_delta.py` old-vs-new reporting 0 added / 0 removed.
+
+The invariance result the old baseline carried is preserved in 8.2. It is no longer
+demonstrable from the file itself, which is exactly why it is written down there.
+
+**Re-base rule, unchanged and restated:** re-base only when a **block** GDS changes. Adding
+top-level metal does not require it - that is precisely the delta the gate exists to measure.
+But re-capture the *header* whenever the baseline is re-captured for any reason, so `GDSBLOB`
+never drifts from the layout it describes again.

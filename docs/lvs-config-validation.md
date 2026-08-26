@@ -68,8 +68,9 @@ harness, not this repo. `INCLUDE_CONFIGS` points at a path that genuinely exists
 in `extra_be_checks` (`tech/gf180mcuD/lvs_config.base.json`), so it will resolve
 in Bailey's environment.
 
-The source golden's top port list matches `info.yaml`/`pins.md` exactly (12):
-`chip_top VSSA VDDA IBIAS ISS VTUNE CP_OUT I_P I_N Q_P Q_N VDDD REF_IN`.
+The source golden's top port list is **12** ports, while `info.yaml` declares **13**
+pins. That is deliberate, not drift -- see **(e)** below for the mechanism and the one
+open risk it carries.
 
 ## (d) Running the organizer's flow locally — NOT possible here; what's missing
 
@@ -99,3 +100,56 @@ Two blockers:
 and spiral inductor need device-aware handling (abstract preload or black-box) in
 the signoff LVS — a flat GDS extract will not reproduce our `match uniquely`.
 Everything else in the config is upstream-identical and path-clean.
+
+## (e) 13 pins in `info.yaml`, 12 ports in the golden — deliberate, not drift (2026-08-25)
+
+`info.yaml` declares **13** pins. `chip_top_golden.spice` declares **12** ports:
+
+```
+.subckt chip_top VSSA VDDA IBIAS ISS VTUNE CP_OUT I_P I_N Q_P Q_N VDDD REF_IN
+```
+
+The name that is absent is **VSSD**, and it is absent on purpose.
+
+**VSSD is a second bond *pad*, not a second electrical *node*.** On-chip VSSA and
+VSSD are one net — single p-substrate, no deep n-well — and they are shorted again
+through the padring and substrate. The padring's digital-domain BREAK isolates the
+*rails*; it does not create DC isolation. The pad exists so the VDDD/REF_IN island
+has a local ESD/return path and its own bond inductance, which buys noise and
+bond-inductance isolation, not a node. A SPICE subcircuit cannot declare two ports
+on one node, so the golden names that node exactly once. 13 pads, 12 nodes.
+
+**Which of the two names wins is set by a label datatype, not by the schematic.**
+The magic tech file maps every metal twice:
+
+```
+layer MET2            layer MET2TXT
+  labels allm2 noport   labels allm2 port
+  calma  36 0           calma  36 10
+```
+
+Text on `<layer>/10` is promoted to a **port**; text on `<layer>/0` stays a plain
+label that magic never promotes. `route_chip.py` therefore places the VSSD text on
+**36/0** (`team_src/magic/phase5/route_chip.py`, the `DText("VSSD")` insert). It is
+still in the GDS, and still visible to a plain text scrape of the top cell — it
+simply never competes with VSSA for the port name. Before this, both texts sat on
+/10, the extract picked VSSD, and LVS reported `Netlists match uniquely` and then
+FAILED pin matching against a VSSA golden.
+
+Verified state at `f31d594`: **12 ports, 21 nets, ground port emitted as VSSA,
+`LVS match uniquely`, `RESULT PASS`.** `chip_top_golden.spice`, `chip_top.sch` and
+`chip_sch_gen.py` are all untouched by the fix — it is a layout-side label change.
+
+Port **order** also differs between the two sides: the extracted layout emits
+`VTUNE I_P I_N Q_P Q_N IBIAS ISS VSSA VDDA VDDD REF_IN CP_OUT`. That is not a
+discrepancy — netgen matches ports by name, not by position.
+
+**The one open risk.** Whether the organizer's `top_cell_text` audit reports
+datatype-0 text. His scrape lists each text with its layer *and* its datatype, and
+lists duplicates separately, which suggests it collects all text rather than
+filtering to /10 — a /10-only filter would make the datatype field redundant. But
+every text in the GDS he has scraped so far happened to be on /10, so that is
+inference, not proof. His next regeneration settles it: if VSSD appears in
+`top_cell_text`, this is closed. If it does not, the fallback is renaming the
+golden's ground port to VSSD, which is known to work because that was the
+pre-`f31d594` state.

@@ -6,7 +6,27 @@
 *.sch text eol=lf
 *.sym text eol=lf
 
+# LVS source netlists. These are read by netgen INSIDE the Linux container via the
+# bind mount, same hazard as the .sh/.tcl decks above. Index copies are already LF;
+# this pins the working-tree copy too.
+*.spice text eol=lf
+
+# DRC baseline dumps, read by drc_delta.py inside the container. Same hazard class; git
+# warns "LF will be replaced by CRLF" on these without it.
+*.drcbase text eol=lf
+
+# Layout deliverable. GDS is binary; today it survives only because git's content
+# auto-detection sees NUL bytes and declines to convert it. That is an inference,
+# not a contract -- mark it explicitly so no future core.autocrlf / eol setting can
+# ever rewrite a byte of the taped-out layout.
+*.gds -text
+
 # Organizer-issued padframe package: third-party artifacts, kept byte-exact.
 # -text disables ALL eol conversion so a Windows checkout cannot rewrite them
 # and make a hash/diff against a future re-issue meaningless.
+#
+# KEPT LAST ON PURPOSE: .gitattributes is last-match-wins, so this must sit below
+# the extension rules above. The package ships no .spice today, but if a future
+# re-issue did, an earlier `*.spice text eol=lf` would silently eol-convert a
+# third-party artifact and destroy the byte-exactness this line exists to promise.
 padframe/** -text

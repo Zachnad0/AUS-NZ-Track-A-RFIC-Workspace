@@ -59,7 +59,9 @@ gates it four ways. NOT the flow — a sandbox to de-risk the escape/serpentine 
 - `ring_corridor.py` — every layer in the GND-ring left segment + the escape corridors west of
   DIV2 (proved the ring is M5-only and the "2.5 µm slot" is an artifact, §3i, Item 1).
 - `tap_layers.py` — pin layer present at each block tap (VDDA/IBIAS/ISS/VTUNE/CP_OUT/VDDD/REF_IN).
-- `vco_tap_escape.py` — scans upward from the vco TUNE/ISS taps → the inductor M5 enclosure that
-  blocks a clean escape (§3j, why Item 3 stops at VTUNE).
+- `vco_tap_escape.py` — scans upward from the vco TUNE/ISS taps → the inductor M5
+  enclosure above them. The **measurement** stands; the conclusion it was cited for
+  (“blocks a clean escape, why Item 3 stops at VTUNE”) is **WITHDRAWN** — that was reasoned
+  at 522 × 309, and seating the core in the 1110 × 550 die opened a south exit. See §3j/§3n.
 - Waivers `reh_base.waivers` / `reh_phase8.waivers` (one dir up) mirror `chip_top.waivers`
   (PL.5a_LV/PL.5b_LV) for the KLayout signoff gate.

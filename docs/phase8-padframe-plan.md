@@ -754,6 +754,72 @@ block-edge-escape problem that belongs in the real build (with block ports + LVS
 and §3g establishes their paths are clear. The rehearsal has done its job — it de-risked the
 one case that genuinely needed geometry (the quad) and *measured* exactly what the others need.
 
+## 3j. (RECORD) The block-interior tap escape and the routes-only limit — both conclusions WITHDRAWN (written 2026-08-25)
+
+**Why this section is being written now.** §3j never had a header. Its analysis was written
+into the tail of §3i and the label `3j` was then cited from three places with nothing to
+resolve against:
+
+- §3l: *"§3j claimed a full in-context extract was impossible (flat extract shorts the inductor)."*
+- `team_src/magic/analysis/README.md`, twice: the rehearsal heading *"(§3h/§3i/§3j, 4th–5th
+  session)"*, and `vco_tap_escape.py` — *"the inductor M5 enclosure that blocks a clean escape
+  (§3j, why Item 3 stops at VTUNE)"*.
+
+This is the same defect §3m was written to fix, and it is fixed the same way: record the claim,
+then record that it is dead. **No new analysis is introduced here.** The measurements referred
+to below live in §3i's closing subsections and are unchanged.
+
+### What §3j claimed
+
+1. **Block-interior taps cannot be escaped in the sandbox.** `analysis/vco_tap_escape.py`
+   measured the VTUNE tap at chip (358.68, 66.70) as enclosed by the inductor — M5 spiral over
+   y90–186, vco M3 up to y≈89, tap x inside vco M3 x358.5–419.8 — with **no clear band at
+   y≈66**, the clear bands all sitting at y174–287.5 above the block bodies. ISS at chip
+   (395.84, 60.33) sat in the same enclosure (M5 y92–196). Conclusion drawn: **Item 3 stops at
+   VTUNE**; these escapes are per-block build work, not a sandbox primitive.
+2. **A full in-context extraction is impossible.** Because a flat full-cell extract merges the
+   spiral and shorts OUT_p/OUT_n, the rehearsal's only available gate was a **routes-only**
+   extract — which by construction cannot see a haul shorting to a *block* net, and same-layer
+   overlap is invisible to DRC. Conclusion drawn: catching tap-to-block distinctness **requires
+   the organizer's LEF-abstract flow** (`analysis/bailey_pass2_extract.tcl`), which we cannot
+   install.
+
+### Claim 2 is WITHDRAWN — superseded by §3l
+
+Wrong, and wrong about a mechanism the repo already owned. `chip_top.abstract` +
+`verify_extract.tcl` preload the `vco_varactors` and `vco_inductor_v2` abstracts with
+`gds noduplicates true`, so `gds read` keeps the geometry-free abstract instead of traversing
+the spiral. `reh_phase8.gds` instances that same `chip_top` cell with its subhierarchy intact
+(verified with `cell_list.py`), so the identical preload extracts the rehearsal **in full
+context**. The harness is `analysis/reh_ctx_extract.tcl`, and it is the real distinct-net gate.
+
+The correction was not academic. The first time it ran it caught a short §3i had passed clean:
+`reh_base` gave chip_top **12** clean ports, `reh_phase8` gave **14**, with the two
+`DIV2_QUAD_v1_0/ib_conv_v1_{0,3}/a_8764_6964#` bias nodes exposed and bridged to `I_P`/`Q_P`.
+The organizer's flow was never needed to find it.
+
+### Claim 1 is WITHDRAWN — superseded by §3n (which also took §3m down)
+
+Claim 1 is the direct ancestor of §3m's "VTUNE is boxed". Both were reasoned inside a
+**522 × 309** chip_top, where every route had to win an internal column. Once T2 seated the
+core at (175.00,178.50)–(697.00,487.50) inside the **1110 × 550** BH DIEAREA, free die appeared
+south of y178.5, west of x175, east of x697 and north of y487.5 that did not exist when the
+claim was made. A west-then-**south** exit through the 52.6 µm DIV2↔vco gap crosses nothing but
+the GND ring. VTUNE is not boxed, and Item 3 does not stop at it — VTUNE was built and landed
+in phase 8 (c) on a clean gate.
+
+### What survives
+
+The **measurements** survive; only the conclusions drawn from them died. The inductor enclosure
+over the VTUNE and ISS taps is real and still there — it is why neither net rises at its tap.
+For VTUNE specifically the coupling objection also still stands (KVCO 822 MHz/V, §3h), so
+"rise under the spiral" remains the wrong move for that net. ISS sits in the same enclosure but
+is a DC tail node, so the coupling objection does not apply to it; its routing was settled
+later, and differently, by §3p and §3q. `vco_tap_escape.py` remains valid as a measurement
+script — read its output as geometry, not as the 522 × 309-era verdict its README line still
+quotes.
+
+
 ## 3k. What survives a pin-list change, and what must be redone (Item 4)
 
 Two things are still BLOCKED upstream (not this session's to decide): whether **VSSD** is
