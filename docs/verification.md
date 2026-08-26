@@ -944,3 +944,56 @@ demonstrable from the file itself, which is exactly why it is written down there
 top-level metal does not require it - that is precisely the delta the gate exists to measure.
 But re-capture the *header* whenever the baseline is re-captured for any reason, so `GDSBLOB`
 never drifts from the layout it describes again.
+
+### 8.7 Baseline RE-CAPTURED again (2026-08-25, rung 2 density markers)
+
+Rung 2 added four keep-out rectangles on three marker layers, so `gds/chip_top.gds` changed and
+the baseline was re-captured a second time the same day.
+
+**The box set did not move:** `ADDED 0 / REMOVED 0`, and all **252 `B` lines byte-identical** to
+the previous baseline (verified by `cmp`). Marker layers carry no geometry the DRC rules act on,
+which is exactly what was expected -- and the gate is what proved it rather than assumed it.
+
+**`TOTAL` moved 108 -> 84, and the cause is fully isolated.** Magic's techfile maps **152/5 to
+`FILLOBS2`**, a real `fillblock` layer, so PMNDMY paint is visible to magic and changes how it
+re-tiles the error plane at `chip_top`. Proven by dumping four variants of the same GDS through
+one invocation:
+
+| variant | `TOTAL` | boxes |
+|---------|---------|-------|
+| no markers | 108 | 252 |
+| NDMY 111/5 only | 108 | 252 |
+| IND_MK 151/5 only | 108 | 252 |
+| **PMNDMY 152/5 only** | **84** | 252 |
+
+Magic ignores 111/5 (its techfile entry is commented out) and does not know 151/5 at all --
+it emits `Unknown layer/datatype in boundary, layer=151 type=5` and drops that polygon. The
+read is otherwise complete: `chip_top`'s magic bbox is identical with and without the markers.
+
+This is the §8.2 rule doing its job. `TOTAL` moved for an understood reason, the box multiset --
+the actual gate -- did not move at all, and nothing needed hunting.
+
+**A note on `SRCCOMMIT` in this capture.** The baseline is dumped *before* the commit that
+contains the GDS, so `SRCCOMMIT` names the **parent** commit. `GDSBLOB` is the authoritative
+field and matches the committed blob exactly; `SRCCOMMIT` is context. Do not "fix" it by
+re-dumping after committing -- that just moves the skew to the next commit.
+
+### 8.8 Marker layers are NOT visible to magic -- do not round-trip the GDS through magic
+
+Recorded because it is a live hazard for any future flow change:
+
+| layer | magic techfile | magic on `gds read` |
+|-------|----------------|---------------------|
+| NDMY 111/5 | `layer FILLOBS fillblock / calma 111 5` -- **commented out** | silently ignored |
+| PMNDMY 152/5 | `layer FILLOBS2 fillblock / calma 152 5` -- **active** | read as `FILLOBS2` |
+| IND_MK 151/5 | **absent** | `Unknown layer/datatype`, polygon dropped |
+
+**Two of the three markers would not survive a magic GDS write.** They survive today only
+because the deliverable never passes through magic's writer: `chip_merge.py` and
+`route_chip.py` are KLayout, and `verify_cp.sh` reads the GDS into magic but emits `.ext` and
+`.spice`, never a GDS. **If any future step writes `gds/chip_top.gds` out of magic, NDMY and
+IND_MK are lost silently** -- no error on the write, and DRC will not notice, because the DE
+rules live in the KLayout deck which is the only tool that sees these layers.
+
+The round-trip check that catches it is in rung 2's commit: read the written GDS back with
+KLayout and assert layer, datatype and coordinates against what was painted.

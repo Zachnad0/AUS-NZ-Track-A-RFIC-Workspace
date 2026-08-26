@@ -585,5 +585,56 @@ print("DIEAREA_dbu=(0,0)-(%d,%d)" % (round(DIE_W / ly.dbu), round(DIE_H / ly.dbu
 assert abs(seated.left) < 1e-9 and abs(seated.bottom) < 1e-9, seated
 assert abs(seated.width() - DIE_W) < 1e-9 and abs(seated.height() - DIE_H) < 1e-9, seated
 
+# --- DENSITY KEEP-OUT MARKERS (die frame, painted AFTER the seat) -------------------------
+# Fill has not been inserted yet -- by us or by the organizer -- and whoever inserts it will
+# drop dummy metal on the spiral and the varactor array unless these markers are present.
+# Supplied unconditionally: they are ours to supply either way.
+#
+# WHICH LAYER STOPS WHAT. Read out of the PDK's own fill generators, which are the authority
+# on what actually gets dropped (drc/filler_generation/*.rb), and cross-checked against the
+# DRC rules, which agree exactly:
+#
+#   marker            dummy COMP        dummy POLY2       dummy METAL
+#   NDMY   111/5      3.5 um DCF.11a    29.7 um DPF.11    -- NONE --
+#   PMNDMY 152/5      -- none --        8 um DPF.19       6.0 um DM1.8-DM5.8
+#   IND_MK 151/5      3.0 um DCF.12     3.0 um DPF.14     -- NONE --
+#
+# NDMY DOES NOT STOP METAL FILL. fill_metal.rb subtracts PMNDMY, MTPMK, OTP_MK, the fuse
+# layers and the scribe ring; NDMY and IND_MK appear nowhere in it. PMNDMY is the metal
+# keep-out. NDMY and IND_MK are the COMP/poly2 keep-outs.
+#
+# NO TILING IS NEEDED. DE.3's 15,000 um2 area cap and DE.4's 20 um merge distance bind
+# `ndmy` ONLY (dummy_exclude.drc). PMNDMY and IND_MK carry neither, so the 15,288 um2 spiral
+# is ONE rectangle on each. The only NDMY here is the varactor rect at 2,545.9 um2 -- 17% of
+# the cap -- and it is the sole NDMY polygon in the design, so DE.4 has no pair to check.
+# NDMY is deliberately kept OFF the spiral: covering it would force a tiling with a 20 um
+# unprotected gap straight across the coil, to buy only a wider poly2 halo outside it.
+#
+# COORDINATES ARE MEASURED off gds/chip_top.gds (each instance's cell bbox in the die frame),
+# not taken from a plan doc. The recorded plan figures were rounded, and the spiral's would
+# have UNDER-covered the coil by 0.020 um at its bottom edge.
+NDMY, PMNDMY, IND_MK = (111, 5), (152, 5), (151, 5)
+
+SPIRAL = pya.DBox(490.000, 295.480, 672.000, 379.480)   # vco_v1/vco_inductor_v2, 182.000 x 84.000
+VARACT = pya.DBox(576.630, 200.010, 623.370, 254.480)   # vco_v1/vco_varactors,    46.740 x 54.470
+
+for _name, _box, _layers in [
+    ("spiral",    SPIRAL, [PMNDMY, IND_MK]),   # metal fill; comp/poly2 fill (eddy loss -> Q)
+    ("varactors", VARACT, [PMNDMY, NDMY]),     # metal fill; comp/poly2 fill (tuning match)
+]:
+    # geom.drc runs ongrid(0.005) on all three layers -- assert rather than hope.
+    for _v in (_box.left, _box.bottom, _box.right, _box.top):
+        assert abs(round(_v / ly.dbu) * ly.dbu - _v) < 1e-9, ("off-grid marker edge", _name, _v)
+    # DE.2: minimum NDMY or PMNDMY size (x or y) is 0.8 um.
+    assert min(_box.width(), _box.height()) >= 0.8, ("DE.2 min size", _name)
+    for _lay, _dt in _layers:
+        chip.shapes(ly.layer(_lay, _dt)).insert(_box)
+    print("keep-out %-10s (%.3f,%.3f)-(%.3f,%.3f)  %.3f x %.3f um  %.1f um2  -> %s"
+          % (_name, _box.left, _box.bottom, _box.right, _box.top, _box.width(), _box.height(),
+             _box.width() * _box.height(), " ".join("%d/%d" % _l for _l in _layers)))
+
+# DE.3 is an NDMY-only area cap; assert the one NDMY shape stays clear of it.
+assert VARACT.width() * VARACT.height() < 15000.0, "DE.3: NDMY area cap"
+
 ly.write(GDS)
 print("routed power + GND ring + labels + DIEAREA boundary; wrote %s" % GDS)
