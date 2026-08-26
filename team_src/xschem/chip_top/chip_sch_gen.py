@@ -50,7 +50,7 @@ DIRS = {  # pin directions (cosmetic in a black box, but set them sensibly)
 NETMAP = {
     "PFD_lib":      {"REF": "REF_IN", "FB": "I_P", "UP": "UP", "DOWN": "DOWN", "VDD": "VDDD", "VSS": "VSSA"},
     "CP_v1":        {"UP": "UP", "DOWN": "DOWN", "CP_OUT": "CP_OUT", "VDD": "VDDA", "VSS": "VSSA", "VGP": "VGP", "VGN": "VGN"},
-    "ibias_gen_v1": {"IBIAS": "IBIAS", "VGP": "VGP", "VGN": "VGN", "IB_DIV2": "IB_DIV2", "VDD": "VDDA", "VSS": "VSSA"},
+    "ibias_gen_v1": {"IBIAS": "IBIAS_C", "VGP": "VGP", "VGN": "VGN", "IB_DIV2": "IB_DIV2", "VDD": "VDDA", "VSS": "VSSA"},
     "DIV2_QUAD_v1": {"CK": "VCO_OUTP", "CKB": "VCO_OUTN", "IBIAS": "IB_DIV2", "I_P": "I_P", "I_N": "I_N", "Q_P": "Q_P", "Q_N": "Q_N", "VDD": "VDDD", "VSS": "VSSA"},
     "vco_v1":       {"VDD": "VDDA", "OUT_p": "VCO_OUTP", "OUT_n": "VCO_OUTN", "GND": "VSSA", "TUNE": "VTUNE", "ISS": "ISS"},
 }
@@ -65,6 +65,31 @@ PADS = [
     ("VSSA", "iopin"), ("VDDA", "ipin"), ("IBIAS", "ipin"), ("ISS", "ipin"), ("VTUNE", "ipin"),
     ("CP_OUT", "opin"), ("I_P", "opin"), ("I_N", "opin"), ("Q_P", "opin"), ("Q_N", "opin"),
     ("VDDD", "ipin"), ("REF_IN", "ipin"),
+]
+
+# --- RUNG 3: secondary ESD (Bailey: "add it yourself and update the schematics accordingly").
+# Sizing and topology are the ORGANIZERS', from examples/pads_simulation/symbols/
+# io_secondary_3p3/io_secondary_3p3.sch: diodes r_w=10u r_l=10u m=4, ppolyf_u W=16u L=4u, and
+# BOTH diodes on the CORE side of the ballast -- so the block instance moves to the clamp node
+# (<PAD>_C) and the pad net feeds only the resistor.
+#
+# POLARITY IS PHYSICS, NOT THE SYMBOL PIN NAMES. pd2nw is P+ in N-well: the P+ is the ANODE, so
+# it takes the clamp node and the N-well cathode goes to VDDA. nd2ps is N+ in p-well: the p-well
+# is the ANODE, so it takes VSSA and the N+ cathode takes the clamp node. That ordering is what
+# magic emits too -- the extracted nd2ps puts its SUBSTRATE node first.
+# Pin coords come from the PDK symbols: diodes p(0,-30) m(0,+30); ppolyf_u P(0,-30) M(0,+30) B(-20,0).
+ESD_PINS = {"diode": {"p": (0.0, -30.0), "m": (0.0, 30.0)},
+            "res":   {"P": (0.0, -30.0), "M": (0.0, 30.0), "B": (-20.0, 0.0)}}
+ESD = [   # (inst, symbol, kind, {pin: net}, params)
+    ("R_ESD_IBIAS", "symbols/ppolyf_u.sym", "res",
+     {"P": "IBIAS", "M": "IBIAS_C", "B": "VSSA"},
+     "model=ppolyf_u spiceprefix=X W=16e-6 L=4e-6 m=1"),
+    ("D_ESD_IBIAS_P", "symbols/diode_pd2nw_03v3.sym", "diode",
+     {"p": "IBIAS_C", "m": "VDDA"},
+     "model=diode_pd2nw_03v3 r_w=10u r_l=10u m=4"),
+    ("D_ESD_IBIAS_N", "symbols/diode_nd2ps_03v3.sym", "diode",
+     {"p": "VSSA", "m": "IBIAS_C"},
+     "model=diode_nd2ps_03v3 r_w=10u r_l=10u m=4"),
 ]
 
 PITCH = 40  # vertical pin pitch (grid-aligned)
@@ -129,6 +154,14 @@ def main():
             net = NETMAP[name][p]
             sch.append("C {lab_pin.sym} %g %g 0 0 {name=l%d lab=%s}" % (ax, ay, lab_id, net))
             lab_id += 1
+
+    # --- secondary ESD devices, one column per pin, below the block row ---
+    for e, (inst, sym, kind, netmap, params) in enumerate(ESD):
+        X, Y = e * 300 - 300, 600
+        sch.append("C {%s} %g %g 0 0 {name=%s %s}" % (sym, X, Y, inst, params))
+        for pin, (dx, dy) in ESD_PINS[kind].items():
+            sch.append("C {lab_pin.sym} %g %g 0 0 {name=e%d_%s lab=%s}"
+                       % (X + dx, Y + dy, e, pin, netmap[pin]))
 
     # 13 pads across the top, as ports (ipin/opin/iopin)
     for j, (net, kind) in enumerate(PADS):

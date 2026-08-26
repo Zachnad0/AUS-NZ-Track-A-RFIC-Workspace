@@ -38,8 +38,11 @@ with open(NETLIST) as f:
 
 if not top or not top[0].startswith(".subckt chip_top"):
     raise SystemExit("could not extract chip_top subckt from %s" % NETLIST)
-# sanity: exactly 5 instance lines
-xlines = [l for l in top if l[:1].lower() == "x"]
+# sanity: exactly 5 BLOCK instances. Rung 3 adds secondary-ESD devices to the same subckt
+# (XR_ESD_* resistors and D_ESD_* diodes), so the count must look at the x_<block> prefix the
+# generator uses and not at "starts with x" -- otherwise a resistor reads as a sixth block.
+xlines = [l for l in top if l.lower().startswith("x_")]
+esdlines = [l for l in top if "_ESD_" in l.upper()]
 if len(xlines) != 5:
     raise SystemExit("expected 5 block instances in chip_top, found %d" % len(xlines))
 
@@ -60,4 +63,7 @@ with open(OUT, "w", newline="\n") as o:
 print("wrote", OUT)
 print("top subckt line:", top[0])
 for l in xlines:
+    print("  ", l)
+print("secondary-ESD devices:", len(esdlines))
+for l in esdlines:
     print("  ", l)

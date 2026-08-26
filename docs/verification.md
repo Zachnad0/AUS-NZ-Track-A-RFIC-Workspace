@@ -37,7 +37,7 @@ found in two digital testbenches are **outliers to correct**, not a rail choice.
 | `NAND3_v1` | 3×nfet_03v3, 3×pfet_03v3 | VDD / VSS | none | ✅ |
 | `NAND_v1` | 2×nfet_03v3, 2×pfet_03v3 | VDD / VSS | none | ✅ |
 | `NOT_v1` | 1×nfet_03v3, 1×pfet_03v3 | VDD / VSS | none | ✅ |
-| `vco_v1` | 2×nfet_03v3, 2×pfet_03v3, 2×cap_nmos_03v3_b (varactor), 1×ppolyf_u_3k | VDD (tail to GND) | none (1.7 pF = coupling caps, not a rail) | ✅ |
+| `vco_v1` | 2×nfet_03v3, 2×pfet_03v3, 2×cap_nmos_03v3_b (varactor), 1×ppolyf_u_1k (**corrected 2026-08-25** — this row said `ppolyf_u_3k`; `chip_top_golden.spice` line 186 is `XR2 … ppolyf_u_1k r_width=1u r_length=15u`, and no `ppolyf_u_3k` exists anywhere in the golden) | VDD (tail to GND) | none (1.7 pF = coupling caps, not a rail) | ✅ |
 
 **No non-03v3 device exists anywhere in the design.** `CP_v1`'s 0.32–3.0 V output
 compliance window is only meaningful at a 3.3 V rail, and `vco_tb` already runs
@@ -997,3 +997,70 @@ rules live in the KLayout deck which is the only tool that sees these layers.
 
 The round-trip check that catches it is in rung 2's commit: read the written GDS back with
 KLayout and assert layer, datatype and coordinates against what was painted.
+
+### 8.9 STANDING LIMITATION: a net that extracts as a GLOBAL node is outside the gate's reach
+
+Recorded 2026-08-25, alongside 8.8, because it is the same shape of hazard: a real defect that
+every gate reports as clean.
+
+**magic treats the p-substrate as one global node.** From the techfile:
+
+```
+substrate *ppdiff,*mvppdiff,space/w,pwell well $SUB -dnwell,isosub
+```
+
+`$SUB` is a single global node. Every p-substrate contact anywhere on the die extracts as that
+same node **whether or not any metal connects them**. Extracting a bare `diode_nd2ps_03v3`
+gencell shows it directly - the cell has **zero ports**, and its anode is emitted as
+`substrate "a_n2329_n2329#"`.
+
+**The consequence:** LVS reports `match uniquely` with a perfect ground strap, a token strap, or
+no strap at all. **Gate 4 cannot see a missing substrate return.** This is not the gate being
+weak; the defect is invisible to the abstraction the gate is built on. The same applies to any
+well tie, and to any other net the extractor globalises.
+
+**The rule this imposes on every remaining ESD pin:** a substrate or well connection needs a
+**physical argument** - measured metal, measured distance, a via that provably lands - **every
+time**. An LVS pass is not evidence about it. Concretely, for rung 3 the return path from each
+clamp's p-side to the nearest VSSA metal was measured at **96.47 um (IBIAS)** and **49.85 um
+(ISS)** of bare bulk silicon, with no metal on the path at all; LVS was green throughout and
+said nothing.
+
+This sits with 8.8 as the pair of things the six-gate suite structurally cannot check:
+marker layers magic cannot see, and nets the extractor globalises.
+
+## 9. Resistor models — two sheet resistances for one device, and which tool uses which
+
+Recorded 2026-08-25 while sizing the rung-3 secondary-ESD series resistor. **`ppolyf_u` does
+not have one sheet resistance in this PDK — it has two, depending on which tool you ask.**
+
+| source | value | where |
+|--------|-------|-------|
+| KLayout LVS extraction deck | **350 Ω/sq** | `libs.tech/klayout/tech/lvs/rule_decks/res_extraction.lvs`: `extract_devices(resistor_with_bulk('ppolyf_u', 350, BResistor), …)` |
+| magic gencell | **315 Ω/sq** | `libs.tech/magic/gf180mcuD.tcl`, `gf180mcu::ppolyf_u_defaults` → `rho 315` |
+
+An 11 % disagreement on the same device. For the organizers' secondary-ESD geometry
+(`ppolyf_u` W=16 µm, L=4 µm, from `io_secondary_3p3.sch`) that is:
+
+* **87.5 Ω** by the LVS deck's 350 Ω/sq
+* **~78.75 Ω** by magic's 315 Ω/sq (nominal, before the gencell's `dw 0.07` edge correction)
+
+**This does not affect the LVS gate.** netgen matches resistors on their *geometry* parameters
+(`w`, `l` / `r_width`, `r_length`), not on an ohms value, so layout and golden agree as long as
+the drawn geometry agrees. It matters for **anything that quotes a resistance**: never publish a
+single number for a `ppolyf_u` without saying which sheet value it came from. Both clear the
+>50 Ω secondary-ESD guidance, so the choice is not load-bearing here.
+
+`ppolyf_u_1k` is **1000 Ω/sq** in the LVS deck and is the model every existing resistor in
+`chip_top_golden.spice` uses — there is no `ppolyf_u_3k` in the design:
+
+| device | block | geometry | value at 1000 Ω/sq |
+|--------|-------|----------|---------------------|
+| `XR2 TUNE cap_bias` | `vco_v1` | r_width 1 µm, r_length 15 µm | **15 kΩ** — VTUNE series |
+| `XR_SER_{IP,IN,QP,QN}` | `DIV2_QUAD_v1` | r_width 2 µm, r_length 2 µm | **1 kΩ** each — I/Q series |
+| `XRFB_{IP,IN,QP,QN}` | `DIV2_QUAD_v1` | r_width 2 µm, r_length 40.04 µm | ~20 kΩ — inverter feedback |
+| `XRA{1,2}` / `XRB{1,2}` | `DIV2_QUAD_v1` | r_width 10 µm, r_length 3 µm | ~300 Ω — CML loads |
+
+In every case the **pad-facing net is the subckt port** (`TUNE`, `I_P`, …) and the resistor
+already sits between pad and core, which is why a secondary clamp inserts at chip level
+without reopening a signed-off block.

@@ -47,7 +47,14 @@ SEED = {
     "Q_P":       (435.18, 251.92, "M1", "DIV2 Q_P output tap"),
     "VTUNE":     (558.68, 266.70, "M1", "vco TUNE gate pad"),
     "ISS":       (595.84, 260.33, "M2", "vco ISS tail strap"),
-    "IBIAS":     (271.30, 423.90, "M2", "ibias IBIAS tap"),
+    # RUNG 3: IBIAS now has a SERIES ballast resistor between the pad and the block tap, so
+    # the net is two metal islands and a metal flood from the block tap cannot reach the pad
+    # (it read 0/8 fingers). The question this tool exists to answer -- "does the haul REACH
+    # its pin" -- is about the PAD-side island, so seed there: the M3 at the pad side of the
+    # series cut (route_chip.py IB_CUT_W, IB_HAUL_Y). That the block-side island reaches the
+    # clamp node is a connectivity question, and LVS answers it -- verified: the shorted and
+    # the disconnected variants both FAIL gate 4.
+    "IBIAS":     (40.00, 423.90, "M3", "IBIAS pad side of the series ballast"),
     "VDDA":      (400.00, 399.00, "M5", "VDDA M5 bus"),
     "VDDD":      (380.00, 388.00, "M5", "VDDD M5 bus"),
     "VSSA":      (400.00, 190.00, "M5", "GND ring, bottom segment"),

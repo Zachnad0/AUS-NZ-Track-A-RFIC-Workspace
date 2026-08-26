@@ -379,7 +379,17 @@ R.hwire(chip, ly, 3, 4.0, IB_TAP[0], IB_TAP[1], w=0.4)         # M3 west to die 
 R.via_stack(chip, ly, 3, 4, 4.0, IB_TAP[1])
 R.hwire(chip, ly, 4, -7.0, 4.0, IB_TAP[1], w=0.4)              # M4 hop over the two quad risers
 R.via_stack(chip, ly, 3, 4, -7.0, IB_TAP[1])
-R.route_path(chip, ly, 3, [(-7.0, IB_TAP[1]), (-166.0, IB_TAP[1]), (-166.0, 82.5)], w=0.4)
+# RUNG 3 CUT: this M3 used to run unbroken from the block tap to the pad riser. The secondary
+# ESD ballast resistor goes IN SERIES in it, so the run is split into a TAP-side piece and a
+# PAD-side piece and the gap (die x40.0-58.5, under esd_rpoly) is bridged through the resistor.
+# Leaving it unbroken would short the ballast out. DRC-clean -- but NOT LVS-clean: TESTED
+# 2026-08-25 by re-painting the bridge and re-running the gate. The resistor extracts as
+# `Xesd_rpoly_0 IBIAS IBIAS VSSA` (both terminals on one node), the chip net count drops
+# 20 -> 19, and netgen reports "Final result: Top level cell failed pin matching". So gate 4
+# DOES see a shorted-out ballast. An earlier version of this comment claimed otherwise; it was
+# wrong and is retracted. This is an ordinary visible defect, not a docs 8.8/8.9 blindness.
+R.hwire(chip, ly, 3, -141.5, -7.0, IB_TAP[1], w=0.4)                       # TAP side  -> die x58.5
+R.route_path(chip, ly, 3, [(-160.0, IB_TAP[1]), (-166.0, IB_TAP[1]), (-166.0, 82.5)], w=0.4)  # PAD side
 R.via_stack(chip, ly, 2, 3, -166.0, 82.5)
 R.hwire(chip, ly, 2, -184.0, -166.0, 82.5, w=2.0)              # feeder, plate -> via (MSLOT.1)
 R.box(chip, ly, (36, 0), -200.0, 60.34, -182.0, 104.66)        # W20 finger-column plate, 18 um
@@ -635,6 +645,324 @@ for _name, _box, _layers in [
 
 # DE.3 is an NDMY-only area cap; assert the one NDMY shape stays clear of it.
 assert VARACT.width() * VARACT.height() < 15000.0, "DE.3: NDMY area cap"
+
+
+# =========================================================================================
+# RUNG 3 (B2): SECONDARY ESD -- IBIAS and ISS only. Die frame, painted AFTER the seat.
+# =========================================================================================
+# TOPOLOGY IS THE ORGANIZERS', NOT THE PLAN OF RECORD'S. examples/pads_simulation/symbols/
+# io_secondary_3p3/io_secondary_3p3.sch puts BOTH clamp diodes on `to_gate` -- the CORE side
+# of the ballast resistor -- not the pad side. That is correct for a SECONDARY network: the
+# PRIMARY already exists inside the pad cell (gf180mcu_fd_io__asig_5p0 carries D2/D3,
+# diode_*_06v0 m=4 pj=106e-6) and clamps to DVDD/DVSS, the PADRING rails. Our job is to bound
+# the CORE-side node against VDDA/VSSA, which the primary structurally cannot do.
+#
+# ORDER ALONG THE NET: pad -> existing haul -> R (IBIAS only) -> clamp node -> block tap.
+# ISS gets NO series R by design: 50 ohm there costs 78.5 mV, ~15x the engineered strap budget.
+#
+# WHY THE VSSA STRAP EXISTS. The gencell guard ring is metallised but has NO PORT -- the cell
+# extracts with ZERO ports and its anode is emitted as `substrate`, because magic globalises
+# the p-substrate to $SUB. LVS reports `match uniquely` with or without any ground metal:
+# gate 4 is STRUCTURALLY BLIND here (docs/verification.md 8.9). Measured, the return was
+# 96.47 um (IBIAS) / 49.85 um (ISS) of bare bulk silicon at 3250 ohm/sq -- of order 12.5 kohm
+# and 6.5 kohm. The 10 um straps replace that with ~2-4 ohm.
+for _n in ("esd_pd2nw", "esd_nd2ps", "esd_rpoly"):
+    _src = pya.Layout(); _src.read("/foss/designs/AUS-NZ-integration/gds/%s.gds" % _n)
+    ly.create_cell(_n).copy_tree(_src.cell(_n))
+
+EM1, EVIA1, EM2 = (34, 0), (35, 0), (36, 0)
+VIA1_SZ  = 0.26     # V1.1: via1 size is min AND max 0.26 um -- a fixed size, not a floor
+M1_SPACE = 0.23     # M1.2a
+
+def _rings_plates(cellname):
+    c = ly.cell(cellname)
+    r = pya.Region(c.begin_shapes_rec(ly.layer(*EM1))); r.merge()
+    rings  = sorted([p for p in r.each_merged() if p.holes() > 0], key=lambda q: q.bbox().width())
+    plates = [p for p in r.each_merged() if p.holes() == 0]
+    return rings, plates
+
+def _outer(p):
+    b = p.bbox().to_dtype(ly.dbu)
+    return max(abs(b.left), abs(b.right), abs(b.bottom), abs(b.top))
+
+def _inner(p):
+    best = 0.0
+    for h in range(p.holes()):
+        for pt in p.each_point_hole(h):
+            best = max(best, abs(pt.x * ly.dbu), abs(pt.y * ly.dbu))
+    return best
+
+def esd_tabs(cellname, cx, cy, ring_idx, tab_out, dirs, tag):
+    """Outward M1 widening tabs on a gencell tie ring, + via1 up to M2.
+
+    The gencell ring arms are 0.25 um. V1.1 fixes via1 at 0.26 um, so a via CANNOT be
+    covered by the ring as generated -- no enclosure rule rescues a via wider than its
+    metal. Same-layer M1 paint MERGES with the ring and widens the same conductor (the
+    technique already used for the ISS EM widen). Widening goes OUTWARD: inward is blocked
+    by the diode plate, and bridging that gap would short the diode to its own guard.
+    """
+    rings, plates = _rings_plates(cellname)
+    ring = rings[ring_idx]
+    r_out, r_in = _outer(ring), _inner(ring)
+    tab_far = r_out + tab_out
+
+    # ---- BUILD-TIME ASSERTS, recomputed from the GENERATED geometry on every run ---------
+    # A gencell regeneration, a parameter change or a grid snap can silently eat these
+    # margins. A number in a report cannot catch that; an assert that fires at build can.
+    if len(rings) > ring_idx + 1:                   # an OUTER ring exists (pd2nw RING B)
+        outer_in = _inner(rings[ring_idx + 1])
+        gap = outer_in - tab_far
+        assert gap >= M1_SPACE, (
+            "ESD %s: tab-to-outer-ring gap %.4f um < M1.2a %.2f um "
+            "(ring_out %.4f tab_far %.4f outer_in %.4f)"
+            % (tag, gap, M1_SPACE, r_out, tab_far, outer_in))
+    plate_far = max(_outer(p) for p in plates)      # inward: never approach the diode plate
+    assert r_in - plate_far >= M1_SPACE, (
+        "ESD %s: ring-inner-to-plate gap %.4f um < M1.2a %.2f um (r_in %.4f plate %.4f)"
+        % (tag, r_in - plate_far, M1_SPACE, r_in, plate_far))
+    assert (tab_far - r_in) >= VIA1_SZ, (
+        "ESD %s: widened M1 %.4f um cannot hold a %.2f um via1"
+        % (tag, tab_far - r_in, VIA1_SZ))
+
+    half = 0.6                                      # tab half-length along the ring
+    vr   = (r_in + tab_far) / 2.0                   # via centre radius, inside the metal
+    vias = []
+    for d in dirs:
+        if d in ("E", "W"):
+            s = 1.0 if d == "E" else -1.0
+            x0, x1 = (cx + r_out, cx + tab_far) if s > 0 else (cx - tab_far, cx - r_out)
+            R.box(chip, ly, EM1, x0, cy - half, x1, cy + half)
+            vias.append((cx + s * vr, cy))
+        else:
+            s = 1.0 if d == "N" else -1.0
+            y0, y1 = (cy + r_out, cy + tab_far) if s > 0 else (cy - tab_far, cy - r_out)
+            R.box(chip, ly, EM1, cx - half, y0, cx + half, y1)
+            vias.append((cx, cy + s * vr))
+    for (vx, vy) in vias:
+        R.box(chip, ly, EVIA1, vx - VIA1_SZ / 2, vy - VIA1_SZ / 2,
+                               vx + VIA1_SZ / 2, vy + VIA1_SZ / 2)
+    print("   %-16s ring %.3f/%.3f -> tab %.3f  %d tab(s) %-4s  via r=%.3f"
+          % (tag, r_in, r_out, tab_far, len(dirs), "".join(dirs), vr))
+    return vias, r_out, tab_far
+
+
+def esd_res_tabs(cellname, cx, cy, tag):
+    """The ppolyf_u terminals are 0.23 um M1 strips -- the SAME via-can't-land problem as the
+    diode tie rings, found the same way (measured, not assumed). Widen each terminal OUTWARD
+    in y, away from the poly body, and via up. Returns (bottom_via, top_via)."""
+    c = ly.cell(cellname)
+    r = pya.Region(c.begin_shapes_rec(ly.layer(*EM1))); r.merge()
+    strips = sorted([p for p in r.each_merged() if p.holes() == 0],
+                    key=lambda q: q.bbox().to_dtype(ly.dbu).bottom)
+    frames = [p for p in r.each_merged() if p.holes() > 0]
+    assert len(strips) == 2, "ESD %s: expected 2 terminal strips, got %d" % (tag, len(strips))
+    frame_in = _inner(frames[0]) if frames else 1e9
+    vias = []
+    for i, p in enumerate(strips):
+        b = p.bbox().to_dtype(ly.dbu)
+        s = -1.0 if i == 0 else 1.0                    # bottom strip grows down, top grows up
+        far = (b.bottom - 0.455) if s < 0 else (b.top + 0.455)
+        gap = frame_in - abs(far)
+        assert gap >= M1_SPACE, (
+            "ESD %s: terminal tab to guard frame %.4f um < M1.2a %.2f um (far %.4f frame %.4f)"
+            % (tag, gap, M1_SPACE, far, frame_in))
+        inner_edge = b.top if s < 0 else b.bottom
+        assert abs(far - inner_edge) >= VIA1_SZ, (
+            "ESD %s: widened terminal %.4f um cannot hold a %.2f um via1"
+            % (tag, abs(far - inner_edge), VIA1_SZ))
+        y0, y1 = (far, b.top) if s < 0 else (b.bottom, far)
+        R.box(chip, ly, EM1, cx + b.left, cy + y0, cx + b.right, cy + y1)
+        vy = (far + inner_edge) / 2.0
+        R.box(chip, ly, EVIA1, cx - VIA1_SZ / 2, cy + vy - VIA1_SZ / 2,
+                               cx + VIA1_SZ / 2, cy + vy + VIA1_SZ / 2)
+        vias.append((cx, cy + vy))
+    print("   %-16s terminals widened to +-%.3f, frame_in %.3f" % (tag, 0.455, frame_in))
+    return vias[0], vias[1]
+
+def esd_m2_frame(cx, cy, ri, ro):
+    """Square M2 annulus collecting the tab via1s of one device."""
+    R.box(chip, ly, EM2, cx - ro, cy + ri, cx + ro, cy + ro)     # N
+    R.box(chip, ly, EM2, cx - ro, cy - ro, cx + ro, cy - ri)     # S
+    R.box(chip, ly, EM2, cx + ri, cy - ro, cx + ro, cy + ro)     # E
+    R.box(chip, ly, EM2, cx - ro, cy - ro, cx - ri, cy + ro)     # W
+
+def esd_plate_bridge(cx, cy):
+    """Tie the FOUR diode plates together and take them up to M2.
+
+    Each doverlap cell has four SEPARATE M1 plates (the diode terminals), one per unit. A via
+    on one plate leaves the other three FLOATING -- netgen sees it as 4 devices reducing to 2
+    instead of 1, plus extra nets. They cannot be bridged on M1: the tie ring's own central
+    cross occupies |x|,|y| < 0.135, exactly the gap between the plates, so an M1 bridge would
+    short every diode to its own guard. So bridge on M2, inside the tie-ring M2 frame's inner
+    radius (11.00 / 10.80) with clearance to spare."""
+    for sx in (-5.5, 5.5):
+        for sy in (-5.5, 5.5):
+            R.box(chip, ly, EVIA1, cx + sx - VIA1_SZ / 2, cy + sy - VIA1_SZ / 2,
+                                   cx + sx + VIA1_SZ / 2, cy + sy + VIA1_SZ / 2)
+    R.box(chip, ly, EM2, cx - 6.5, cy - 6.5, cx + 6.5, cy + 6.5)
+    return (cx + 5.5, cy + 5.5)
+
+print("phase 8 rung 3: secondary ESD, IBIAS + ISS")
+# ---- PLACEMENT IS DERIVED, NOT TRANSCRIBED -----------------------------------------------
+# Each device is anchored by its intended LOWER-LEFT corner in the die frame; the instance
+# origin is computed from the cell's MEASURED bbox at build time. Transcribed centres would
+# silently drift the moment a gencell parameter changed -- and they already did once this
+# rung: magic's `box values` reported the resistor as 18.16 x 7.18 while the written GDS is
+# 18.24 x 7.26. Deriving means the 0.08 um can never become a landing defect.
+ESD_PLACE = {                       # tag: (cell, lower-left x, lower-left y)
+    "IB_D1": ("esd_pd2nw",  22.00, 440.00),
+    "IB_D2": ("esd_nd2ps",  60.00, 440.00),
+    "IB_R":  ("esd_rpoly",  40.00, 427.00),
+    # ISS lands in the NEXT commit -- one pin at a time, so each commit is self-consistent
+    # and LVS stays green throughout. Painting both pins while the golden carries only one
+    # makes the gate red for a reason that has nothing to do with the pin under test.
+    # "IS_D1": ("esd_pd2nw", 105.00, 300.00),
+    # "IS_D2": ("esd_nd2ps", 105.00, 335.00),
+}
+# the measured free blocks these must stay inside (docs: rung-3 stage B1 occupancy scans)
+ESD_BLOCK = {"IB": (18.0, 425.0, 98.0, 470.0), "IS": (95.0, 200.0, 180.0, 390.0)}
+ESD_POS, ESD_BOX = {}, {}
+for _tag, (_cell, _llx, _lly) in ESD_PLACE.items():
+    _bb = ly.cell(_cell).dbbox()
+    _cx, _cy = _llx - _bb.left, _lly - _bb.bottom          # origin s.t. bbox LL lands on (llx,lly)
+    ESD_POS[_tag] = (_cx, _cy)
+    ESD_BOX[_tag] = (_llx, _lly, _llx + _bb.width(), _lly + _bb.height())
+    chip.insert(pya.DCellInstArray(ly.cell(_cell).cell_index(),
+                                   pya.DTrans(pya.DVector(_cx, _cy))))
+    _bx = ESD_BLOCK[_tag[:2]]
+    assert (_bx[0] <= _llx and _bx[1] <= _lly
+            and ESD_BOX[_tag][2] <= _bx[2] and ESD_BOX[_tag][3] <= _bx[3]), (
+        "ESD %s box (%.3f,%.3f)-(%.3f,%.3f) escapes its measured free block %s"
+        % ((_tag,) + ESD_BOX[_tag] + (_bx,)))
+    print("   %-6s %-11s (%8.3f,%8.3f)-(%8.3f,%8.3f)  %6.3f x %6.3f"
+          % (_tag, _cell, ESD_BOX[_tag][0], ESD_BOX[_tag][1], ESD_BOX[_tag][2],
+             ESD_BOX[_tag][3], _bb.width(), _bb.height()))
+# no two ESD devices may overlap
+for _a in ESD_BOX:
+    for _b in ESD_BOX:
+        if _a >= _b: continue
+        ax0, ay0, ax1, ay1 = ESD_BOX[_a]; bx0, by0, bx1, by1 = ESD_BOX[_b]
+        assert not (ax0 < bx1 and bx0 < ax1 and ay0 < by1 and by0 < ay1),             "ESD %s and %s overlap" % (_a, _b)
+IB_D1, IB_D2, IB_R = ESD_POS["IB_D1"], ESD_POS["IB_D2"], ESD_POS["IB_R"]
+
+# ---- tie-ring tabs. nd2ps gets 4 (outward is free); pd2nw RING A gets 2 (it is boxed in by
+# RING B with only 0.58 um, so each tab is a thin-margin structure -- fewer is safer).
+# The pd2nw RING B "bonus" VSSA tab from the approved plan is DROPPED: it would put a third
+# net on M2 around one cell with a measured 0.2 um gap to the VDDA frame, under the 0.28 um
+# M2 spacing. The nd2ps beside it provides the substrate strap and they share one substrate.
+for _tag, _c, _p in (("IBIAS.nd2ps", "esd_nd2ps", IB_D2),):
+    _v, _ro, _tf = esd_tabs(_c, _p[0], _p[1], 0, 1.00, ("N", "S", "E", "W"), _tag)
+    esd_m2_frame(_p[0], _p[1], 11.00, 12.70)
+for _tag, _c, _p in (("IBIAS.pd2nw", "esd_pd2nw", IB_D1),):
+    _v, _ro, _tf = esd_tabs(_c, _p[0], _p[1], 0, 0.285, ("E", "W"), _tag)
+    esd_m2_frame(_p[0], _p[1], 10.80, 11.50)
+
+
+# ---- IBIAS: resistor terminals, series insertion, clamp node ----------------------------
+# NOTE ON FRAME: everything below this point paints in the DIE frame -- the +200/+200 seat has
+# already happened. An earlier revision of this block used core coordinates (die-200) and every
+# connecting wire landed 200 um from its device, leaving all five ESD devices on isolated m1_*
+# nodes. Caught by the extraction port/net count, not by DRC: unconnected is not a rule
+# violation. Same failure class as the five landing defects in analysis/landing_check.py.
+# --- STRUCTURAL GUARD FOR THE R.hwire HALF-WIDTH OVERRUN ---------------------------------
+# R.hwire/R.vwire extend HALF THEIR WIDTH past each endpoint. That overrun has now silently
+# merged a net THREE times in this file (the ISS south lane, the ISS bus, and the rung-3 VSSA
+# strap reaching into the ESD plate bridge). It is documented twice already, so documenting it
+# again is not a fix. Every ESD segment is recorded here with its GROWN extent and checked
+# pairwise against the other nets' segments and against every device footprint, at BUILD time.
+# A new segment can no longer reach a foreign net without the build failing loudly.
+ESD_SEGS = []      # (net, metal, grown DBox)
+
+def eseg(net, m, x0, y0, x1, y1, w, horiz=None):
+    """Paint an ESD wire AND record the grown extent the checker must use."""
+    if horiz is None:
+        horiz = abs(y1 - y0) < 1e-9
+    if horiz:
+        R.hwire(chip, ly, m, x0, x1, y0, w=w)
+    else:
+        R.vwire(chip, ly, m, y0, y1, x0, w=w)
+    h = w / 2.0
+    ESD_SEGS.append((net, m, pya.DBox(min(x0, x1) - h, min(y0, y1) - h,
+                                      max(x0, x1) + h, max(y0, y1) + h)))
+
+def esd_check_segments(devboxes):
+    bad = []
+    for i in range(len(ESD_SEGS)):
+        for j in range(i + 1, len(ESD_SEGS)):
+            (na, ma, ba), (nb, mb, bb) = ESD_SEGS[i], ESD_SEGS[j]
+            if na != nb and ma == mb and ba.overlaps(bb):
+                bad.append("%s/%s on M%d: %s vs %s" % (na, nb, ma, ba, bb))
+    for (net, m, b) in ESD_SEGS:
+        for tag, (x0, y0, x1, y1) in devboxes.items():
+            if net == "VSSA" and b.overlaps(pya.DBox(x0, y0, x1, y1)) and m == 2:
+                # the VSSA strap MAY overlap its own nd2ps frame, nothing else
+                if not tag.endswith("D2"):
+                    bad.append("VSSA M2 grown extent reaches device %s" % tag)
+    assert not bad, "ESD segment overrun reaches a foreign net: " + "; ".join(bad)
+    print("   ESD segment check: %d segments, 0 cross-net overruns" % len(ESD_SEGS))
+
+_rb, _rt = esd_res_tabs("esd_rpoly", IB_R[0], IB_R[1], "IBIAS.rpoly")
+IB_CUT_W, IB_CUT_E, IB_HAUL_Y = 40.0, 58.5, 423.90      # the series gap, die frame
+# PAD side of the cut -> resistor BOTTOM terminal
+R.route_path(chip, ly, 3, [(IB_CUT_W, IB_HAUL_Y), (IB_CUT_W, _rb[1]), (_rb[0], _rb[1])], w=0.4)
+R.via_stack(chip, ly, 2, 3, _rb[0], _rb[1])             # M2 over the tab's via1, then up to M3
+# CORE side: resistor TOP terminal -> clamp node -> both diodes -> back onto the TAP piece
+R.via_stack(chip, ly, 2, 3, _rt[0], _rt[1])
+IB_E1 = (IB_D1[0] + 5.5, IB_D1[1] - 5.5)      # D1 pad escape, SE plate
+IB_E2 = (IB_D2[0] - 5.5, IB_D2[1] - 5.5)      # D2 pad escape, SW plate
+esd_plate_bridge(IB_D1[0], IB_D1[1])
+esd_plate_bridge(IB_D2[0], IB_D2[1])
+for _e in (IB_E1, IB_E2):
+    R.via_stack(chip, ly, 2, 3, _e[0], _e[1])   # M2 bridge -> M3 clamp node (via1 already set)
+R.route_path(chip, ly, 3, [(_rt[0], _rt[1]), (_rt[0], IB_E1[1]), (IB_E1[0], IB_E1[1])], w=0.4)
+R.route_path(chip, ly, 3, [(_rt[0], IB_E1[1]), (IB_E2[0], IB_E1[1]), (IB_E2[0], IB_E2[1])], w=0.4)
+R.route_path(chip, ly, 3, [(IB_E2[0], IB_E1[1]), (90.0, IB_E1[1]), (90.0, IB_HAUL_Y)], w=0.4)
+print("   IBIAS clamp node: R %.3f/%.3f -> D1 %.2f,%.2f  D2 %.2f,%.2f"
+      % (_rb[1], _rt[1], IB_E1[0], IB_E1[1], IB_E2[0], IB_E2[1]))
+
+# ---- VDDA feed onto the pd2nw RING A frame ----------------------------------------------
+eseg("VDDA", 4, 52.0, 400.50, 52.0, IB_D1[1], 3.0)
+eseg("VDDA", 4, IB_D1[0] + 11.133, IB_D1[1], 52.0, IB_D1[1], 3.0)
+R.via_stack(chip, ly, 2, 4, IB_D1[0] + 11.133, IB_D1[1])
+
+# ---- VSSA strap: nd2ps M2 frame -> GND ring, 10 um, via stack INTO the ring --------------
+# R.hwire EXTENDS HALF ITS WIDTH past each endpoint. At w=10 that is 5 um, so a strap
+# nominally starting at the M2 frame's inner edge (cx+11.00 = 82.30) actually reaches 77.30 --
+# INSIDE the plate bridge, which ends at cx+6.5 = 77.80. That shorted the clamp node to VSSA
+# and every ESD node extracted as VSSA. Start at cx+13.0 so the EXTENDED end lands at 79.30,
+# still covering the frame (82.30-84.00) with 1.5 um clear of the bridge. Third time this
+# overrun has cost a net in this file; the strap start is now derived from it, not eyeballed.
+assert (IB_D2[0] + 13.0) - 5.0 > IB_D2[0] + 6.5 + 1.0, "VSSA strap would reach the plate bridge"
+eseg("VSSA", 2, IB_D2[0] + 13.0, IB_D2[1], 190.0, IB_D2[1], 10.0)
+R.via_stack(chip, ly, 2, 5, 190.0, IB_D2[1])
+print("   IBIAS VSSA strap: M2 10 um (%.2f,%.2f) -> GND ring die x190.00  [extends to %.2f]"
+      % (IB_D2[0] + 13.0, IB_D2[1], IB_D2[0] + 13.0 - 5.0))
+
+# ---- DEMOTE the block's own IBIAS port label -------------------------------------------
+# ibias_gen_v1's GDS carries an `IBIAS` text on 36/10 at its tap (die 271.30,423.90), streamed
+# in verbatim by chip_merge. Our pad plate carries a second `IBIAS` on 36/10 at (0.50,282.50).
+# Before the series cut those two texts sat on ONE net, so magic emitted one port. The ballast
+# splits that net in two, and magic then has one name for two electrically distinct nodes --
+# it emits `IBIAS` and `IBIAS_uq0`, a 13th port, and LVS fails on port count.
+#
+# The chip's port list is a CHIP-level decision; a block's internal port label should not get a
+# vote. Demote the tap label to 36/10 -> 36/0, which the magic tech maps to `labels allm2
+# noport`: it stays in the GDS and stays visible to a text scrape, it simply stops competing
+# for a port name. Exactly the mechanism used for VSSD in f31d594, applied one level down.
+_TAPTXT, _n = "IBIAS", 0
+_l1010, _l360 = ly.layer(36, 10), ly.layer(36, 0)
+_keep = []
+for _sh in chip.shapes(_l1010).each():
+    if _sh.is_text() and _sh.text.string == _TAPTXT:
+        _t = _sh.text
+        if abs(_t.x * ly.dbu - 0.5) > 1e-6 or abs(_t.y * ly.dbu - 282.5) > 1e-6:
+            _keep.append(pya.DText(_t.string, pya.DTrans(pya.DVector(_t.x * ly.dbu, _t.y * ly.dbu))))
+            _sh.delete(); _n += 1
+for _t in _keep:
+    chip.shapes(_l360).insert(_t)
+assert _n == 1, "expected exactly 1 non-pad IBIAS 36/10 label to demote, found %d" % _n
+esd_check_segments(ESD_BOX)
+print("   IBIAS: demoted %d block-tap label 36/10 -> 36/0 (pad label at 0.50,282.50 kept)" % _n)
 
 ly.write(GDS)
 print("routed power + GND ring + labels + DIEAREA boundary; wrote %s" % GDS)
