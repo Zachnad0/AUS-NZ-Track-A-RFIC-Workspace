@@ -40,6 +40,23 @@ STACK = ["M1", "v1", "M2", "v2", "M3", "v3", "M4", "v4", "M5"]
 
 # net -> (seed x, seed y, seed layer, what the seed is)
 # Seeds are on the BLOCK side so the flood must traverse the haul to reach the pad.
+#
+# !! THE SEED IS FRAGILE. RE-CHECK IT AFTER ANY CHANGE TO A NET'S DEVICE ORDER. !!
+# This check floods METAL. It cannot cross a device. So a seed is only valid while it sits on
+# the same metal island as the pad fingers, and inserting or moving a series device on a net
+# silently invalidates it -- the tool then reports 0/8 fingers, which reads as a landing defect
+# when it is actually a stale seed. It is a LOUD failure, not a silent one, but it costs a gate
+# cycle to diagnose every time.
+#
+# IBIAS's seed has moved TWICE in three commits and both times the tool was right and the seed
+# was wrong:
+#   7391653  ballast inserted between pad and block tap -> block-side seed could no longer
+#            reach the pad. Moved to the pad side of the ballast, at the haul (40.00,423.90).
+#   5eda5b6  clamp relocated into the W20 pin band, so the ballast became the FIRST element on
+#            the net -- (40.00,423.90) was then on the CORE side of it. Moved again, to the
+#            resistor's pad-side terminal.
+# The rule that would have caught both without a gate cycle: after changing a net, ask which
+# metal island the pad fingers are on, and seed at the far end of THAT island.
 SEED = {
     "Q_N":       (202.18, 251.92, "M1", "DIV2 Q_N output tap"),
     "I_N":       (202.18, 340.27, "M1", "DIV2 I_N output tap"),
