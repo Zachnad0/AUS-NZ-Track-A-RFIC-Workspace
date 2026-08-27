@@ -75,9 +75,6 @@ pins:
 - name: I_N
   io_type: analog
   secondary_esd: false
-- name: I_P
-  io_type: analog
-  secondary_esd: false
 - name: Q_P
   io_type: analog
   secondary_esd: false

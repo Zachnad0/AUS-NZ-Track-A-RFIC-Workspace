@@ -246,15 +246,22 @@ for outnet, xv, xd, ylane in [("OUT_p", 401.8, 65.0, 181.0), ("OUT_n", 398.0, 13
 #     existing M3 instead. Q_N/I_N/Q_P pins are M1-only and take the via stack.
 #   * I_P low-jog into the west column, Q_P high-jog into the east column, so no lane crosses
 #     a riser (M3.2a).
-IQ_TAP  = {"Q_N": (2.18, 51.92), "I_N": (2.18, 140.27),
-           "I_P": (235.18, 140.27), "Q_P": (235.18, 51.92)}
-IQ_PAD  = {"Q_N": -32.5, "I_N": 67.5, "I_P": 167.5, "Q_P": 267.5}   # core x of N02..N05 centres
+# JOB B: I_P is OFF the pin list (docs/verification.md 8.10 -- its pad's 875 fF through
+# XR_SER_IP's 1 kohm collapses the PFD feedback clock to 11 % swing). DIV2.I_P still reaches
+# PFD.FB through the dedicated chip-level FB route above, so only the PAD haul goes.
+# Q_P moves N05 -> N04, i.e. onto I_P's old pad x. Every other I/Q pad is unchanged.
+IQ_TAP  = {"Q_N": (2.18, 51.92), "I_N": (2.18, 140.27), "Q_P": (235.18, 51.92)}
+IQ_PAD  = {"Q_N": -32.5, "I_N": 67.5, "Q_P": 167.5}                 # core x of N02..N04 centres
 IQ_PADY = 349.0                                                     # core y of the north pin row
 IQ_PLAN = {
     "Q_N": dict(esc=-3.6, jog=None,           lane=290.0),
     "I_N": dict(esc=-2.3, jog=None,           lane=300.0),
-    "I_P": dict(esc=+11.0, jog=(185.0, 190.0), lane=308.0, novia=True),
-    "Q_P": dict(esc=+17.0, jog=(200.0, 198.0), lane=316.0),
+    # JOB B: Q_P now lands on I_P's old pad (N05 -> N04), so its lane runs x167.5 -> jog_x.
+    # With the jog left at 200.0 that lane SPANS core x192, where CP_OUT's M3 riser threads
+    # "between I_P's lane and Q_P's" -- and Q_P merged into CP_OUT (LVS: XCP_v1_0 ... Q_P ...,
+    # CP_OUT absent from the port list). Q_P inherits I_P's jog x for the same reason it
+    # inherited its pad: the column at x185 is exactly the one I_P vacated.
+    "Q_P": dict(esc=+17.0, jog=(185.0, 198.0), lane=316.0),
 }
 
 def iq_pts(net, ser_extra):
@@ -468,18 +475,18 @@ print("(e) ISS: %.2f um bus (M2 8um / M4 10um / M5 10um), one M4 hop over VSSA's
 # a spur off the analog VSSA side of the ring. On-chip VSSA and VSSD are one node (shared
 # p-substrate, no deep nwell); the padring break isolates the RAILS, so what VSSD buys is a
 # local bond for the digital island's return, which is exactly what a short vertical gives.
-R.via_stack(chip, ly, 4, 5, 367.5, 280.0)                      # onto the ring top, die (567.5,480)
-R.vwire(chip, ly, 4, 280.0, 347.0, 367.5, w=3.0)               # M4 riser, die y480 -> 547
-R.via_stack(chip, ly, 2, 4, 367.5, 347.0)
-R.vwire(chip, ly, 2, 347.0, 348.0, 367.5, w=3.0)   # w=3 extends 1.5: must not pass die y550
-R.box(chip, ly, (36, 0), 331.36, 349.0, 403.64, 350.0)         # N06 finger-row bar, 72.28 x 1.0
+R.via_stack(chip, ly, 4, 5, 267.5, 280.0)                      # onto the ring top, die (567.5,480)
+R.vwire(chip, ly, 4, 280.0, 347.0, 267.5, w=3.0)               # M4 riser, die y480 -> 547
+R.via_stack(chip, ly, 2, 4, 267.5, 347.0)
+R.vwire(chip, ly, 2, 347.0, 348.0, 267.5, w=3.0)   # w=3 extends 1.5: must not pass die y550
+R.box(chip, ly, (36, 0), 231.36, 349.0, 303.64, 350.0)         # N06 finger-row bar, 72.28 x 1.0
 # VSSD text on 36/0, NOT 36/10. The magic tech maps `calma 36 10 -> labels allm2 port` and
 # `calma 36 0 -> labels allm2 noport`, so a text on /0 is a label magic never promotes to a
 # port. VSSA and VSSD are ONE electrical net, magic emits ONE name for it, and on /10 it was
 # picking VSSD -- which broke pin matching against a golden whose ground port is VSSA. On /0
 # the VSSD text is still in the GDS (Bailey's top_cell_text scrape reports each text with its
 # layer and datatype) but never competes for the port name.
-chip.shapes(ly.layer(36, 0)).insert(pya.DText("VSSD", pya.DTrans(pya.DVector(367.5, 349.5))))
+chip.shapes(ly.layer(36, 0)).insert(pya.DText("VSSD", pya.DTrans(pya.DVector(267.5, 349.5))))
 
 # VDDD -- N07, die x631.36-703.64, off the M5 VDDD bus (die x249-442, y382-394).
 # Tapped at die x408, INSIDE the bus -- 3o's "tap at x256" for VDDA was 2.5 um outside its bus
@@ -489,16 +496,16 @@ chip.shapes(ly.layer(36, 0)).insert(pya.DText("VSSD", pya.DTrans(pya.DVector(367
 # net -- so it hops to M5 for 30 um. M5 is free there, above the ring top at die y487.5.
 R.via_stack(chip, ly, 4, 5, 208.0, 188.0)                      # onto the VDDD bus, die (408,388)
 R.vwire(chip, ly, 4, 188.0, 305.0, 208.0, w=3.0)               # M4 riser, die y388 -> 505
-R.hwire(chip, ly, 4, 208.0, 360.0, 305.0, w=3.0)
-R.via_stack(chip, ly, 4, 5, 360.0, 305.0)
-R.hwire(chip, ly, 5, 360.0, 375.0, 305.0, w=3.0)               # M5 hop over VSSD's M4 riser
-R.via_stack(chip, ly, 4, 5, 375.0, 305.0)
-R.hwire(chip, ly, 4, 375.0, 467.0, 305.0, w=3.0)
-R.vwire(chip, ly, 4, 305.0, 347.0, 467.0, w=3.0)               # M4 riser, die x667
-R.via_stack(chip, ly, 2, 4, 467.0, 347.0)
-R.vwire(chip, ly, 2, 347.0, 348.0, 467.0, w=3.0)   # ditto
-R.box(chip, ly, (36, 0), 431.36, 349.0, 503.64, 350.0)         # N07 finger-row bar
-chip.shapes(ly.layer(36, 10)).insert(pya.DText("VDDD", pya.DTrans(pya.DVector(467.0, 349.5))))
+R.hwire(chip, ly, 4, 208.0, 260.0, 305.0, w=3.0)
+R.via_stack(chip, ly, 4, 5, 260.0, 305.0)
+R.hwire(chip, ly, 5, 260.0, 275.0, 305.0, w=3.0)               # M5 hop over VSSD's M4 riser
+R.via_stack(chip, ly, 4, 5, 275.0, 305.0)
+R.hwire(chip, ly, 4, 275.0, 367.0, 305.0, w=3.0)
+R.vwire(chip, ly, 4, 305.0, 347.0, 367.0, w=3.0)               # M4 riser, die x667
+R.via_stack(chip, ly, 2, 4, 367.0, 347.0)
+R.vwire(chip, ly, 2, 347.0, 348.0, 367.0, w=3.0)   # ditto
+R.box(chip, ly, (36, 0), 331.36, 349.0, 403.64, 350.0)         # N07 finger-row bar
+chip.shapes(ly.layer(36, 10)).insert(pya.DText("VDDD", pya.DTrans(pya.DVector(367.0, 349.5))))
 
 # REF_IN -- N08 in_c. THREE separate pins in one slot, ONE 0.38 um finger each, no row to bar
 # across (plan doc 3s): Y die x733.76-734.14, PD x794.29-794.67, PU x798.655-799.035. Each is
@@ -508,31 +515,31 @@ chip.shapes(ly.layer(36, 10)).insert(pya.DText("VDDD", pya.DTrans(pya.DVector(46
 # escapes WEST into the ibias/PFD gap rather than crossing the block.
 R.hwire(chip, ly, 3, 205.0, 210.28, 257.6, w=0.4)              # escape west out of PFD
 R.vwire(chip, ly, 3, 257.6, 305.0, 205.0, w=0.4)               # north, crossing the ring on M3
-R.hwire(chip, ly, 3, 205.0, 534.0, 305.0, w=0.4)               # east at die y505 (measured clear)
-R.vwire(chip, ly, 3, 305.0, 348.5, 534.0, w=0.4)
-R.via_stack(chip, ly, 2, 3, 534.0, 348.5)
+R.hwire(chip, ly, 3, 205.0, 434.0, 305.0, w=0.4)               # east at die y505 (measured clear)
+R.vwire(chip, ly, 3, 305.0, 348.5, 434.0, w=0.4)
+R.via_stack(chip, ly, 2, 3, 434.0, 348.5)
 # The box must reach DOWN to the via2 M2 pad (die y548.25-548.75), not start at the finger
 # edge: at y349.0 (die 549.0) it cleared the pad by 0.25 um and REF_IN extracted as two
 # disconnected labels (REF_IN + REF_IN_uq0). Same landing-miss family as VSSA_uq0/VDDA_uq0.
-R.box(chip, ly, (36, 0), 533.5, 348.3, 534.4, 350.0)           # lands ON the Y finger
-chip.shapes(ly.layer(36, 10)).insert(pya.DText("REF_IN", pya.DTrans(pya.DVector(533.95, 349.5))))
+R.box(chip, ly, (36, 0), 433.5, 348.3, 434.4, 350.0)           # lands ON the Y finger
+chip.shapes(ly.layer(36, 10)).insert(pya.DText("REF_IN", pya.DTrans(pya.DVector(433.95, 349.5))))
 
 # PU/PD: decided 2026-08-21 and confirmed against the PDK truth table -- PU=0, PD=1 = weak
 # pull-down, so REF_IN parks at a clean logic 0 when the bench clock is disconnected. Both
 # terminals MUST be driven; a floating CMOS control gate is not acceptable.
 #   PD -> VDDD   PU -> VSSD (the DIGITAL island's ground, NOT VSSA)
 # Both ties run on M2 so they cross REF_IN's M3 riser and each other's risers on other layers.
-R.box(chip, ly, (36, 0), 594.0, 349.0, 594.96, 350.0)          # lands ON the PD finger
-R.vwire(chip, ly, 2, 340.0, 349.0, 594.48, w=1.0)
-R.hwire(chip, ly, 2, 467.0, 594.48, 340.0, w=1.0)              # west to VDDD's riser
-R.via_stack(chip, ly, 2, 4, 467.0, 340.0)                      # joins VDDD -- same net
-chip.shapes(ly.layer(36, 10)).insert(pya.DText("REF_IN_PD", pya.DTrans(pya.DVector(594.48, 349.5))))
+R.box(chip, ly, (36, 0), 494.0, 349.0, 494.96, 350.0)          # lands ON the PD finger
+R.vwire(chip, ly, 2, 340.0, 349.0, 494.48, w=1.0)
+R.hwire(chip, ly, 2, 367.0, 494.48, 340.0, w=1.0)              # west to VDDD's riser
+R.via_stack(chip, ly, 2, 4, 367.0, 340.0)                      # joins VDDD -- same net
+chip.shapes(ly.layer(36, 10)).insert(pya.DText("REF_IN_PD", pya.DTrans(pya.DVector(494.48, 349.5))))
 
-R.box(chip, ly, (36, 0), 598.4, 349.0, 599.3, 350.0)           # lands ON the PU finger
-R.vwire(chip, ly, 2, 328.0, 349.0, 598.845, w=1.0)
-R.hwire(chip, ly, 2, 367.5, 598.845, 328.0, w=1.0)             # west to VSSD's riser
-R.via_stack(chip, ly, 2, 4, 367.5, 328.0)                      # joins VSSD -- same net
-chip.shapes(ly.layer(36, 10)).insert(pya.DText("REF_IN_PU", pya.DTrans(pya.DVector(598.845, 349.5))))
+R.box(chip, ly, (36, 0), 498.4, 349.0, 499.3, 350.0)           # lands ON the PU finger
+R.vwire(chip, ly, 2, 328.0, 349.0, 498.845, w=1.0)
+R.hwire(chip, ly, 2, 267.5, 498.845, 328.0, w=1.0)             # west to VSSD's riser
+R.via_stack(chip, ly, 2, 4, 267.5, 328.0)                      # joins VSSD -- same net
+chip.shapes(ly.layer(36, 10)).insert(pya.DText("REF_IN_PU", pya.DTrans(pya.DVector(498.845, 349.5))))
 print("(f) VSSD/VDDD/REF_IN + PU->VSSD, PD->VDDD landed on the 13-pin DEF fingers")
 
 # --- PHASE 8 (g): CP_OUT to N01 ---------------------------------------------------------------
@@ -1017,18 +1024,44 @@ R.via_stack(chip, ly, 2, 5, 190.0, IS_D2[1])
 print("   ISS   VSSA strap: M2 10 um (%.2f,%.2f) -> GND ring die x190.00  [extends to %.2f]"
       % (IS_D2[0] + 13.0, IS_D2[1], IS_D2[0] + 13.0 - 5.0))
 
-_TAPTXT, _n = "IBIAS", 0
+# DELETING WHILE ITERATING shapes(...).each() CORRUPTS THE TRAVERSAL. A first version of this
+# deleted inside the loop; with one shape it happened to work, with several it removed EVERY
+# 36/10 text in the cell and the extraction came back with 0 ports and 5 devices. Collect the
+# targets first, then delete. Never fold these two passes together.
 _l1010, _l360 = ly.layer(36, 10), ly.layer(36, 0)
-_keep = []
-for _sh in chip.shapes(_l1010).each():
-    if _sh.is_text() and _sh.text.string == _TAPTXT:
-        _t = _sh.text
-        if abs(_t.x * ly.dbu - 0.5) > 1e-6 or abs(_t.y * ly.dbu - 282.5) > 1e-6:
-            _keep.append(pya.DText(_t.string, pya.DTrans(pya.DVector(_t.x * ly.dbu, _t.y * ly.dbu))))
-            _sh.delete(); _n += 1
-for _t in _keep:
-    chip.shapes(_l360).insert(_t)
+
+def demote_labels(name, keep_at=None, lay=36):
+    """Move <lay>/10 (port) texts to <lay>/0 (plain label). keep_at=(x,y) spares one instance.
+    Block-tap labels streamed in from a block GDS sit on the tap's OWN metal: the I/Q taps are
+    M1, so theirs are on 34/10, not 36/10."""
+    _p10, _p0 = ly.layer(lay, 10), ly.layer(lay, 0)
+    hits = []
+    for _sh in chip.shapes(_p10).each():                   # pass 1: collect only
+        if _sh.is_text() and _sh.text.string == name:
+            _t = _sh.text
+            xy = (_t.x * ly.dbu, _t.y * ly.dbu)
+            if keep_at is not None and abs(xy[0] - keep_at[0]) < 1e-6 and abs(xy[1] - keep_at[1]) < 1e-6:
+                continue
+            hits.append((_sh, pya.DText(name, pya.DTrans(pya.DVector(xy[0], xy[1])))))
+    for _sh, _ in hits:                                    # pass 2: delete
+        _sh.delete()
+    for _, _t in hits:                                     # pass 3: re-insert on <lay>/0
+        chip.shapes(_p0).insert(_t)
+    return len(hits)
+
+# ibias_gen_v1's GDS carries its own IBIAS text on 36/10 at its tap; our pad plate carries one
+# at (0.50,282.50). The ballast splits that net in two, so magic would emit IBIAS + IBIAS_uq0 --
+# a 13th port. Keep the pad one, demote the block's.
+_n = demote_labels("IBIAS", keep_at=(0.5, 282.5))
 assert _n == 1, "expected exactly 1 non-pad IBIAS 36/10 label to demote, found %d" % _n
+print("   IBIAS: demoted %d block-tap label 36/10 -> 36/0 (pad label at 0.50,282.50 kept)" % _n)
+
+# JOB B: I_P is no longer a PAD, so nothing should carry it as a chip PORT. DIV2_QUAD_v1's GDS
+# still has its own I_P text on 36/10 at its output tap. Demote ALL of them -- I_P stays an
+# internal net (DIV2.I_P -> PFD.FB) and keeps its text in the GDS, it just stops being a port.
+_m = demote_labels("I_P", lay=34) + demote_labels("I_P", lay=36)
+assert _m >= 1, "expected at least one I_P 36/10 label to demote, found none"
+print("   I_P: demoted %d label(s) 36/10 -> 36/0 (no longer a pad)" % _m)
 esd_check_segments(ESD_BOX)
 print("   IBIAS: demoted %d block-tap label 36/10 -> 36/0 (pad label at 0.50,282.50 kept)" % _n)
 

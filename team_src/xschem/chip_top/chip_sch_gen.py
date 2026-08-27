@@ -63,7 +63,9 @@ NETMAP = {
 # for Bailey. So VSSD is NOT a separate LVS port here.
 PADS = [
     ("VSSA", "iopin"), ("VDDA", "ipin"), ("IBIAS", "ipin"), ("ISS", "ipin"), ("VTUNE", "ipin"),
-    ("CP_OUT", "opin"), ("I_P", "opin"), ("I_N", "opin"), ("Q_P", "opin"), ("Q_N", "opin"),
+    # JOB B: I_P is no longer a PAD. It stays an internal net (DIV2.I_P -> PFD.FB) and so
+    # stops being a chip_top PORT -- the port list goes 12 -> 11.
+    ("CP_OUT", "opin"), ("I_N", "opin"), ("Q_P", "opin"), ("Q_N", "opin"),
     ("VDDD", "ipin"), ("REF_IN", "ipin"),
 ]
 
