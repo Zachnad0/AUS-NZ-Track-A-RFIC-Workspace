@@ -819,11 +819,11 @@ ESD_PLACE = {                       # tag: (cell, lower-left x, lower-left y)
     "IB_D1": ("esd_pd2nw",  22.00, 440.00),
     "IB_D2": ("esd_nd2ps",  60.00, 440.00),
     "IB_R":  ("esd_rpoly",  40.00, 427.00),
-    "IS_D1": ("esd_pd2nw", 105.00, 300.00),
-    "IS_D2": ("esd_nd2ps", 105.00, 335.00),
+    "IS_D1": ("esd_pd2nw",  20.00, 368.00),
+    "IS_D2": ("esd_nd2ps",  50.00, 368.00),
 }
 # the measured free blocks these must stay inside (docs: rung-3 stage B1 occupancy scans)
-ESD_BLOCK = {"IB": (18.0, 425.0, 98.0, 470.0), "IS": (95.0, 200.0, 180.0, 390.0)}
+ESD_BLOCK = {"IB": (18.0, 425.0, 98.0, 470.0), "IS": (18.0, 355.0, 100.0, 412.0)}
 ESD_POS, ESD_BOX = {}, {}
 for _tag, (_cell, _llx, _lly) in ESD_PLACE.items():
     _bb = ly.cell(_cell).dbbox()
@@ -891,6 +891,19 @@ def eseg(net, m, x0, y0, x1, y1, w, horiz=None):
     h = w / 2.0
     ESD_SEGS.append((net, m, pya.DBox(min(x0, x1) - h, min(y0, y1) - h,
                                       max(x0, x1) + h, max(y0, y1) + h)))
+
+M4_SPACE = 0.28    # M4.2a
+
+def evia(net, x, y, m_lo, m_hi, pad=0.5):
+    """Record a via stack's INTERMEDIATE metal pads. A via stack from M2 to M5 paints M3 and
+    M4 on the way through, and those pads are invisible to a segment checker that only knows
+    about declared wires -- which is exactly how the ISS clamp via landed 0.14 um from the
+    VDDA M4 feed and fired M4.2a four times. Registered here, grown by the spacing rule, so a
+    near-miss on an intermediate layer fails the build instead of the gate."""
+    R.via_stack(chip, ly, m_lo, m_hi, x, y)
+    h = pad / 2.0 + M4_SPACE
+    for m in range(m_lo, m_hi + 1):
+        ESD_SEGS.append((net, m, pya.DBox(x - h, y - h, x + h, y + h)))
 
 def esd_check_segments(devboxes):
     bad = []
@@ -963,19 +976,24 @@ print("   IBIAS VSSA strap: M2 10 um (%.2f,%.2f) -> GND ring die x190.00  [exten
 # clamp node are ONE low-impedance M5/M4 bus and the clamp taps it directly. Nothing splits
 # the ISS net, so unlike IBIAS there is no duplicate-port-label to resolve and landing_check
 # keeps its BLOCK-side seed: the flood has no series device to cross.
+# RELOCATED into the W21 pin band (DEF pin y360.340-404.660). The clamp node routing is
+# GONE: the ISS M5 bus (die y377.5-387.5, x14-90) passes directly OVER both plate bridges, so
+# the node is two via stacks straight down instead of an M5 tap plus ~45 um of 0.4 um M3.
+# Verified M5 is present at both via points before this was written.
 esd_plate_bridge(IS_D1[0], IS_D1[1])
 esd_plate_bridge(IS_D2[0], IS_D2[1])
-IS_E1 = (IS_D1[0] - 5.5, IS_D1[1] + 5.5)      # D1 pad escape, NW plate
-IS_E2 = (IS_E1[0],       IS_D2[1] - 5.5)      # D2 pad escape, SAME x so the link is axial
-assert 0.51 <= abs(IS_E2[0] - IS_D2[0]) <= 10.49, "ISS D2 escape is not on a plate"
-assert 0.51 <= abs(IS_E1[0] - IS_D1[0]) <= 10.49, "ISS D1 escape is not on a plate"
-for _e in (IS_E1, IS_E2):
-    R.via_stack(chip, ly, 2, 3, _e[0], _e[1])
-R.via_stack(chip, ly, 3, 5, 90.0, IS_E1[1])                      # onto the ISS M5 riser
-R.route_path(chip, ly, 3, [(90.0, IS_E1[1]), (IS_E1[0], IS_E1[1])], w=0.4)
-R.route_path(chip, ly, 3, [(IS_E1[0], IS_E1[1]), (IS_E2[0], IS_E2[1])], w=0.4)
-print("   ISS clamp node:   riser tap (90.00,%.2f) -> D1 %.2f,%.2f  D2 %.2f,%.2f"
-      % (IS_E1[1], IS_E1[0], IS_E1[1], IS_E2[0], IS_E2[1]))
+# IS_VY was 382.0 first: that put the via stack's M4 pad 0.14 um from the VDDA M4 feed
+# (y378.61-381.61) and fired M4.2a x4. Raised clear of it, still inside both plate bridges
+# and still under the ISS M5 bus (y377.5-387.5).
+IS_VY = 384.0
+for _c in (IS_D1, IS_D2):
+    assert abs(IS_VY - _c[1]) <= 6.5 - 0.5, "ISS via y is outside the plate bridge of %r" % (_c,)
+assert 377.5 < IS_VY < 387.5, "ISS clamp via is not under the ISS M5 bus"
+assert (IS_VY - 0.25) - 381.61 >= M4_SPACE, "ISS clamp via M4 pad violates M4.2a to the VDDA feed"
+for _c in (IS_D1, IS_D2):
+    evia("ISS", _c[0], IS_VY, 2, 5)
+print("   ISS clamp node:   2 via stacks M2->M5 at (%.2f,%.1f) and (%.2f,%.1f) under the ISS bus"
+      % (IS_D1[0], IS_VY, IS_D2[0], IS_VY))
 
 # VDDA feed onto the ISS pd2nw RING A W tab, held 5.5 um clear of the ISS M4 tap above it --
 # a first draft put both on M4 at the same y, which would have shorted ISS to VDDA.
