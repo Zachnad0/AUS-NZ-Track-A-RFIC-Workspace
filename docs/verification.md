@@ -1026,8 +1026,51 @@ clamp's p-side to the nearest VSSA metal was measured at **96.47 um (IBIAS)** an
 (ISS)** of bare bulk silicon, with no metal on the path at all; LVS was green throughout and
 said nothing.
 
-This sits with 8.8 as the pair of things the six-gate suite structurally cannot check:
-marker layers magic cannot see, and nets the extractor globalises.
+This sits with 8.8 and 8.10 as the things the six-gate suite structurally cannot check:
+marker layers magic cannot see, nets the extractor globalises, and load that lives in a cell
+we do not extract.
+
+### 8.10 STANDING LIMITATION: the PADRING's load is outside chip_top, so no gate sees it
+
+Recorded 2026-08-25. Third instance of the pattern, and the one that would have SHIPPED.
+
+`gf180mcu_fd_io__asig_5p0` -- the analog pad cell the organizer's padring instantiates for all
+eight analog pins -- carries its own primary ESD:
+
+```
+D2 DVSS ASIG5V diode_nd2ps_06v0 m=4.0 area=150e-12 pj=106e-6
+D3 ASIG5V DVDD diode_pd2nw_06v0 m=4.0 area=150e-12 pj=106e-6
+```
+
+That is 600 um2 of junction area and 424 um of perimeter per pin, or **~875 fF at 1.65 V**
+computed from the 06v0 model cards. **It is not in `chip_top`.** Our extraction sees only the
+~35 um of routing on the pad net, of order 35 fF, so every timing consequence of that 875 fF
+is invisible to gates 1-6. LVS matches, DRC is clean, and the number never appears.
+
+**The worked example, found 2026-08-25.** `XR_SER_IP` is a 1 kohm series resistor between the
+DIV2 output buffer (`INVO3_IP`) and the pad net `I_P`. The PFD's feedback input taps `I_P` --
+the PAD side of that resistor, not the driver side. So the PLL feedback clock reaches
+`dffrnq_1`'s CLK through 1 kohm into the pad's 875 fF:
+
+| | value |
+|---|---|
+| tau = 1 kohm x ~912 fF | **912 ps** |
+| period at 2.4 GHz / 3.2 GHz | 416.7 ps / 312.5 ps |
+| swing at CLK, `tanh(T/4tau)` | **11.4 % / 8.5 %** of full rail |
+| peak slew | ~0.21 V/ns, and it never reaches either rail |
+
+The DFF clock input would sit in its linear region and switch on noise. **The loop would not
+lock** -- and nothing in the six-gate suite would have said so, because the capacitance is in
+the organizer's cell.
+
+**The rule this imposes:** any timing or loading question on a PAD NET must be answered against
+the padring cell's contents, never against a chip_top extraction. `gf180mcu_fd_io__asig_5p0`
+also carries `X1 DVDD DVSS cap_nmos_06v0 m=36.0 c_length=15e-6 c_width=15e-6` across the rails,
+which is likewise invisible here.
+
+**Corollary for the ESD rung:** the same 875 fF means the pad is ALREADY heavily loaded before
+our secondary clamp adds anything. Our 400 um2 secondary is an increment on 600 um2 of primary,
+not a load applied to a bare pad.
 
 ## 9. Resistor models — two sheet resistances for one device, and which tool uses which
 

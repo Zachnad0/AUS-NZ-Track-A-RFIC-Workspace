@@ -54,7 +54,12 @@ SEED = {
     # series cut (route_chip.py IB_CUT_W, IB_HAUL_Y). That the block-side island reaches the
     # clamp node is a connectivity question, and LVS answers it -- verified: the shorted and
     # the disconnected variants both FAIL gate 4.
-    "IBIAS":     (40.00, 423.90, "M3", "IBIAS pad side of the series ballast"),
+    #
+    # UPDATED when the clamp moved into the W20 pin band: the ballast is now the FIRST element
+    # on the net, so the pad-side island is just the plate plus the short M2 run to the
+    # resistor. Seed at the resistor's bottom terminal -- the far end of that island -- so the
+    # flood still has to traverse the whole run and the plate to reach all eight fingers.
+    "IBIAS":     (28.30, 268.25, "M2", "IBIAS pad side of the series ballast"),
     "VDDA":      (400.00, 399.00, "M5", "VDDA M5 bus"),
     "VDDD":      (380.00, 388.00, "M5", "VDDD M5 bus"),
     "VSSA":      (400.00, 190.00, "M5", "GND ring, bottom segment"),

@@ -388,10 +388,18 @@ R.via_stack(chip, ly, 3, 4, -7.0, IB_TAP[1])
 # 20 -> 19, and netgen reports "Final result: Top level cell failed pin matching". So gate 4
 # DOES see a shorted-out ballast. An earlier version of this comment claimed otherwise; it was
 # wrong and is retracted. This is an ordinary visible defect, not a docs 8.8/8.9 blindness.
-R.hwire(chip, ly, 3, -141.5, -7.0, IB_TAP[1], w=0.4)                       # TAP side  -> die x58.5
-R.route_path(chip, ly, 3, [(-160.0, IB_TAP[1]), (-166.0, IB_TAP[1]), (-166.0, 82.5)], w=0.4)  # PAD side
-R.via_stack(chip, ly, 2, 3, -166.0, 82.5)
-R.hwire(chip, ly, 2, -184.0, -166.0, 82.5, w=2.0)              # feeder, plate -> via (MSLOT.1)
+# RUNG 3 (IBIAS RELOCATION): THE SERIES CUT MOVED TO THE PAD END. It used to sit here, a gap
+# at die x40.0-58.5 in this haul, because the clamp was up at y440-464 -- which left 141 um of
+# 0.4 um M3 riser BETWEEN the pad and the ballast, carrying the full pre-ballast current. With
+# the clamp relocated into the W20 pin band the ballast belongs between the PAD PLATE and the
+# clamp, so this haul runs UNBROKEN from the block tap down to the riser bottom again.
+#
+# The break is now the ABSENCE of the old M2 feeder: the pad plate no longer touches the riser
+# at all. Its only path to the core is through esd_rpoly and the clamp node, painted after the
+# seat. Re-adding a feeder here would short the ballast out -- and gate 4 DOES catch that
+# (tested 2026-08-25: resistor extracts with both terminals on IBIAS, net count 20 -> 19,
+# "Top level cell failed pin matching").
+R.route_path(chip, ly, 3, [(-7.0, IB_TAP[1]), (-166.0, IB_TAP[1]), (-166.0, 82.5)], w=0.4)
 R.box(chip, ly, (36, 0), -200.0, 60.34, -182.0, 104.66)        # W20 finger-column plate, 18 um
 chip.shapes(ly.layer(36, 10)).insert(pya.DText("IBIAS", pya.DTrans(pya.DVector(-199.5, 82.5))))
 print("(d) IBIAS: %.2f um, M4 hop x193-204 over the Q_N/I_N risers"
@@ -816,14 +824,14 @@ print("phase 8 rung 3: secondary ESD, IBIAS + ISS")
 # rung: magic's `box values` reported the resistor as 18.16 x 7.18 while the written GDS is
 # 18.24 x 7.26. Deriving means the 0.08 um can never become a landing defect.
 ESD_PLACE = {                       # tag: (cell, lower-left x, lower-left y)
-    "IB_D1": ("esd_pd2nw",  22.00, 440.00),
-    "IB_D2": ("esd_nd2ps",  60.00, 440.00),
-    "IB_R":  ("esd_rpoly",  40.00, 427.00),
+    "IB_D1": ("esd_pd2nw",  38.00, 268.00),
+    "IB_D2": ("esd_nd2ps",  66.00, 268.00),
+    "IB_R":  ("esd_rpoly",  20.00, 268.00),
     "IS_D1": ("esd_pd2nw",  20.00, 368.00),
     "IS_D2": ("esd_nd2ps",  50.00, 368.00),
 }
 # the measured free blocks these must stay inside (docs: rung-3 stage B1 occupancy scans)
-ESD_BLOCK = {"IB": (18.0, 425.0, 98.0, 470.0), "IS": (18.0, 355.0, 100.0, 412.0)}
+ESD_BLOCK = {"IB": (18.0, 255.0, 100.0, 312.0), "IS": (18.0, 355.0, 100.0, 412.0)}
 ESD_POS, ESD_BOX = {}, {}
 for _tag, (_cell, _llx, _lly) in ESD_PLACE.items():
     _bb = ly.cell(_cell).dbbox()
@@ -922,29 +930,30 @@ def esd_check_segments(devboxes):
     print("   ESD segment check: %d segments, 0 cross-net overruns" % len(ESD_SEGS))
 
 _rb, _rt = esd_res_tabs("esd_rpoly", IB_R[0], IB_R[1], "IBIAS.rpoly")
-IB_CUT_W, IB_CUT_E, IB_HAUL_Y = 40.0, 58.5, 423.90      # the series gap, die frame
-# PAD side of the cut -> resistor BOTTOM terminal
-R.route_path(chip, ly, 3, [(IB_CUT_W, IB_HAUL_Y), (IB_CUT_W, _rb[1]), (_rb[0], _rb[1])], w=0.4)
-R.via_stack(chip, ly, 2, 3, _rb[0], _rb[1])             # M2 over the tab's via1, then up to M3
-# CORE side: resistor TOP terminal -> clamp node -> both diodes -> back onto the TAP piece
-R.via_stack(chip, ly, 2, 3, _rt[0], _rt[1])
-IB_E1 = (IB_D1[0] + 5.5, IB_D1[1] - 5.5)      # D1 pad escape, SE plate
-IB_E2 = (IB_D2[0] - 5.5, IB_D2[1] - 5.5)      # D2 pad escape, SW plate
+IB_RISER = (34.0, 282.5)      # die: bottom end of the M3 riser that carries on to the block tap
+# PAD PLATE -> resistor BOTTOM terminal. This M2 run is now the ONLY thing the pad touches.
+eseg("IBIAS", 2, 18.0, _rb[1], _rb[0], _rb[1], 1.0)
+# CORE side: resistor TOP -> clamp node -> both diodes -> up onto the riser bottom
 esd_plate_bridge(IB_D1[0], IB_D1[1])
 esd_plate_bridge(IB_D2[0], IB_D2[1])
-for _e in (IB_E1, IB_E2):
-    R.via_stack(chip, ly, 2, 3, _e[0], _e[1])   # M2 bridge -> M3 clamp node (via1 already set)
-R.route_path(chip, ly, 3, [(_rt[0], _rt[1]), (_rt[0], IB_E1[1]), (IB_E1[0], IB_E1[1])], w=0.4)
-R.route_path(chip, ly, 3, [(_rt[0], IB_E1[1]), (IB_E2[0], IB_E1[1]), (IB_E2[0], IB_E2[1])], w=0.4)
-R.route_path(chip, ly, 3, [(IB_E2[0], IB_E1[1]), (90.0, IB_E1[1]), (90.0, IB_HAUL_Y)], w=0.4)
-print("   IBIAS clamp node: R %.3f/%.3f -> D1 %.2f,%.2f  D2 %.2f,%.2f"
-      % (_rb[1], _rt[1], IB_E1[0], IB_E1[1], IB_E2[0], IB_E2[1]))
+IB_CY = IB_D2[1]                              # clamp-node y, inside BOTH plate bridges
+for _c in (IB_D1, IB_D2):
+    assert abs(IB_CY - _c[1]) <= 6.5 - 0.5, "IBIAS clamp-node y outside the plate bridge of %r" % (_c,)
+evia("IBIAS", _rt[0], _rt[1], 2, 3)           # resistor top -> M3
+for _c in (IB_D1, IB_D2):
+    evia("IBIAS", _c[0], IB_CY, 2, 3)         # each plate bridge -> M3
+R.route_path(chip, ly, 3, [(_rt[0], _rt[1]), (_rt[0], IB_CY), (IB_D2[0], IB_CY)], w=0.4)
+R.route_path(chip, ly, 3, [(IB_RISER[0], IB_CY), (IB_RISER[0], IB_RISER[1])], w=0.4)
+assert min(_rt[0], IB_D2[0]) < IB_RISER[0] < max(_rt[0], IB_D2[0]),     "the riser stub does not meet the clamp node"
+print("   IBIAS clamp node: R %.3f/%.3f -> D1 %.2f -> D2 %.2f at y%.2f -> riser (%.1f,%.1f)"
+      % (_rb[1], _rt[1], IB_D1[0], IB_D2[0], IB_CY, IB_RISER[0], IB_RISER[1]))
 
 # ---- VDDA feed onto the pd2nw RING A frame ----------------------------------------------
-eseg("VDDA", 4, 52.0, 400.50, 52.0, IB_D1[1], 3.0)
-_ibv = ESD_TABVIA["IBIAS.pd2nw"]["E"]
-eseg("VDDA", 4, _ibv[0], _ibv[1], 52.0, _ibv[1], 3.0)
-R.via_stack(chip, ly, 2, 4, _ibv[0], _ibv[1])
+# The VDDA M4 riser (die x44.5-47.5, y205-399) now passes straight through D1's footprint, so
+# the feed is a short hop west onto the W tab instead of a 120 um vertical from y400.
+_ibv = ESD_TABVIA["IBIAS.pd2nw"]["W"]
+eseg("VDDA", 4, 47.5, _ibv[1], _ibv[0], _ibv[1], 3.0)
+evia("VDDA", _ibv[0], _ibv[1], 2, 4)
 
 # ---- VSSA strap: nd2ps M2 frame -> GND ring, 10 um, via stack INTO the ring --------------
 # R.hwire EXTENDS HALF ITS WIDTH past each endpoint. At w=10 that is 5 um, so a strap

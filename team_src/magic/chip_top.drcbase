@@ -1,10 +1,10 @@
 GDSF /foss/designs/AUS-NZ-integration/gds/chip_top.gds
-GDSBLOB ba720f76d5d514bbc8acea04e500aa48d6fb748c
-SRCCOMMIT 914bcdfeaea7b1d962c2018a1ecde6a0cf3b97ac
+GDSBLOB be3da91f634e6144f6345dcac2a5832a915ab3d9
+SRCCOMMIT 7aedc20af16ac84ace0fb15058efdb9af240ea03
 TOTAL 84
-CELLCOUNT chip_top 84
-CELLCOUNT vco_v1 84
 CELLCOUNT vco_varactors 84
+CELLCOUNT vco_v1 84
+CELLCOUNT chip_top 84
 RULE 252 Poly spacing to diffusion < 20 (PL.5a)
 B 115580 46660 115600 46714
 B 115580 46714 115600 47606
