@@ -20,6 +20,8 @@ x_vco_v1 VDDA VCO_OUTP VCO_OUTN VSSA VTUNE ISS vco_v1
 XR_ESD_IBIAS IBIAS_C IBIAS VSSA ppolyf_u r_width=16e-6 r_length=4e-6
 D_ESD_IBIAS_P IBIAS_C VDDA diode_pd2nw_03v3 area='10u * 10u ' pj='2*10u + 2*10u ' m=4
 D_ESD_IBIAS_N VSSA IBIAS_C diode_nd2ps_03v3 area='10u * 10u ' pj='2*10u + 2*10u ' m=4
+D_ESD_ISS_P ISS VDDA diode_pd2nw_03v3 area='10u * 10u ' pj='2*10u + 2*10u ' m=4
+D_ESD_ISS_N VSSA ISS diode_nd2ps_03v3 area='10u * 10u ' pj='2*10u + 2*10u ' m=4
 **.ends
 
 * expanding   symbol:  PFD_lib.sym # of pins=6

@@ -90,6 +90,14 @@ ESD = [   # (inst, symbol, kind, {pin: net}, params)
     ("D_ESD_IBIAS_N", "symbols/diode_nd2ps_03v3.sym", "diode",
      {"p": "VSSA", "m": "IBIAS_C"},
      "model=diode_nd2ps_03v3 r_w=10u r_l=10u m=4"),
+    # ISS has NO ballast (50 ohm would cost 78.5 mV on the VCO tail), so there is no clamp
+    # node distinct from the pad: the diodes hang directly on ISS and vco_v1 keeps its ISS pin.
+    ("D_ESD_ISS_P", "symbols/diode_pd2nw_03v3.sym", "diode",
+     {"p": "ISS", "m": "VDDA"},
+     "model=diode_pd2nw_03v3 r_w=10u r_l=10u m=4"),
+    ("D_ESD_ISS_N", "symbols/diode_nd2ps_03v3.sym", "diode",
+     {"p": "VSSA", "m": "ISS"},
+     "model=diode_nd2ps_03v3 r_w=10u r_l=10u m=4"),
 ]
 
 PITCH = 40  # vertical pin pitch (grid-aligned)

@@ -55,6 +55,12 @@ C {lab_pin.sym} 0 630 0 0 {name=e1_m lab=VDDA}
 C {symbols/diode_nd2ps_03v3.sym} 300 600 0 0 {name=D_ESD_IBIAS_N model=diode_nd2ps_03v3 r_w=10u r_l=10u m=4}
 C {lab_pin.sym} 300 570 0 0 {name=e2_p lab=VSSA}
 C {lab_pin.sym} 300 630 0 0 {name=e2_m lab=IBIAS_C}
+C {symbols/diode_pd2nw_03v3.sym} 600 600 0 0 {name=D_ESD_ISS_P model=diode_pd2nw_03v3 r_w=10u r_l=10u m=4}
+C {lab_pin.sym} 600 570 0 0 {name=e3_p lab=ISS}
+C {lab_pin.sym} 600 630 0 0 {name=e3_m lab=VDDA}
+C {symbols/diode_nd2ps_03v3.sym} 900 600 0 0 {name=D_ESD_ISS_N model=diode_nd2ps_03v3 r_w=10u r_l=10u m=4}
+C {lab_pin.sym} 900 570 0 0 {name=e4_p lab=VSSA}
+C {lab_pin.sym} 900 630 0 0 {name=e4_m lab=ISS}
 C {iopin.sym} -200 -500 0 0 {name=P_VSSA lab=VSSA}
 C {ipin.sym} -40 -500 0 0 {name=P_VDDA lab=VDDA}
 C {ipin.sym} 120 -500 0 0 {name=P_IBIAS lab=IBIAS}

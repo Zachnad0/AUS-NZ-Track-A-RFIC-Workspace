@@ -725,7 +725,13 @@ def esd_tabs(cellname, cx, cy, ring_idx, tab_out, dirs, tag):
         % (tag, tab_far - r_in, VIA1_SZ))
 
     half = 0.6                                      # tab half-length along the ring
-    vr   = (r_in + tab_far) / 2.0                   # via centre radius, inside the metal
+    # SNAP the via radius to the dbu grid. (r_in + tab_far)/2 is 11.1325 for pd2nw, which is
+    # half a dbu off grid; a caller that re-derived it as 11.133 produced a second via1
+    # rectangle snapping one dbu differently, and the 0.005 um sliver between them fired
+    # V1.1 (via1 width) three times. The radius is now on-grid and RETURNED, so no caller
+    # ever has to re-derive it.
+    vr   = round((r_in + tab_far) / 2.0 / ly.dbu) * ly.dbu
+    assert abs(round(vr / ly.dbu) * ly.dbu - vr) < 1e-12, "ESD %s: via radius off grid" % tag
     vias = []
     for d in dirs:
         if d in ("E", "W"):
@@ -813,11 +819,8 @@ ESD_PLACE = {                       # tag: (cell, lower-left x, lower-left y)
     "IB_D1": ("esd_pd2nw",  22.00, 440.00),
     "IB_D2": ("esd_nd2ps",  60.00, 440.00),
     "IB_R":  ("esd_rpoly",  40.00, 427.00),
-    # ISS lands in the NEXT commit -- one pin at a time, so each commit is self-consistent
-    # and LVS stays green throughout. Painting both pins while the golden carries only one
-    # makes the gate red for a reason that has nothing to do with the pin under test.
-    # "IS_D1": ("esd_pd2nw", 105.00, 300.00),
-    # "IS_D2": ("esd_nd2ps", 105.00, 335.00),
+    "IS_D1": ("esd_pd2nw", 105.00, 300.00),
+    "IS_D2": ("esd_nd2ps", 105.00, 335.00),
 }
 # the measured free blocks these must stay inside (docs: rung-3 stage B1 occupancy scans)
 ESD_BLOCK = {"IB": (18.0, 425.0, 98.0, 470.0), "IS": (95.0, 200.0, 180.0, 390.0)}
@@ -844,17 +847,21 @@ for _a in ESD_BOX:
         ax0, ay0, ax1, ay1 = ESD_BOX[_a]; bx0, by0, bx1, by1 = ESD_BOX[_b]
         assert not (ax0 < bx1 and bx0 < ax1 and ay0 < by1 and by0 < ay1),             "ESD %s and %s overlap" % (_a, _b)
 IB_D1, IB_D2, IB_R = ESD_POS["IB_D1"], ESD_POS["IB_D2"], ESD_POS["IB_R"]
+IS_D1, IS_D2       = ESD_POS["IS_D1"], ESD_POS["IS_D2"]
 
 # ---- tie-ring tabs. nd2ps gets 4 (outward is free); pd2nw RING A gets 2 (it is boxed in by
 # RING B with only 0.58 um, so each tab is a thin-margin structure -- fewer is safer).
 # The pd2nw RING B "bonus" VSSA tab from the approved plan is DROPPED: it would put a third
 # net on M2 around one cell with a measured 0.2 um gap to the VDDA frame, under the 0.28 um
 # M2 spacing. The nd2ps beside it provides the substrate strap and they share one substrate.
-for _tag, _c, _p in (("IBIAS.nd2ps", "esd_nd2ps", IB_D2),):
+ESD_TABVIA = {}
+for _tag, _c, _p in (("IBIAS.nd2ps", "esd_nd2ps", IB_D2), ("ISS.nd2ps", "esd_nd2ps", IS_D2)):
     _v, _ro, _tf = esd_tabs(_c, _p[0], _p[1], 0, 1.00, ("N", "S", "E", "W"), _tag)
+    ESD_TABVIA[_tag] = dict(zip(("N", "S", "E", "W"), _v))
     esd_m2_frame(_p[0], _p[1], 11.00, 12.70)
-for _tag, _c, _p in (("IBIAS.pd2nw", "esd_pd2nw", IB_D1),):
+for _tag, _c, _p in (("IBIAS.pd2nw", "esd_pd2nw", IB_D1), ("ISS.pd2nw", "esd_pd2nw", IS_D1)):
     _v, _ro, _tf = esd_tabs(_c, _p[0], _p[1], 0, 0.285, ("E", "W"), _tag)
+    ESD_TABVIA[_tag] = dict(zip(("E", "W"), _v))
     esd_m2_frame(_p[0], _p[1], 10.80, 11.50)
 
 
@@ -922,8 +929,9 @@ print("   IBIAS clamp node: R %.3f/%.3f -> D1 %.2f,%.2f  D2 %.2f,%.2f"
 
 # ---- VDDA feed onto the pd2nw RING A frame ----------------------------------------------
 eseg("VDDA", 4, 52.0, 400.50, 52.0, IB_D1[1], 3.0)
-eseg("VDDA", 4, IB_D1[0] + 11.133, IB_D1[1], 52.0, IB_D1[1], 3.0)
-R.via_stack(chip, ly, 2, 4, IB_D1[0] + 11.133, IB_D1[1])
+_ibv = ESD_TABVIA["IBIAS.pd2nw"]["E"]
+eseg("VDDA", 4, _ibv[0], _ibv[1], 52.0, _ibv[1], 3.0)
+R.via_stack(chip, ly, 2, 4, _ibv[0], _ibv[1])
 
 # ---- VSSA strap: nd2ps M2 frame -> GND ring, 10 um, via stack INTO the ring --------------
 # R.hwire EXTENDS HALF ITS WIDTH past each endpoint. At w=10 that is 5 um, so a strap
@@ -949,6 +957,39 @@ print("   IBIAS VSSA strap: M2 10 um (%.2f,%.2f) -> GND ring die x190.00  [exten
 # vote. Demote the tap label to 36/10 -> 36/0, which the magic tech maps to `labels allm2
 # noport`: it stays in the GDS and stays visible to a text scrape, it simply stops competing
 # for a port name. Exactly the mechanism used for VSSD in f31d594, applied one level down.
+# ---- ISS: NO series ballast, by design ---------------------------------------------------
+# 50 ohm on ISS would cost 78.5 mV at the 1.24-1.57 mA tail current -- about 15x the whole
+# engineered strap budget -- and ISS is the VCO TAIL RETURN, not a signal. So pad node and
+# clamp node are ONE low-impedance M5/M4 bus and the clamp taps it directly. Nothing splits
+# the ISS net, so unlike IBIAS there is no duplicate-port-label to resolve and landing_check
+# keeps its BLOCK-side seed: the flood has no series device to cross.
+esd_plate_bridge(IS_D1[0], IS_D1[1])
+esd_plate_bridge(IS_D2[0], IS_D2[1])
+IS_E1 = (IS_D1[0] - 5.5, IS_D1[1] + 5.5)      # D1 pad escape, NW plate
+IS_E2 = (IS_E1[0],       IS_D2[1] - 5.5)      # D2 pad escape, SAME x so the link is axial
+assert 0.51 <= abs(IS_E2[0] - IS_D2[0]) <= 10.49, "ISS D2 escape is not on a plate"
+assert 0.51 <= abs(IS_E1[0] - IS_D1[0]) <= 10.49, "ISS D1 escape is not on a plate"
+for _e in (IS_E1, IS_E2):
+    R.via_stack(chip, ly, 2, 3, _e[0], _e[1])
+R.via_stack(chip, ly, 3, 5, 90.0, IS_E1[1])                      # onto the ISS M5 riser
+R.route_path(chip, ly, 3, [(90.0, IS_E1[1]), (IS_E1[0], IS_E1[1])], w=0.4)
+R.route_path(chip, ly, 3, [(IS_E1[0], IS_E1[1]), (IS_E2[0], IS_E2[1])], w=0.4)
+print("   ISS clamp node:   riser tap (90.00,%.2f) -> D1 %.2f,%.2f  D2 %.2f,%.2f"
+      % (IS_E1[1], IS_E1[0], IS_E1[1], IS_E2[0], IS_E2[1]))
+
+# VDDA feed onto the ISS pd2nw RING A W tab, held 5.5 um clear of the ISS M4 tap above it --
+# a first draft put both on M4 at the same y, which would have shorted ISS to VDDA.
+_isv = ESD_TABVIA["ISS.pd2nw"]["W"]
+eseg("VDDA", 4, 47.5, _isv[1], _isv[0], _isv[1], 3.0)
+R.via_stack(chip, ly, 2, 4, _isv[0], _isv[1])
+
+# VSSA strap, same overrun-aware start as IBIAS
+assert (IS_D2[0] + 13.0) - 5.0 > IS_D2[0] + 6.5 + 1.0, "ISS VSSA strap would reach the plate bridge"
+eseg("VSSA", 2, IS_D2[0] + 13.0, IS_D2[1], 190.0, IS_D2[1], 10.0)
+R.via_stack(chip, ly, 2, 5, 190.0, IS_D2[1])
+print("   ISS   VSSA strap: M2 10 um (%.2f,%.2f) -> GND ring die x190.00  [extends to %.2f]"
+      % (IS_D2[0] + 13.0, IS_D2[1], IS_D2[0] + 13.0 - 5.0))
+
 _TAPTXT, _n = "IBIAS", 0
 _l1010, _l360 = ly.layer(36, 10), ly.layer(36, 0)
 _keep = []
