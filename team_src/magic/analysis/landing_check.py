@@ -31,7 +31,7 @@ import pya
 import os
 
 REPO = "/foss/designs/AUS-NZ-integration"
-DEF_ROOT = os.environ.get("PADFRAME_ROOT", REPO + "/padframe/A01/project_defs_13pin")
+DEF_ROOT = os.environ.get("PADFRAME_ROOT", REPO + "/padframe/A01/project_defs_12pin")
 MIN_MARGIN = 0.28          # um -- one minimum feature; anything less is not a connection
 
 MET = {"M1": 34, "M2": 36, "M3": 42, "M4": 46, "M5": 81}

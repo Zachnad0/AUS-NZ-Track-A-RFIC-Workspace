@@ -76,3 +76,31 @@ map points the break at VDDD instead, VSSD is outside the digital island and mus
 *after* VDDD. Also unverified: that the generator emits `gf180mcu_fd_io__in_c` at `N08`.
 
 See `docs/phase8-padframe-plan.md` §1 and §1e for the full analysis.
+
+## 12-pin re-issue received 2026-08-27 (`A01.def (3).tgz`) — THE CURRENT PACKAGE
+
+| field | value |
+|-------|-------|
+| source archive | `A01.def (3).tgz` |
+| sha256 | `5ea8e9c6c252fc1ce64b12d7383c60e1da939fcfb5de9fe7f251836ec04e27dd` |
+| received | 2026-08-27 23:42 |
+| extracted to | `A01/project_defs_12pin/` — **BH only, no BV this time** |
+| generated from | our `info.yaml` at **12 pins** (I_P removed) |
+
+`A01/project_defs_12pin_SYNTH/` is our own pre-build synthesis, kept for the diff. It was
+**exactly right**: 0 pin-level differences against the real package across every slot, cell,
+terminal, direction, use and rectangle. The only top-level differences were our `SYNTHESIZED`
+marker, `participant_pin_count` (we left it at 13; the real one says 12), and `top_cell_text`,
+which is his scrape of our GDS and so necessarily newer than ours. Keep both until the dry run;
+delete the SYNTH copy after.
+
+**The padring break followed VSSD, as predicted**: `BRK_BEFORE_N06` -> **`BRK_BEFORE_N05`**,
+reason still `additional_power_ground_set`, and `BRK_AFTER_BH` moved N08 -> N07. The prediction
+came from `padring.cfg` being a SEQUENTIAL table where `BREAK` is positional and keyed to cell
+type, not slot number — the same pattern is visible at W17/W18.
+
+**`top_cell_text` settles the f31d594 open risk.** That commit demoted VSSD's label to 36/0 and
+recorded as unverified whether Bailey's scrape reports datatype-0 text. It does: the scrape
+lists `VSSD` at **36/0**, `IBIAS` at **36/0** (our block-tap demotion) and `I_P` at **34/0**
+(demoted when it stopped being a pad), alongside every 36/10 port. So the demotions cost us
+nothing in his audit, and there are no audit flags for A01 anywhere in the package.
