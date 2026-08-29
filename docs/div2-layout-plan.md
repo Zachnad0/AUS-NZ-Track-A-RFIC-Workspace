@@ -49,9 +49,14 @@ only remaining step.
   mirror W8L0.3), 6 ports. PASS. Gotcha fixed: pfet source→VDD risers must NOT share x with
   the drain vias (they short via the shared M3 via pad) — use an M2 source bridge + one M3
   riser at the far left.
-- **1e inverters** — `ib_inv1.tcl` (10/4, committed) + `ib_inv_gen.tcl` `make_inv {cell Wn Wp}`
-  builds INV2 (26/11) + INV3 (44/16). All three PASS, 4 ports each. Reusable proc: every
-  y-constant linear in Wn/Wp. INV3 is the tallest (~9µm risers) and passed first try.
+- **1e inverters** — `ib_inv_gen.tcl` `make_inv {cell Wn Wp}` builds ALL THREE: INV1 (10/4),
+  INV2 (26/11), INV3 (44/16). (This line used to cite a hand-built `ib_inv1.tcl`. Settled by
+  history 2026-08-29, not by guesswork: that file was added in `e80f175` and DELETED the same
+  day in `38f317d`, "unify inverters on one make_inv path; retire ib_inv1 one-off", which
+  folded it into the proc and regenerated `ib_inv1.mag` from it. It was never renamed and no
+  longer exists. Sizes are Wp/Wn and unchanged — `make_inv ib_inv1 4 10` is Wn=4, Wp=10.)
+  All three PASS, 4 ports each. Reusable proc: every y-constant linear in Wn/Wp. INV3 is the
+  tallest (~9µm risers) and passed first try.
 - **Converter FET widths** — `derisk_nfetw.tcl` (W4/11/16) + `derisk_pfetw.tcl` (W10/26/44)
   both DRC 0. The W44 pfet gate M2 reaches YP+4608, so a shared nwell tap strip in the
   converter/DIV2 must sit ≥ YP+4800.
