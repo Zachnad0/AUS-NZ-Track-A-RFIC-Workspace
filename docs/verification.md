@@ -1072,6 +1072,58 @@ which is likewise invisible here.
 our secondary clamp adds anything. Our 400 um2 secondary is an increment on 600 um2 of primary,
 not a load applied to a bare pad.
 
+### 8.11 STANDING LIMITATION: `chip_top.gds` cannot be byte-reproduced — sha equality is NOT the identity test
+
+Measured 2026-08-29. Rebuilding with an **unmodified** `route_chip.py` (`chip_merge.py` then
+`route_chip.py`, no source change of any kind) produces a file that is the same size and
+differs from the committed one:
+
+```
+committed  04c98b66628c0d87...    rebuilt  fccb84929b573206...
+both exactly 1,548,584 bytes;  216 differing bytes
+every differing byte lies inside a BGNLIB or BGNSTR record
+```
+
+Those are the GDSII library and structure **modification timestamps**, which KLayout stamps
+from the clock on every write. Geometry is bit-identical across the two files: same bbox, same
+layer/datatype histogram, same 827 via1 cuts, same text set.
+
+**Why this is in the limitations section.** We use sha256 equality as a decisive check on the
+`A01.def` package, where it is sound — that artifact is byte-stable. The same reasoning applied
+to `chip_top.gds` gives the wrong answer in **both** directions:
+
+- a differing sha does **not** mean the layout changed (a rebuild alone changes 216 bytes), and
+- it will never confirm that a rebuild is clean, so "the GDS matched byte-for-byte" is a
+  sentence that cannot be true of this artifact and should not be looked for.
+
+**The identity test for `chip_top.gds` is geometric, not byte-wise.** Use the box set
+(`drc_boxset.tcl` + `drc_delta.py`, §8.3) plus a layer/count comparison. `GDSBLOB` in a dump
+header is a provenance *label*, not a reproducibility claim — it identifies which file was
+measured, and it is expected to differ between two dumps of the same geometry.
+
+Same class as §8.8–§8.10: a check that looks decisive and is not.
+
+### 8.12 Measured gate runtimes (2026-08-29, after the rung-3 via array)
+
+Re-measured because the via array was the first change to add geometry in bulk (via1 in
+`chip_top.gds` went 827 → 1563). **Neither tool got materially slower.**
+
+| gate | measured | what it reads |
+|------|----------|---------------|
+| `drc_boxset.tcl` (magic, full geometry) | **1.8 s** | the whole die |
+| `klayout_signoff.py chip_top` (variant D) | **16.9 s** | the whole die; V1.2b's `sized`/`merged`/`interacting` pass over 1563 via1 costs about 1 s of this |
+| `verify_cp.sh chip_top` (extract + netgen LVS) | **14.6 s** | |
+| `landing_check.py` | **4.4 s** | |
+| `lane_conflicts.py` | **4.0 s** | |
+| `check_placement.py` | **3.7 s** | |
+| **six-gate total** | **45.4 s** | plus 8 s to rebuild (`chip_merge` 4 s + `route_chip` 4 s) |
+
+**Correction to an earlier figure: `check_placement.py` is 3.7 s, not the 0.7 s recorded on
+2026-08-25.** It is not the new geometry — that script compares placement tables and never
+reads via1. Every KLayout-hosted gate here has a **~3.5 s process-startup floor**, and the
+0.7 s figure evidently excluded it. Quote the wall-clock numbers above; they are what a future
+run will actually see.
+
 ## 9. Resistor models — two sheet resistances for one device, and which tool uses which
 
 Recorded 2026-08-25 while sizing the rung-3 secondary-ESD series resistor. **`ppolyf_u` does

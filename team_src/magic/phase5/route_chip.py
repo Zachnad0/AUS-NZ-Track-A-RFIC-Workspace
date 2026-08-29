@@ -689,6 +689,76 @@ EM1, EVIA1, EM2 = (34, 0), (35, 0), (36, 0)
 VIA1_SZ  = 0.26     # V1.1: via1 size is min AND max 0.26 um -- a fixed size, not a floor
 M1_SPACE = 0.23     # M1.2a
 
+# ---- VIA1 ARRAY (2026-08-29) ------------------------------------------------------------
+# READ OUT OF THE DECK, NOT ASSUMED -- libs.tech/klayout/tech/drc/rule_decks/via1.drc:
+#   V1.2a  via1.space(0.26.um, euclidian)                       -- min spacing 0.26
+#   V1.2b  selected_via1.space(0.36.um, projecting >= 0.26.um)  -- 0.36 inside an ARRAY,
+#          where "array" = a group that merges under sized(+-0.2) (any spacing < 0.40), has
+#          a merged bbox min side >= 0.26*3 + 3*0.36 = 1.86 um, AND holds >= 16 cuts.
+# A 9x9 plate grid is all three, so the naive 0.52 pitch (0.26 + 0.26) FIRES V1.2b. The
+# floor is 0.62; 0.63 is used because it costs ZERO cuts (9 fit either way) and leaves 2 dbu
+# of margin on a rule family this design had never stressed before this change.
+#
+# A SINGLE ROW escapes V1.2b -- with_bbox_min sees 0.26 um, under the 1.86 threshold -- so
+# the ring arms could legally run at 0.52 and gain 5 cuts/arm. DELIBERATELY NOT TAKEN (Greg,
+# 2026-08-29): it is rule-lawyering the deck's grouping semantics and breaks silently if a
+# deck update changes how with_bbox_min merges. One uniform pitch keeps the assert honest.
+VIA1_PITCH = 0.63   # 0.26 cut + 0.37 space; 126 dbu, exact on the 0.005 um grid
+# Enclosure. V1.3a (metal1 overlap >= 0) and V1.4a (metal2 overlap >= 0.01) alone would allow
+# ~0, but V1.3d and V1.4c impose a 0.06 um ADJACENT-EDGE condition on any via enclosed by
+# < 0.04 um on one side. Staying >= 0.04 everywhere sidesteps both; 0.10 is 2.5x that and
+# absorbs the half-dbu a centring snap can move a row.
+VIA1_ENC     = 0.10
+VIA1_ENC_MIN = 0.04   # what V1.3d / V1.4c actually key on -- asserted against, never drawn to
+# Which pins have had the array applied. Rung 3 lands ONE PIN PER COMMIT with a full gate on
+# each, so this tuple grows by one entry per commit rather than the whole clamp set moving at
+# once (Greg, 2026-08-29). A pin not listed keeps the original single-cut geometry EXACTLY.
+ESD_VIA_ARRAY = ("IBIAS",)
+
+
+def _snap(v):
+    return round(v / ly.dbu) * ly.dbu
+
+
+def via1_grid(x0, y0, x1, y1, tag):
+    """Fill an ALREADY-ENCLOSURE-REDUCED window with a centred via1 array at VIA1_PITCH.
+
+    The caller passes the window it MEASURED -- M1 and M2 intersected, minus VIA1_ENC on
+    every side -- so every cut placed here is enclosure-correct by construction rather than
+    by a number in a comment. Counting is integer dbu: a float floor() on a 0.63 pitch lands
+    one cut short about half the time, and the array comes out silently smaller, not wrong.
+
+    Returns (ncols, nrows, [centres])."""
+    sz = int(round(VIA1_SZ / ly.dbu))
+    pt = int(round(VIA1_PITCH / ly.dbu))
+    n, first = [], []
+    for lo, hi in ((x0, x1), (y0, y1)):
+        span = int(round((hi - lo) / ly.dbu))
+        assert span >= sz, ("ESD %s: via1 window %.4f um cannot hold one %.2f um cut"
+                            % (tag, hi - lo, VIA1_SZ))
+        k = (span - sz) // pt + 1
+        n.append(k)
+        first.append(_snap(lo + (span - (sz + (k - 1) * pt)) * ly.dbu / 2.0 + VIA1_SZ / 2.0))
+    nx, ny = n
+    if nx > 1 or ny > 1:
+        assert VIA1_PITCH - VIA1_SZ >= 0.36 - 1e-9, (
+            "ESD %s: pitch %.3f gives %.3f um spacing, under V1.2b's 0.36"
+            % (tag, VIA1_PITCH, VIA1_PITCH - VIA1_SZ))
+    cuts = []
+    for i in range(nx):
+        for j in range(ny):
+            vx, vy = first[0] + i * VIA1_PITCH, first[1] + j * VIA1_PITCH
+            # Re-assert AFTER the centring snap. The snap can move a row half a dbu, and a
+            # window that fitted BEFORE the snap is not proof it fits after.
+            assert (x0 - 1e-9 <= vx - VIA1_SZ / 2 and vx + VIA1_SZ / 2 <= x1 + 1e-9
+                    and y0 - 1e-9 <= vy - VIA1_SZ / 2 and vy + VIA1_SZ / 2 <= y1 + 1e-9), (
+                "ESD %s: cut (%.4f,%.4f) escapes its enclosure window (%.4f,%.4f)-(%.4f,%.4f)"
+                % (tag, vx, vy, x0, y0, x1, y1))
+            R.box(chip, ly, EVIA1, vx - VIA1_SZ / 2, vy - VIA1_SZ / 2,
+                                   vx + VIA1_SZ / 2, vy + VIA1_SZ / 2)
+            cuts.append((vx, vy))
+    return nx, ny, cuts
+
 def _rings_plates(cellname):
     c = ly.cell(cellname)
     r = pya.Region(c.begin_shapes_rec(ly.layer(*EM1))); r.merge()
@@ -707,7 +777,8 @@ def _inner(p):
             best = max(best, abs(pt.x * ly.dbu), abs(pt.y * ly.dbu))
     return best
 
-def esd_tabs(cellname, cx, cy, ring_idx, tab_out, dirs, tag):
+def esd_tabs(cellname, cx, cy, ring_idx, tab_out, dirs, tag,
+             array=False, half=0.6, m2ri=None, m2ro=None):
     """Outward M1 widening tabs on a gencell tie ring, + via1 up to M2.
 
     The gencell ring arms are 0.25 um. V1.1 fixes via1 at 0.26 um, so a via CANNOT be
@@ -739,7 +810,13 @@ def esd_tabs(cellname, cx, cy, ring_idx, tab_out, dirs, tag):
         "ESD %s: widened M1 %.4f um cannot hold a %.2f um via1"
         % (tag, tab_far - r_in, VIA1_SZ))
 
-    half = 0.6                                      # tab half-length along the ring
+    # `half` is the tab half-length ALONG the ring. 0.6 (one cut) is the original tab and is
+    # what pd2nw RING A keeps: it has only 0.285 um of outward room and 0.295 um to RING B, so
+    # running the widening the full arm would hold that margin over 16 um instead of 1.2 um.
+    # nd2ps has NO outer ring and 1.00 um of free outward room, so it takes the full row.
+    assert half + M1_SPACE <= r_out, (
+        "ESD %s: tab half-length %.3f um reaches the ring corner (r_out %.3f) -- the "
+        "perpendicular arm's tab would merge into it" % (tag, half, r_out))
     # SNAP the via radius to the dbu grid. (r_in + tab_far)/2 is 11.1325 for pd2nw, which is
     # half a dbu off grid; a caller that re-derived it as 11.133 produced a second via1
     # rectangle snapping one dbu differently, and the 0.005 um sliver between them fired
@@ -747,24 +824,47 @@ def esd_tabs(cellname, cx, cy, ring_idx, tab_out, dirs, tag):
     # ever has to re-derive it.
     vr   = round((r_in + tab_far) / 2.0 / ly.dbu) * ly.dbu
     assert abs(round(vr / ly.dbu) * ly.dbu - vr) < 1e-12, "ESD %s: via radius off grid" % tag
-    vias = []
+    # RADIAL enclosure, against the MEASURED ring and the M2 frame the caller is about to
+    # paint. One cut centred in a 1.25 um widening is obviously enclosed; a 25-cut row is not
+    # obviously anything, so both directions are now checked rather than reasoned about.
+    assert ((vr - VIA1_SZ / 2) - r_in >= VIA1_ENC_MIN
+            and tab_far - (vr + VIA1_SZ / 2) >= VIA1_ENC_MIN), (
+        "ESD %s: via1 radius %.4f not enclosed by M1 %.4f..%.4f by V1.3d's %.2f um"
+        % (tag, vr, r_in, tab_far, VIA1_ENC_MIN))
+    if m2ri is not None:
+        assert ((vr - VIA1_SZ / 2) - m2ri >= VIA1_ENC_MIN
+                and m2ro - (vr + VIA1_SZ / 2) >= VIA1_ENC_MIN), (
+            "ESD %s: via1 radius %.4f not enclosed by the M2 frame %.4f..%.4f by V1.4c's "
+            "%.2f um" % (tag, vr, m2ri, m2ro, VIA1_ENC_MIN))
+        assert half - VIA1_ENC + VIA1_SZ / 2 <= m2ro - VIA1_ENC_MIN, (
+            "ESD %s: via1 row (half %.3f) runs past the M2 frame end %.3f" % (tag, half, m2ro))
+    vias, ncut = [], 0
     for d in dirs:
         if d in ("E", "W"):
-            s = 1.0 if d == "E" else -1.0
-            x0, x1 = (cx + r_out, cx + tab_far) if s > 0 else (cx - tab_far, cx - r_out)
+            sgn = 1.0 if d == "E" else -1.0
+            x0, x1 = (cx + r_out, cx + tab_far) if sgn > 0 else (cx - tab_far, cx - r_out)
             R.box(chip, ly, EM1, x0, cy - half, x1, cy + half)
-            vias.append((cx + s * vr, cy))
+            vx, vy = cx + sgn * vr, cy
+            # x window is exactly one cut wide -- the RADIAL enclosure is asserted above,
+            # against the real ring and frame radii, not re-derived from a box here.
+            win = (vx - VIA1_SZ / 2, cy - half + VIA1_ENC, vx + VIA1_SZ / 2, cy + half - VIA1_ENC)
         else:
-            s = 1.0 if d == "N" else -1.0
-            y0, y1 = (cy + r_out, cy + tab_far) if s > 0 else (cy - tab_far, cy - r_out)
+            sgn = 1.0 if d == "N" else -1.0
+            y0, y1 = (cy + r_out, cy + tab_far) if sgn > 0 else (cy - tab_far, cy - r_out)
             R.box(chip, ly, EM1, cx - half, y0, cx + half, y1)
-            vias.append((cx, cy + s * vr))
-    for (vx, vy) in vias:
-        R.box(chip, ly, EVIA1, vx - VIA1_SZ / 2, vy - VIA1_SZ / 2,
-                               vx + VIA1_SZ / 2, vy + VIA1_SZ / 2)
-    print("   %-16s ring %.3f/%.3f -> tab %.3f  %d tab(s) %-4s  via r=%.3f"
-          % (tag, r_in, r_out, tab_far, len(dirs), "".join(dirs), vr))
-    return vias, r_out, tab_far
+            vx, vy = cx, cy + sgn * vr
+            win = (cx - half + VIA1_ENC, vy - VIA1_SZ / 2, cx + half - VIA1_ENC, vy + VIA1_SZ / 2)
+        if array:
+            ncut += len(via1_grid(win[0], win[1], win[2], win[3], "%s.%s" % (tag, d))[2])
+        else:
+            R.box(chip, ly, EVIA1, vx - VIA1_SZ / 2, vy - VIA1_SZ / 2,
+                                   vx + VIA1_SZ / 2, vy + VIA1_SZ / 2)
+            ncut += 1
+        vias.append((vx, vy))
+    print("   %-16s ring %.3f/%.3f -> tab %.3f  %d tab(s) %-4s  via r=%.3f  half %.2f  "
+          "%d cut(s) = %d/arm" % (tag, r_in, r_out, tab_far, len(dirs), "".join(dirs), vr,
+                                  half, ncut, ncut // max(1, len(dirs))))
+    return vias, r_out, tab_far, ncut
 
 
 def esd_res_tabs(cellname, cx, cy, tag):
@@ -807,7 +907,10 @@ def esd_m2_frame(cx, cy, ri, ro):
     R.box(chip, ly, EM2, cx + ri, cy - ro, cx + ro, cy + ro)     # E
     R.box(chip, ly, EM2, cx - ro, cy - ro, cx - ri, cy + ro)     # W
 
-def esd_plate_bridge(cx, cy):
+ESD_BRIDGE = 6.5   # M2 plate-bridge half-extent. NOT a free parameter: it has to clear the
+                   # tie-ring M2 frame's inner radius (11.00 nd2ps / 10.80 pd2nw).
+
+def esd_plate_bridge(cx, cy, cellname, tag, array=False):
     """Tie the FOUR diode plates together and take them up to M2.
 
     Each doverlap cell has four SEPARATE M1 plates (the diode terminals), one per unit. A via
@@ -815,13 +918,42 @@ def esd_plate_bridge(cx, cy):
     instead of 1, plus extra nets. They cannot be bridged on M1: the tie ring's own central
     cross occupies |x|,|y| < 0.135, exactly the gap between the plates, so an M1 bridge would
     short every diode to its own guard. So bridge on M2, inside the tie-ring M2 frame's inner
-    radius (11.00 / 10.80) with clearance to spare."""
-    for sx in (-5.5, 5.5):
-        for sy in (-5.5, 5.5):
-            R.box(chip, ly, EVIA1, cx + sx - VIA1_SZ / 2, cy + sy - VIA1_SZ / 2,
-                                   cx + sx + VIA1_SZ / 2, cy + sy + VIA1_SZ / 2)
-    R.box(chip, ly, EM2, cx - 6.5, cy - 6.5, cx + 6.5, cy + 6.5)
-    return (cx + 5.5, cy + 5.5)
+    radius (11.00 / 10.80) with clearance to spare.
+
+    VIA ARRAY (2026-08-29). Each plate used to carry ONE 0.26 um cut on 98.50 um2 of solid
+    M1 -- four cuts for an entire diode, against 1040 in the organizers' io_secondary_5p0
+    (resources/Integration/Chipathon2025_pads/magic/secondary_ESD.gds). On an ESD path the
+    CUT, not the diode, was the current limit.
+
+    THE M2 BRIDGE CAPS THE ARRAY, NOT THE M1 PLATE. The plates reach +-10.49 but the bridge
+    stops at +-6.5, so each plate's usable window is the M1/M2 INTERSECTION -- 5.990 x 5.935
+    um, a CORNER of the plate, not its centre. Measured per plate and re-derived every run:
+    a gencell change moves the plates, and an array centred on the plate would then drift off
+    the bridge silently. (Widening the bridge to ~+-10 would allow ~16x16; deliberately NOT
+    done -- it would eat the clearance to the M2 frame, and 752 cuts/clamp already matches
+    the reference's order of magnitude. Greg, 2026-08-29.)"""
+    if not array:
+        for sx in (-5.5, 5.5):
+            for sy in (-5.5, 5.5):
+                R.box(chip, ly, EVIA1, cx + sx - VIA1_SZ / 2, cy + sy - VIA1_SZ / 2,
+                                       cx + sx + VIA1_SZ / 2, cy + sy + VIA1_SZ / 2)
+        R.box(chip, ly, EM2, cx - ESD_BRIDGE, cy - ESD_BRIDGE, cx + ESD_BRIDGE, cy + ESD_BRIDGE)
+        return (cx + 5.5, cy + 5.5), 4
+    _, plates = _rings_plates(cellname)
+    assert len(plates) == 4, "ESD %s: expected 4 diode plates, got %d" % (tag, len(plates))
+    tot, shape = 0, None
+    for pl in sorted(plates, key=lambda q: (q.bbox().bottom, q.bbox().left)):
+        b = pl.bbox().to_dtype(ly.dbu)
+        wx0 = max(b.left,   -ESD_BRIDGE) + VIA1_ENC
+        wx1 = min(b.right,   ESD_BRIDGE) - VIA1_ENC
+        wy0 = max(b.bottom, -ESD_BRIDGE) + VIA1_ENC
+        wy1 = min(b.top,     ESD_BRIDGE) - VIA1_ENC
+        nx, ny, cuts = via1_grid(cx + wx0, cy + wy0, cx + wx1, cy + wy1, "%s plate" % tag)
+        tot += len(cuts); shape = (nx, ny)
+    R.box(chip, ly, EM2, cx - ESD_BRIDGE, cy - ESD_BRIDGE, cx + ESD_BRIDGE, cy + ESD_BRIDGE)
+    print("   %-16s 4 plates x %dx%d = %d via1 cuts (was 4)  pitch %.2f  enc %.2f"
+          % (tag, shape[0], shape[1], tot, VIA1_PITCH, VIA1_ENC))
+    return (cx + 5.5, cy + 5.5), tot
 
 print("phase 8 rung 3: secondary ESD, IBIAS + ISS")
 # ---- PLACEMENT IS DERIVED, NOT TRANSCRIBED -----------------------------------------------
@@ -870,13 +1002,22 @@ IS_D1, IS_D2       = ESD_POS["IS_D1"], ESD_POS["IS_D2"]
 # net on M2 around one cell with a measured 0.2 um gap to the VDDA frame, under the 0.28 um
 # M2 spacing. The nd2ps beside it provides the substrate strap and they share one substrate.
 ESD_TABVIA = {}
+ESD_CUTS = {}      # tag -> via1 cuts drawn, for the attribution report
 for _tag, _c, _p in (("IBIAS.nd2ps", "esd_nd2ps", IB_D2), ("ISS.nd2ps", "esd_nd2ps", IS_D2)):
-    _v, _ro, _tf = esd_tabs(_c, _p[0], _p[1], 0, 1.00, ("N", "S", "E", "W"), _tag)
+    # nd2ps ONLY. The arm widening grows from 1.2 um to 16 um, which is real new M1; pd2nw
+    # RING A is deliberately left alone (0.295 um to RING B -- holding that over 16 um is a
+    # bad trade for a return path). Greg, 2026-08-29.
+    _a = _tag.split(".")[0] in ESD_VIA_ARRAY
+    _v, _ro, _tf, _n = esd_tabs(_c, _p[0], _p[1], 0, 1.00, ("N", "S", "E", "W"), _tag,
+                                array=_a, half=(8.0 if _a else 0.6),
+                                m2ri=11.00, m2ro=12.70)
     ESD_TABVIA[_tag] = dict(zip(("N", "S", "E", "W"), _v))
+    ESD_CUTS[_tag + ".ring"] = _n
     esd_m2_frame(_p[0], _p[1], 11.00, 12.70)
 for _tag, _c, _p in (("IBIAS.pd2nw", "esd_pd2nw", IB_D1), ("ISS.pd2nw", "esd_pd2nw", IS_D1)):
-    _v, _ro, _tf = esd_tabs(_c, _p[0], _p[1], 0, 0.285, ("E", "W"), _tag)
+    _v, _ro, _tf, _n = esd_tabs(_c, _p[0], _p[1], 0, 0.285, ("E", "W"), _tag)
     ESD_TABVIA[_tag] = dict(zip(("E", "W"), _v))
+    ESD_CUTS[_tag + ".ring"] = _n
     esd_m2_frame(_p[0], _p[1], 10.80, 11.50)
 
 
@@ -941,8 +1082,10 @@ IB_RISER = (34.0, 282.5)      # die: bottom end of the M3 riser that carries on 
 # PAD PLATE -> resistor BOTTOM terminal. This M2 run is now the ONLY thing the pad touches.
 eseg("IBIAS", 2, 18.0, _rb[1], _rb[0], _rb[1], 1.0)
 # CORE side: resistor TOP -> clamp node -> both diodes -> up onto the riser bottom
-esd_plate_bridge(IB_D1[0], IB_D1[1])
-esd_plate_bridge(IB_D2[0], IB_D2[1])
+ESD_CUTS["IBIAS.pd2nw.plates"] = esd_plate_bridge(
+    IB_D1[0], IB_D1[1], "esd_pd2nw", "IBIAS.pd2nw", "IBIAS" in ESD_VIA_ARRAY)[1]
+ESD_CUTS["IBIAS.nd2ps.plates"] = esd_plate_bridge(
+    IB_D2[0], IB_D2[1], "esd_nd2ps", "IBIAS.nd2ps", "IBIAS" in ESD_VIA_ARRAY)[1]
 IB_CY = IB_D2[1]                              # clamp-node y, inside BOTH plate bridges
 for _c in (IB_D1, IB_D2):
     assert abs(IB_CY - _c[1]) <= 6.5 - 0.5, "IBIAS clamp-node y outside the plate bridge of %r" % (_c,)
@@ -996,8 +1139,10 @@ print("   IBIAS VSSA strap: M2 10 um (%.2f,%.2f) -> GND ring die x190.00  [exten
 # GONE: the ISS M5 bus (die y377.5-387.5, x14-90) passes directly OVER both plate bridges, so
 # the node is two via stacks straight down instead of an M5 tap plus ~45 um of 0.4 um M3.
 # Verified M5 is present at both via points before this was written.
-esd_plate_bridge(IS_D1[0], IS_D1[1])
-esd_plate_bridge(IS_D2[0], IS_D2[1])
+ESD_CUTS["ISS.pd2nw.plates"] = esd_plate_bridge(
+    IS_D1[0], IS_D1[1], "esd_pd2nw", "ISS.pd2nw", "ISS" in ESD_VIA_ARRAY)[1]
+ESD_CUTS["ISS.nd2ps.plates"] = esd_plate_bridge(
+    IS_D2[0], IS_D2[1], "esd_nd2ps", "ISS.nd2ps", "ISS" in ESD_VIA_ARRAY)[1]
 # IS_VY was 382.0 first: that put the via stack's M4 pad 0.14 um from the VDDA M4 feed
 # (y378.61-381.61) and fired M4.2a x4. Raised clear of it, still inside both plate bridges
 # and still under the ISS M5 bus (y377.5-387.5).
@@ -1063,6 +1208,15 @@ _m = demote_labels("I_P", lay=34) + demote_labels("I_P", lay=36)
 assert _m >= 1, "expected at least one I_P 36/10 label to demote, found none"
 print("   I_P: demoted %d label(s) 36/10 -> 36/0 (no longer a pad)" % _m)
 esd_check_segments(ESD_BOX)
+# ---- VIA1 CUT INVENTORY -- the attribution source for the DRC box-set delta --------------
+# Every via1 cut this script adds is attributable to exactly one structure below. If the box
+# set moves and a box cannot be tied back to one of these extents, that is a STOP, not a
+# rounding difference (Greg, 2026-08-29).
+print("   via1 cut inventory (arrayed pins: %s)" % (", ".join(ESD_VIA_ARRAY) or "none"))
+for _k in sorted(ESD_CUTS):
+    print("      %-24s %4d cut(s)" % (_k, ESD_CUTS[_k]))
+print("      %-24s %4d cut(s)  TOTAL (was 30 across both clamps)"
+      % ("all ESD via1", sum(ESD_CUTS.values())))
 print("   IBIAS: demoted %d block-tap label 36/10 -> 36/0 (pad label at 0.50,282.50 kept)" % _n)
 
 ly.write(GDS)
