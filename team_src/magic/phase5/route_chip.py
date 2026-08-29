@@ -713,7 +713,7 @@ VIA1_ENC_MIN = 0.04   # what V1.3d / V1.4c actually key on -- asserted against, 
 # Which pins have had the array applied. Rung 3 lands ONE PIN PER COMMIT with a full gate on
 # each, so this tuple grows by one entry per commit rather than the whole clamp set moving at
 # once (Greg, 2026-08-29). A pin not listed keeps the original single-cut geometry EXACTLY.
-ESD_VIA_ARRAY = ("IBIAS",)
+ESD_VIA_ARRAY = ("IBIAS", "ISS")
 
 
 def _snap(v):
