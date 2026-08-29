@@ -88,7 +88,7 @@ Corrected f–VTUNE of `vco_v1` (TT, 27 °C, VDD 3.3 V; full sweep + the correct
   target sits mid-range with **tuning margin on both sides**.
 - **KVCO ≈ −706 MHz/V** average; **local KVCO near the ISM point ≈ −1.1 GHz/V**
   (corrected 2026-08-12 — the old −790 MHz/V and the −1.4 GHz/V "mid-range" came from
-  §3.1's non-reproducible mid-curve; the real curve is smooth/monotonic). Tuning is
+  a non-reproducible mid-curve in the frequency plan that §3 superseded; the real curve is smooth/monotonic). Tuning is
   **inverted** (freq falls as VTUNE rises — NMOS varactor); see the loop-sign note in §2.
   **Loop-filter design must use −1.1 GHz/V** (loop BW ∝ √KVCO → ~18% higher, phase
   margin shifts; off-chip filter is unstarted so this is bench-adjustable).

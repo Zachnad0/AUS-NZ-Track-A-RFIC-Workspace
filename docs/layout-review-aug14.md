@@ -104,7 +104,7 @@ Evidence (file-read):
   the incidental compliance above; the corrected 15 µm applies to the next build.
 - **DUALGATE spacing** (cited from `docs/scope.md §4.2`, not re-derived): DV.3 (DUALGATE-to-COMP)
   0.24 µm, DV.2 (DUALGATE space) 0.44 µm → ~0.48 µm PFD-active-to-CP-active DRC floor. That is
-  a **DRC floor, not the block gap**; the noise-driven CP↔PFD gap is ≥ 20 µm (§3 / packet §3b).
+  a **DRC floor, not the block gap**; the noise-driven CP↔PFD gap is ≥ 20 µm (§3 / packet `docs/cp-layout-packet.md` §3b).
 - **ESD:** this block has **no pads**; secondary ESD sits with the **organizer padframe**
   (`scope.md §7`, `pins.md §2`). ESD is not a block-level artifact here.
 

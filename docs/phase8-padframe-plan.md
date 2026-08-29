@@ -18,7 +18,7 @@ DEF units are **200 dbu/µm** (5 nm). `translated_user` = pin rectangle in the
 **project's own frame** (origin at the project LL). Pin rects are all **Metal2**.
 Both variants: `DIEAREA (0 0)–(…)`, `PINS 14` (12 user pins; REF_IN expands to 3).
 
-### BV — 550 × 1110 µm (portrait). origin 350,1475. vss_fixed W12. usable 610500 µm²
+### 1a. BV — 550 × 1110 µm (portrait). origin 350,1475. vss_fixed W12. usable 610500 µm²
 
 | pin | slot | cell | use | dir | edge | translated_user bbox (µm) |
 |-----|------|------|-----|-----|------|---------------------------|
@@ -41,7 +41,7 @@ Both variants: `DIEAREA (0 0)–(…)`, `PINS 14` (12 user pins; REF_IN expands 
   (north). chip_top is **309 µm tall** → **reach shortfall ≈ 801 µm** to the north
   edge; the west analog pins climb to y1065 (Q_N), ~756 µm above chip_top's top.
 
-### BH — 1110 × 550 µm (landscape). origin 350,2035. vss_fixed [] (none). usable 610500 µm²
+### 1b. BH — 1110 × 550 µm (landscape). origin 350,2035. vss_fixed [] (none). usable 610500 µm²
 
 | pin | slot | cell | use | dir | edge | translated_user bbox (µm) |
 |-----|------|------|-----|-----|------|---------------------------|
