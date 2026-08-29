@@ -1159,3 +1159,32 @@ single number for a `ppolyf_u` without saying which sheet value it came from. Bo
 In every case the **pad-facing net is the subckt port** (`TUNE`, `I_P`, …) and the resistor
 already sits between pad and core, which is why a secondary clamp inserts at chip level
 without reopening a signed-off block.
+
+## 10. Documentation cross-references are gated, not trusted
+
+`team_src/magic/analysis/ref_audit.py .` — exit 0 iff every cross-reference in the markdown
+resolves. Run it after any doc edit that adds or renumbers a section.
+
+```
+scanned 28 markdown files
+section refs : 139 checked, 0 dangling
+path refs    : 432 checked, 15 allowlisted, 0 unresolved
+RESULT: PASS -- every section and path reference resolves
+```
+
+Two classes, both gating. **Section refs** must name a heading that exists; ranges are
+expanded so every endpoint is checked, which is the only reason the "supersedes 1a-1d" ref in
+`phase8-padframe-plan.md` was ever caught — its 1c and 1d resolved and hid the two that did
+not. **Path refs** are backticked repo-relative paths; they cannot be judged by existence
+alone, because the docs legitimately name organizer-side files and one file we deliberately
+cite as retired, so those sit in an ALLOWLIST in the script with a per-entry reason. An
+allowlist entry that starts resolving, or stops being referenced, is reported too — the list
+cannot rot into a blanket suppression.
+
+Note that a *literal* section reference written in prose is indistinguishable from a live one,
+so illustrative examples in this paragraph are written without the section sign on purpose.
+
+Three dangling section refs were fixed when this first ran (2026-08-29): 1a and 1b in
+`phase8-padframe-plan.md`, whose subsections were headed "BV" and "BH" and are now numbered;
+and 3.1 in `scope.md`, a subsection the frequency-plan rewrite had removed. Same failure mode
+as §8.11 — something that reads as checked and is not.
