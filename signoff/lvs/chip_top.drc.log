@@ -1,0 +1,122 @@
+
+Magic 8.3 revision 642 - Compiled on Wed May 13 07:57:37 PM CEST 2026.
+Starting magic under Tcl interpreter
+Using the terminal as the console.
+WARNING: RLIMIT_NOFILE is above 1024 and Tcl_Version<9 this may cause runtime issues [rlim_cur=1048576]
+Using NULL graphics device.
+Processing system .magicrc file
+Switching to WIRING tool.
+Switching to NETLIST tool.
+Switching to PICK tool.
+Switching to BOX tool.
+Sourcing design .magicrc for technology gf180mcuD ...
+10 Magic internal units = 1 Lambda
+Input style import: scaleFactor=10, multiplier=2
+The following types are not handled by extraction and will be treated as non-electrical types:
+    obsactive mvobsactive filldiff fillpoly m1hole obsm1 fillm1 obsv1 m2hole obsm2 fillm2 obsv2 m3hole obsm3 fillm3 m4hole obsm4 fillm4 m5hole obsm5 fillm5 glass fillblock lvstext obscomment 
+Scaled tech values by 10 / 1 to match internal grid scaling
+Loading gf180mcuD Device Generator Menu ...
+Loading "/foss/designs/AUS-NZ-integration/team_src/magic/verify_extract.tcl" from command line.
+Cell vco_varactors read from path /foss/designs/AUS-NZ-integration/team_src/magic
+Cell vco_inductor_v2 read from path /foss/designs/AUS-NZ-integration/team_src/magic/vco_inductor_v2
+Scaled magic input cell vco_inductor_v2 geometry by factor of 5
+Warning: Calma reading is not undoable!  I hope that's OK.
+Library written using GDS-II Release 6.0
+Library name: LIB
+Reading "ib_conv_v1".
+Reading "vco_varactors".
+Note:  cell vco_varactors already existed before reading GDS.
+Using pre-existing cell definition
+Reading "vco_tune_r".
+Reading "vco_inductor_v2".
+Note:  cell vco_inductor_v2 already existed before reading GDS.
+Using pre-existing cell definition
+Reading "vco_core".
+Reading "gf180mcu_fd_sc_mcu7t5v0__fillcap_32".
+Reading "gf180mcu_fd_sc_mcu7t5v0__fillcap_8".
+Reading "gf180mcu_fd_sc_mcu7t5v0__fillcap_16".
+Reading "gf180mcu_fd_sc_mcu7t5v0__fill_1".
+Reading "gf180mcu_fd_sc_mcu7t5v0__endcap".
+Reading "gf180mcu_fd_sc_mcu7t5v0__filltie".
+Reading "gf180mcu_fd_sc_mcu7t5v0__dffrnq_1".
+Reading "gf180mcu_fd_sc_mcu7t5v0__fillcap_4".
+Reading "gf180mcu_fd_sc_mcu7t5v0__fill_2".
+Reading "gf180mcu_fd_sc_mcu7t5v0__tieh".
+Reading "gf180mcu_fd_sc_mcu7t5v0__inv_1".
+Reading "gf180mcu_fd_sc_mcu7t5v0__nand2_1".
+Reading "esd_rpoly".
+Reading "esd_nd2ps".
+Reading "esd_pd2nw".
+Reading "DIV2_QUAD_v1".
+Moving label "OQ" from metal4 to via4 in cell DIV2_QUAD_v1.
+Reading "vco_v1".
+Reading "ibias_gen_v1".
+Reading "CP_v1".
+Moving label "VSS" from metal2 to via1 in cell CP_v1.
+Moving label "NMID" from metal3 to via3 in cell CP_v1.
+Moving label "VSS" from metal5 to via4 in cell CP_v1.
+Reading "PFD_lib".
+Reading "chip_top".
+Error while reading cell "chip_top" (byte position 1642672): Unknown layer/datatype in boundary, layer=151 type=5
+Moving label "IBIAS" from metal2 to via2 in cell chip_top.
+Loading DRC CIF style.
+VERIFY_DRC_COUNT=0
+Extracting ib_conv_v1 into /foss/designs/AUS-NZ-integration/team_src/magic/verify_work/ib_conv_v1.ext:
+Processing ib_conv_v1
+Extracting DIV2_QUAD_v1 into /foss/designs/AUS-NZ-integration/team_src/magic/verify_work/DIV2_QUAD_v1.ext:
+Processing DIV2_QUAD_v1
+Extracting ibias_gen_v1 into /foss/designs/AUS-NZ-integration/team_src/magic/verify_work/ibias_gen_v1.ext:
+Processing ibias_gen_v1
+ibias_gen_v1: 10 warnings
+Extracting esd_pd2nw into /foss/designs/AUS-NZ-integration/team_src/magic/verify_work/esd_pd2nw.ext:
+Processing esd_pd2nw
+Extracting esd_nd2ps into /foss/designs/AUS-NZ-integration/team_src/magic/verify_work/esd_nd2ps.ext:
+Processing esd_nd2ps
+Extracting esd_rpoly into /foss/designs/AUS-NZ-integration/team_src/magic/verify_work/esd_rpoly.ext:
+Processing esd_rpoly
+Extracting gf180mcu_fd_sc_mcu7t5v0__fillcap_32 into /foss/designs/AUS-NZ-integration/team_src/magic/verify_work/gf180mcu_fd_sc_mcu7t5v0__fillcap_32.ext:
+Processing gf180mcu_fd_sc_mcu7t5v0__fillcap_32
+Extracting gf180mcu_fd_sc_mcu7t5v0__fillcap_8 into /foss/designs/AUS-NZ-integration/team_src/magic/verify_work/gf180mcu_fd_sc_mcu7t5v0__fillcap_8.ext:
+Processing gf180mcu_fd_sc_mcu7t5v0__fillcap_8
+Extracting gf180mcu_fd_sc_mcu7t5v0__fillcap_16 into /foss/designs/AUS-NZ-integration/team_src/magic/verify_work/gf180mcu_fd_sc_mcu7t5v0__fillcap_16.ext:
+Processing gf180mcu_fd_sc_mcu7t5v0__fillcap_16
+Extracting gf180mcu_fd_sc_mcu7t5v0__fill_1 into /foss/designs/AUS-NZ-integration/team_src/magic/verify_work/gf180mcu_fd_sc_mcu7t5v0__fill_1.ext:
+Processing gf180mcu_fd_sc_mcu7t5v0__fill_1
+Extracting gf180mcu_fd_sc_mcu7t5v0__endcap into /foss/designs/AUS-NZ-integration/team_src/magic/verify_work/gf180mcu_fd_sc_mcu7t5v0__endcap.ext:
+Processing gf180mcu_fd_sc_mcu7t5v0__endcap
+Extracting gf180mcu_fd_sc_mcu7t5v0__filltie into /foss/designs/AUS-NZ-integration/team_src/magic/verify_work/gf180mcu_fd_sc_mcu7t5v0__filltie.ext:
+Processing gf180mcu_fd_sc_mcu7t5v0__filltie
+Extracting gf180mcu_fd_sc_mcu7t5v0__dffrnq_1 into /foss/designs/AUS-NZ-integration/team_src/magic/verify_work/gf180mcu_fd_sc_mcu7t5v0__dffrnq_1.ext:
+Processing gf180mcu_fd_sc_mcu7t5v0__dffrnq_1
+Extracting gf180mcu_fd_sc_mcu7t5v0__fillcap_4 into /foss/designs/AUS-NZ-integration/team_src/magic/verify_work/gf180mcu_fd_sc_mcu7t5v0__fillcap_4.ext:
+Processing gf180mcu_fd_sc_mcu7t5v0__fillcap_4
+Extracting gf180mcu_fd_sc_mcu7t5v0__fill_2 into /foss/designs/AUS-NZ-integration/team_src/magic/verify_work/gf180mcu_fd_sc_mcu7t5v0__fill_2.ext:
+Processing gf180mcu_fd_sc_mcu7t5v0__fill_2
+Extracting gf180mcu_fd_sc_mcu7t5v0__tieh into /foss/designs/AUS-NZ-integration/team_src/magic/verify_work/gf180mcu_fd_sc_mcu7t5v0__tieh.ext:
+Processing gf180mcu_fd_sc_mcu7t5v0__tieh
+Extracting gf180mcu_fd_sc_mcu7t5v0__inv_1 into /foss/designs/AUS-NZ-integration/team_src/magic/verify_work/gf180mcu_fd_sc_mcu7t5v0__inv_1.ext:
+Processing gf180mcu_fd_sc_mcu7t5v0__inv_1
+Extracting gf180mcu_fd_sc_mcu7t5v0__nand2_1 into /foss/designs/AUS-NZ-integration/team_src/magic/verify_work/gf180mcu_fd_sc_mcu7t5v0__nand2_1.ext:
+Processing gf180mcu_fd_sc_mcu7t5v0__nand2_1
+Extracting PFD_lib into /foss/designs/AUS-NZ-integration/team_src/magic/verify_work/PFD_lib.ext:
+Processing PFD_lib
+Extracting CP_v1 into /foss/designs/AUS-NZ-integration/team_src/magic/verify_work/CP_v1.ext:
+Processing CP_v1
+Extracting vco_core into /foss/designs/AUS-NZ-integration/team_src/magic/verify_work/vco_core.ext:
+Processing vco_core
+Extracting vco_inductor_v2 into /foss/designs/AUS-NZ-integration/team_src/magic/verify_work/vco_inductor_v2.ext:
+Extracting vco_tune_r into /foss/designs/AUS-NZ-integration/team_src/magic/verify_work/vco_tune_r.ext:
+Processing vco_tune_r
+Extracting vco_varactors into /foss/designs/AUS-NZ-integration/team_src/magic/verify_work/vco_varactors.ext:
+Processing vco_varactors
+Extracting vco_v1 into /foss/designs/AUS-NZ-integration/team_src/magic/verify_work/vco_v1.ext:
+Processing vco_v1
+Extracting chip_top into /foss/designs/AUS-NZ-integration/team_src/magic/verify_work/chip_top.ext:
+Processing chip_top
+Warning:  Ports "VDDD" and "REF_IN_PD" are electrically shorted.
+Warning:  Ports "VSSA" and "REF_IN_PU" are electrically shorted.
+Total of 10 warnings.
+Warning:  Ports "VDDD" and "REF_IN_PD" are electrically shorted.
+Warning:  Ports "VSSA" and "REF_IN_PU" are electrically shorted.
+exttospice finished.
+VERIFY_EXTRACT_DONE=/foss/designs/AUS-NZ-integration/team_src/magic/verify_work/chip_top.lvs.spice

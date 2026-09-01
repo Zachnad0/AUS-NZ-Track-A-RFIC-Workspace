@@ -1,0 +1,43 @@
+* NGSPICE file created from CP_v1.ext - technology: gf180mcuD
+
+.subckt CP_v1 VDD VSS VGP VGN DOWN CP_OUT UP
+X0 CP_OUT UPB PMID VDD pfet_03v3 ad=1.3p pd=5.52u as=2.2p ps=10.88u w=5u l=0.3u
+X1 UPB UP VSS VSS nfet_03v3 ad=0.44p pd=2.88u as=0.44p ps=2.88u w=1u l=0.3u
+X2 PMID UPB CP_OUT VDD pfet_03v3 ad=2.2p pd=10.88u as=1.3p ps=5.52u w=5u l=0.3u
+X3 VGN VGN VSS VSS nfet_03v3 ad=1.3p pd=5.52u as=2.2p ps=10.88u w=5u l=2u
+X4 VSS VGN NMID VSS nfet_03v3 ad=2.2p pd=10.88u as=1.3p ps=5.52u w=5u l=2u
+X5 NMID VGN VSS VSS nfet_03v3 ad=1.3p pd=5.52u as=1.3p ps=5.52u w=5u l=2u
+X6 VDD VGP PMID VDD pfet_03v3 ad=1.3p pd=5.52u as=1.3p ps=5.52u w=5u l=2u
+X7 CP_OUT DOWN NMID VSS nfet_03v3 ad=1.3p pd=5.52u as=2.2p ps=10.88u w=5u l=0.3u
+X8 UPB UP VDD VDD pfet_03v3 ad=0.88p pd=4.88u as=0.88p ps=4.88u w=2u l=0.3u
+X9 CP_OUT UPB PMID VDD pfet_03v3 ad=1.3p pd=5.52u as=1.3p ps=5.52u w=5u l=0.3u
+X10 VGP VGP VDD VDD pfet_03v3 ad=1.3p pd=5.52u as=1.3p ps=5.52u w=5u l=2u
+X11 VDD VGP PMID VDD pfet_03v3 ad=2.2p pd=10.88u as=1.3p ps=5.52u w=5u l=2u
+X12 VDD VGP VGP VDD pfet_03v3 ad=1.3p pd=5.52u as=1.3p ps=5.52u w=5u l=2u
+X13 PMID VGP VDD VDD pfet_03v3 ad=1.3p pd=5.52u as=1.3p ps=5.52u w=5u l=2u
+X14 CP_OUT UPB PMID VDD pfet_03v3 ad=1.3p pd=5.52u as=1.3p ps=5.52u w=5u l=0.3u
+X15 CP_OUT UPB PMID VDD pfet_03v3 ad=1.3p pd=5.52u as=1.3p ps=5.52u w=5u l=0.3u
+X16 VGP VGP VDD VDD pfet_03v3 ad=1.3p pd=5.52u as=1.3p ps=5.52u w=5u l=2u
+X17 NMID DOWN CP_OUT VSS nfet_03v3 ad=2.2p pd=10.88u as=1.3p ps=5.52u w=5u l=0.3u
+X18 PMID VGP VDD VDD pfet_03v3 ad=1.3p pd=5.52u as=1.3p ps=5.52u w=5u l=2u
+X19 VDD VGP VGP VDD pfet_03v3 ad=1.3p pd=5.52u as=1.3p ps=5.52u w=5u l=2u
+X20 VDD VGP PMID VDD pfet_03v3 ad=1.3p pd=5.52u as=1.3p ps=5.52u w=5u l=2u
+X21 PMID VGP VDD VDD pfet_03v3 ad=1.3p pd=5.52u as=1.3p ps=5.52u w=5u l=2u
+X22 VDD VGP VGP VDD pfet_03v3 ad=1.3p pd=5.52u as=1.3p ps=5.52u w=5u l=2u
+X23 PMID UPB CP_OUT VDD pfet_03v3 ad=1.3p pd=5.52u as=1.3p ps=5.52u w=5u l=0.3u
+X24 VGP VGP VDD VDD pfet_03v3 ad=1.3p pd=5.52u as=1.3p ps=5.52u w=5u l=2u
+X25 PMID VGP VDD VDD pfet_03v3 ad=1.3p pd=5.52u as=1.3p ps=5.52u w=5u l=2u
+X26 VGP VGP VDD VDD pfet_03v3 ad=1.3p pd=5.52u as=2.2p ps=10.88u w=5u l=2u
+X27 VDD VGP PMID VDD pfet_03v3 ad=1.3p pd=5.52u as=1.3p ps=5.52u w=5u l=2u
+X28 PMID UPB CP_OUT VDD pfet_03v3 ad=1.3p pd=5.52u as=1.3p ps=5.52u w=5u l=0.3u
+X29 PMID VGP VDD VDD pfet_03v3 ad=1.3p pd=5.52u as=1.3p ps=5.52u w=5u l=2u
+X30 VSS VGN VGN VSS nfet_03v3 ad=1.3p pd=5.52u as=1.3p ps=5.52u w=5u l=2u
+X31 VGP VGP VDD VDD pfet_03v3 ad=1.3p pd=5.52u as=1.3p ps=5.52u w=5u l=2u
+X32 PMID UPB CP_OUT VDD pfet_03v3 ad=1.3p pd=5.52u as=1.3p ps=5.52u w=5u l=0.3u
+X33 VDD VGP PMID VDD pfet_03v3 ad=1.3p pd=5.52u as=1.3p ps=5.52u w=5u l=2u
+X34 CP_OUT UPB PMID VDD pfet_03v3 ad=1.3p pd=5.52u as=1.3p ps=5.52u w=5u l=0.3u
+X35 VDD VGP VGP VDD pfet_03v3 ad=1.3p pd=5.52u as=1.3p ps=5.52u w=5u l=2u
+X36 PMID UPB CP_OUT VDD pfet_03v3 ad=1.3p pd=5.52u as=1.3p ps=5.52u w=5u l=0.3u
+X37 VDD VGP VGP VDD pfet_03v3 ad=1.3p pd=5.52u as=1.3p ps=5.52u w=5u l=2u
+.ends
+

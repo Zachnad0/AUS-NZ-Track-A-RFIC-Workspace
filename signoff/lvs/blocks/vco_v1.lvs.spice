@@ -1,0 +1,96 @@
+* NGSPICE file created from vco_v1.ext - technology: gf180mcuD
+
+.subckt vco_tune_r TUNE cap_bias GND
+X0 TUNE cap_bias GND ppolyf_u_1k r_width=1u r_length=15u
+.ends
+
+.subckt vco_varactors cap_bias OUT_n OUT_p
+X0 cap_bias OUT_n cap_nmos_03v3_b c_width=5u c_length=5u
+X1 cap_bias OUT_p cap_nmos_03v3_b c_width=5u c_length=5u
+X2 cap_bias OUT_p cap_nmos_03v3_b c_width=5u c_length=5u
+X3 cap_bias OUT_n cap_nmos_03v3_b c_width=5u c_length=5u
+X4 cap_bias OUT_n cap_nmos_03v3_b c_width=5u c_length=5u
+X5 cap_bias OUT_n cap_nmos_03v3_b c_width=5u c_length=5u
+X6 cap_bias OUT_p cap_nmos_03v3_b c_width=5u c_length=5u
+X7 cap_bias OUT_n cap_nmos_03v3_b c_width=5u c_length=5u
+X8 cap_bias OUT_p cap_nmos_03v3_b c_width=5u c_length=5u
+X9 cap_bias OUT_n cap_nmos_03v3_b c_width=5u c_length=5u
+X10 cap_bias OUT_n cap_nmos_03v3_b c_width=5u c_length=5u
+X11 cap_bias OUT_p cap_nmos_03v3_b c_width=5u c_length=5u
+X12 cap_bias OUT_p cap_nmos_03v3_b c_width=5u c_length=5u
+X13 cap_bias OUT_n cap_nmos_03v3_b c_width=5u c_length=5u
+X14 cap_bias OUT_n cap_nmos_03v3_b c_width=5u c_length=5u
+X15 cap_bias OUT_n cap_nmos_03v3_b c_width=5u c_length=5u
+X16 cap_bias OUT_p cap_nmos_03v3_b c_width=5u c_length=5u
+X17 cap_bias OUT_n cap_nmos_03v3_b c_width=5u c_length=5u
+X18 cap_bias OUT_n cap_nmos_03v3_b c_width=5u c_length=5u
+X19 cap_bias OUT_p cap_nmos_03v3_b c_width=5u c_length=5u
+X20 cap_bias OUT_p cap_nmos_03v3_b c_width=5u c_length=5u
+X21 cap_bias OUT_p cap_nmos_03v3_b c_width=5u c_length=5u
+X22 cap_bias OUT_p cap_nmos_03v3_b c_width=5u c_length=5u
+X23 cap_bias OUT_p cap_nmos_03v3_b c_width=5u c_length=5u
+X24 cap_bias OUT_p cap_nmos_03v3_b c_width=5u c_length=5u
+X25 cap_bias OUT_n cap_nmos_03v3_b c_width=5u c_length=5u
+X26 cap_bias OUT_n cap_nmos_03v3_b c_width=5u c_length=5u
+X27 cap_bias OUT_n cap_nmos_03v3_b c_width=5u c_length=5u
+X28 cap_bias OUT_p cap_nmos_03v3_b c_width=5u c_length=5u
+X29 cap_bias OUT_p cap_nmos_03v3_b c_width=5u c_length=5u
+X30 cap_bias OUT_n cap_nmos_03v3_b c_width=5u c_length=5u
+X31 cap_bias OUT_n cap_nmos_03v3_b c_width=5u c_length=5u
+X32 cap_bias OUT_p cap_nmos_03v3_b c_width=5u c_length=5u
+X33 cap_bias OUT_p cap_nmos_03v3_b c_width=5u c_length=5u
+X34 cap_bias OUT_n cap_nmos_03v3_b c_width=5u c_length=5u
+X35 cap_bias OUT_n cap_nmos_03v3_b c_width=5u c_length=5u
+X36 cap_bias OUT_n cap_nmos_03v3_b c_width=5u c_length=5u
+X37 cap_bias OUT_n cap_nmos_03v3_b c_width=5u c_length=5u
+X38 cap_bias OUT_p cap_nmos_03v3_b c_width=5u c_length=5u
+X39 cap_bias OUT_p cap_nmos_03v3_b c_width=5u c_length=5u
+X40 cap_bias OUT_p cap_nmos_03v3_b c_width=5u c_length=5u
+X41 cap_bias OUT_p cap_nmos_03v3_b c_width=5u c_length=5u
+.ends
+
+.subckt vco_inductor_v2 PORT1 PORT2
+X0 PORT2 m4_n14800_800# tm11k r_width=8u r_length=76u
+X1 m4_n14800_800# PORT1 tm11k r_width=8u r_length=76u
+.ends
+
+.subckt vco_core ISS VDD OUT_p OUT_n GND
+X0 OUT_n OUT_p ISS GND nfet_03v3 ad=1.04p pd=4.52u as=1.76p ps=8.88u w=4u l=0.28u
+X1 ISS OUT_p OUT_n GND nfet_03v3 ad=1.04p pd=4.52u as=1.04p ps=4.52u w=4u l=0.28u
+X2 OUT_p OUT_n VDD VDD pfet_03v3 ad=3.64p pd=14.52u as=6.16p ps=28.88u w=14u l=0.28u
+X3 OUT_n OUT_p ISS GND nfet_03v3 ad=1.04p pd=4.52u as=1.04p ps=4.52u w=4u l=0.28u
+X4 OUT_p OUT_n VDD VDD pfet_03v3 ad=6.16p pd=28.88u as=3.64p ps=14.52u w=14u l=0.28u
+X5 OUT_p OUT_n VDD VDD pfet_03v3 ad=3.64p pd=14.52u as=3.64p ps=14.52u w=14u l=0.28u
+X6 VDD OUT_n OUT_p VDD pfet_03v3 ad=3.64p pd=14.52u as=3.64p ps=14.52u w=14u l=0.28u
+X7 OUT_p OUT_n ISS GND nfet_03v3 ad=1.04p pd=4.52u as=1.76p ps=8.88u w=4u l=0.28u
+X8 OUT_n OUT_p ISS GND nfet_03v3 ad=1.04p pd=4.52u as=1.04p ps=4.52u w=4u l=0.28u
+X9 ISS OUT_n OUT_p GND nfet_03v3 ad=1.76p pd=8.88u as=1.04p ps=4.52u w=4u l=0.28u
+X10 VDD OUT_n OUT_p VDD pfet_03v3 ad=3.64p pd=14.52u as=3.64p ps=14.52u w=14u l=0.28u
+X11 ISS OUT_p OUT_n GND nfet_03v3 ad=1.04p pd=4.52u as=1.04p ps=4.52u w=4u l=0.28u
+X12 ISS OUT_p OUT_n GND nfet_03v3 ad=1.04p pd=4.52u as=1.04p ps=4.52u w=4u l=0.28u
+X13 OUT_p OUT_n ISS GND nfet_03v3 ad=1.04p pd=4.52u as=1.04p ps=4.52u w=4u l=0.28u
+X14 OUT_n OUT_p VDD VDD pfet_03v3 ad=3.64p pd=14.52u as=3.64p ps=14.52u w=14u l=0.28u
+X15 ISS OUT_n OUT_p GND nfet_03v3 ad=1.04p pd=4.52u as=1.04p ps=4.52u w=4u l=0.28u
+X16 OUT_n OUT_p VDD VDD pfet_03v3 ad=6.16p pd=28.88u as=3.64p ps=14.52u w=14u l=0.28u
+X17 OUT_p OUT_n ISS GND nfet_03v3 ad=1.04p pd=4.52u as=1.04p ps=4.52u w=4u l=0.28u
+X18 VDD OUT_p OUT_n VDD pfet_03v3 ad=3.64p pd=14.52u as=3.64p ps=14.52u w=14u l=0.28u
+X19 VDD OUT_p OUT_n VDD pfet_03v3 ad=3.64p pd=14.52u as=3.64p ps=14.52u w=14u l=0.28u
+X20 OUT_n OUT_p ISS GND nfet_03v3 ad=1.04p pd=4.52u as=1.04p ps=4.52u w=4u l=0.28u
+X21 ISS OUT_n OUT_p GND nfet_03v3 ad=1.04p pd=4.52u as=1.04p ps=4.52u w=4u l=0.28u
+X22 ISS OUT_n OUT_p GND nfet_03v3 ad=1.04p pd=4.52u as=1.04p ps=4.52u w=4u l=0.28u
+X23 ISS OUT_p OUT_n GND nfet_03v3 ad=1.04p pd=4.52u as=1.04p ps=4.52u w=4u l=0.28u
+X24 OUT_p OUT_n ISS GND nfet_03v3 ad=1.04p pd=4.52u as=1.04p ps=4.52u w=4u l=0.28u
+X25 ISS OUT_p OUT_n GND nfet_03v3 ad=1.76p pd=8.88u as=1.04p ps=4.52u w=4u l=0.28u
+X26 OUT_n OUT_p ISS GND nfet_03v3 ad=1.04p pd=4.52u as=1.04p ps=4.52u w=4u l=0.28u
+X27 ISS OUT_n OUT_p GND nfet_03v3 ad=1.04p pd=4.52u as=1.04p ps=4.52u w=4u l=0.28u
+X28 OUT_n OUT_p VDD VDD pfet_03v3 ad=3.64p pd=14.52u as=6.16p ps=28.88u w=14u l=0.28u
+X29 OUT_p OUT_n ISS GND nfet_03v3 ad=1.04p pd=4.52u as=1.04p ps=4.52u w=4u l=0.28u
+.ends
+
+.subckt vco_v1 VDD ISS OUT_p OUT_n TUNE GND
+Xvco_tune_r_0 TUNE vco_tune_r_0/cap_bias GND vco_tune_r
+Xvco_varactors_0 vco_tune_r_0/cap_bias OUT_n OUT_p vco_varactors
+Xvco_inductor_v2_0 OUT_n OUT_p vco_inductor_v2
+Xvco_core_0 ISS VDD OUT_p OUT_n GND vco_core
+.ends
+

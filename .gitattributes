@@ -30,3 +30,9 @@
 # re-issue did, an earlier `*.spice text eol=lf` would silently eol-convert a
 # third-party artifact and destroy the byte-exactness this line exists to promise.
 padframe/** -text
+
+# Committed LVS artifacts: verbatim tool output (netgen reports, Magic-extracted netlists).
+# -text for the same reason as padframe/** above -- these are compared and greped by other
+# people's scripts, so a Windows checkout must not rewrite a byte. Note this must sit AFTER
+# the `*.spice text eol=lf` rule so the extracted .lvs.spice files are covered by this one.
+signoff/lvs/** -text

@@ -1,0 +1,171 @@
+* NGSPICE file created from DIV2_QUAD_v1.ext - technology: gf180mcuD
+
+.subckt ib_conv_v1 IBIAS INP INM OUT VDD VSS
+X0 a_938_3424# INP a_100_n800# VSS nfet_03v3 ad=3.52p pd=16.88u as=3.52p ps=16.88u w=8u l=0.3u
+X1 a_938_3424# a_938_3424# VDD VDD pfet_03v3 ad=3.52p pd=16.88u as=3.52p ps=16.88u w=8u l=0.3u
+X2 a_8030_n1600# a_6430_n1100# VDD VDD pfet_03v3 ad=19.36p pd=88.88u as=19.36p ps=88.88u w=44u l=0.3u
+X3 a_8030_n1600# a_6430_n1100# VSS VSS nfet_03v3 ad=7.04p pd=32.88u as=7.04p ps=32.88u w=16u l=0.3u
+X4 a_6430_n1100# a_2156_7176# VDD VDD pfet_03v3 ad=11.44p pd=52.88u as=11.44p ps=52.88u w=26u l=0.3u
+X5 a_2430_n800# INM a_100_n800# VSS nfet_03v3 ad=3.52p pd=16.88u as=3.52p ps=16.88u w=8u l=0.3u
+X6 a_6430_n1100# a_2156_7176# VSS VSS nfet_03v3 ad=4.84p pd=22.88u as=4.84p ps=22.88u w=11u l=0.3u
+X7 OUT a_8030_n1600# VSS ppolyf_u_1k r_width=2u r_length=2u
+X8 a_2156_7176# a_1676_7176# VSS VSS nfet_03v3 ad=1.76p pd=8.88u as=1.76p ps=8.88u w=4u l=0.3u
+X9 a_100_n800# IBIAS VSS VSS nfet_03v3 ad=3.52p pd=16.88u as=3.52p ps=16.88u w=8u l=1u
+X10 a_2156_7176# a_1676_7176# VDD VDD pfet_03v3 ad=4.4p pd=20.88u as=4.4p ps=20.88u w=10u l=0.3u
+X11 a_2430_n800# a_938_3424# VDD VDD pfet_03v3 ad=3.52p pd=16.88u as=3.52p ps=16.88u w=8u l=0.3u
+X12 a_2430_n800# a_1676_7176# cap_mim_2f0_m4m5_noshield c_width=5u c_length=10u
+X13 a_2156_7176# a_1676_7176# VSS ppolyf_u_1k r_width=2u r_length=40.04u
+.ends
+
+.subckt DIV2_QUAD_v1 CK CKB IBIAS VDD VSS I_P I_N Q_P Q_N
+Xib_conv_v1_0 IBIAS OIB OI I_P VDD VSS ib_conv_v1
+Xib_conv_v1_1 IBIAS OI OIB I_N VDD VSS ib_conv_v1
+Xib_conv_v1_2 IBIAS OQ OQB Q_N VDD VSS ib_conv_v1
+Xib_conv_v1_3 IBIAS OQB OQ Q_P VDD VSS ib_conv_v1
+X0 OQ OQB a_4344_n7400# VSS nfet_03v3 ad=1.04p pd=4.52u as=1.76p ps=8.88u w=4u l=0.3u
+X1 OQ OI a_n708_n7400# VSS nfet_03v3 ad=1.04p pd=4.52u as=1.04p ps=4.52u w=4u l=0.3u
+X2 VDD OQB VSS ppolyf_u_1k r_width=10u r_length=3u
+X3 a_4344_n400# OI OIB VSS nfet_03v3 ad=1.76p pd=8.88u as=1.04p ps=4.52u w=4u l=0.3u
+X4 OI OQB a_n708_n400# VSS nfet_03v3 ad=1.04p pd=4.52u as=1.76p ps=8.88u w=4u l=0.3u
+X5 a_4344_n400# CKB a_n856_n400# VSS nfet_03v3 ad=1.04p pd=4.52u as=1.04p ps=4.52u w=4u l=0.3u
+X6 OI OIB a_4344_n400# VSS nfet_03v3 ad=1.04p pd=4.52u as=1.04p ps=4.52u w=4u l=0.3u
+X7 OQB OQ a_4344_n7400# VSS nfet_03v3 ad=1.04p pd=4.52u as=1.04p ps=4.52u w=4u l=0.3u
+X8 a_4344_n400# CKB a_n856_n400# VSS nfet_03v3 ad=1.04p pd=4.52u as=1.04p ps=4.52u w=4u l=0.3u
+X9 a_n708_n400# OQ OIB VSS nfet_03v3 ad=1.04p pd=4.52u as=1.04p ps=4.52u w=4u l=0.3u
+X10 a_n708_n7400# OIB OQB VSS nfet_03v3 ad=1.04p pd=4.52u as=1.04p ps=4.52u w=4u l=0.3u
+X11 a_n856_n7400# CK a_4344_n7400# VSS nfet_03v3 ad=1.04p pd=4.52u as=1.04p ps=4.52u w=4u l=0.3u
+X12 a_n856_n7400# CKB a_n708_n7400# VSS nfet_03v3 ad=1.04p pd=4.52u as=1.04p ps=4.52u w=4u l=0.3u
+X13 a_n856_n7400# CKB a_n708_n7400# VSS nfet_03v3 ad=1.04p pd=4.52u as=1.04p ps=4.52u w=4u l=0.3u
+X14 a_n856_n400# CKB a_4344_n400# VSS nfet_03v3 ad=1.04p pd=4.52u as=1.04p ps=4.52u w=4u l=0.3u
+X15 OIB OQ a_n708_n400# VSS nfet_03v3 ad=1.04p pd=4.52u as=1.04p ps=4.52u w=4u l=0.3u
+X16 a_n856_n400# CK a_n708_n400# VSS nfet_03v3 ad=1.04p pd=4.52u as=1.04p ps=4.52u w=4u l=0.3u
+X17 a_4344_n400# OIB OI VSS nfet_03v3 ad=1.04p pd=4.52u as=1.04p ps=4.52u w=4u l=0.3u
+X18 VSS IBIAS a_n856_n400# VSS nfet_03v3 ad=1.04p pd=4.52u as=1.04p ps=4.52u w=4u l=1u
+X19 OI OIB a_4344_n400# VSS nfet_03v3 ad=1.04p pd=4.52u as=1.04p ps=4.52u w=4u l=0.3u
+X20 a_n856_n7400# CK a_4344_n7400# VSS nfet_03v3 ad=1.04p pd=4.52u as=1.04p ps=4.52u w=4u l=0.3u
+X21 OQB OIB a_n708_n7400# VSS nfet_03v3 ad=1.04p pd=4.52u as=1.04p ps=4.52u w=4u l=0.3u
+X22 VSS IBIAS a_n856_n7400# VSS nfet_03v3 ad=1.04p pd=4.52u as=1.04p ps=4.52u w=4u l=1u
+X23 a_4344_n7400# OQ OQB VSS nfet_03v3 ad=1.76p pd=8.88u as=1.04p ps=4.52u w=4u l=0.3u
+X24 a_n856_n7400# CK a_4344_n7400# VSS nfet_03v3 ad=1.04p pd=4.52u as=1.04p ps=4.52u w=4u l=0.3u
+X25 a_4344_n7400# CK a_n856_n7400# VSS nfet_03v3 ad=1.04p pd=4.52u as=1.04p ps=4.52u w=4u l=0.3u
+X26 a_n856_n7400# CKB a_n708_n7400# VSS nfet_03v3 ad=1.04p pd=4.52u as=1.04p ps=4.52u w=4u l=0.3u
+X27 a_n856_n400# IBIAS VSS VSS nfet_03v3 ad=1.04p pd=4.52u as=1.04p ps=4.52u w=4u l=1u
+X28 a_n708_n400# OQ OIB VSS nfet_03v3 ad=1.04p pd=4.52u as=1.04p ps=4.52u w=4u l=0.3u
+X29 OI OIB a_4344_n400# VSS nfet_03v3 ad=1.04p pd=4.52u as=1.04p ps=4.52u w=4u l=0.3u
+X30 a_n708_n400# CK a_n856_n400# VSS nfet_03v3 ad=1.04p pd=4.52u as=1.04p ps=4.52u w=4u l=0.3u
+X31 a_4344_n7400# OQB OQ VSS nfet_03v3 ad=1.04p pd=4.52u as=1.04p ps=4.52u w=4u l=0.3u
+X32 a_n708_n400# OQ OIB VSS nfet_03v3 ad=1.04p pd=4.52u as=1.04p ps=4.52u w=4u l=0.3u
+X33 VSS IBIAS a_n856_n400# VSS nfet_03v3 ad=1.76p pd=8.88u as=1.04p ps=4.52u w=4u l=1u
+X34 OI OQB a_n708_n400# VSS nfet_03v3 ad=1.04p pd=4.52u as=1.04p ps=4.52u w=4u l=0.3u
+X35 a_n856_n400# IBIAS VSS VSS nfet_03v3 ad=1.04p pd=4.52u as=1.04p ps=4.52u w=4u l=1u
+X36 a_n856_n400# CKB a_4344_n400# VSS nfet_03v3 ad=1.04p pd=4.52u as=1.04p ps=4.52u w=4u l=0.3u
+X37 a_n708_n400# OQB OI VSS nfet_03v3 ad=1.76p pd=8.88u as=1.04p ps=4.52u w=4u l=0.3u
+X38 a_4344_n400# OIB OI VSS nfet_03v3 ad=1.04p pd=4.52u as=1.04p ps=4.52u w=4u l=0.3u
+X39 a_4344_n7400# OQB OQ VSS nfet_03v3 ad=1.04p pd=4.52u as=1.04p ps=4.52u w=4u l=0.3u
+X40 OQ OQB a_4344_n7400# VSS nfet_03v3 ad=1.04p pd=4.52u as=1.04p ps=4.52u w=4u l=0.3u
+X41 OIB OQ a_n708_n400# VSS nfet_03v3 ad=1.04p pd=4.52u as=1.76p ps=8.88u w=4u l=0.3u
+X42 a_4344_n7400# OQB OQ VSS nfet_03v3 ad=1.04p pd=4.52u as=1.04p ps=4.52u w=4u l=0.3u
+X43 a_n708_n7400# OI OQ VSS nfet_03v3 ad=1.04p pd=4.52u as=1.04p ps=4.52u w=4u l=0.3u
+X44 OQB OQ a_4344_n7400# VSS nfet_03v3 ad=1.04p pd=4.52u as=1.04p ps=4.52u w=4u l=0.3u
+X45 OI OQB a_n708_n400# VSS nfet_03v3 ad=1.04p pd=4.52u as=1.04p ps=4.52u w=4u l=0.3u
+X46 a_n856_n400# CK a_n708_n400# VSS nfet_03v3 ad=1.76p pd=8.88u as=1.04p ps=4.52u w=4u l=0.3u
+X47 OIB OI a_4344_n400# VSS nfet_03v3 ad=1.04p pd=4.52u as=1.04p ps=4.52u w=4u l=0.3u
+X48 a_n856_n7400# CKB a_n708_n7400# VSS nfet_03v3 ad=1.04p pd=4.52u as=1.04p ps=4.52u w=4u l=0.3u
+X49 a_n708_n7400# CKB a_n856_n7400# VSS nfet_03v3 ad=1.04p pd=4.52u as=1.04p ps=4.52u w=4u l=0.3u
+X50 a_n856_n400# CKB a_4344_n400# VSS nfet_03v3 ad=1.04p pd=4.52u as=1.04p ps=4.52u w=4u l=0.3u
+X51 a_4344_n400# OIB OI VSS nfet_03v3 ad=1.04p pd=4.52u as=1.04p ps=4.52u w=4u l=0.3u
+X52 a_4344_n7400# CK a_n856_n7400# VSS nfet_03v3 ad=1.04p pd=4.52u as=1.04p ps=4.52u w=4u l=0.3u
+X53 a_n856_n7400# CK a_4344_n7400# VSS nfet_03v3 ad=1.76p pd=8.88u as=1.04p ps=4.52u w=4u l=0.3u
+X54 a_n708_n7400# CKB a_n856_n7400# VSS nfet_03v3 ad=1.04p pd=4.52u as=1.76p ps=8.88u w=4u l=0.3u
+X55 a_4344_n7400# OQ OQB VSS nfet_03v3 ad=1.04p pd=4.52u as=1.04p ps=4.52u w=4u l=0.3u
+X56 a_n856_n7400# IBIAS VSS VSS nfet_03v3 ad=1.04p pd=4.52u as=1.04p ps=4.52u w=4u l=1u
+X57 OQB OIB a_n708_n7400# VSS nfet_03v3 ad=1.04p pd=4.52u as=1.76p ps=8.88u w=4u l=0.3u
+X58 OQ OI a_n708_n7400# VSS nfet_03v3 ad=1.04p pd=4.52u as=1.76p ps=8.88u w=4u l=0.3u
+X59 a_n856_n400# IBIAS VSS VSS nfet_03v3 ad=1.04p pd=4.52u as=1.76p ps=8.88u w=4u l=1u
+X60 a_4344_n400# CKB a_n856_n400# VSS nfet_03v3 ad=1.04p pd=4.52u as=1.04p ps=4.52u w=4u l=0.3u
+X61 OQ OQB a_4344_n7400# VSS nfet_03v3 ad=1.04p pd=4.52u as=1.04p ps=4.52u w=4u l=0.3u
+X62 VSS IBIAS a_n856_n7400# VSS nfet_03v3 ad=1.04p pd=4.52u as=1.04p ps=4.52u w=4u l=1u
+X63 VSS IBIAS a_n856_n400# VSS nfet_03v3 ad=1.04p pd=4.52u as=1.04p ps=4.52u w=4u l=1u
+X64 OIB OI a_4344_n400# VSS nfet_03v3 ad=1.04p pd=4.52u as=1.04p ps=4.52u w=4u l=0.3u
+X65 a_4344_n7400# OQB OQ VSS nfet_03v3 ad=1.76p pd=8.88u as=1.04p ps=4.52u w=4u l=0.3u
+X66 OQ OI a_n708_n7400# VSS nfet_03v3 ad=1.04p pd=4.52u as=1.04p ps=4.52u w=4u l=0.3u
+X67 a_n708_n7400# OIB OQB VSS nfet_03v3 ad=1.04p pd=4.52u as=1.04p ps=4.52u w=4u l=0.3u
+X68 a_n856_n400# CKB a_4344_n400# VSS nfet_03v3 ad=1.04p pd=4.52u as=1.04p ps=4.52u w=4u l=0.3u
+X69 IBIAS IBIAS VSS VSS nfet_03v3 ad=1.76p pd=8.88u as=1.76p ps=8.88u w=4u l=1u
+X70 OIB OQ a_n708_n400# VSS nfet_03v3 ad=1.04p pd=4.52u as=1.04p ps=4.52u w=4u l=0.3u
+X71 a_4344_n7400# CK a_n856_n7400# VSS nfet_03v3 ad=1.04p pd=4.52u as=1.04p ps=4.52u w=4u l=0.3u
+X72 a_n708_n400# OQB OI VSS nfet_03v3 ad=1.04p pd=4.52u as=1.04p ps=4.52u w=4u l=0.3u
+X73 a_n856_n7400# CKB a_n708_n7400# VSS nfet_03v3 ad=1.76p pd=8.88u as=1.04p ps=4.52u w=4u l=0.3u
+X74 a_4344_n400# OI OIB VSS nfet_03v3 ad=1.04p pd=4.52u as=1.04p ps=4.52u w=4u l=0.3u
+X75 a_4344_n400# CKB a_n856_n400# VSS nfet_03v3 ad=1.04p pd=4.52u as=1.76p ps=8.88u w=4u l=0.3u
+X76 OI OIB a_4344_n400# VSS nfet_03v3 ad=1.04p pd=4.52u as=1.04p ps=4.52u w=4u l=0.3u
+X77 OQB OQ a_4344_n7400# VSS nfet_03v3 ad=1.04p pd=4.52u as=1.04p ps=4.52u w=4u l=0.3u
+X78 a_n856_n7400# CK a_4344_n7400# VSS nfet_03v3 ad=1.04p pd=4.52u as=1.04p ps=4.52u w=4u l=0.3u
+X79 OQ OQB a_4344_n7400# VSS nfet_03v3 ad=1.04p pd=4.52u as=1.04p ps=4.52u w=4u l=0.3u
+X80 a_n856_n400# CKB a_4344_n400# VSS nfet_03v3 ad=1.76p pd=8.88u as=1.04p ps=4.52u w=4u l=0.3u
+X81 a_4344_n400# OIB OI VSS nfet_03v3 ad=1.04p pd=4.52u as=1.04p ps=4.52u w=4u l=0.3u
+X82 a_n708_n400# OQB OI VSS nfet_03v3 ad=1.04p pd=4.52u as=1.04p ps=4.52u w=4u l=0.3u
+X83 VSS IBIAS a_n856_n400# VSS nfet_03v3 ad=1.04p pd=4.52u as=1.04p ps=4.52u w=4u l=1u
+X84 a_n708_n400# CK a_n856_n400# VSS nfet_03v3 ad=1.04p pd=4.52u as=1.04p ps=4.52u w=4u l=0.3u
+X85 VSS IBIAS a_n856_n7400# VSS nfet_03v3 ad=1.04p pd=4.52u as=1.04p ps=4.52u w=4u l=1u
+X86 a_4344_n400# OI OIB VSS nfet_03v3 ad=1.04p pd=4.52u as=1.04p ps=4.52u w=4u l=0.3u
+X87 a_n708_n7400# OI OQ VSS nfet_03v3 ad=1.04p pd=4.52u as=1.04p ps=4.52u w=4u l=0.3u
+X88 a_n708_n7400# OIB OQB VSS nfet_03v3 ad=1.04p pd=4.52u as=1.04p ps=4.52u w=4u l=0.3u
+X89 a_n708_n400# OQ OIB VSS nfet_03v3 ad=1.76p pd=8.88u as=1.04p ps=4.52u w=4u l=0.3u
+X90 OI OIB a_4344_n400# VSS nfet_03v3 ad=1.04p pd=4.52u as=1.76p ps=8.88u w=4u l=0.3u
+X91 VDD OIB VSS ppolyf_u_1k r_width=10u r_length=3u
+X92 a_n708_n7400# OIB OQB VSS nfet_03v3 ad=1.04p pd=4.52u as=1.04p ps=4.52u w=4u l=0.3u
+X93 OQB OIB a_n708_n7400# VSS nfet_03v3 ad=1.04p pd=4.52u as=1.04p ps=4.52u w=4u l=0.3u
+X94 a_n856_n7400# IBIAS VSS VSS nfet_03v3 ad=1.04p pd=4.52u as=1.04p ps=4.52u w=4u l=1u
+X95 a_n856_n400# IBIAS VSS VSS nfet_03v3 ad=1.04p pd=4.52u as=1.04p ps=4.52u w=4u l=1u
+X96 a_n708_n7400# OI OQ VSS nfet_03v3 ad=1.04p pd=4.52u as=1.04p ps=4.52u w=4u l=0.3u
+X97 OI OQB a_n708_n400# VSS nfet_03v3 ad=1.04p pd=4.52u as=1.04p ps=4.52u w=4u l=0.3u
+X98 a_n708_n400# CK a_n856_n400# VSS nfet_03v3 ad=1.04p pd=4.52u as=1.76p ps=8.88u w=4u l=0.3u
+X99 OQB OQ a_4344_n7400# VSS nfet_03v3 ad=1.04p pd=4.52u as=1.76p ps=8.88u w=4u l=0.3u
+X100 VDD OQ VSS ppolyf_u_1k r_width=10u r_length=3u
+X101 a_4344_n400# OIB OI VSS nfet_03v3 ad=1.76p pd=8.88u as=1.04p ps=4.52u w=4u l=0.3u
+X102 VDD OI VSS ppolyf_u_1k r_width=10u r_length=3u
+X103 a_n856_n400# CK a_n708_n400# VSS nfet_03v3 ad=1.04p pd=4.52u as=1.04p ps=4.52u w=4u l=0.3u
+X104 OQB OIB a_n708_n7400# VSS nfet_03v3 ad=1.04p pd=4.52u as=1.04p ps=4.52u w=4u l=0.3u
+X105 a_n708_n7400# OIB OQB VSS nfet_03v3 ad=1.76p pd=8.88u as=1.04p ps=4.52u w=4u l=0.3u
+X106 OIB OQ a_n708_n400# VSS nfet_03v3 ad=1.04p pd=4.52u as=1.04p ps=4.52u w=4u l=0.3u
+X107 a_n708_n400# OQB OI VSS nfet_03v3 ad=1.04p pd=4.52u as=1.04p ps=4.52u w=4u l=0.3u
+X108 a_n856_n400# CK a_n708_n400# VSS nfet_03v3 ad=1.04p pd=4.52u as=1.04p ps=4.52u w=4u l=0.3u
+X109 a_n708_n400# CK a_n856_n400# VSS nfet_03v3 ad=1.04p pd=4.52u as=1.04p ps=4.52u w=4u l=0.3u
+X110 a_4344_n7400# CK a_n856_n7400# VSS nfet_03v3 ad=1.04p pd=4.52u as=1.04p ps=4.52u w=4u l=0.3u
+X111 a_n708_n7400# CKB a_n856_n7400# VSS nfet_03v3 ad=1.04p pd=4.52u as=1.04p ps=4.52u w=4u l=0.3u
+X112 a_4344_n400# OI OIB VSS nfet_03v3 ad=1.04p pd=4.52u as=1.04p ps=4.52u w=4u l=0.3u
+X113 a_4344_n7400# OQB OQ VSS nfet_03v3 ad=1.04p pd=4.52u as=1.04p ps=4.52u w=4u l=0.3u
+X114 a_n856_n7400# IBIAS VSS VSS nfet_03v3 ad=1.04p pd=4.52u as=1.76p ps=8.88u w=4u l=1u
+X115 a_n708_n400# CK a_n856_n400# VSS nfet_03v3 ad=1.04p pd=4.52u as=1.04p ps=4.52u w=4u l=0.3u
+X116 OIB OI a_4344_n400# VSS nfet_03v3 ad=1.04p pd=4.52u as=1.04p ps=4.52u w=4u l=0.3u
+X117 OIB OI a_4344_n400# VSS nfet_03v3 ad=1.04p pd=4.52u as=1.04p ps=4.52u w=4u l=0.3u
+X118 OQ OQB a_4344_n7400# VSS nfet_03v3 ad=1.04p pd=4.52u as=1.04p ps=4.52u w=4u l=0.3u
+X119 a_n856_n400# IBIAS VSS VSS nfet_03v3 ad=1.04p pd=4.52u as=1.04p ps=4.52u w=4u l=1u
+X120 a_n708_n7400# OI OQ VSS nfet_03v3 ad=1.04p pd=4.52u as=1.04p ps=4.52u w=4u l=0.3u
+X121 OQ OI a_n708_n7400# VSS nfet_03v3 ad=1.04p pd=4.52u as=1.04p ps=4.52u w=4u l=0.3u
+X122 a_n856_n7400# IBIAS VSS VSS nfet_03v3 ad=1.04p pd=4.52u as=1.04p ps=4.52u w=4u l=1u
+X123 OQB OIB a_n708_n7400# VSS nfet_03v3 ad=1.04p pd=4.52u as=1.04p ps=4.52u w=4u l=0.3u
+X124 a_4344_n7400# OQ OQB VSS nfet_03v3 ad=1.04p pd=4.52u as=1.04p ps=4.52u w=4u l=0.3u
+X125 a_4344_n7400# CK a_n856_n7400# VSS nfet_03v3 ad=1.04p pd=4.52u as=1.76p ps=8.88u w=4u l=0.3u
+X126 a_4344_n400# OI OIB VSS nfet_03v3 ad=1.04p pd=4.52u as=1.04p ps=4.52u w=4u l=0.3u
+X127 VSS IBIAS a_n856_n7400# VSS nfet_03v3 ad=1.76p pd=8.88u as=1.04p ps=4.52u w=4u l=1u
+X128 a_4344_n400# CKB a_n856_n400# VSS nfet_03v3 ad=1.04p pd=4.52u as=1.04p ps=4.52u w=4u l=0.3u
+X129 OI OQB a_n708_n400# VSS nfet_03v3 ad=1.04p pd=4.52u as=1.04p ps=4.52u w=4u l=0.3u
+X130 a_n708_n7400# CKB a_n856_n7400# VSS nfet_03v3 ad=1.04p pd=4.52u as=1.04p ps=4.52u w=4u l=0.3u
+X131 a_n856_n7400# IBIAS VSS VSS nfet_03v3 ad=1.04p pd=4.52u as=1.04p ps=4.52u w=4u l=1u
+X132 OQ OI a_n708_n7400# VSS nfet_03v3 ad=1.04p pd=4.52u as=1.04p ps=4.52u w=4u l=0.3u
+X133 a_n708_n7400# CKB a_n856_n7400# VSS nfet_03v3 ad=1.04p pd=4.52u as=1.04p ps=4.52u w=4u l=0.3u
+X134 VSS IBIAS a_n856_n400# VSS nfet_03v3 ad=1.04p pd=4.52u as=1.04p ps=4.52u w=4u l=1u
+X135 a_n708_n7400# OI OQ VSS nfet_03v3 ad=1.76p pd=8.88u as=1.04p ps=4.52u w=4u l=0.3u
+X136 a_n856_n400# CK a_n708_n400# VSS nfet_03v3 ad=1.04p pd=4.52u as=1.04p ps=4.52u w=4u l=0.3u
+X137 a_n708_n400# OQ OIB VSS nfet_03v3 ad=1.04p pd=4.52u as=1.04p ps=4.52u w=4u l=0.3u
+X138 a_4344_n7400# OQ OQB VSS nfet_03v3 ad=1.04p pd=4.52u as=1.04p ps=4.52u w=4u l=0.3u
+X139 VSS IBIAS a_n856_n7400# VSS nfet_03v3 ad=1.04p pd=4.52u as=1.04p ps=4.52u w=4u l=1u
+X140 a_n708_n400# OQB OI VSS nfet_03v3 ad=1.04p pd=4.52u as=1.04p ps=4.52u w=4u l=0.3u
+X141 OQB OQ a_4344_n7400# VSS nfet_03v3 ad=1.04p pd=4.52u as=1.04p ps=4.52u w=4u l=0.3u
+X142 OIB OI a_4344_n400# VSS nfet_03v3 ad=1.04p pd=4.52u as=1.76p ps=8.88u w=4u l=0.3u
+X143 a_4344_n7400# OQ OQB VSS nfet_03v3 ad=1.04p pd=4.52u as=1.04p ps=4.52u w=4u l=0.3u
+X144 OIB OQ a_n708_n400# VSS nfet_03v3 ad=1.04p pd=4.52u as=1.04p ps=4.52u w=4u l=0.3u
+.ends
+

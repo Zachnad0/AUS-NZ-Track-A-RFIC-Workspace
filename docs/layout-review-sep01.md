@@ -204,8 +204,14 @@ forgotten dummy would show as a count mismatch rather than be waived away. The s
 at 16 devices. This is documented in `docs/verification.md` §2.6.1 and is **not** a schematic
 error, but any future flow that netlists `ibias_gen_v1.sch` directly must add the same dummy.
 
-**`ibias_gen_v1` has no committed GDS.** It exists as `team_src/magic/ibias_gen_v1.mag` and is
-streamed into `chip_top` from there. This is an inconsistency with the other four blocks — see §6.
+**`gds/ibias_gen_v1.gds` is committed** (added at `4156997`, "needed for top-level submission"),
+alongside `team_src/magic/ibias_gen_v1.mag`. All five blocks have a committed GDS.
+
+> **Correction, 2026-09-01.** An earlier revision of this document said `ibias_gen_v1` had no
+> committed GDS. That was wrong. It came from `docs/tracking.md` §5, where the line
+> "ibias_gen_v1.mag is flat, no committed GDS" is dated 2026-08-18 and was true when written —
+> the GDS landed afterwards at `4156997`. Verified now with `git ls-files gds/`, which lists
+> all thirteen tracked GDS files including `gds/ibias_gen_v1.gds`.
 
 ### 1.4 `DIV2_QUAD_v1` — CML ÷2 quadrature divider (full-custom, the RF core)
 
@@ -834,7 +840,7 @@ filter for **KVCO = −1.1 GHz/V**; and **apply the UP/DOWN sense inversion** re
 |---|---|---|---|---|---|---|
 | `PFD_lib` | ✅ | 0 | 0 | ✅ | ✅ 3-region + corners | PEX only (caps); no re-sim |
 | `CP_v1` | ✅ | 0 | 0 | ✅ | ✅ DC + transient + PFD pair | ❌ none |
-| `ibias_gen_v1` | ✅ (no committed GDS) | 0 | 0 | ✅ | ✅ S1–S7 + PSRR + corners | ❌ none |
+| `ibias_gen_v1` | ✅ | 0 | 0 | ✅ | ✅ S1–S7 + PSRR + corners | ❌ none |
 | `DIV2_QUAD_v1` | ✅ | 0 | 0 | ✅ | ✅ full band + PVT + I/Q | ❌ none |
 | `vco_v1` | ✅ | 0 | 168 (W4 waiver) | ✅ | ✅ f–VTUNE + PVT + startup | ❌ none; re-sim as *drawn schematic* only |
 | `vco_inductor_v2` | ✅ | 0 | 0 | waiver W3 (black box) | analytical (Mohan) | ❌ EM solve deferred |
@@ -911,8 +917,10 @@ Everything in this list is a real absence. None of it is mitigated by anything i
     KLayout reports present are from the LibreLane `PFD_lib` run. Every other KLayout result in
     this document is quoted from the project documentation, not from a report file a reviewer can
     open. (The runs are reproducible in ~17 s via `klayout_signoff.py`.)
-18. **`ibias_gen_v1` has no committed GDS** — it lives only as `team_src/magic/ibias_gen_v1.mag`
-    and is streamed into `chip_top` from there, unlike the other four blocks.
+18. ~~`ibias_gen_v1` has no committed GDS.~~ **WITHDRAWN 2026-09-01 — this was wrong.**
+    `gds/ibias_gen_v1.gds` is tracked (added at `4156997`); `git ls-files gds/` lists all
+    thirteen GDS files. The claim was inherited from a `docs/tracking.md` §5 line dated
+    2026-08-18 that the later commit made stale. Nothing was missing; the gap did not exist.
 19. **The inductor EM solve is deferred.** `team_src/sim/ind_em/ind_em.py` (openEMS) builds the
     real gf180mcuD metal4/via4/metal5 stack at true z-heights and the FDTD engine runs
     (32 k cells), but the full 3-D solve is ~50 min because dt is capped by the 0.55 µm metal4
@@ -960,6 +968,9 @@ If time is short, these four things carry the most information:
 
 | Topic | Document |
 |---|---|
+| **Device declaration — every PDK model, count, where used** | `signoff/devices.md` |
+| **Top-level LVS report** (`chip_top`) | `signoff/lvs/lvs.report` |
+| **Extracted netlists, chip and per block** | `signoff/lvs/chip_top.lvs.spice`, `signoff/lvs/blocks/` |
 | Historical per-block review notes (not superseded) | `docs/layout-review-aug14.md` |
 | Full verification log, all measured numbers | `docs/verification.md` |
 | Scope freeze, tiers, frequency plan, area | `docs/scope.md` |
