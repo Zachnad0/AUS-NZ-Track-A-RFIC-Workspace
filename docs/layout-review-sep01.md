@@ -769,15 +769,91 @@ meter split into the IP converter's return). Against those currents:
 | M2 collector plate | 7.5 µm | ~2.3–2.9 mA/µm |
 | Per-converter VSS ties | 0.28–0.56 µm | ~5.3–10.6 mA/µm |
 
-**The comparison base must be stated plainly: the open gf180mcuD PDK ships no EM current-density
-deck at all** — confirmed by search, there is no EM rule in any DRC or LVS deck. There is
-therefore **no PDK limit to cite**, and the figures above are compared against an **industry rule
-of thumb for ~0.5 µm Al (~1 mA/µm on M1–M4, ~2 mA/µm on thick M5)**, *not* a value read from the
-GF design manual, which was not consulted. On that basis every conductor above is over. The fix
-is scoped (widen the `ib_conv_v1` bus to ~3 µm and re-verify the cell and all four instances;
-stack the plate on M2/M3/M4 to ~22 µm equivalent; widen the four top ties to ~3 µm; re-gate) and
-**deliberately deferred**. It is a reliability item; it does not affect the DRC/LVS/port
-sign-off. The real per-layer limits must come from the GF manual before signoff.
+**The comparison base must be stated plainly, because it is not a foundry rule.** The open
+gf180mcuD PDK **ships no EM current-density deck at all** — confirmed by search, there is no EM
+rule in any DRC or LVS deck. There is therefore **no PDK limit to cite**. The figures above are
+compared against an **industry rule of thumb for ~0.5 µm Al (~1 mA/µm on M1–M4, ~2 mA/µm on
+thick M5)**, hard-coded at `team_src/magic/phase5/em_sizing.py:1–2`. It is **not** a value read
+from the GF design manual — that manual **has not been consulted**, and the real per-layer limits
+must come from it before signoff. On the rule-of-thumb basis every conductor above is over.
+
+**EM is a wear-out mechanism, not a functional failure.** Nothing here stops the part working at
+power-up; it bounds service life at the stated current. That is why it does not gate DRC, LVS or
+the port list, and why it is carried as a reliability item rather than a blocker.
+
+### The bus fix: verified at cell level, and NOT in the shipped GDS
+
+**Measured truth first.** `ib_conv_v1.mag` is `magscale 1 10` = **200 internal units/µm** (not the
+100 iu/µm that `chip_top.mag`'s `magscale 1 5` uses — mixing the two is an easy and material
+error). Measured on the taped-out `gds/DIV2_QUAD_v1.gds`: cell `ib_conv_v1` is 54.860 µm wide,
+giving 10,972 iu ÷ 54.860 µm = **200.000 iu/µm** exactly, and the leftmost metal1 edge sits at
+−5.300 µm = −1060 iu, the bus spine. **The bus is 120 iu ÷ 200 = 0.60 µm and the density is
+2.96 mA ÷ 0.60 µm = 4.93 mA/µm.** The figures recorded in this document and in
+`docs/layout-review-aug14.md` are **correct**.
+
+**A fix exists and is verified, at cell level only.** `ib_conv_v1.tcl:117–119`, `hw` 60 → 300,
+i.e. **0.60 → 3.00 µm**, giving **0.987 mA/µm**. Compensation is applied on the **width axis, not
+the x-ends**: only the bottom edge threatens the cell bbox (the I3 hseg and the vseg both sit at
+y = −2430, bottom edge −2490 against a −2600 floor, and symmetric growth pushes it to −2730,
+growing the cell 0.65 µm — measured, not predicted), so those y anchors shift up by `hw − 60` to
+pin the bottom edge where it was. Each widened wire still fully covers its original footprint, so
+every `CVSS` tie is preserved. Pulling the x-ends in instead would invert the 0.835 µm segment at
+line 117 and drag the runs off their inverter anchors at x = 4800/6400/8000; x needs no
+compensation (−1300 against a −1360 cell edge). Result:
+
+| Check | Result |
+|---|---|
+| Magic DRC | **0** |
+| bbox, committed cell | `-1360 -2600 9612 14564` = −6.800 −13.000 … 48.060 72.820 µm |
+| bbox, rebuilt cell | `-1360 -2600 9612 14564` — **byte-identical in both axes** |
+| Current density | **4.93 → 0.987 mA/µm** |
+
+The patch is retained at `scratchpad/div2-vss-widen.patch`. **It has deliberately not been applied
+to the repository.**
+
+### OUTSTANDING: `ib_div2.tcl` does not reproduce the signed-off `DIV2_QUAD_v1`
+
+**This is why the fix is not in the shipped GDS, and it is an open item in its own right.**
+Rebuilding `DIV2_QUAD_v1` from `team_src/magic/phase5/ib_div2.tcl` produces a cell of
+**233.28 × 136.86 µm** against the signed-off **237.36 × 174.17 µm** (`47472 x 34834 iu`, the
+figure recorded in commit `1ba0838` when the block was signed off) — **4.08 µm narrower and
+37.31 µm shorter**.
+
+**The gap is pre-existing and unrelated to the EM work.** Proven by a control: the widening was
+stashed, DIV2 was rebuilt from entirely unmodified sources, and magic reported the same
+`-12592 -19728 34064 7644` bbox. It is not missing gencell children either —
+`DIV2_QUAD_v1.mag` references only `ib_conv_v1` (×4), which is present on disk. Commit `1ba0838`
+records a rename from `ib_div2`, so the signed-off cell most likely carries manual post-build
+steps that were never captured in the script.
+
+**Consequence, stated without softening:** the largest analog block on the die cannot currently be
+regenerated from its committed generator. The shipped GDS is the signed-off artifact and is
+unaffected — DRC 0, LVS match uniquely, gates green — but **any** future change to DIV2, including
+this EM fix, is blocked until the gap is closed. Chasing it was explicitly out of scope for this
+pass.
+
+**Standing rule adopted 2026-09-01 as a result:** never `gds write` over a committed artifact.
+Write rebuilds to a scratch path and compare. (This was learned the hard way in this pass —
+`gds/DIV2_QUAD_v1.gds` was briefly overwritten with the short rebuild and restored from git; every
+signed-off artifact was verified byte-identical to `HEAD` afterwards.)
+
+### The 7.5 µm M2 collector plate cannot be fixed by widening
+
+Confirmed in source at `ib_div2.tcl:177`:
+`box values [$xbias-600] [$ybias-2500] [$xbias+6300] [$ybias-1000]` = 1500 iu = **7.50 µm** tall.
+Measured layer margins inside `DIV2_QUAD_v1` (bbox −65.000 −105.000 … 172.360 69.170):
+
+| layer | left | bottom | right | top |
+|---|---:|---:|---:|---:|
+| metal1 | 0.185 | 0.550 | 0.185 | 0.200 |
+| **metal2** | 1.970 | **3.860** | 1.970 | 0.500 |
+| metal3 | 1.970 | 6.360 | 1.970 | 0.690 |
+
+**Metal2's bottom margin is 3.860 µm against a ~22 µm target.** The plate cannot grow into the
+space available; reaching the target needs the **M3/M4 stacking** the fix scope itself proposes,
+which is a different and larger change and is **out of scope for this pass**. The four top ties
+(0.28 µm at `ib_div2.tcl:275`/`:309`, 0.56 µm at `:308`/`:342`) were left untouched for the same
+reason — they are anchored to converter pin positions and share the DIV2 reproducibility blocker.
 
 A related chip-level EM problem **was** fixed: the DIV2 VDD chip tap was a single 0.28 µm M4
 collector carrying all ~22.4 mA at **80 mA/µm**. It is now a **40-point tap on a 3 µm pitch**
@@ -882,9 +958,25 @@ Everything in this list is a real absence. None of it is mitigated by anything i
 9. **Antenna checking exists only for `PFD_lib`** (LibreLane, 0 violations / 0 diodes). It has
    never been run on the custom blocks or on `chip_top`.
 10. **No electromigration deck exists in the open gf180mcuD PDK** — not a missing run, an absent
-    rule set. The DIV2 VSS numbers are compared against an industry rule of thumb, not a foundry
-    limit, and on that basis **the DIV2 internal VSS network is over-limit and the fix is
-    deferred**. Real per-layer limits must come from the GF design manual before signoff.
+    rule set. The DIV2 VSS numbers are compared against an **industry rule of thumb** hard-coded
+    at `em_sizing.py:1–2`, **not** a foundry limit; the GF design manual has not been consulted
+    and real per-layer limits must come from it before signoff. On that basis **the DIV2 internal
+    VSS network is over-limit**: the bus is 0.60 µm carrying 2.96 mA = **4.93 mA/µm** (measured
+    from the taped-out GDS at 200 iu/µm; the recorded figures are correct). EM is a **wear-out**
+    mechanism, not a functional failure — it bounds service life, and does not gate DRC or LVS.
+    A fix is **verified at cell level** (0.60 → 3.00 µm, DRC 0, bbox byte-identical, 0.987 mA/µm,
+    patch at `scratchpad/div2-vss-widen.patch`) but is **NOT in the shipped GDS** — see item 10a.
+10a. **`ib_div2.tcl` does not reproduce the signed-off `DIV2_QUAD_v1`, and this blocks any future
+    DIV2 change.** A rebuild from committed sources gives **233.28 × 136.86 µm** against the
+    signed-off **237.36 × 174.17 µm** (`47472 x 34834 iu`, commit `1ba0838`) — 4.08 µm narrower,
+    37.31 µm shorter. Proven **pre-existing** by a stash control: the same bbox results from
+    entirely unmodified sources. Not missing gencell children. The shipped GDS is the signed-off
+    artifact and is unaffected, but the largest analog block on the die **cannot currently be
+    regenerated from its generator**. Deliberately not chased in this pass.
+10b. **The 7.5 µm M2 collector plate cannot be fixed by widening** — metal2's bottom margin inside
+    `DIV2_QUAD_v1` is **3.860 µm** against a ~22 µm target. It needs M3/M4 stacking, out of scope
+    for this pass. The four top ties (0.28/0.56 µm) are untouched for the same reason and share
+    the item-10a blocker.
 11. **No ESD simulation of any kind.** No HBM, no CDM. The two built clamps are verified
     structurally (DRC + LVS inside `chip_top`) only.
 12. **Only 2 of 7 analog pins carry a secondary ESD clamp**, and whether that is complete rests
