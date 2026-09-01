@@ -64,6 +64,11 @@ An **integer-N PLL**: reference in → PFD → charge pump → *off-chip* loop f
 CML ÷2 quadrature divider → back to the PFD, with three of the four divider phases brought out
 as monitor outputs. Chip-level bias generator on board. Loop filter deliberately off-chip.
 
+> **That is the topology. It is not a loop that can lock** — the feedback divides by 2 and
+> nothing else, so lock would need a 2.4–2.5 GHz reference into a PFD that has no usable
+> phase-detection window at that rate. **See §4.6.1 before reading the loop as functional.**
+> Every block is individually verified and measurable; the die is an open-loop test chip.
+
 ```
  REF_IN ─▶ PFD_lib ─▶ CP_v1 ─▶ CP_OUT ─┤ off-chip R + C1‖C2 ├─▶ VTUNE ─▶ vco_v1 (4.13–6.35 GHz)
              ▲ FB                                                            │ VCO_OUTP/N
@@ -861,7 +866,126 @@ across DIV2's two VDD collectors, each a 0.4 µm M4 riser → via4 → 0.44 µm 
 bus. Peak per-wire is now ~0.97 mA/µm on the collector, 1.27–1.40 mA/µm on the riser stubs,
 1.9 mA/µm on the VDDD M5 bus. DRC 0, LVS match uniquely, and **DIV2 was not reopened**.
 
-### 4.6 System-level: what has and has not been verified as a loop
+### 4.6 System-level: the loop, and the constraint that governs it
+
+> **Read §4.6.1 first.** The feedback path divides by **2 and nothing else**, which fixes the
+> required reference at 2.4–2.5 GHz — a rate the PFD cannot detect at. That single fact
+> determines what closed-loop verification is and is not meaningful for this die, so it comes
+> before the rest.
+
+#### 4.6.1 N = 2: no usable phase-detection window at the required reference
+
+**Traced through `team_src/magic/chip_top_golden.spice`, not inferred:**
+
+```
+line 18:   x_pfd_lib       REF_IN I_P UP DOWN VDDD VSSA   PFD_lib
+line 35:   .subckt PFD_lib REF FB UP DOWN VDD VSS                 -> FB = I_P
+line 21:   x_div2_quad_v1  VCO_OUTP VCO_OUTN IB_DIV2 I_P I_N Q_P Q_N VDDD VSSA
+line 103:  .subckt DIV2_QUAD_v1 CK CKB IBIAS I_P I_N Q_P Q_N VDD VSS   -> I_P = VCO / 2
+```
+
+`PFD_lib`'s golden contains exactly 2× `dffrnq_1`, 1× `nand2_1`, 2× `inv_1`, 2× `tieh` —
+**no divider**. The only division in the loop is the CML ÷2. **N = 2.**
+
+At the ISM operating point the VCO runs 4.8–5.0 GHz, so `PFD.FB` sees **2.4–2.5 GHz** and lock
+requires `REF_IN` at the same rate. Against the PFD's measured reset pulse:
+
+| | Value | Source |
+|---|---|---|
+| Reference period at 2.45 GHz | **408.2 ps** | 1/2.45 GHz; cf. 416.7 ps at 2.4 GHz, `verification.md` §8.10 |
+| PFD minimum reset pulse, typ | **500 ps** | `verification.md` §2, `:120`, `:174` |
+| PFD minimum reset pulse, ff | **390 ps** | `verification.md` `:176` |
+| **reset ÷ period** | **1.22 typ · 0.96 ff** | |
+
+**There is no usable phase-detection window.** At typ the reset pulse is longer than the entire
+reference period. At the fast corner it is 96 % of it — the residual window is ~18 ps, smaller
+than the reset path's own corner spread, so the detector has no linear region to work in. This
+is a *rate* limit, not a marginal-timing question: the PFD is a 5 V standard-cell design
+deliberately slowed with 2× `inv_1` to widen its reset pulse (§4.1), and it was characterised at
+**1 MHz and 2 MHz** (`verification.md:111`, `:163`) — three orders of magnitude below the
+required rate.
+
+**There is no bench workaround.** `I_P → PFD.FB` is an **internal net** — `I_P` came off the pad
+list at `020852a` — so no external divider can be inserted into the feedback path. The loop is
+hard-wired at N = 2 with no access.
+
+**Consequence, stated plainly: what was taped out is an open-loop test chip.** Every block is
+individually measurable and the bench plan in `docs/pins.md` §7 — VTUNE from a DC source, f–VTUNE
+swept open-loop, quadrature measured off-chip — is exactly the right procedure for it. Closed-loop
+lock is not demonstrable on this die at any reference frequency. **This is not recorded anywhere
+else in the repository**; `docs/scope.md` marks "full integer-N PLL loop closure" as Tier-3
+stretch, never started, but does not identify the N = 2 consequence.
+
+**For a respin**, the fix is a feedback divide chain that brings FB into the PFD's proven range:
+at N = 2450 a 2.45 GHz VCO gives a 1 MHz reference, which is where the PFD is characterised.
+That is added silicon, not a wiring change.
+
+#### 4.6.2 Loop sign: the concrete UP/DOWN → CP-switch assignment
+
+**The measurement.** `PFD_CP_tb` (§4.2) swept static phase error with CP_OUT held at 1.65 V and
+measured average output current: **−9.97 µA at φ = −200 ns → +10.19 µA at φ = +200 ns**, linear
+through **+0.105 µA at φ = 0**. So REF-lead (φ > 0) drives **UP**, the CP **sources** current, and
+**VTUNE rises**.
+
+**The conflict.** `verification.md` §3.2 measures **KVCO ≈ −1.1 GHz/V** near ISM — tuning is
+inverted, so VTUNE↑ ⇒ f_VCO↓. But REF leading means the feedback edge is late, i.e. the VCO is
+**too slow** and needs f↑. The as-built direct wiring therefore drives **away** from lock.
+
+**The assignment required.** In `CP_v1` (`docs/layout-review-sep01.md` §1.2), `M_PSW` is the
+source (pull-up) switch gated from the `UP` port via the `M_INVP`/`M_INVN` inverter, and `M_NSW`
+is the sink (pull-down) switch on `DOWN`. The correction is to swap which detector output drives
+which switch:
+
+| net | as built (`chip_top_golden.spice:18,20`) | **required** |
+|---|---|---|
+| `PFD_lib.UP` | → `CP_v1.UP` → `M_PSW` (source) | → **`CP_v1.DOWN`** → `M_NSW` (sink) |
+| `PFD_lib.DOWN` | → `CP_v1.DOWN` → `M_NSW` (sink) | → **`CP_v1.UP`** → `M_PSW` (source) |
+
+This is a **chip-level net swap between two block ports** — it changes no block, only the routing
+between `x_pfd_lib` and `x_cp_v1` inside `chip_top`. Equivalently it can be absorbed off-chip by
+an inverting loop-filter stage, at the cost of making the filter active rather than passive.
+
+**Status: documented, NOT implemented.** No net was swapped and no cell rewired. It is moot for
+this die because of §4.6.1, and it is recorded so a respin does not rediscover it.
+
+#### 4.6.3 Lock-feasibility arithmetic, and what it rules in and out
+
+Inputs, all measured: **I_CP = 50 µA** (§4.2, confirmed by 10.19 µA at φ = 200 ns against 10.00 µA
+ideal), **|KVCO| = 1.1 GHz/V** (`verification.md` §3.2), **N = 2**.
+
+Loop gain constant for a type-II charge-pump PLL, K = I_CP·K_VCO/(2π·N) with K_VCO in rad/s/V:
+
+> K = (50 µA × 2π × 1.1 GHz/V) / (2π × 2) = **2.750 × 10⁴ A/(V·s)**
+
+**The filter values below are PROPOSED. No loop filter exists in the repository** — it is off-chip
+and unstarted, and nothing in `docs/` specifies R, C1 or C2. A standard passive lead-lag
+(R + C1 in series, both in parallel with C2) with C2 = C1/10 and the crossover at the zero/pole
+geometric mean gives a **56.4° phase margin**, and R = ω_c/K:
+
+| proposed f_c | R | C1 | C2 | verdict |
+|---|---:|---:|---:|---|
+| **1 MHz** | **228 Ω** | **2.31 nF** | **231 pF** | ordinary passives |
+| 10 MHz | 2.28 kΩ | 23.1 pF | 2.3 pF | realisable |
+| 100 MHz | 22.8 kΩ | 231 fF | 23.1 fF | C2 is **38× smaller** than the 875 fF pad |
+| 245 MHz (F_ref/10) | 56.0 kΩ | 38.5 fF | 3.8 fF | C2 is **227× smaller** than the pad |
+
+**What this rules in:** at any sane loop bandwidth the filter is unremarkable — R ≈ 228 Ω,
+C1 ≈ 2.31 nF, C2 ≈ 231 pF at 1 MHz are ordinary board components. **The loop filter is not the
+obstacle, and the KVCO/I_CP/N combination is not the obstacle.**
+
+**What this rules out:** pushing f_c toward the conventional F_ref/10 for a 2.45 GHz reference
+drives C2 below the **875 fF** pad capacitance (`verification.md` §8.10) by two orders of
+magnitude, so the filter would be defined by pad and board parasitics rather than by its own
+components.
+
+**The binding constraint is neither** — it is §4.6.1. The arithmetic is recorded because it is
+what a bench engineer needs for a respin, and because it demonstrates that the loop's *analogue*
+design is sound; only the detector rate is not.
+
+---
+
+### 4.6.4 What has and has not been verified as a loop
+
 
 **There is no closed-loop PLL simulation. None. This is the single largest gap in the
 verification set and it is stated first, not last.** A search of all of `docs/*.md` for
@@ -931,15 +1055,26 @@ Everything in this list is a real absence. None of it is mitigated by anything i
 
 **System / circuit verification**
 
-1. **No closed-loop PLL simulation exists.** No lock time, no lock range, no loop bandwidth, no
-   phase margin, no closed-loop jitter, no closed-loop spur figure. The loop has never been
-   simulated as a loop.
+1. **The loop cannot lock as taped out, and no closed-loop simulation exists.** The feedback
+   path divides by **2 and nothing else** (§4.6.1), fixing the required reference at
+   2.4–2.5 GHz, where the PFD's reset pulse is **1.22× the period at typ and 0.96× at ff** —
+   **no usable phase-detection window**. `I_P → PFD.FB` is internal, so no external divider can
+   be inserted; there is no bench workaround. **What was taped out is an open-loop test chip.**
+   Separately and consequently: no lock time, no lock range, no loop bandwidth, no phase margin,
+   no closed-loop jitter or spur figure — the loop has never been simulated as a loop. A respin
+   needs a feedback divide chain (N ≈ 2450 for a 1 MHz reference), which is added silicon.
 2. **No phase noise.** ngspice has no PSS or harmonic-balance engine for autonomous oscillators.
    This is closed as *not obtainable with this toolchain*, not as *done*. It requires a
    PSS-capable simulator at signoff.
-3. **The loop-sign inversion is documented but not implemented.** KVCO < 0 means the direct
-   UP→UP / DOWN→DOWN wiring drives away from lock. Nothing has been rewired; the correction is
-   deferred to the off-chip filter/bench.
+3. **The loop-sign inversion is specified but not implemented.** KVCO ≈ −1.1 GHz/V means the
+   as-built direct UP→UP / DOWN→DOWN wiring drives **away** from lock. §4.6.2 now states the
+   required correction concretely — `PFD_lib.UP → CP_v1.DOWN` and `PFD_lib.DOWN → CP_v1.UP`, a
+   chip-level net swap between two block ports that changes no block. **Nothing has been
+   swapped or rewired.** Moot for this die given item 1, recorded for a respin.
+3a. **The loop filter does not exist.** It is off-chip and unstarted; no R/C1/C2 appears anywhere
+   in the repository. §4.6.3 proposes values (228 Ω / 2.31 nF / 231 pF at f_c = 1 MHz, 56.4°
+   phase margin) from the measured I_CP, KVCO and N — they are **proposed, not designed or
+   verified**, and they show the filter is *not* the obstacle.
 4. **No Monte Carlo.** All mismatch figures (FF 0.004 % / TT 0.18 % / SS 0.94 %) are systematic
    process-tracking only. Random device mismatch is not captured anywhere in this design.
 5. **No loaded-ss CP steering measurement**, so there is no apples-to-apples dead-zone margin.
@@ -1041,7 +1176,7 @@ Everything in this list is a real absence. None of it is mitigated by anything i
 
 ## 7. What a reviewer should look at first
 
-If time is short, these four things carry the most information:
+If time is short, these five things carry the most information:
 
 1. **§2.3 — `I_P` removed from the pin list.** A 912 ps RC on the feedback path would have stopped
    the loop locking, and no gate in our flow could see it because the padring load lives outside
@@ -1049,10 +1184,16 @@ If time is short, these four things carry the most information:
 2. **§4.5 — the divider.** Full-band ÷2 with exact quadrature at every corner is the strongest
    result in the design, and the block was genuinely broken until an architectural fix on
    2026-08-12.
-3. **§6 items 1–3 — the loop.** Blocks are verified; the loop is not. Loop sign is a known
-   inversion that has not been applied.
-4. **§6 items 13–14 — density fill and the W4 waiver.** These are the two items most likely to
-   affect whether the design is accepted at final signoff, and neither is resolved.
+3. **§4.6.1 — N = 2, and no usable phase-detection window.** The most important thing in this
+   document. The feedback divides by 2 only, so lock needs a 2.4–2.5 GHz reference into a PFD
+   characterised at 1–2 MHz whose reset pulse is 1.22× that period at typ. This die is an
+   open-loop test chip, and that is not recorded anywhere else in the repository.
+4. **§6 items 10 / 10a — the DIV2 EM fix and why it is not shipped.** The fix is verified at
+   cell level (4.93 → 0.987 mA/µm, DRC 0, bbox byte-identical) but is **not in the GDS**,
+   because `ib_div2.tcl` does not reproduce the signed-off block. That reproducibility gap is
+   itself outstanding and blocks any future DIV2 change.
+5. **§6 items 13–14 — density fill and the W4 waiver.** The two items most likely to affect
+   whether the design is accepted at final signoff, and neither is resolved.
 
 ---
 
