@@ -2,11 +2,24 @@
 
 **IEEE SSCS Chipathon 2026 · GF180MCU (gf180mcuD) · issue [#143](https://github.com/sscs-ose/sscs-chipathon-2026/issues/143)**
 Prepared 2026-09-01 for **Caglar Ozdag**, at the request of `silicon-vlsi` on issue #143
-(2026-09-01 05:59 UTC). Repo state: branch `integration`, commit `423d148`.
+(2026-09-01 05:59 UTC), and revised the same day against Caglar's four tapeout-priority items.
+Repo state: branch `integration`, commit `25a50c0`.
 
 This document supersedes the 2026-08-10 review deck. **`docs/layout-review-aug14.md` is kept
 unchanged as the historical record** and is not superseded — it holds the per-block working
 notes this document summarises.
+
+**What changed in the 2026-09-01 revision**, against Caglar's four items:
+
+| Item | Outcome |
+|---|---|
+| **1 — loop sign + closed-loop lock** | §4.6.1–4.6.3. The loop **divides by 2 and nothing else**, so lock needs a 2.4–2.5 GHz reference where the PFD has **no usable phase-detection window**. Loop sign now stated as a concrete net swap; lock arithmetic done from measured I_CP/KVCO/N. **Closed-loop lock is not demonstrable on this die** — this is the most important finding in the document. |
+| **2 — DIV2 VSS current density** | §4.5. Fix **verified at cell level** (4.93 → 0.987 mA/µm, DRC 0, bbox byte-identical) but **not shipped**, because `ib_div2.tcl` does not reproduce the signed-off block. Plate cannot be widened. |
+| **3 — PEX / re-simulation** | §4.2.1. **Done for `CP_v1`** (R+C): parasitics move the UP/DOWN match by ≤ 0.076 pp. Full-chip PEX not attempted. |
+| **4 — density fill + nmoscap waiver** | §2.5 and §6 item 13. Waiver evidence assembled and an acceptance request drafted; **density fill not started** and its ownership is unresolved. |
+
+**Nothing in this revision changed the shipped GDS.** `gds/chip_top.gds` is byte-identical to
+the artifact all six gates were run against.
 
 **Reading rule used throughout.** Every number below is read from a named file. Where a check
 does not exist, the line says *not done* and the item is repeated in §6 (Gaps). §6 is not a
@@ -619,6 +632,49 @@ reviewer should treat this as an open design constraint carried into bring-up, n
 > topology's single-point zero-crossing with *ideal, perfectly equal* current sources. With the
 > real `ibias_gen_v1` substituted, the delivered figure is **~0.18 % at TT** — see §4.3.
 
+#### 4.2.1 Extracted UP/DOWN match — the CP's headline spec, now measured on the layout
+
+**This is the one place in the design where a matching claim has been lifted off the schematic.**
+R+C parasitic extraction of the signed-off `gds/CP_v1.gds` (38 devices, **265 parasitic caps,
+269 parasitic resistors**), swept against the *same* testbench on the schematic golden. Both
+decks drive `VGP`/`VGN` from **ideal 50 µA** sources, so the comparison isolates the layout
+contribution and nothing else. Artifacts: `signoff/pex/`.
+
+| CP_OUT | schematic | **extracted** | delta |
+|---:|---:|---:|---:|
+| 0.50 V | +1.675 % | +1.721 % | +0.047 pp |
+| 1.00 V | +0.717 % | +0.736 % | +0.019 pp |
+| **1.50 V** | −0.001 % | **+0.007 %** | +0.008 pp |
+| 2.00 V | −0.849 % | −0.848 % | +0.001 pp |
+| 2.50 V | −1.635 % | −1.638 % | −0.004 pp |
+
+Over all 49 points of the 0.4–2.8 V compliance window: schematic mean **−0.193 %**, extracted
+mean **−0.182 %**, and **extracted − schematic between −0.008 and +0.076 pp, mean +0.012 pp**.
+
+**The layout does not degrade the charge pump's current match.** At the zero crossing the
+extracted figure is **+0.007 %** against the schematic's −0.001 %.
+
+Two further results fall out of the same sweep:
+
+- **The ±2.3 % swing across the window is not a layout defect.** It appears in *both* columns,
+  independently reproducing `verification.md` §2.6 S5's finding that the ±2 % variation is the
+  CP's intrinsic output-impedance mismatch and is present identically with ideal sources.
+- **The historical "0.001 %" is now properly retired.** It was a schematic single-point
+  zero-crossing with ideal, perfectly equal sources. The extracted-layout equivalent at the same
+  point is **0.007 %**.
+
+**What this does not cover, and must not be read into it:** ideal bias, so the real generator's
+**uniform +0.18 %** (§4.3) is **additive and still schematic-level**; **TT only**, no corners;
+**no Monte Carlo**, so random device mismatch remains uncaptured everywhere in this project; and
+**DC only**, so it says nothing about the **+110 fC/cycle charge injection** (§4.2), which is a
+dynamic schematic-level flaw that layout does not fix.
+
+**A flow correction this turned up.** `ext2spice rthresh 0` **emits zero resistors on its own** —
+it only sets a reporting threshold. Real parasitic R needs `extract do resistance` → `ext2sim` →
+`extresist all` → `ext2spice extresist on`. On this cell that is the difference between **27 caps
+/ 0 R** and **265 caps / 269 R**. The earlier `PFD_lib` PEX (§4.1) uses the short form and is
+therefore **capacitance-only**.
+
 ### 4.3 `ibias_gen_v1`
 
 Decks: `team_src/sim/ibias/*.spice` (9 committed decks). Evidence: `docs/verification.md` §2.6
@@ -1039,7 +1095,7 @@ filter for **KVCO = −1.1 GHz/V**; and **apply the UP/DOWN sense inversion** re
 | Block | Layout | Magic DRC | KLayout DRC | LVS | Schematic sim | Layout-extracted sim |
 |---|---|---|---|---|---|---|
 | `PFD_lib` | ✅ | 0 | 0 | ✅ | ✅ 3-region + corners | PEX only (caps); no re-sim |
-| `CP_v1` | ✅ | 0 | 0 | ✅ | ✅ DC + transient + PFD pair | ❌ none |
+| `CP_v1` | ✅ | 0 | 0 | ✅ | ✅ DC + transient + PFD pair | ✅ **R+C PEX, UP/DOWN match (§4.2.1)** |
 | `ibias_gen_v1` | ✅ | 0 | 0 | ✅ | ✅ S1–S7 + PSRR + corners | ❌ none |
 | `DIV2_QUAD_v1` | ✅ | 0 | 0 | ✅ | ✅ full band + PVT + I/Q | ❌ none |
 | `vco_v1` | ✅ | 0 | 168 (W4 waiver) | ✅ | ✅ f–VTUNE + PVT + startup | ❌ none; re-sim as *drawn schematic* only |
@@ -1086,10 +1142,15 @@ Everything in this list is a real absence. None of it is mitigated by anything i
 
 **Physical verification**
 
-8. **PEX exists only for `PFD_lib`.** There is no parasitic extraction for `CP_v1`,
-   `DIV2_QUAD_v1`, `vco_v1`, `ibias_gen_v1` or `chip_top`. Consequently there is **no extracted
-   CP UP/DOWN current match** and **no extracted mirror ratio** — the CP matching claims are
-   schematic-level throughout.
+8. **PEX exists for `CP_v1` (R+C) and `PFD_lib` (capacitance-only), and nothing else.** There
+   is no parasitic extraction for `DIV2_QUAD_v1`, `vco_v1`, `ibias_gen_v1` or `chip_top`, and
+   full-chip PEX was not attempted. **The CP UP/DOWN current match is no longer
+   schematic-level** — see §4.2.1: R+C parasitics move it by at most **0.076 pp**. Two things
+   remain schematic-level and are additive to it: the real `ibias_gen_v1`'s **uniform +0.18 %**
+   contribution (`verification.md` §2.6 S5), and the mirror ratio. **Correction to the earlier
+   record:** the `PFD_lib` PEX is **capacitance-only** — `pex_pfd.tcl` uses `ext2spice rthresh 0`
+   without a resistance-extraction pass, which emits zero resistors. Adequate for the REF/FB
+   coupling question it was asked; not a full PEX, and it should not be described as one.
 9. **Antenna checking exists only for `PFD_lib`** (LibreLane, 0 violations / 0 diodes). It has
    never been run on the custom blocks or on `chip_top`.
 10. **No electromigration deck exists in the open gf180mcuD PDK** — not a missing run, an absent
@@ -1163,6 +1224,11 @@ Everything in this list is a real absence. None of it is mitigated by anything i
     `BLOCKAGES` section or the `metal2_blockages` key at all** — the Metal2 clearance is
     established by direct geometry query, not by an automated check that would catch a future
     blockage landing somewhere we do have metal.
+20a. ~~`ref_audit.py` does not gate the `signoff/*.md` files.~~ **CLOSED 2026-09-01** — it now
+    scans `signoff/**/*.md` (29 → 32 files) and keys heading sets by **relative path** rather
+    than basename, so the three `README.md` files cannot silently overwrite one another's
+    headings. Ambiguous basenames are reported rather than hidden. The extension immediately
+    caught a live defect in `signoff/pex/README.md`.
 
 **Process note**
 
@@ -1204,6 +1270,7 @@ If time is short, these five things carry the most information:
 | **Device declaration — every PDK model, count, where used** | `signoff/devices.md` |
 | **Top-level LVS report** (`chip_top`) | `signoff/lvs/lvs.report` |
 | **Extracted netlists, chip and per block** | `signoff/lvs/chip_top.lvs.spice`, `signoff/lvs/blocks/` |
+| **CP_v1 R+C PEX and the extracted UP/DOWN match** | `signoff/pex/` |
 | Historical per-block review notes (not superseded) | `docs/layout-review-aug14.md` |
 | Full verification log, all measured numbers | `docs/verification.md` |
 | Scope freeze, tiers, frequency plan, area | `docs/scope.md` |
