@@ -96,6 +96,12 @@ on a topology mismatch — netgen otherwise prints *"Circuits match uniquely"* w
 deltas separately, which would let a mis-sized device through. Every result above is
 property-error clean.
 
+> **Two different net counts exist for `chip_top`; the table above uses the LVS one.**
+> `verify_cp.sh`'s summary line prints **25 nets** — its own awk tally of distinct node tokens
+> in the extracted top-level subcircuit. The number netgen actually compared, and the one
+> quoted above, is **20 / 20** (`verify_work/chip_top.comp.out`). The 25 is informational and
+> is not gated on; the gate is DRC count, port count, the LVS verdict and property errors.
+
 ### 1.1 `PFD_lib` — phase/frequency detector
 
 Two `dffrnq_1` (async active-low-reset DFFs, D tied high via 2× `tieh`) plus a `nand2_1`
@@ -494,11 +500,38 @@ x 0–16, y 46.36–118.64. It clears the blockage's top edge (y = 21.0) by **25
 every layer found the **only** geometry anywhere below y = 25 µm on the whole die is the 0/0
 boundary rectangle itself. The south-west corner is empty.
 
-**Two caveats, stated rather than glossed.** (1) `blockages:` in the interface YAML is **still
-`[]`** — `metal2_blockages` is a *new* key, so any tool reading only `blockages` sees nothing.
-(2) The six-gate suite has **not** been re-run against a package that has a `BLOCKAGES` section,
-and `landing_check.py`'s default `DEF_ROOT` still points at the 08-27 directory. The pin geometry
-is byte-identical, so no landing can have moved — but that is an argument, not a gate result.
+**The suite was re-run against the 0831 package (2026-09-01) and is green.**
+`landing_check.py` was pointed at `project_defs_12pin_0831/` via its `PADFRAME_ROOT`
+environment override; its committed default still targets the 08-27 directory and was not
+changed. Results:
+
+| Gate | Result |
+|---|---|
+| `drc_boxset.tcl` + `drc_delta.py` | **PASS** — TOTAL 84, 252 boxes, **0 added / 0 removed**; GDS blob `3231333c68fa` identical both sides |
+| `klayout_signoff.py chip_top` | **PASS** — 84 `PL.5a_LV` + 84 `PL.5b_LV` = 168, all waived, no other rule violated |
+| `verify_cp.sh chip_top` | **PASS** — DRC 0, 10 devices, **11 ports**, match uniquely, 0 property errors |
+| `landing_check.py` (`PADFRAME_ROOT` → 0831) | **PASS** — all 14 targets, **0 nets failed to reach every finger**; worst-case overlaps unchanged |
+| `check_placement.py` | **PASS** — all five blocks reconcile, placement record matches the deliverable |
+| `lane_conflicts.py` | **0 net-vs-net same-layer overlaps** — see the note below |
+
+Every one of the 14 landing targets still covers every finger with the same worst-case overlap
+as before (e.g. VSSA 6/6 at 1.000 × 9.500 µm, REF_IN 1/1 at 0.380 × 1.000 µm), which is the
+expected result given the pin geometry is byte-identical — but it is now a measured result
+rather than an inference. **No tracked file changed during the run**; only the gitignored
+`team_src/magic/verify_work/` was regenerated.
+
+**One caveat about the sixth item, so the table is not read as more than it is.**
+`lane_conflicts.py` is **not a pass/fail gate** — it self-documents as *"Exit is advisory
+(printed); NOT the flow — an analysis harness"*, and it exits 0 unconditionally. Its
+substantive result is part (1), **net-vs-net same-layer overlap = 0**, which is the short
+detector. Part (2) compares each planned segment against the built chip on its own layer and
+reports 49 touches; those are each net finding **its own already-built geometry** (several are
+explicitly labelled `BUILT -- skipped (would self-detect)`), not conflicts.
+
+**And one caveat that the re-run does not remove:** `blockages:` in the interface YAML is
+**still `[]`** — `metal2_blockages` is a *new* key, so any tool reading only `blockages` sees
+nothing. None of our gates read either key; the Metal2 clearance in the table above was
+established by direct geometry query on the GDS, not by a tool consuming the blockage list.
 
 ---
 
@@ -886,8 +919,15 @@ Everything in this list is a real absence. None of it is mitigated by anything i
     thickness. There is **no measured Q and no measured SRF** — only L = 1.2 nH from the pi-model
     plus the Mohan cross-check. The fix is known (model the metals as conducting sheets to
     coarsen the z-mesh) and has not been run.
-20. **The six-gate suite has not been run against the 2026-08-31 package** (§3), and
-    `landing_check.py`'s default `DEF_ROOT` still points at the 08-27 directory.
+20. ~~The six-gate suite has not been run against the 2026-08-31 package.~~ **CLOSED
+    2026-09-01** — run and green against `project_defs_12pin_0831/`, results in §3.
+    `landing_check.py`'s committed default `DEF_ROOT` still points at the 08-27 directory by
+    design; the 0831 run used its `PADFRAME_ROOT` environment override. **What remains open is
+    narrower:** `lane_conflicts.py` is advisory and exits 0 unconditionally, so it is a
+    reporting tool rather than a sixth gate, and **no tool in the suite reads the DEF's
+    `BLOCKAGES` section or the `metal2_blockages` key at all** — the Metal2 clearance is
+    established by direct geometry query, not by an automated check that would catch a future
+    blockage landing somewhere we do have metal.
 
 **Process note**
 
