@@ -1,0 +1,26 @@
+* CP_v1 UP/DOWN current match -- sch
+* Bias per CP_v1_golden.spice header: external IBIAS SINKS I_CP from VGP and SOURCES I_CP
+* into VGN. I_CP = 50 uA (verification.md 2.1, confirmed 10.19 uA at phi=200ns vs 10.00 ideal).
+.include /foss/designs/AUS-NZ-integration/team_src/magic/CP_v1_golden.spice
+X1 UP DOWN CP_OUT VDD VSS VGP VGN CP_v1
+V_VDD  VDD 0 3.3
+V_VSS  VSS 0 0
+V_UP   UP  0 0
+V_DOWN DOWN 0 0
+V_OUT  CP_OUT 0 1.65
+I_PREF VGP 0 50u
+I_NREF 0 VGN 50u
+.include /foss/pdks/gf180mcuD/libs.tech/ngspice/design.ngspice
+.lib /foss/pdks/gf180mcuD/libs.tech/ngspice/sm141064.ngspice typical
+.control
+set filetype=ascii
+alter v_up = 3.3
+alter v_down = 0
+dc V_OUT 0.4 2.8 0.05
+wrdata cpsrc_sch.txt i(v_out)
+alter v_up = 0
+alter v_down = 3.3
+dc V_OUT 0.4 2.8 0.05
+wrdata cpsnk_sch.txt i(v_out)
+.endc
+.end

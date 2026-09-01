@@ -36,3 +36,7 @@ padframe/** -text
 # people's scripts, so a Windows checkout must not rewrite a byte. Note this must sit AFTER
 # the `*.spice text eol=lf` rule so the extracted .lvs.spice files are covered by this one.
 signoff/lvs/** -text
+
+# Extracted netlists and their raw sweep data: verbatim tool output, same reasoning as
+# signoff/lvs/** above.
+signoff/pex/** -text
