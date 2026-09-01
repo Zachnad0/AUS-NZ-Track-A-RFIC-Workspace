@@ -102,7 +102,21 @@ for dp, dns, fns in os.walk(ROOT):
     ALLREL.update(os.path.relpath(os.path.join(dp, f), ROOT).replace("\\", "/") for f in fns)
 
 files = sorted(glob.glob(os.path.join(ROOT, "docs", "*.md"))
-               + glob.glob(os.path.join(ROOT, "*.md")))
+               + glob.glob(os.path.join(ROOT, "*.md"))
+               + glob.glob(os.path.join(ROOT, "signoff", "**", "*.md"), recursive=True))
+
+
+def relkey(f):
+    return os.path.relpath(f, ROOT).replace("\\", "/")
+
+
+# KEYED BY RELATIVE PATH, NOT BASENAME. This used to be heads[os.path.basename(f)], which was
+# safe only while the scanned set held no duplicate basenames. Adding signoff/**/*.md brings in
+# signoff/lvs/README.md, whose basename collides with the root README.md -- and the collision
+# was SILENT: whichever sorted last simply overwrote the other's heading set, so a section ref
+# in one file would have been checked against the other file's headings. Both happen to have
+# zero numbered headings today, so the blast radius was nil, but it would have become a real
+# defect the moment either gained one. Path keys cannot collide.
 heads = {}
 for f in files:
     hs = set()
@@ -110,11 +124,23 @@ for f in files:
         m = HEAD.match(line)
         if m:
             hs.add(m.group(1))
-    heads[os.path.basename(f)] = hs
+    heads[relkey(f)] = hs
+
+# The DOCM fallback captures a BARE BASENAME ("verification.md"), so it needs a basename index.
+# Union the headings of every file sharing a basename: permissive on purpose, because the
+# alternative is a false DANGLING on a ref that names a file ambiguously. Ambiguous basenames
+# are reported below so the looseness stays visible instead of silent.
+heads_by_base = {}
+base_owners = {}
+for k, hs in heads.items():
+    b = os.path.basename(k)
+    heads_by_base.setdefault(b, set()).update(hs)
+    base_owners.setdefault(b, []).append(k)
+ambiguous = sorted(b for b, owners in base_owners.items() if len(owners) > 1)
 
 bad_sec, bad_path, nsec, npath, used = [], [], 0, 0, set()
 for f in files:
-    base = os.path.basename(f)
+    key = relkey(f)
     for i, line in enumerate(io.open(f, encoding="utf-8", errors="replace"), 1):
         if line.lstrip().startswith("#"):
             continue                              # a heading is not a reference
@@ -123,15 +149,15 @@ for f in files:
         # good refs in phase8-padframe-plan.md into false positives purely because the line
         # happened to name analysis/README.md.
         dm = DOCM.search(line)
-        alt = dm.group(1) if dm and dm.group(1) in heads else None
+        alt = dm.group(1) if dm and dm.group(1) in heads_by_base else None
         for m in SEC.finditer(line):
             for n in expand(m.group(1), m.group(2)):
                 nsec += 1
-                if n in heads.get(base, ()):
+                if n in heads.get(key, ()):
                     continue
-                if alt and n in heads.get(alt, ()):
+                if alt and n in heads_by_base.get(alt, ()):
                     continue
-                bad_sec.append((base, i, n, base if not alt else base + " or " + alt))
+                bad_sec.append((key, i, n, key if not alt else key + " or " + alt))
         for m in PATH.finditer(line):
             rel = m.group(1); npath += 1
             if os.path.exists(os.path.join(ROOT, rel)):
@@ -145,10 +171,13 @@ for f in files:
             if rel in ALLOWLIST:
                 used.add(rel)
                 continue
-            bad_path.append((base, i, rel))
+            bad_path.append((key, i, rel))
 
 stale = sorted(set(ALLOWLIST) - used)
 print("scanned %d markdown files" % len(files))
+for b in ambiguous:
+    print("   NOTE ambiguous basename %-16s -> %s  (a bare `%s` ref resolves against the union)"
+          % (b, ", ".join(base_owners[b]), b))
 print("section refs : %d checked, %d dangling" % (nsec, len(bad_sec)))
 for b in bad_sec:
     print("   DANGLING %s:%d  section %s does not exist in %s" % b)

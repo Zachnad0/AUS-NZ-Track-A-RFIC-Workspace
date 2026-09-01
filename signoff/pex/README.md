@@ -29,7 +29,8 @@ ngspice -b cpmatch_sch.spice ; ngspice -b cpmatch_pex.spice
 Bias follows the `CP_v1_golden.spice` header: the external generator **sinks** I_CP from `VGP`
 and **sources** I_CP into `VGN`. Both decks use **ideal 50 µA** sources for that, so the
 comparison isolates the *layout* contribution and nothing else. `I_CP = 50 µA` is the measured
-value (`docs/verification.md` §2.1 — 10.19 µA at φ = 200 ns against 10.00 µA ideal).
+value (`docs/verification.md` §2.1, which measured 10.19 µA at φ = 200 ns against 10.00 µA
+ideal).
 
 Source-only is `UP = 3.3 V, DOWN = 0` (the `M_INVP`/`M_INVN` inverter takes `UP` to `UP_B`, so
 the PMOS switch turns on); sink-only is `UP = 0, DOWN = 3.3 V`. `CP_OUT` is swept 0.4–2.8 V,
