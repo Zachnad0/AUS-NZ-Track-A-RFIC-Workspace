@@ -19,9 +19,18 @@ project:
   lvs_config: "lvs/lvs_config.json"
 
 # ======================================================
-# Pad / pin list  (config B: 1/8 die, 16-pin total, 13 used, 3 spare)
+# Pad / pin list  (config B: 1/8 die, 16-pin total, 12 used, 4 spare)
+#
+# COMMENT CORRECTED 2026-09-01. This header said "13 used, 3 spare" and "analog 8 ... = 13"
+# while the pins: list below already had 12 entries -- the comment was stale from 2026-08-27,
+# when I_P came off the list at commit 020852a (confirmed against the organizer-issued 12-pin
+# package at 5e55d14, whose A01_BH_interface.yaml states participant_pin_count: 12). ONLY THE
+# COMMENTS CHANGED IN THIS EDIT; not one pin entry was touched, and the list below is byte-for-
+# byte what the 12-pin DEF was generated against.
+#
 # SLOT VARIANT: BH -- 1110 x 550 um landscape (Greg 2026-08-22). Slots W18-W22 (west) +
-# N01-N08 (north). Order = CLOCKWISE from bottom-left. VSSA first so all the analog pads
+# N01-N07 (north; N01-N08 until I_P came off at N04 and Q_P/VSSD/VDDD/REF_IN each shifted
+# one slot west, exactly -100.000 um). Order = CLOCKWISE from bottom-left. VSSA first so all the analog pads
 # sit on the analog rail (one padring island, VSSA+VDDA); VSSD/VDDD/REF_IN sit in the
 # north digital island behind the padring BREAK.
 #
@@ -41,16 +50,29 @@ project:
 # lands inside that island and supplies its ESD/return path locally. Electrically VSSA and
 # VSSD are ONE node on-chip (single p-substrate, no deep-nwell) and are shorted again
 # through the padring/substrate (Bailey 2026-08-21); the separation buys noise and
-# bond-inductance isolation, not DC isolation. The chip LVS golden therefore ties both
-# ports to a single internal node -- one net carrying two port labels.
-# I/Q PAD ORDER Q_N, I_N, I_P, Q_P (Greg 2026-08-22, docs/phase8-padframe-plan.md 3d):
-# left taps -> left pads. Matched wire 2000 -> ~1077 um, I/Q spread 288 -> 58 um, and all
-# three route crossings removed.
-# secondary_esd FALSE on the eight analog pins (Greg 2026-08-22) per Bailey: "Set the
-# secondary_esd to false, and then add it yourself to the circuit and layout." The eight
-# CDM clamps (diode perimeter > 25 um + > 50 ohm series poly R) are ours to add and are a
-# FINAL-data item, not an Aug 28 gate item.
-# Source of truth: docs/pins.md (analog 8, digital 1, power 2, ground 2 = 13).
+# bond-inductance isolation, not DC isolation. The chip LVS golden does NOT give VSSD its
+# own port: it is the same internal node as VSSA, so team_src/magic/chip_top_golden.spice
+# declares 11 ports for these 12 pads. The organizers' scrape does read the VSSD text --
+# their own A01_BH_interface.yaml top_cell_text lists "text: VSSD / layer: 36 / datatype: 0".
+# I_P REMOVED FROM THE PAD LIST 2026-08-27 (commit 020852a, verified against the real 12-pin
+# package at 5e55d14): PFD's FB tapped I_P on the PAD side of the 1 kohm XR_SER_IP, so the
+# feedback clock saw 1 kohm into the pad's 875 fF -- tau 912 ps against a 416.7 ps period,
+# 11.4 % swing at 2.4 GHz, and the loop would not have locked (docs/verification.md 8.10).
+# I_P is now an internal net, DIV2_QUAD_v1.I_P -> PFD_lib.FB, which is how the loop closes.
+# Removing the pad drops that node to ~23 fF and touched no signed-off block.
+# I/Q PAD ORDER Q_N, I_N, Q_P at N02-N04 (Greg 2026-08-22 as Q_N, I_N, I_P, Q_P at N02-N05;
+# I_P dropped 2026-08-27 and Q_P inherited its N04 slot AND its jog x, docs/phase8-padframe-
+# plan.md 3d): left taps -> left pads. Matched wire 2000 -> ~1077 um, I/Q spread 288 -> 58 um,
+# and all three route crossings removed.
+# secondary_esd FALSE on the seven analog pins (Greg 2026-08-22, eight before I_P came off)
+# per Bailey: "Set the secondary_esd to false, and then add it yourself to the circuit and
+# layout." The CDM clamps (diode perimeter > 25 um + > 50 ohm series poly R) are ours to add
+# and are a FINAL-data item, not an Aug 28 gate item. TWO are built -- IBIAS (7391653,
+# relocated 5eda5b6) and ISS (914bcdf, relocated 7aedc20). Under the gate-only rule in
+# docs/esd-which-pins.md that is complete, because I_P was the only other gate-driving pin
+# and it is no longer a pad; that rule is ORGANIZER GUIDANCE RELAYED IN CONVERSATION, not a
+# written spec. If it does not hold, five more clamps are required.
+# Source of truth: docs/pins.md 1 (analog 7, digital 1, power 2, ground 2 = 12).
 # ======================================================
 pins:
 - name: VSSA
