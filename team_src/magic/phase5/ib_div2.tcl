@@ -174,7 +174,10 @@ vseg metal4 -1000 [expr {$yB+3800}] [expr {$yA+3800}] $H
 # a 7.5um-tall M2 collector plate over the bias (the aggregate VSS node), wide (500) source
 # risers, m2contacts. VSS port sits here so the tail current exits on wide metal, not the
 # thin M3 spine (which now only ties the low-current bulk taps). Converters tap this in B/C.
-box values [expr {$xbias-600}] [expr {$ybias-2500}] [expr {$xbias+6300}] [expr {$ybias-1000}] ; paint metal2
+# 10c: grown downward 1500 -> 4480 iu (7.50 -> 22.40 um) for the full 22.40 mA at
+# DRM 14.2 @110 C = 1.00 mA/um. The corridor below, y -8980..-6000 across the plate full
+# x extent, is M2-free except the QP vseg (VSS, merges).
+box values [expr {$xbias-600}] [expr {$ybias-5480}] [expr {$xbias+6300}] [expr {$ybias-1000}] ; paint metal2
 # The nfet source rail is already M2 -> connect it to the plate with WIDE M2 (no metal1,
 # so no collision with the interleaved TAILA/B drain straps). M_TAILA/B wide, M_BREF narrow.
 box values [expr {$xta-250}] [expr {$ybias-1000}] [expr {$xta+250}] [expr {$ybias-580}] ; paint metal2
@@ -235,7 +238,16 @@ hseg metal3 21300 $ipIB -2540 28 ; vseg metal3 $ipIB -2540 $pY 28 ; via_m2m3 $ip
 vseg metal4 8700 3800 6500 28 ; hseg metal4 8700 $ipVbus 6500 28
 vseg metal4 $ipVbus 3850 6500 28 ; via_m2m4 $ipVbus 3850
 # VSS : extend the M2 collector plate east under the conv VSS pin, via to its M1 bus
-box values 21900 -2100 [expr {$OX-980}] -1900 ; paint metal2
+# 10d FIX: the old strip sat at y -2100..-1900, 2400 iu ABOVE the plate (y -6000..-4500),
+# so it joined nothing and IP returned through the p-substrate. Rebuilt as a real metal path,
+# >=592 iu (2.96 um) end to end: strip -> two risers straddling the foreign net at
+# x23500..23620 (100 iu clear each side) -> slab that merges the VSS riser at x21050..21550
+# and hence the plate. Risers clear IBIAS (x<=22560) and the x20718..22860 band by >=100 iu.
+box values 21900 -2398 [expr {$OX-980}] -1806 ; paint metal2
+box values 21050 -4742 23400 -3800 ; paint metal2
+box values 22960 -3800 23400 -2398 ; paint metal2
+box values 22960 -3800 [expr {$OX-980}] -3208 ; paint metal2
+box values 23720 -3800 [expr {$OX-980}] -2398 ; paint metal2
 via_m1m2 [expr {$OX-1032}] -2002
 
 # ===== STAGE C: IN converter (WEST, MIRRORED via sideways; latch A; INP=OI INM=OIB) =====
@@ -272,7 +284,7 @@ hseg metal5 $ipIBn 15450 7600 44 ; via_m3m5 $ipIBn 7600 ; vseg metal3 $ipIBn $pY
 hseg metal4 $ipVbusN -1000 3400 28
 box values [expr {$ipVbusN-60}] 3340 [expr {$ipVbusN+60}] 3460 ; paint metal2 ; via_m2m4 $ipVbusN 3400
 # VSS_N : tie IN VSS pin (M1) east to the core VSS M3 spine @x-1150 (y-2002 within its span)
-box values [expr {$ipVSSn-28}] -2030 -1122 -1974 ; paint metal2
+box values [expr {$ipVSSn-28}] -2566 -1122 -1974 ; paint metal2   ;# 10b: 56 -> 592 iu (2.96 um), grown down; VDD is 1574 iu below
 via_m1m2 $ipVSSn -2002 ; via_m2m3 -1150 -2002
 
 # ===== STAGE C: QN converter (WEST, MIRRORED, BELOW IN; latch B; INP=OQ INM=OQB) =====
@@ -305,8 +317,8 @@ box values [expr {$qVbus-60}] -4260 [expr {$qVbus+60}] -4140 ; paint metal2 ; vi
 # VSS_Q : extend the core VSS spine (M3 @x-1150) DOWN to QN's deep VSS pin, on M2 (so it crosses
 # the Q hauls -- INP M4, INM M5, IBIAS M3 -- all inter-layer instead of shorting IBIAS on M3).
 set qVSSy [expr {$OYNq-1272}]
-via_m2m3 -1150 -8040 ; vseg metal2 -1150 $qVSSy -8040 56
-box values [expr {$qVSS-28}] [expr {$qVSSy-28}] -1122 [expr {$qVSSy+28}] ; paint metal2
+via_m2m3 -1150 -8040 ; vseg metal2 -1150 $qVSSy -8040 296   ;# 10b: hw 56 -> 296 = 592 iu (2.96 um)
+box values [expr {$qVSS-28}] [expr {$qVSSy-28}] -1122 [expr {$qVSSy+564}] ; paint metal2   ;# 10b: 56 -> 592 iu
 via_m1m2 $qVSS $qVSSy
 
 # ===== STAGE C: QP converter (EAST, UNMIRRORED, BELOW IP; latch B; INP=OQB INM=OQ) =====
@@ -339,8 +351,8 @@ box values [expr {$qpVbus-60}] 3110 [expr {$qpVbus+60}] 3260 ; paint metal2 ; vi
 # VSS_QP : drop from the core VSS plate's east edge (x21900, plate y-6000..-4500), MERGED with it
 # (not a separate near-by M2 -> M2.2a spacing), down to QP's deep VSS pin, then east to the pin.
 set qpVSSy [expr {$OYP2-1272}]
-vseg metal2 21900 $qpVSSy -4500 56
-box values 21844 [expr {$qpVSSy-28}] [expr {$qpVSS+28}] [expr {$qpVSSy+28}] ; paint metal2 ; via_m1m2 $qpVSS $qpVSSy
+vseg metal2 21900 $qpVSSy -4500 296   ;# 10b: hw 56 -> 296 = 592 iu (2.96 um)
+box values 21604 [expr {$qpVSSy-28}] [expr {$qpVSS+28}] [expr {$qpVSSy+564}] ; paint metal2 ; via_m1m2 $qpVSS $qpVSSy   ;# 10b: 56 -> 592 iu
 
 select top cell
 drc on ; drc euclidean on ; drc check ; drc catchup

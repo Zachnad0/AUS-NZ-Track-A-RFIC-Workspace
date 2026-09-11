@@ -14,7 +14,7 @@ notes this document summarises.
 | Item | Outcome |
 |---|---|
 | **1 — loop sign + closed-loop lock** | §4.6.1–4.6.3. The loop **divides by 2 and nothing else**, so lock needs a 2.4–2.5 GHz reference where the PFD has **no usable phase-detection window**. Loop sign now stated as a concrete net swap; lock arithmetic done from measured I_CP/KVCO/N. **Closed-loop lock is not demonstrable on this die** — this is the most important finding in the document. |
-| **2 — DIV2 VSS current density** | §4.5. **Not shipped, but a working fix is now built.** The original M1 widening **fails LVS — it shorts `NS` to `VSS`** (it had been signed off on DRC + bbox alone, neither of which can see a same-layer short). An **M2 plate + 193 via1 stitch** replaces it: 4.93 → **1.000 mA/µm**, DRC 0, LVS 14/6/17 match uniquely, KLayout var-D clean, bbox unchanged. Ties (10b), plate (10c) and the **disconnected IP tie (10d)** remain open. |
+| **2 — DIV2 VSS current density** | §4.5. **Not shipped, but a working fix is now built.** The original M1 widening **fails LVS — it shorts `NS` to `VSS`** (it had been signed off on DRC + bbox alone, neither of which can see a same-layer short). An **M2 plate + 193 via1 stitch** replaces it: 4.93 → **1.000 mA/µm**. The DIV2-level ties (10b), the collector plate (10c) and the **disconnected IP tie (10d)** are now fixed too — every VSS path in the block is at **1.000 mA/µm or better**, DRC 0, LVS 149/9/22 match uniquely, KLayout var-D clean, bbox unchanged. `chip_top` not yet re-integrated. |
 | **3 — PEX / re-simulation** | §4.2.1. **Done for `CP_v1`** (R+C): parasitics move the UP/DOWN match by ≤ 0.076 pp. Full-chip PEX not attempted. |
 | **4 — density fill + nmoscap waiver** | §2.5 and §6 item 13. Waiver evidence assembled and an acceptance request drafted; **density fill not started** and its ownership is unresolved. |
 
@@ -965,7 +965,8 @@ ceiling −1142 to the −2600 cell floor is 1458 iu shared by three stacked row
    y −1298…−1246, carrying the whole 2.96 mA — **10.6× over** the 0.28 mA/cut figure at 110 °C.
    The plate relieves that as a side effect. The binding width on the exit is now the DIV2-level
    tie itself, ≈80 iu = 0.40 µm, which is item 10b — and item **10d**, since the IP tie
-   connects to nothing at all. Neither is addressed here.
+   connected to nothing at all. Both were fixed on 2026-09-11, one day after this section was
+   written; see the DIV2-level VSS section in §4.5.
 
 **A defect only the parent could catch.** The first spine via was placed at the VSS port
 (y −1272) so that VSS had a via exit. Standalone the cell was **clean — Magic DRC 0, KLayout
@@ -991,10 +992,62 @@ exactly as DRC and bbox were blind to the `NS` short. Recorded in `docs/tracking
 
 **Status: built, gated at both levels, and shipped to the repository sources.**
 `phase5/ib_conv_v1.tcl`, both `.mag`, `gds/ib_conv_v1.gds` (new) and `gds/DIV2_QUAD_v1.gds` are
-updated. `chip_top` is **NOT** re-integrated — that waits on items 10b/10c/10d so `route_chip` and the six
+updated. `chip_top` is **NOT** re-integrated — 10b/10c/10d are now cleared, so `route_chip` and the six
 gates run once. Note `DIV2_QUAD_v1.mag` changes only in its own timestamp and the four
 `use ib_conv_v1` instance stamps: the plate is entirely inside the child, so the parent carries
 no new geometry.
+
+### DIV2-level VSS: ties widened, plate grown, IP reconnected — BUILT and SHIPPED 2026-09-11
+
+All three of 10b, 10c and 10d are fixed in one `ib_div2.tcl` change, gated at parent level and
+copied into the repository sources. Criterion throughout: **DRM 14.2 @110 °C unidirectional,
+1.00 mA/µm for M1–(TopMetal−1)**, per `docs/phase8-padframe-plan.md` §3q.
+
+| path | before | mA/µm | after | mA/µm |
+|---|---|---:|---|---:|
+| IP `:238` | 1.00 µm **to nothing** | — (substrate) | strip 2.96 µm, risers **3.00 µm** parallel, slab 4.71 µm | **0.987** |
+| IN `:275` | 0.28 µm | 10.571 | 2.96 µm | **1.000** |
+| QN vseg `:308` | 0.56 µm | 5.286 | 2.96 µm | **1.000** |
+| QN strip `:309` | 0.28 µm | 10.571 | 2.96 µm | **1.000** |
+| QP vseg `:342` | 0.56 µm | 5.286 | 2.96 µm | **1.000** |
+| QP strip `:343` | 0.28 µm | 10.571 | 2.96 µm | **1.000** |
+| **collector plate (10c)** | 7.50 µm @ 22.40 mA | 2.987 | **22.40 µm** | **1.000** |
+
+The plate was grown downward 1500 → 4480 iu after checking the corridor across its **full** x
+extent: 1 of 69 100-iu columns holds any M2, and that one is the QP vseg, which is VSS and
+merges. It was grown fully, not partially.
+
+**Gates (repo copies, both read from the committed GDS):** `ib_conv_v1` DRC 0, 14/6/17 match
+uniquely, 0 property errors; `DIV2_QUAD_v1` DRC 0, **149 devices / 9 ports / 22 nets match
+uniquely**, 0 property errors; KLayout variant-D **clean**; GDS cell list
+`['ib_conv_v1','DIV2_QUAD_v1']`; bbox **237.360 × 174.170 µm unchanged**; and the metal-only
+probe returns **plate = VSS port = IP = IN = QN = QP, one net**.
+
+**A short that only extraction could see.** The first IP route put its east riser at
+x 23720…23880 running down to y −4150. That crosses the top edge of the **QP instance** and lands
+on `ib_conv_v1`'s VDD bus at child y 14430…14464. Top-level `select net` still reported VSS and
+VDD as separate nets — it does not descend into child cells — and the geometry check found no
+top-level M2 contact. Only LVS caught it: 8 ports / 21 nets, VDD absorbed into VSS. The riser now
+starts at y −3800, above the instance boundary at −3836, and reaches the slab through a connector.
+
+**The pairing to remember: `select net` is hierarchy-blind, LVS is substrate-blind.** Item 10d
+existed because LVS cannot see a missing supply tie (the p-substrate is one global node); this
+short survived a clean `select net` because that command cannot see into an instance. Neither
+check alone is sufficient for a supply path, and the gate rule in `docs/tracking.md` now requires
+both.
+
+**Residual I/Q asymmetry, recorded rather than forced.** IP is not a mirror of the other three and
+cannot be made one: IN, QN and QP are single widened segments, while IP needed a new path — strip,
+two parallel risers straddling the foreign net at x 23500…23620 with 100 iu clearance each side,
+and a slab. A single 592 iu riser does not fit, bounded by the x 20718…22860 band to the west and
+that net to the east, so the two risers carry 440 iu and 160 iu in parallel. The return-path
+lengths were already far from symmetric before this pass and remain so: **IN 6.31 µm, QN 65.03 µm,
+QP 86.48 µm**. Widths are now uniform at 2.96 µm; lengths are not, and equalising them would need
+re-floorplanning, not re-routing.
+
+**`chip_top` is NOT re-integrated.** The blocker named for it — 10b/10c/10d — is now cleared, so
+it is ready for `route_chip` plus the six gates, but that cycle has not been run and `chip_top`
+still carries the old DIV2.
 
 ### WITHDRAWN 2026-09-10: `ib_div2.tcl` DOES reproduce the signed-off `DIV2_QUAD_v1`
 
@@ -1322,7 +1375,8 @@ Everything in this list is a real absence. None of it is mitigated by anything i
     0.56 µm → **5.286**; `:343` QP strip 0.28 µm → **10.571**. Against DRM 14.2 @110 °C
     (1.00 mA/µm) each needs **≥ 2.96 µm**. Surveyed for room: **2.96 µm fits on all six
     segments** — the binding neighbours are VDD 2110 iu below the IN strip and a foreign net
-    412 iu below the IP strip; everything else has 1110–22938 iu. Not yet widened.
+    412 iu below the IP strip; everything else has 1110–22938 iu. **RESOLVED 2026-09-11:** all
+    six widened to 2.96 µm = 1.000 mA/µm; see the DIV2-level VSS section in §4.5.
 10c. **The 7.5 µm M2 collector plate carries the full 22.40 mA = 2.987 mA/µm, 2.99× over.**
     Budget: 4 ties × 2.96 = 11.84 mA plus 10.56 mA of core rails and bias. Reaching 1.00 mA/µm
     needs **22.40 µm = 4480 iu**, a shortfall of 2980 iu on the present 1500 iu.
@@ -1334,7 +1388,8 @@ Everything in this list is a real absence. None of it is mitigated by anything i
     free vertical space against a 2980 iu shortfall. M3/M4/M5 cross it (8/11/6 rects, different
     layers, no short) and it holds **zero via1**, so there are no via landings to collide with.
     **M3/M4 stacking is therefore not the only route**; growing the plate downward in-plane
-    reaches the target. Not yet grown.
+    reaches the target. **RESOLVED 2026-09-11:** grown 1500 → 4480 iu = 22.40 µm = 1.000 mA/µm,
+    in-plane, no stacking; see §4.5.
 10d. **The IP converter's VSS tie is not connected to anything — its return is the substrate.**
     `ib_div2.tcl:237–238` says "extend the M2 collector plate east under the conv VSS pin", but
     the plate is at y −6000…−4500 and the strip it draws is at **y −2100…−1900**: it takes the
@@ -1348,6 +1403,8 @@ Everything in this list is a real absence. None of it is mitigated by anything i
     class of blindness as Magic DRC to a same-layer short. **Pre-existing:** present in the
     signed-off `DIV2_QUAD_v1`, in `gds/DIV2_QUAD_v1.gds`, and therefore in `chip_top` on
     `origin/main`. Not caused by the `ib_conv_v1` M2 plate, and not hidden by it.
+    **RESOLVED 2026-09-11:** a real metal path was built (strip → two parallel risers → slab),
+    and the metal-only probe now returns plate = port = all four ties on one net; see §4.5.
 11. **No ESD simulation of any kind.** No HBM, no CDM. The two built clamps are verified
     structurally (DRC + LVS inside `chip_top`) only.
 12. **Only 2 of 7 analog pins carry a secondary ESD clamp**, and whether that is complete rests
