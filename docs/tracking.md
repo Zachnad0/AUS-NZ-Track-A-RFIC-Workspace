@@ -91,11 +91,15 @@ clean and documented beats four half-done** (`scope.md §6` fallback ladder).
 (5 gf180 cells, our topology, re-verified `verification.md §2.2`); **CP_v1 = manual
 Magic + netgen LVS** (full-custom analog). VCO/CP need the manual flow regardless.
 
-**GATE RULE (2026-09-11) — metal-only supply connectivity:** at DIV2 and chip_top level, `select net`
-from the collector plate / supply pad and confirm EVERY instance VSS and VDD port is on that net — 
-LVS cannot catch a missing supply tie because the p-substrate is one global node (`ib_conv_v1_0` 
-returned through substrate only, undetected through full sign-off; `layout-review-sep01.md` §6 10d). 
-Re-run after any supply-path change.
+**GATE RULE (2026-09-11) — metal-only supply connectivity:** at DIV2 and chip_top level, run a
+metal-only connectivity extraction (metals + vias, NO diffusion/well) and confirm every instance
+VSS and VDD port is on the supply net. THREE checks are each blind in a different way and none
+substitutes for another: LVS is **substrate-blind** (p-substrate is one global node, so a missing
+supply tie extracts as connected -- `layout-review-sep01.md` 6 item 10d); `select net` is
+**hierarchy-blind** (does not descend into child cells, so a child-level short reads clean);
+and `extract all` without `extract unique` is **same-name-merge-blind** (two disjoint pieces
+sharing a label extract as one net -- item 22, `verify_extract.tcl:52`). Re-run after any
+supply-path change.
 
 **GATE RULE (2026-09-10):** after ANY change to a child cell, re-run **parent-level Magic DRC** —
 magic's "this layer can't abut or partially overlap between subcells" fires only in hierarchy, so a

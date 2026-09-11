@@ -1497,6 +1497,35 @@ Everything in this list is a real absence. None of it is mitigated by anything i
     (same bbox, layer histogram, via count, texts). A differing sha256 therefore does **not** mean
     the layout changed. The identity test for this GDS is the **DRC box set**
     (`drc_boxset.tcl` + `drc_delta.py`), not a hash.
+22. **The LVS flow runs `extract all` with no `extract unique`, so magic merges same-named
+    labels by name — a genuine metal open between two identically-labelled pieces would extract
+    as ONE net and still "match uniquely".** `verify_extract.tcl:52` is `extract all` and nothing
+    else; no `extract unique` appears anywhere in the flow. Magic's default is to treat two
+    disjoint pieces of metal carrying the same label text as the same node. The gate would
+    therefore pass a layout in which a net had been cut in half, provided both halves kept the
+    label — which is precisely the failure mode of item 10d, only detectable by a different tool.
+
+    **Worked example, and a false alarm worth recording.** The metal-only connectivity gate added
+    on 2026-09-11 reported `IBIAS` resolving to **two separate metal nets**, which looked exactly
+    like such a cut. It is not one. The two pieces are the **pad side** (x 0.00–36.29,
+    y 260.34–304.66, 814 µm², reaching the die edge at x = 0 and the pad label at (0.50, 282.50))
+    and the **core side** (x 20.31–339.70, y 268.87–424.20, 1063 µm², spanning `ibias_gen_v1` and
+    `CP_v1`). Re-running the extraction with poly2 (30/0) and contact (33/0) added merges them —
+    19 nets → 18, `IBIAS` 2 → 1 — because they are the two terminals of
+    `XR_ESD_IBIAS  IBIAS_C IBIAS VSSA ppolyf_u r_width=16e-6 r_length=4e-6`, the ESD ballast in
+    `chip_top_golden.spice`. `IBIAS` (pad) and `IBIAS_C` (core) are **deliberately different
+    nets**; two metal nets is the correct topology. Both pieces read as `IBIAS` only because
+    `ibias_gen_v1`'s block port is also named `IBIAS` — a hierarchy label collision that makes the
+    metal-only gate noisy and must be read with that in mind.
+
+    **Why it still matters.** The example is benign, but it only came out benign because the two
+    pieces were genuinely different nets. Nothing in the gate set would have told us if they had
+    not been. This is the third blind spot in the same family: **LVS is substrate-blind** (10d —
+    the p-substrate is one global node, so a missing supply tie is invisible), **`select net` is
+    hierarchy-blind** (it does not descend into child cells, which is how a riser shorting a
+    child's VDD bus passed a clean probe), and **`extract all` is same-name-merge-blind** (this
+    item). Only the metal-only connectivity extraction covers the third. Adopting
+    `extract unique` is being evaluated separately; it is **not** adopted as of this writing.
 
 ---
 
