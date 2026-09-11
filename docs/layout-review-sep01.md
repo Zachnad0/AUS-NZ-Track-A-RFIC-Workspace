@@ -869,29 +869,46 @@ compensation (−1300 against a −1360 cell edge). Result:
 | bbox, rebuilt cell | `-1360 -2600 9612 14564` — **byte-identical in both axes** |
 | Current density | **4.93 → 0.987 mA/µm** |
 
-The patch is retained at `scratchpad/div2-vss-widen.patch`. **It has deliberately not been applied
-to the repository.**
+The patch is **regenerated into a scratch path on demand** and **has deliberately not been
+applied to the repository.** Earlier revisions of this section cited
+`scratchpad/div2-vss-widen.patch` as a retained file; **no such file exists, and none was ever
+committed** — `git log --all --diff-filter=A` over that path returns nothing. The reproducible
+statement of the fix is `ib_conv_v1.tcl:117–119`, `hw` 60 → 300, with the I3 `hseg` and the
+`vseg` y-anchors lifted by `hw − 60` to pin the bottom edge where it was.
 
-### OUTSTANDING: `ib_div2.tcl` does not reproduce the signed-off `DIV2_QUAD_v1`
+### WITHDRAWN 2026-09-10: `ib_div2.tcl` DOES reproduce the signed-off `DIV2_QUAD_v1`
 
-**This is why the fix is not in the shipped GDS, and it is an open item in its own right.**
-Rebuilding `DIV2_QUAD_v1` from `team_src/magic/phase5/ib_div2.tcl` produces a cell of
-**233.28 × 136.86 µm** against the signed-off **237.36 × 174.17 µm** (`47472 x 34834 iu`, the
-figure recorded in commit `1ba0838` when the block was signed off) — **4.08 µm narrower and
-37.31 µm shorter**.
+**This section previously reported a reproducibility gap. The claim was wrong and is withdrawn in
+full.** Rebuilt 2026-09-10 into a scratch path with `ib_conv_v1.mag` on magic's cell search path,
+`ib_div2.tcl` produces `47472 x 34834 iu` = **237.360 × 174.170 µm**, bbox
+`-65.000 -105.000 172.360 69.170`, two cells (`DIV2_QUAD_v1` + `ib_conv_v1`), `DIV2_DRC=0` — the
+signed-off cell exactly. The saved `.mag` is **byte-identical to the committed blob** apart from its
+`timestamp` line: md5 `194e336f230ba91145304670736bc340` on both with that line stripped, compared
+against `git show origin/main:` and **not** against the working tree, whose `.mag` a Windows
+checkout stores CRLF while the blob is LF (`.mag` is not covered by `.gitattributes`, so a naive
+working-tree diff reports every line changed).
 
-**The gap is pre-existing and unrelated to the EM work.** Proven by a control: the widening was
-stashed, DIV2 was rebuilt from entirely unmodified sources, and magic reported the same
-`-12592 -19728 34064 7644` bbox. It is not missing gencell children either —
-`DIV2_QUAD_v1.mag` references only `ib_conv_v1` (×4), which is present on disk. Commit `1ba0838`
-records a rename from `ib_div2`, so the signed-off cell most likely carries manual post-build
-steps that were never captured in the script.
+**Root cause: the child master was not on magic's cell search path.** Rerunning the identical
+script from a directory containing no `ib_conv_v1.mag` reproduces the old number to the micron —
+`-12592 -19728 34064 7644` = **233.28 × 136.86 µm**, the exact bbox this section used to record —
+with magic logging `Cell ib_conv_v1 couldn't be read` and the built cell carrying **zero
+children**. All four `getcell ib_conv_v1` calls (`ib_div2.tcl:210,247,283,316`) had dropped
+silently. That is the failure mode already documented in `docs/tracking.md` under DIV2: *getcell
+silently drops the instance from the .mag*.
 
-**Consequence, stated without softening:** the largest analog block on the die cannot currently be
-regenerated from its committed generator. The shipped GDS is the signed-off artifact and is
-unaffected — DRC 0, LVS match uniquely, gates green — but **any** future change to DIV2, including
-this EM fix, is blocked until the gap is closed. Chasing it was explicitly out of scope for this
-pass.
+**Why the original control did not catch it.** The stash control varied the *script* and held the
+environment fixed, so it returned the same wrong bbox and read as confirmation. The variable was
+magic's search path, not the sources. This section also argued that children could not be missing
+because `ib_conv_v1.mag` is present on disk — presence on disk is not presence on the search path,
+and that distinction is the whole of the bug. The inference that the signed-off cell "most likely
+carries manual post-build steps that were never captured in the script" is withdrawn; there are no
+such steps.
+
+**Consequence:** DIV2 is regenerable from its committed generator. The reproducibility blocker that
+this section placed on the EM fix, on the M2 collector plate and on the four top ties **does not
+exist**. What remains open on the EM fix is the decision to ship it, nothing else. Every rebuild
+above was written to a scratch path outside the repo and compared, never over a committed
+artifact.
 
 **Standing rule adopted 2026-09-01 as a result:** never `gds write` over a committed artifact.
 Write rebuilds to a scratch path and compare. (This was learned the hard way in this pass —
@@ -1161,18 +1178,20 @@ Everything in this list is a real absence. None of it is mitigated by anything i
     from the taped-out GDS at 200 iu/µm; the recorded figures are correct). EM is a **wear-out**
     mechanism, not a functional failure — it bounds service life, and does not gate DRC or LVS.
     A fix is **verified at cell level** (0.60 → 3.00 µm, DRC 0, bbox byte-identical, 0.987 mA/µm,
-    patch at `scratchpad/div2-vss-widen.patch`) but is **NOT in the shipped GDS** — see item 10a.
-10a. **`ib_div2.tcl` does not reproduce the signed-off `DIV2_QUAD_v1`, and this blocks any future
-    DIV2 change.** A rebuild from committed sources gives **233.28 × 136.86 µm** against the
-    signed-off **237.36 × 174.17 µm** (`47472 x 34834 iu`, commit `1ba0838`) — 4.08 µm narrower,
-    37.31 µm shorter. Proven **pre-existing** by a stash control: the same bbox results from
-    entirely unmodified sources. Not missing gencell children. The shipped GDS is the signed-off
-    artifact and is unaffected, but the largest analog block on the die **cannot currently be
-    regenerated from its generator**. Deliberately not chased in this pass.
+    patch regenerated in scratch, not stored in the repo) but is **NOT in the shipped GDS**.
+10a. **WITHDRAWN 2026-09-10 — `ib_div2.tcl` DOES reproduce the signed-off `DIV2_QUAD_v1`.** This
+    item previously reported a **233.28 × 136.86 µm** rebuild against the signed-off
+    **237.36 × 174.17 µm** (`47472 x 34834 iu`, commit `1ba0838`) and called it a blocker on any
+    future DIV2 change. With `ib_conv_v1.mag` on magic's cell search path the rebuild gives
+    `47472 x 34834 iu` = **237.360 × 174.170 µm**, and the saved `.mag` is **byte-identical to the
+    committed blob** apart from its timestamp. The old figure is what the script produces when the
+    child master is absent and all four `getcell ib_conv_v1` calls drop silently; that was
+    reproduced deliberately as a control. **There is no reproducibility blocker on DIV2.** Full
+    trace in the "WITHDRAWN 2026-09-10" subsection of §4.5.
 10b. **The 7.5 µm M2 collector plate cannot be fixed by widening** — metal2's bottom margin inside
     `DIV2_QUAD_v1` is **3.860 µm** against a ~22 µm target. It needs M3/M4 stacking, out of scope
-    for this pass. The four top ties (0.28/0.56 µm) are untouched for the same reason and share
-    the item-10a blocker.
+    for this pass. The four top ties (0.28/0.56 µm) are untouched for the same reason. They no
+    longer share an item-10a blocker: **that item is withdrawn** — see 10a.
 11. **No ESD simulation of any kind.** No HBM, no CDM. The two built clamps are verified
     structurally (DRC + LVS inside `chip_top`) only.
 12. **Only 2 of 7 analog pins carry a secondary ESD clamp**, and whether that is complete rests
@@ -1254,10 +1273,11 @@ If time is short, these five things carry the most information:
    document. The feedback divides by 2 only, so lock needs a 2.4–2.5 GHz reference into a PFD
    characterised at 1–2 MHz whose reset pulse is 1.22× that period at typ. This die is an
    open-loop test chip, and that is not recorded anywhere else in the repository.
-4. **§6 items 10 / 10a — the DIV2 EM fix and why it is not shipped.** The fix is verified at
-   cell level (4.93 → 0.987 mA/µm, DRC 0, bbox byte-identical) but is **not in the GDS**,
-   because `ib_div2.tcl` does not reproduce the signed-off block. That reproducibility gap is
-   itself outstanding and blocks any future DIV2 change.
+4. **§6 items 10 / 10a — the DIV2 EM fix and why it is not shipped.** The fix is verified
+   at cell level (4.93 → 0.987 mA/µm, DRC 0, bbox byte-identical) but is **not in the GDS**. The
+   reproducibility gap previously given as the reason is **withdrawn (2026-09-10)**: `ib_div2.tcl`
+   regenerates the signed-off block byte-identically, and shipping the fix is now a decision
+   rather than a blocked item.
 5. **§6 items 13–14 — density fill and the W4 waiver.** The two items most likely to affect
    whether the design is accepted at final signoff, and neither is resolved.
 
