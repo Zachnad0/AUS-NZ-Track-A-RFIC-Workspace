@@ -1448,6 +1448,34 @@ Everything in this list is a real absence. None of it is mitigated by anything i
     pass on the final GDS. Fill ownership was raised with the organizers and is unanswered; fill
     also interacts with analog matching, the CP_OUT shield and the inductor keep-out, so it was
     left unstarted rather than half-built.
+
+    **MEASURED ON THE FULL DIE 2026-09-11** (this is Caglar's review-condition item 4(a); §6 has
+    no item 4a — its item 4 is Monte Carlo). `run_drc.py --density_only --variant=D` on
+    `gds/chip_top.gds` at `98b01a5`, one cell per invocation, 5.0 s, **measure only — no fill was
+    generated**. Die **1110.000 × 550.000 µm = 610,500 µm²**, read from the GDS bbox. Percentages
+    are the deck's own, quoted from its log; the µm² column is `(floor − measured) × die area`.
+
+    | layer | rule | measured | floor | shortfall | shortfall µm² |
+    |---|---|---:|---:|---:|---:|
+    | COMP (+dummy) | DCF.1b | **1.622 %** | ≥ 25 % | 23.378 pp | 142,720 |
+    | Poly2 | PL.8 | **1.140 %** | ≥ 14 % | 12.860 pp | 78,511 |
+    | Metal1 | M1.4 | **0.790 %** | ≥ 30 % | 29.210 pp | 178,325 |
+    | Metal2 | M2.4 | **2.238 %** | ≥ 30 % | 27.762 pp | 169,488 |
+    | Metal3 | M3.4 | **0.371 %** | ≥ 30 % | 29.629 pp | 180,885 |
+    | Metal4 | M4.4 | **1.476 %** | ≥ 30 % | 28.524 pp | 174,138 |
+    | Metal5 | M5.4 | **7.835 %** | ≥ 30 % | 22.165 pp | 135,317 |
+    | MetalTop | MT.3 | **7.835 %** | ≥ 30 % | 22.165 pp | 135,317 |
+
+    **All eight fire, and all eight are minimum-coverage floors** — too little metal, never a
+    max-density violation. **`MT.3` and `M5.4` are the same physical layer**: this is a 5-layer
+    metal stack, so MetalTop *is* Metal5, and the deck reports the identical
+    7.835071515151516 % for both. Counting them as two distinct shortfalls would double-count
+    135,317 µm².
+
+    The block-level 2026-08-15 figures in `docs/tracking.md` §5.2 are **not comparable** to these:
+    those are coverage over each block's own bbox, these are over the whole die. The die is mostly
+    empty — five blocks in a 1110 × 550 µm slot — which is why every full-die number is far below
+    its floor. Metal5 is the highest at 7.8 % because the power ring and buses live there.
 14. **The W4 waiver (168 KLayout PL.5a_LV/PL.5b_LV items) is an accepted risk, not a resolved
     issue.** The evidence that it is `nmoscap_3p3`-gencell-internal is strong and reproducible
     (§2.5), but it is still a nonzero KLayout count on a flow where failing-DRC designs may be
