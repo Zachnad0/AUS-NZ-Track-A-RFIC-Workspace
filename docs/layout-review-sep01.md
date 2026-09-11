@@ -1610,7 +1610,21 @@ Everything in this list is a real absence. None of it is mitigated by anything i
     than a series bottleneck. The VDD port-to-internal drop, never previously measured, reaches
     **165.33 mV average on `VDD.t5` and 200.17 mV peak on `VDD.t4`** — the two supply terminals
     of the **W44 INV3 pfet**, the widest device in the cell — against 33.68 mV average on the
-    worst VSS node. What in the layout produces that VDD resistance is **not** established.
+    worst VSS node.
+
+    **Geometry named 2026-09-11; it is real, not an extraction artifact.** The 17 VDD resistors
+    are two populations. Three of them (R4 4,010.79, R5 2,510.79, R6 1,177.45 ohm, 7,699 of the
+    8,344) are **nwell body paths**: `VDD.t4` is the *bulk* terminal of the W44 pfet, and the
+    tech's `resist (nwell,dnwell)/well 1000000` milliohms/sq = 1000 ohm/sq makes R4 exactly
+    **4.01 squares of nwell** between the tap and the device body. A bulk path carries no DC
+    current, so those are **not** the mechanism. The mechanism is the supply metal: the INV3
+    source path `VDD -> n4 -> n2 -> n0 -> t5` totals **60.92 ohm**, which at the measured
+    2.7249 mA gives **166.0 mV** against a measured droop of **165.33 mV, agreement to 0.4 %**.
+    The geometry behind it: **every device is `nf = 1`**, the INV3 pfet drawn as one 44 um
+    finger, contacted over 98.8 % of its length by 186 contacts, so **contacting is not the
+    problem**, but strapped by only **0.230 um of metal1**, which at the tech's 90 milliohms/sq
+    is 187 squares = 16.8 ohm, fed by a 0.600 um M2 bus. Both populations reproduce from the
+    tech sheet values on the drawn geometry, so the extraction is **consistent and real**.
 23a. **`vco_core` PEX is extracted but not re-simulated, and a core-only re-sim would not be
     meaningful.** The extracted netlist exists (30 devices / 194 C / 208 R,
     `signoff/pex/vco_core/`). It is not re-simulated because `vco_core` is the cross-coupled pair

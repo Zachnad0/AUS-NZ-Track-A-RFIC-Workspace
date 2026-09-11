@@ -248,6 +248,54 @@ For comparison the worst VSS node is `VSS.t3` at 33.68 mV average, 58.50 mV peak
 pfet**, the widest device in the cell. Its source sees 165 mV of average droop and its bulk
 200 mV of peak droop on a 3.3 V supply.
 
+### Geometry 2026-09-11: what the VDD resistance physically is
+
+Node coordinates from `ib_conv_v1_flat.res.ext` (cell internal units, 200 iu/um; `VDD.n2` sits
+at x -1300, which is `xVDDbus`), read back against `gds/ib_conv_v1.gds`.
+
+**The 17 VDD resistors are two populations.**
+
+| | resistors | sum | what they are |
+|---|---|---:|---|
+| **bulk / nwell** | R4 4,010.79, R5 2,510.79, R6 1,177.45 | 7,699 ohm | nwell tap to pfet **body** |
+| **supply metal** | R19 1.68, R18 2.84, R12 14.46, R8 41.94 and the rest | 645 ohm | M2 bus to M1 strap to source |
+
+**R4 is a well resistance, not a routing resistance.** `X2` is
+`a_8030_n1600.t0 a_6430_n1100.t3 VDD.t5 VDD.t4 pfet_03v3 w=44u` - drain, gate, **source**,
+**bulk** - so `VDD.t4` is the pfet body. The magic tech gives
+`resist (nwell,dnwell)/well 1000000` **milliohms** per square = **1000 ohm/sq**, and
+4,010.79 ohm is **4.01 squares of nwell** between the tap (`VDD.n0`, a COMP 4.200 x 1.200 um
+patch at y 71.32-72.52 with one Via1 up to the M2 bus) and the device body. R5 (W26) and R6
+(W10) are the same structure on INV2 and INV1 and scale with device length.
+**Consistent with the tech: real, and it is the `nwell` class.**
+
+**A bulk path carries no DC current**, so those three kilo-ohm elements are not the mechanism.
+
+**The mechanism is the supply metal, and it reconciles exactly.** The INV3 source path
+`VDD -> n4 -> n2 -> n0 -> t5` is R19 + R18 + R12 + R8 = **60.92 ohm**. At the measured converter
+current of 2.7249 mA that is **166.0 mV**, against a measured `VDD.t5` droop of **165.33 mV**:
+agreement to **0.4 %**. The droop is I x R of the extracted supply metal.
+
+**The geometry that produces it**, all four devices measured:
+
+| device | nf | COMP | contacts | contact span | M1 strap |
+|---|---:|---|---:|---:|---|
+| INV3 pfet W44 | **1** | 1.180 x 44.000 um | 186 | 98.8 % | **0.230 um** wide, 97.7 % of finger |
+| INV3 nfet W16 | **1** | 1.180 x 16.000 | 68 | 98.3 % | 0.230 um, 99.3 % |
+| INV2 pfet W26 | **1** | 1.180 x 26.000 | 110 | 98.5 % | 0.230 um, 96.1 % |
+| INV2 nfet W11 | **1** | 1.180 x 11.000 | 46 | 96.0 % | 0.230 um, 99.0 % |
+
+**Contacting is not the problem**: every device is contacted over 96-99 % of its finger, 186
+contacts on the W44. **Every device is `nf = 1`**, the INV3 pfet drawn as a single 44 um finger,
+and each source strap is **0.230 um of metal1** over the full length. At the tech's
+`resist (allm1)/metal1 90` milliohms/sq that strap alone is 43 um / 0.23 um = 187 squares =
+**16.8 ohm**, fed by a 0.600 um M2 bus running 47.1 um.
+
+**Consistent, therefore real, not an extraction artifact.** Both populations reproduce from the
+tech sheet values on the drawn geometry: the kilo-ohm elements from `nwell` at 1000 ohm/sq, the
+tens-of-ohms elements from `metal1`/`metal2` at 90 milliohms/sq over narrow straps. No layer
+class produces a number the geometry does not support.
+
 **What this establishes and what it does not.** The degradation is resistive, and the VDD
 network is the group that carries it; the VSS mesh contributes none of it. That the largest
 drops land on the W44 INV3 pfet's supply terminals is measured, not inferred. No claim is made
