@@ -14,7 +14,7 @@ notes this document summarises.
 | Item | Outcome |
 |---|---|
 | **1 — loop sign + closed-loop lock** | §4.6.1–4.6.3. The loop **divides by 2 and nothing else**, so lock needs a 2.4–2.5 GHz reference where the PFD has **no usable phase-detection window**. Loop sign now stated as a concrete net swap; lock arithmetic done from measured I_CP/KVCO/N. **Closed-loop lock is not demonstrable on this die** — this is the most important finding in the document. |
-| **2 — DIV2 VSS current density** | §4.5. Fix **verified at cell level** (4.93 → 0.987 mA/µm, DRC 0, bbox byte-identical) but **not shipped**, because `ib_div2.tcl` does not reproduce the signed-off block. Plate cannot be widened. |
+| **2 — DIV2 VSS current density** | §4.5. **NOT fixed.** The proposed widening (4.93 → 0.987 mA/µm) **fails LVS — it shorts `NS` to `VSS`**, and was recorded as verified on DRC + bbox alone, neither of which can see a same-layer short. Plate cannot be widened. |
 | **3 — PEX / re-simulation** | §4.2.1. **Done for `CP_v1`** (R+C): parasitics move the UP/DOWN match by ≤ 0.076 pp. Full-chip PEX not attempted. |
 | **4 — density fill + nmoscap waiver** | §2.5 and §6 item 13. Waiver evidence assembled and an acceptance request drafted; **density fill not started** and its ownership is unresolved. |
 
@@ -842,7 +842,7 @@ must come from it before signoff. On the rule-of-thumb basis every conductor abo
 power-up; it bounds service life at the stated current. That is why it does not gate DRC, LVS or
 the port list, and why it is carried as a reliability item rather than a blocker.
 
-### The bus fix: verified at cell level, and NOT in the shipped GDS
+### The bus fix: FAILS LVS (NS–VSS short), and NOT in the shipped GDS
 
 **Measured truth first.** `ib_conv_v1.mag` is `magscale 1 10` = **200 internal units/µm** (not the
 100 iu/µm that `chip_top.mag`'s `magscale 1 5` uses — mixing the two is an easy and material
@@ -852,29 +852,53 @@ giving 10,972 iu ÷ 54.860 µm = **200.000 iu/µm** exactly, and the leftmost me
 2.96 mA ÷ 0.60 µm = 4.93 mA/µm.** The figures recorded in this document and in
 `docs/layout-review-aug14.md` are **correct**.
 
-**A fix exists and is verified, at cell level only.** `ib_conv_v1.tcl:117–119`, `hw` 60 → 300,
-i.e. **0.60 → 3.00 µm**, giving **0.987 mA/µm**. Compensation is applied on the **width axis, not
-the x-ends**: only the bottom edge threatens the cell bbox (the I3 hseg and the vseg both sit at
-y = −2430, bottom edge −2490 against a −2600 floor, and symmetric growth pushes it to −2730,
-growing the cell 0.65 µm — measured, not predicted), so those y anchors shift up by `hw − 60` to
-pin the bottom edge where it was. Each widened wire still fully covers its original footprint, so
-every `CVSS` tie is preserved. Pulling the x-ends in instead would invert the 0.835 µm segment at
-line 117 and drag the runs off their inverter anchors at x = 4800/6400/8000; x needs no
-compensation (−1300 against a −1360 cell edge). Result:
+**A fix was proposed here and is NOT valid — it shorts `NS` to `VSS`.** The proposal is
+`ib_conv_v1.tcl:117–119`, `hw` 60 → 300, i.e. **0.60 → 3.00 µm**, which would give
+**0.987 mA/µm**. Compensation was applied on the **width axis, not the x-ends**: only the bottom
+edge threatens the cell bbox (the I3 hseg and the vseg both sit at y = −2430, bottom edge −2490
+against a −2600 floor), so those y anchors shift up by `hw − 60`. That reasoning is sound as far
+as it goes, and x genuinely needs no compensation (−1300 against a −1360 cell edge). **It guards
+the wrong edge.** `hseg`/`vseg` grow **symmetrically**, so the same +240 that pins the bottom
+pushes the **top** edge up by 240 — into a live node that was never considered.
 
-| Check | Result |
-|---|---|
-| Magic DRC | **0** |
-| bbox, committed cell | `-1360 -2600 9612 14564` = −6.800 −13.000 … 48.060 72.820 µm |
-| bbox, rebuilt cell | `-1360 -2600 9612 14564` — **byte-identical in both axes** |
-| Current density | **4.93 → 0.987 mA/µm** |
+Measured at the tail-nfet column, metal1:
 
-The patch is **regenerated into a scratch path on demand** and **has deliberately not been
-applied to the repository.** Earlier revisions of this section cited
-`scratchpad/div2-vss-widen.patch` as a retained file; **no such file exists, and none was ever
-committed** — `git log --all --diff-filter=A` over that path returns nothing. The reproducible
-statement of the fix is `ib_conv_v1.tcl:117–119`, `hw` 60 → 300, with the I3 `hseg` and the
-`vseg` y-anchors lifted by `hw − 60` to pin the bottom edge where it was.
+```
+UNPATCHED   VSS strip   x  -833..3233   y -1170..-1130
+            NS riser    x  -190..-114   y  -974..-787      <- 156 iu clear
+PATCHED     VSS run     x -1300..5100   y  -974..-930      <- grew up into the gap
+            NS riser    x  -190..-114   y  -930..-787      <- re-cut, now abutting
+```
+
+Line 117's `y = -1230` with `hw = 300` puts the top edge at **−930** against an NS bottom of
+**−974**: a **44 iu overlap**. Built and measured 2026-09-10 against the unpatched cell in the
+same `verify_cp.sh` harness, both read from a scratch path:
+
+| Check | unpatched control | `hw` 60 → 300 |
+|---|---|---|
+| Magic DRC | **0** | **0** — structurally blind, see below |
+| bbox | `-1360 -2600 9612 14564` | **identical** — also blind |
+| netgen LVS | **match uniquely**, 14 dev / 6 ports / **17 nets** | **DO NOT MATCH**, **16 nets** |
+| netgen detail | — | `Net: VSS` vs `Net: NS`, *(no matching net)*; lost `a_100_n800#` |
+| Current density | 4.93 mA/µm | 0.987 mA/µm *(unrealised)* |
+
+**Why DRC 0 and an unchanged bbox proved nothing.** metal1 touching metal1 is a legal merge, not
+a spacing violation, so Magic DRC cannot report a same-layer short; and the short happens well
+inside the cell, so the bbox cannot move. **The two checks this section originally offered as
+verification are both incapable of detecting the defect they were used to rule out.** Any future
+VSS-widening attempt must gate on LVS, not on DRC and bbox.
+
+**What a valid fix must do:** add conductor without growing the metal1 footprint into `NS` —
+either strap the existing M1 run with M2 through via arrays at each `CVSS` tap (no M1 geometry
+change, so no clearance problem), or grow M1 asymmetrically into the free space left and below
+only (≈420 iu ≈ 2.1 µm, ~1.41 mA/µm — an improvement, short of the ~1.0 target). Neither is
+built.
+
+The patch is **regenerated into a scratch path on demand** and **must not be applied** — it is
+kept only as the reproducible statement of what was tried: `ib_conv_v1.tcl:117–119`, `hw` 60 → 300,
+with the I3 `hseg` and the `vseg` y-anchors lifted by `hw − 60`. Earlier revisions of this section
+cited `scratchpad/div2-vss-widen.patch` as a retained file; **no such file exists, and none was
+ever committed** — `git log --all --diff-filter=A` over that path returns nothing.
 
 ### WITHDRAWN 2026-09-10: `ib_div2.tcl` DOES reproduce the signed-off `DIV2_QUAD_v1`
 
@@ -1177,8 +1201,10 @@ Everything in this list is a real absence. None of it is mitigated by anything i
     VSS network is over-limit**: the bus is 0.60 µm carrying 2.96 mA = **4.93 mA/µm** (measured
     from the taped-out GDS at 200 iu/µm; the recorded figures are correct). EM is a **wear-out**
     mechanism, not a functional failure — it bounds service life, and does not gate DRC or LVS.
-    A fix is **verified at cell level** (0.60 → 3.00 µm, DRC 0, bbox byte-identical, 0.987 mA/µm,
-    patch regenerated in scratch, not stored in the repo) but is **NOT in the shipped GDS**.
+    A fix was proposed (0.60 → 3.00 µm, 0.987 mA/µm) and is **NOT valid: it shorts the
+    differential-pair tail node `NS` to `VSS`** — netgen `DO NOT MATCH`, 16 nets against 17.
+    It had been recorded as "verified at cell level" on Magic DRC 0 and an unchanged bbox;
+    **neither check can see the defect and LVS was never run on it.** Nothing is shipped.
 10a. **WITHDRAWN 2026-09-10 — `ib_div2.tcl` DOES reproduce the signed-off `DIV2_QUAD_v1`.** This
     item previously reported a **233.28 × 136.86 µm** rebuild against the signed-off
     **237.36 × 174.17 µm** (`47472 x 34834 iu`, commit `1ba0838`) and called it a blocker on any
@@ -1273,11 +1299,12 @@ If time is short, these five things carry the most information:
    document. The feedback divides by 2 only, so lock needs a 2.4–2.5 GHz reference into a PFD
    characterised at 1–2 MHz whose reset pulse is 1.22× that period at typ. This die is an
    open-loop test chip, and that is not recorded anywhere else in the repository.
-4. **§6 items 10 / 10a — the DIV2 EM fix and why it is not shipped.** The fix is verified
-   at cell level (4.93 → 0.987 mA/µm, DRC 0, bbox byte-identical) but is **not in the GDS**. The
-   reproducibility gap previously given as the reason is **withdrawn (2026-09-10)**: `ib_div2.tcl`
-   regenerates the signed-off block byte-identically, and shipping the fix is now a decision
-   rather than a blocked item.
+4. **§6 items 10 / 10a — the DIV2 EM fix, and that there is no working fix.** The widening
+   recorded as "verified at cell level" (4.93 → 0.987 mA/µm, DRC 0, bbox byte-identical)
+   **fails LVS: it shorts `NS` to `VSS`** (2026-09-10). It had never been LVS'd, and DRC and bbox
+   cannot see a same-layer short. Separately, the reproducibility gap once given as the reason it
+   was unshipped is **withdrawn**: `ib_div2.tcl` regenerates the signed-off block byte-identically.
+   The EM exposure is real and **unmitigated**.
 5. **§6 items 13–14 — density fill and the W4 waiver.** The two items most likely to affect
    whether the design is accepted at final signoff, and neither is resolved.
 
