@@ -12,10 +12,10 @@
 # Project metadata (used for documentation / review)
 # ======================================================
 project:
-  title: "GF180MCU integer-N PLL RFIC (2.4-2.5 GHz)"
+  title: "Open-loop integer-N PLL characterization chip: LC-VCO, quadrature divider, PFD and charge pump"
   team: "A01"
   discord: "gregorydaley_87272_39557"
-  description: "PLL building blocks in GF180MCU: LC-VCO (4.11-6.37 GHz), CML divide-by-2 quadrature divider, PFD and charge pump; 2.4-2.5 GHz ISM quadrature output with off-chip loop filter."
+  description: "RF-block characterization chip containing the blocks of an integer-N PLL (LC-VCO with varactor tuning, CML divide-by-2 quadrature divider, PFD, charge pump), brought out to pads for open-loop characterization. Closed-loop lock is not demonstrable on this die: the feedback divides by 2 only and the PFD has no usable phase-detection window at the ~2.5 GHz reference that would require. Not a functioning integer-N PLL."
   lvs_config: "lvs/lvs_config.json"
 
 # ======================================================

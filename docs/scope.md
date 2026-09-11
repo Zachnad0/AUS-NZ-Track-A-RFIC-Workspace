@@ -1,5 +1,7 @@
 # Scope, Frequency Plan, and Area Estimate — AUS/NZ Track A RFIC
 
+> **SCOPE (2026-09-11, reviewer reframe).** RF-block characterization chip containing the blocks of an integer-N PLL (LC-VCO with varactor tuning, CML divide-by-2 quadrature divider, PFD, charge pump), brought out to pads for open-loop characterization. Closed-loop lock is not demonstrable on this die: the feedback divides by 2 only and the PFD has no usable phase-detection window at the ~2.5 GHz reference that would require. Not a functioning integer-N PLL.
+
 **Team A01 · IEEE SSCS Chipathon 2026 · GF180MCU (gf180mcuD)**
 Last updated: 2026-07-30. Figures marked *(estimate)* are pre-layout and will be
 replaced by extracted numbers as blocks are laid out.

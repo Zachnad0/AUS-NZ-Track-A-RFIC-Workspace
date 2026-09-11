@@ -1,4 +1,6 @@
-## Track: A <br>Team: AUS/NZ Track A RFIC <br>Project: Microwave RFIC with integrated VCO, PLL, and IQ modulator for use in the 2.4 GHz ISM band
+## Track: A <br>Team: AUS/NZ Track A RFIC <br>Project: Open-loop integer-N PLL characterization chip: LC-VCO, quadrature divider, PFD and charge pump
+
+RF-block characterization chip containing the blocks of an integer-N PLL (LC-VCO with varactor tuning, CML divide-by-2 quadrature divider, PFD, charge pump), brought out to pads for open-loop characterization. Closed-loop lock is not demonstrable on this die: the feedback divides by 2 only and the PFD has no usable phase-detection window at the ~2.5 GHz reference that would require. Not a functioning integer-N PLL.
 
 Team members
 

@@ -1,7 +1,9 @@
 # Pin / Pad Plan — AUS/NZ Track A RFIC
 
 **Team A01 · IEEE SSCS Chipathon 2026 · GF180MCU**
-Last updated: **2026-09-01**. Slot variant **BH**; pin list frozen for the Aug 28 DEF gate.
+Last updated: **2026-09-11**. Slot variant **BH**; pin list frozen for the Aug 28 DEF gate.
+
+> **SCOPE (2026-09-11, reviewer reframe).** RF-block characterization chip containing the blocks of an integer-N PLL (LC-VCO with varactor tuning, CML divide-by-2 quadrature divider, PFD, charge pump), brought out to pads for open-loop characterization. Closed-loop lock is not demonstrable on this die: the feedback divides by 2 only and the PFD has no usable phase-detection window at the ~2.5 GHz reference that would require. Not a functioning integer-N PLL.
 
 > **CORRECTED 2026-09-01 — this file said 13 pins with `I_P` at #9 until today, and that was
 > stale by five days.** `I_P` came off the pad list at commit `020852a`, and the correction was
@@ -63,7 +65,8 @@ lists `text: VSSD / layer: 36 / datatype: 0`.
 
 > **`I_P` REMOVED FROM THE PAD LIST (2026-08-27, commit `020852a`; confirmed against the real
 > 12-pin package at `5e55d14`).** `I_P` is now an **internal net**: `DIV2_QUAD_v1.I_P` →
-> `PFD_lib.FB`, and that is how the PLL loop closes. It is not a pad and not a golden port.
+> `PFD_lib.FB`, which is where the feedback path would close in a loop. It does not close one on
+> this die (see the scope note above). It is not a pad and not a golden port.
 >
 > **Why it had to go — an RC failure no gate we run could see** (`docs/verification.md` §8.10).
 > The PFD's FB tapped `I_P` on the **pad side** of the 1 kΩ `XR_SER_IP`, so the feedback clock
@@ -153,7 +156,7 @@ run**; the clamps are verified structurally (DRC + LVS inside `chip_top`) only.
 > **Bias-pad rename (2026-08-04):** `IBIAS_CP` → **`IBIAS`**, a chip-level bias
 > reference. One external 240 µA feeds an on-chip bias generator that fans out to
 > both the charge pump (~50 µA) and the DIV2 CML tails (2.4 mA each). This matches
-> `CP_v1`'s stated end-state (mirrored bias from the PLL bias generator). **Pin
+> `CP_v1`'s stated end-state (mirrored bias from the on-chip bias generator). **Pin
 > count is unchanged by the rename (still one analog-DC pad).** Issue #143's
 > pin-line wording may need to follow this rename (Greg to update — external).
 

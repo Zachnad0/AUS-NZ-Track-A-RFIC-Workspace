@@ -5,6 +5,8 @@ Prepared 2026-09-01 for **Caglar Ozdag**, at the request of `silicon-vlsi` on is
 (2026-09-01 05:59 UTC), and revised the same day against Caglar's four tapeout-priority items.
 Repo state: branch `integration`, commit `25a50c0`.
 
+> **SCOPE (2026-09-11, reviewer reframe).** RF-block characterization chip containing the blocks of an integer-N PLL (LC-VCO with varactor tuning, CML divide-by-2 quadrature divider, PFD, charge pump), brought out to pads for open-loop characterization. Closed-loop lock is not demonstrable on this die: the feedback divides by 2 only and the PFD has no usable phase-detection window at the ~2.5 GHz reference that would require. Not a functioning integer-N PLL.
+
 This document supersedes the 2026-08-10 review deck. **`docs/layout-review-aug14.md` is kept
 unchanged as the historical record** and is not superseded — it holds the per-block working
 notes this document summarises.

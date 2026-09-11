@@ -1205,12 +1205,30 @@ _n = demote_labels("IBIAS", keep_at=(0.5, 282.5))
 assert _n == 1, "expected exactly 1 non-pad IBIAS 36/10 label to demote, found %d" % _n
 print("   IBIAS: demoted %d block-tap label 36/10 -> 36/0 (pad label at 0.50,282.50 kept)" % _n)
 
-# JOB B: I_P is no longer a PAD, so nothing should carry it as a chip PORT. DIV2_QUAD_v1's GDS
-# still has its own I_P text on 36/10 at its output tap. Demote ALL of them -- I_P stays an
-# internal net (DIV2.I_P -> PFD.FB) and keeps its text in the GDS, it just stops being a port.
-_m = demote_labels("I_P", lay=34) + demote_labels("I_P", lay=36)
-assert _m >= 1, "expected at least one I_P 36/10 label to demote, found none"
-print("   I_P: demoted %d label(s) 36/10 -> 36/0 (no longer a pad)" % _m)
+def delete_labels(name, lay):
+    """Remove <lay>/10 AND <lay>/0 texts for `name` entirely."""
+    # Collect before deleting -- see the traversal warning above.
+    n = 0
+    for _dt in (10, 0):
+        _li = ly.layer(lay, _dt)
+        _hits = [_sh for _sh in chip.shapes(_li).each()
+                 if _sh.is_text() and _sh.text.string == name]
+        for _sh in _hits:
+            _sh.delete()
+        n += len(_hits)
+    return n
+
+# JOB B: I_P is no longer a PAD, so nothing should carry it as a chip PORT.
+# It must also not appear as a top-level LABEL at all. The organizers scrape top_cell_text
+# on BOTH datatype 0 and datatype 10 and match the names against info.yaml; their
+# A01_BH_interface.yaml lists `text: I_P / layer: 34 / datatype: 0`, and audit 20260907-1
+# reported I_P UNMATCHED because info.yaml has no I_P pin (it came off the pad list at
+# 020852a). Demoting 10 -> 0 makes it a plain label for MAGIC but leaves it fully visible to
+# that scrape, which is what produced the finding. Delete it instead: I_P stays an internal
+# net (DIV2.I_P -> PFD.FB), it just carries no top-level text.
+_m = delete_labels("I_P", lay=34) + delete_labels("I_P", lay=36)
+assert _m >= 1, "expected at least one top-level I_P label to delete, found none"
+print("   I_P: deleted %d top-level label(s) -- no pin entry, must not appear in top_cell_text" % _m)
 esd_check_segments(ESD_BOX)
 # ---- VIA1 CUT INVENTORY -- the attribution source for the DRC box-set delta --------------
 # Every via1 cut this script adds is attributable to exactly one structure below. If the box
