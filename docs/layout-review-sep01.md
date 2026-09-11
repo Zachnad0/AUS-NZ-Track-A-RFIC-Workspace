@@ -14,7 +14,7 @@ notes this document summarises.
 | Item | Outcome |
 |---|---|
 | **1 — loop sign + closed-loop lock** | §4.6.1–4.6.3. The loop **divides by 2 and nothing else**, so lock needs a 2.4–2.5 GHz reference where the PFD has **no usable phase-detection window**. Loop sign now stated as a concrete net swap; lock arithmetic done from measured I_CP/KVCO/N. **Closed-loop lock is not demonstrable on this die** — this is the most important finding in the document. |
-| **2 — DIV2 VSS current density** | §4.5. **Not shipped, but a working fix is now built.** The original M1 widening **fails LVS — it shorts `NS` to `VSS`** (it had been signed off on DRC + bbox alone, neither of which can see a same-layer short). An **M2 plate + 193 via1 stitch** replaces it: 4.93 → **1.000 mA/µm**, DRC 0, LVS 14/6/17 match uniquely, KLayout var-D clean, bbox unchanged. Collector plate still cannot be widened (10b). |
+| **2 — DIV2 VSS current density** | §4.5. **Not shipped, but a working fix is now built.** The original M1 widening **fails LVS — it shorts `NS` to `VSS`** (it had been signed off on DRC + bbox alone, neither of which can see a same-layer short). An **M2 plate + 193 via1 stitch** replaces it: 4.93 → **1.000 mA/µm**, DRC 0, LVS 14/6/17 match uniquely, KLayout var-D clean, bbox unchanged. Ties (10b), plate (10c) and the **disconnected IP tie (10d)** remain open. |
 | **3 — PEX / re-simulation** | §4.2.1. **Done for `CP_v1`** (R+C): parasitics move the UP/DOWN match by ≤ 0.076 pp. Full-chip PEX not attempted. |
 | **4 — density fill + nmoscap waiver** | §2.5 and §6 item 13. Waiver evidence assembled and an acceptance request drafted; **density fill not started** and its ownership is unresolved. |
 
@@ -964,7 +964,8 @@ ceiling −1142 to the −2600 cell floor is 1458 iu shared by three stacked row
    the only exit was a **single 52×52 iu via1** per instance at child x −1058…−1006,
    y −1298…−1246, carrying the whole 2.96 mA — **10.6× over** the 0.28 mA/cut figure at 110 °C.
    The plate relieves that as a side effect. The binding width on the exit is now the DIV2-level
-   tie itself, ≈80 iu = 0.40 µm, which is item 10b and is **not** addressed here.
+   tie itself, ≈80 iu = 0.40 µm, which is item 10b — and item **10d**, since the IP tie
+   connects to nothing at all. Neither is addressed here.
 
 **A defect only the parent could catch.** The first spine via was placed at the VSS port
 (y −1272) so that VSS had a via exit. Standalone the cell was **clean — Magic DRC 0, KLayout
@@ -990,7 +991,7 @@ exactly as DRC and bbox were blind to the `NS` short. Recorded in `docs/tracking
 
 **Status: built, gated at both levels, and shipped to the repository sources.**
 `phase5/ib_conv_v1.tcl`, both `.mag`, `gds/ib_conv_v1.gds` (new) and `gds/DIV2_QUAD_v1.gds` are
-updated. `chip_top` is **NOT** re-integrated — that waits on item 10b so `route_chip` and the six
+updated. `chip_top` is **NOT** re-integrated — that waits on items 10b/10c/10d so `route_chip` and the six
 gates run once. Note `DIV2_QUAD_v1.mag` changes only in its own timestamp and the four
 `use ib_conv_v1` instance stamps: the plate is entirely inside the child, so the parent carries
 no new geometry.
@@ -1315,10 +1316,38 @@ Everything in this list is a real absence. None of it is mitigated by anything i
     child master is absent and all four `getcell ib_conv_v1` calls drop silently; that was
     reproduced deliberately as a control. **There is no reproducibility blocker on DIV2.** Full
     trace in the "WITHDRAWN 2026-09-10" subsection of §4.5.
-10b. **The 7.5 µm M2 collector plate cannot be fixed by widening** — metal2's bottom margin inside
-    `DIV2_QUAD_v1` is **3.860 µm** against a ~22 µm target. It needs M3/M4 stacking, out of scope
-    for this pass. The four top ties (0.28/0.56 µm) are untouched for the same reason. They no
-    longer share an item-10a blocker: **that item is withdrawn** — see 10a.
+10b. **The four DIV2-level converter VSS ties are 0.28 / 0.56 µm, carrying 2.96 mA each.** Measured
+    2026-09-11: `:238` IP strip 1.00 µm → 2.960 mA/µm; `:275` IN strip 0.28 µm → **10.571**;
+    `:308` QN vseg 0.56 µm → **5.286**; `:309` QN strip 0.28 µm → **10.571**; `:342` QP vseg
+    0.56 µm → **5.286**; `:343` QP strip 0.28 µm → **10.571**. Against DRM 14.2 @110 °C
+    (1.00 mA/µm) each needs **≥ 2.96 µm**. Surveyed for room: **2.96 µm fits on all six
+    segments** — the binding neighbours are VDD 2110 iu below the IN strip and a foreign net
+    412 iu below the IP strip; everything else has 1110–22938 iu. Not yet widened.
+10c. **The 7.5 µm M2 collector plate carries the full 22.40 mA = 2.987 mA/µm, 2.99× over.**
+    Budget: 4 ties × 2.96 = 11.84 mA plus 10.56 mA of core rails and bias. Reaching 1.00 mA/µm
+    needs **22.40 µm = 4480 iu**, a shortfall of 2980 iu on the present 1500 iu.
+    **CORRECTED 2026-09-11 — the earlier "cannot be fixed by widening" was based on the wrong
+    measurement.** It cited metal2's **3.860 µm margin to the cell boundary**, which does not
+    bound the plate: the plate sits at y −6000…−4500 and the question is what lies below *it*.
+    Measured, the corridor x 15000…21844, y −19646…−6000 contains **zero M2** — the only rects
+    in that x-band are the QP vseg and its sliver, both VSS — giving **≈13,646 iu ≈ 68 µm** of
+    free vertical space against a 2980 iu shortfall. M3/M4/M5 cross it (8/11/6 rects, different
+    layers, no short) and it holds **zero via1**, so there are no via landings to collide with.
+    **M3/M4 stacking is therefore not the only route**; growing the plate downward in-plane
+    reaches the target. Not yet grown.
+10d. **The IP converter's VSS tie is not connected to anything — its return is the substrate.**
+    `ib_div2.tcl:237–238` says "extend the M2 collector plate east under the conv VSS pin", but
+    the plate is at y −6000…−4500 and the strip it draws is at **y −2100…−1900**: it takes the
+    plate's *x* edge (21900) at the wrong *y*, 2400 iu above it, and lands on nothing.
+    `select net` from the collector plate returns md5 `071c460ca41e` and reaches IN, QN and QP;
+    from the IP strip it returns `9daf294bf594`, a 399-byte island of one M2 strip, one via1 and
+    the child pad. **`ib_conv_v1_0` therefore returns 2.96 mA through the p-substrate**, which
+    `7b470be` already records as not a low-Z return.
+    **LVS cannot see this.** The p-substrate is a single global node, so netgen reports
+    `Xib_conv_v1_0 … VSS` and "match uniquely" whether or not any metal connects it — the same
+    class of blindness as Magic DRC to a same-layer short. **Pre-existing:** present in the
+    signed-off `DIV2_QUAD_v1`, in `gds/DIV2_QUAD_v1.gds`, and therefore in `chip_top` on
+    `origin/main`. Not caused by the `ib_conv_v1` M2 plate, and not hidden by it.
 11. **No ESD simulation of any kind.** No HBM, no CDM. The two built clamps are verified
     structurally (DRC + LVS inside `chip_top`) only.
 12. **Only 2 of 7 analog pins carry a secondary ESD clamp**, and whether that is complete rests
@@ -1388,7 +1417,7 @@ Everything in this list is a real absence. None of it is mitigated by anything i
 
 ## 7. What a reviewer should look at first
 
-If time is short, these five things carry the most information:
+If time is short, these six things carry the most information:
 
 1. **§2.3 — `I_P` removed from the pin list.** A 912 ps RC on the feedback path would have stopped
    the loop locking, and no gate in our flow could see it because the padring load lives outside
@@ -1406,7 +1435,11 @@ If time is short, these five things carry the most information:
    cannot see a same-layer short. Separately, the reproducibility gap once given as the reason it
    was unshipped is **withdrawn**: `ib_div2.tcl` regenerates the signed-off block byte-identically.
    The EM exposure is real and **unmitigated**.
-5. **§6 items 13–14 — density fill and the W4 waiver.** The two items most likely to affect
+5. **§6 item 10d — the IP converter's VSS tie connects to nothing.** `ib_div2.tcl:237–238`
+   draws it at the wrong y, so `ib_conv_v1_0` returns its 2.96 mA through the p-substrate. LVS
+   is structurally blind to it (substrate is one global node), so it passed every gate and is
+   present in the signed-off GDS and in `chip_top` on `origin/main`.
+6. **§6 items 13–14 — density fill and the W4 waiver.** The two items most likely to affect
    whether the design is accepted at final signoff, and neither is resolved.
 
 ---
