@@ -12,7 +12,11 @@ import pya, sys, os
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import route_lib as R
 
+# --out PATH: the chip_top.gds this pass reads and writes back (it is an in-place pass).
+# Defaults to the committed repo path so the recorded invocation is unchanged.
 GDS = "/foss/designs/AUS-NZ-integration/gds/chip_top.gds"
+if "--out" in sys.argv:
+    GDS = sys.argv[sys.argv.index("--out") + 1]
 ly = pya.Layout(); ly.read(GDS)
 chip = ly.cell("chip_top")
 if chip is None:

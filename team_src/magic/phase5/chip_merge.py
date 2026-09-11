@@ -7,9 +7,15 @@
 #
 # Placement: getcell/floorplan targets are block BBOX-LL in um. KLayout inserts a cell at
 # its ORIGIN, so origin = target_LL - block_bbox_LL.  (block_bbox_LL from gds/<blk>.gds)
-import pya
+import pya, sys
 
 GDS = "/foss/designs/AUS-NZ-integration/gds"
+# --out PATH: where chip_top.gds is written. Defaults to the committed repo path so the
+# recorded invocation (`python3 chip_merge.py`) is unchanged. Pass --out to build into a
+# scratch path instead of overwriting the committed deliverable.
+OUT = "%s/chip_top.gds" % GDS
+if "--out" in sys.argv:
+    OUT = sys.argv[sys.argv.index("--out") + 1]
 # (file, topcell, target_LL_x, target_LL_y, block_bbox_LL_x, block_bbox_LL_y)
 BLOCKS = [
     ("DIV2_QUAD_v1", 0.0,   0.0,   -65.000, -105.000),  # bottom-left
@@ -56,5 +62,5 @@ bb = chip.dbbox()
 print("CHIP_BBOX_um=(%.3f,%.3f)-(%.3f,%.3f)  size=%.2f x %.2f"
       % (bb.left, bb.bottom, bb.right, bb.top, bb.width(), bb.height()))
 print("CELL_COUNT=%d" % master.cells())
-master.write("%s/chip_top.gds" % GDS)
-print("WROTE %s/chip_top.gds" % GDS)
+master.write(OUT)
+print("WROTE %s" % OUT)
