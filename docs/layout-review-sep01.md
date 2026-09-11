@@ -14,7 +14,7 @@ notes this document summarises.
 | Item | Outcome |
 |---|---|
 | **1 — loop sign + closed-loop lock** | §4.6.1–4.6.3. The loop **divides by 2 and nothing else**, so lock needs a 2.4–2.5 GHz reference where the PFD has **no usable phase-detection window**. Loop sign now stated as a concrete net swap; lock arithmetic done from measured I_CP/KVCO/N. **Closed-loop lock is not demonstrable on this die** — this is the most important finding in the document. |
-| **2 — DIV2 VSS current density** | §4.5. **NOT fixed.** The proposed widening (4.93 → 0.987 mA/µm) **fails LVS — it shorts `NS` to `VSS`**, and was recorded as verified on DRC + bbox alone, neither of which can see a same-layer short. Plate cannot be widened. |
+| **2 — DIV2 VSS current density** | §4.5. **Not shipped, but a working fix is now built.** The original M1 widening **fails LVS — it shorts `NS` to `VSS`** (it had been signed off on DRC + bbox alone, neither of which can see a same-layer short). An **M2 plate + 194 via1 stitch** replaces it: 4.93 → **1.000 mA/µm**, DRC 0, LVS 14/6/17 match uniquely, KLayout var-D clean, bbox unchanged. Collector plate still cannot be widened (10b). |
 | **3 — PEX / re-simulation** | §4.2.1. **Done for `CP_v1`** (R+C): parasitics move the UP/DOWN match by ≤ 0.076 pp. Full-chip PEX not attempted. |
 | **4 — density fill + nmoscap waiver** | §2.5 and §6 item 13. Waiver evidence assembled and an acceptance request drafted; **density fill not started** and its ownership is unresolved. |
 
@@ -891,14 +891,82 @@ VSS-widening attempt must gate on LVS, not on DRC and bbox.
 **What a valid fix must do:** add conductor without growing the metal1 footprint into `NS` —
 either strap the existing M1 run with M2 through via arrays at each `CVSS` tap (no M1 geometry
 change, so no clearance problem), or grow M1 asymmetrically into the free space left and below
-only (≈420 iu ≈ 2.1 µm, ~1.41 mA/µm — an improvement, short of the ~1.0 target). Neither is
-built.
+only (≈420 iu ≈ 2.1 µm, ~1.41 mA/µm — an improvement, short of the ~1.0 target). **The first
+of those is now built and green** — see the next section.
 
 The patch is **regenerated into a scratch path on demand** and **must not be applied** — it is
 kept only as the reproducible statement of what was tried: `ib_conv_v1.tcl:117–119`, `hw` 60 → 300,
 with the I3 `hseg` and the `vseg` y-anchors lifted by `hw − 60`. Earlier revisions of this section
 cited `scratchpad/div2-vss-widen.patch` as a retained file; **no such file exists, and none was
 ever committed** — `git log --all --diff-filter=A` over that path returns nothing.
+
+### The bus fix, second attempt: M2 plate + via stitching — BUILT, gates green, NOT shipped
+
+**Built 2026-09-10, entirely from the generator.** The plate and its stitching are emitted by
+`phase5/ib_conv_v1.tcl`; a rebuild from the `.tcl` alone into an empty directory reproduces the
+cell byte-for-byte (md5 `8c3be58202920ce98e11f019ba51b2e1`, timestamp stripped). Nothing is
+hand-drawn, and nothing is applied to the repository.
+
+**The approach.** The M1 hw stays **60** — no metal1 geometry moves, which is what shorted `NS`
+last time. Conductor is added on **metal2 only**: a staircase plate merged across all four VSS
+segments, plus via1 stitching along the whole M1/M2 overlap. Distributed stitching is not
+optional — without it the M1 still carries full current between transfer points and the parallel
+M2 buys nothing.
+
+| plate row | footprint (iu) | height |
+|---|---|---|
+| row 1 (S1, spine) | x −1360…4800, y −1614…−1142 | 472 iu = 2.36 µm |
+| row 2 (S2) | x −1360…6400, y −2086…−1614 | 472 iu = 2.36 µm |
+| row 3 (S3) | x −1360…8000, y −2558…−2086 | 472 iu = 2.36 µm |
+
+Ceiling −1142 holds exactly **100 iu** clear of the `INP`/`INM` M2 riser pads at y −1042 — the
+only M2 obstruction anywhere over the bus path, which is otherwise **0 % occupied**. No row
+extends right of its own segment's `CVSS` tap x (4800 / 6400 / 8000).
+
+**Per-segment result — every segment sized for the full 2.96 mA:**
+
+| segment | M1 | M2 | total | density | was |
+|---|---:|---:|---:|---:|---:|
+| S1 (`CVSS(I1)` 4800,−1230) | 0.60 µm | 2.36 µm | **2.96 µm** | **1.000 mA/µm** | 4.93 |
+| S2 (`CVSS(I2)` 6400,−1930) | 0.60 | 2.36 | 2.96 | **1.000** | 4.93 |
+| S3 (`CVSS(I3)` 8000,−2430) | 0.60 | 2.36 | 2.96 | **1.000** | 4.93 |
+| spine | 0.60 | 2.36 | 2.96 | **1.000** | 4.93 |
+
+**via1 count: 194** — S1 48, S2 61, S3 75, spine 10, at 120 iu pitch.
+
+**Gates, all green.** Magic DRC **0**; `verify_cp.sh` LVS **14 devices / 6 ports / 17 nets,
+circuits match uniquely, 0 property errors** — identical to the unpatched control, and the
+17-vs-16 net count is the direct refutation of the `NS`–`VSS` short; bbox
+`-1360 -2600 9612 14564` **unchanged**; KLayout **variant-D clean, 0 violations** on a scratch
+GDS whose cell list is exactly `['ib_conv_v1']`. Both the LVS control and the patched run were
+read from a scratch repository root, never from `team_src/magic`.
+
+**The criterion, and its provenance.** **GF180MCU DRM 14.2 Electro-migration, 110 °C
+unidirectional column = 1.00 mA/µm for M1–(TopMetal−1)**, as looked up and recorded in
+`docs/phase8-padframe-plan.md` §3q. This is a **foundry design-manual figure, not a PDK figure**
+— the open PDK ships no EM data at all — and it is the same number `em_sizing.py:1–2` hard-codes.
+Via1 in the same table is 0.58 / 0.28 / 0.18 mA per cut at 85 / 110 / 125 °C. VSS current is DC,
+so the unidirectional column applies.
+
+**Margins at the other two junction temperatures, recorded as information and not as
+requirements:** 1.000 mA/µm passes 85 °C (2.09 mA/µm) with 2.09× margin and is 1.49× over
+125 °C (0.67 mA/µm). Reaching the 125 °C figure would need 4.42 µm total, which does **not** fit:
+ceiling −1142 to the −2600 cell floor is 1458 iu shared by three stacked rows, so ≈486 iu ≈
+2.43 µm of M2 per row is the geometric ceiling in this cell, about 0.98 mA/µm.
+
+**Two caveats, stated plainly.**
+1. **1.000 mA/µm is exactly the 110 °C limit — zero margin.** It meets the criterion and does not
+   beat it.
+2. **The cell's VSS exit is M2-to-M2, so the spine via column is not the current path.** The
+   DIV2-level M2 VSS tie overlaps the plate directly on all four instances (1.832 µm² on
+   `ib_conv_v1_0`, 0.496 µm² on the other three), and the two merge on flatten. Before the plate,
+   the only exit was a **single 52×52 iu via1** per instance at child x −1058…−1006,
+   y −1298…−1246, carrying the whole 2.96 mA — **10.6× over** the 0.28 mA/cut figure at 110 °C.
+   The plate relieves that as a side effect. The binding width on the exit is now the DIV2-level
+   tie itself, ≈80 iu = 0.40 µm, which is item 10b and is **not** addressed here.
+
+**Status: built and verified at cell level, NOT shipped.** No committed `.tcl`, `.mag` or `.gds`
+has been touched, and DIV2 has not been regenerated against it.
 
 ### WITHDRAWN 2026-09-10: `ib_div2.tcl` DOES reproduce the signed-off `DIV2_QUAD_v1`
 
@@ -1196,15 +1264,21 @@ Everything in this list is a real absence. None of it is mitigated by anything i
    never been run on the custom blocks or on `chip_top`.
 10. **No electromigration deck exists in the open gf180mcuD PDK** — not a missing run, an absent
     rule set. The DIV2 VSS numbers are compared against an **industry rule of thumb** hard-coded
-    at `em_sizing.py:1–2`, **not** a foundry limit; the GF design manual has not been consulted
-    and real per-layer limits must come from it before signoff. On that basis **the DIV2 internal
+    at `em_sizing.py:1–2`. **The GF design manual HAS since been consulted** (2026-08-23):
+    **DRM 14.2 Electro-migration**, recorded in `docs/phase8-padframe-plan.md` §3q, gives
+    2.09 / 1.00 / 0.67 mA/µm unidirectional for M1–(TopMetal−1) and 0.58 / 0.28 / 0.18 mA per
+    via1 cut at 85 / 110 / 125 °C — so `em_sizing.py`'s flat 1.0 is exactly the 110 °C column,
+    and the numbers below are a foundry figure, not a guess. On that basis **the DIV2 internal
     VSS network is over-limit**: the bus is 0.60 µm carrying 2.96 mA = **4.93 mA/µm** (measured
     from the taped-out GDS at 200 iu/µm; the recorded figures are correct). EM is a **wear-out**
     mechanism, not a functional failure — it bounds service life, and does not gate DRC or LVS.
-    A fix was proposed (0.60 → 3.00 µm, 0.987 mA/µm) and is **NOT valid: it shorts the
-    differential-pair tail node `NS` to `VSS`** — netgen `DO NOT MATCH`, 16 nets against 17.
-    It had been recorded as "verified at cell level" on Magic DRC 0 and an unchanged bbox;
-    **neither check can see the defect and LVS was never run on it.** Nothing is shipped.
+    The M1 widening once recorded here (0.60 → 3.00 µm) is **NOT valid: it shorts the
+    differential-pair tail node `NS` to `VSS`** — netgen `DO NOT MATCH`, 16 nets against 17. It
+    had been recorded as "verified at cell level" on Magic DRC 0 and an unchanged bbox;
+    **neither check can see the defect and LVS was never run on it.** A **replacement is built
+    and green** — M2 plate + 194 via1 stitch, M1 untouched, **1.000 mA/µm** against the DRM 14.2
+    110 °C figure, DRC 0 / LVS 14-6-17 match uniquely / KLayout var-D clean / bbox unchanged
+    (§4.5). **Still not shipped:** no committed `.tcl`, `.mag` or `.gds` has been touched.
 10a. **WITHDRAWN 2026-09-10 — `ib_div2.tcl` DOES reproduce the signed-off `DIV2_QUAD_v1`.** This
     item previously reported a **233.28 × 136.86 µm** rebuild against the signed-off
     **237.36 × 174.17 µm** (`47472 x 34834 iu`, commit `1ba0838`) and called it a blocker on any
