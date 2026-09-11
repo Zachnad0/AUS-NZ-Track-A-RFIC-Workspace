@@ -15,7 +15,7 @@ notes this document summarises.
 |---|---|
 | **1 — loop sign + closed-loop lock** | §4.6.1–4.6.3. The loop **divides by 2 and nothing else**, so lock needs a 2.4–2.5 GHz reference where the PFD has **no usable phase-detection window**. Loop sign now stated as a concrete net swap; lock arithmetic done from measured I_CP/KVCO/N. **Closed-loop lock is not demonstrable on this die** — this is the most important finding in the document. |
 | **2 — DIV2 VSS current density** | §4.5. **Not shipped, but a working fix is now built.** The original M1 widening **fails LVS — it shorts `NS` to `VSS`** (it had been signed off on DRC + bbox alone, neither of which can see a same-layer short). An **M2 plate + 193 via1 stitch** replaces it: 4.93 → **1.000 mA/µm**. The DIV2-level ties (10b), the collector plate (10c) and the **disconnected IP tie (10d)** are now fixed too — every VSS path in the block is at **1.000 mA/µm or better**, DRC 0, LVS 149/9/22 match uniquely, KLayout var-D clean, bbox unchanged. **`chip_top` re-integrated 2026-09-11**, all six gates green. |
-| **3 — PEX / re-simulation** | §4.2.1. **Done for `CP_v1`** (R+C): parasitics move the UP/DOWN match by ≤ 0.076 pp. Full-chip PEX not attempted. |
+| **3 — PEX / re-simulation** | §4.2.1. R+C extracted for **three** blocks: `CP_v1` 38 dev / 265 C / 269 R, `ib_conv_v1` 14 / 70 / 526, `vco_core` 30 / 194 / 208; every device count equals that block's LVS count. Re-simulated: `CP_v1` match moves ≤ 0.076 pp; **`ib_conv_v1` in the DIV2 bench degrades badly — output swing 131 → 25 mVpp, duty +29 %, VSS current −8.4 %** (`signoff/pex/ib_conv_v1/resim.md`). `vco_core` re-sim deferred. Full-chip PEX not attempted. |
 | **4 — density fill + nmoscap waiver** | §2.5 and §6 item 13. Waiver evidence assembled and an acceptance request drafted; **density fill not started** and its ownership is unresolved. |
 
 **Nothing in this revision changed the shipped GDS.** `gds/chip_top.gds` is byte-identical to
@@ -1554,6 +1554,32 @@ Everything in this list is a real absence. None of it is mitigated by anything i
     child's VDD bus passed a clean probe), and **`extract all` is same-name-merge-blind** (this
     item). Only the metal-only connectivity extraction covers the third. Adopting
     `extract unique` is being evaluated separately; it is **not** adopted as of this writing.
+23. **The extracted `ib_conv_v1` does not work in the DIV2 bench, and this is unexplained.**
+    Re-simulated 2026-09-11 (`signoff/pex/ib_conv_v1/resim.md`). Against the golden-subckt
+    reference in the same deck, with the DIV2 core left schematic and only the converters
+    swapped: **output swing 131 → 25 mVpp (−80.9 %)**, duty 49.5 → 63.9 % (+29.1 %), per-converter
+    VSS current 2.9735 → 2.7249 mA (−8.4 %), total supply +2.7 % with one PEX converter and
+    +10.75 % with four. The INV3 output stops reaching the rails — it sits between 2079 mV and
+    2677 mV — so rise and fall times are **undefined**, not merely slow. `f_out` stays exactly
+    2.500 GHz throughout.
+
+    **It is a settled state, not incomplete settling**: the envelope is flat from 12 ns to
+    20 ns in every run, checked because `team_src/sim/div2/README.md` records some corners
+    settling at 24–28 ns while the deck stops at 20 ns. With one converter extracted the other
+    three are unchanged to within 0.06 %; with all four extracted they degrade identically and
+    the I/Q phase returns to 270.0°.
+
+    **The cause has not been isolated and nothing is claimed about it.** Candidates not
+    distinguished: the extracted VSS network, the self-bias path through the extracted `RFB`,
+    the 20 ns stop, the `uic` start. The measured VSS port-to-internal drop across the 12
+    device-terminal nodes is 0.87–33.68 mV average, 58.50 mV peak on the worst node.
+
+    **What this does NOT say.** It does not say the layout is broken. The block passes DRC, LVS
+    (14 / 6 / 17 match uniquely, 0 property errors) and KLayout variant-D, and the silicon it
+    describes is the same silicon that produced the schematic result. It says an extracted-view
+    simulation of it does not reproduce the schematic behaviour in this bench, which is either a
+    real layout effect or a bench/extraction artefact, and which of those has not been
+    established.
 
 ---
 

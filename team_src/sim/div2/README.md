@@ -30,6 +30,17 @@ diff-pair front end (unchanged: M_NT tail, M_BN1/2 in = OIB/OI, M_BP1/2 mirror l
 INV3 driver (44u/16u, R_SER 1k) --> I_P. The RFB self-bias holds G1=INVO1=Vtrip
 automatically; AC coupling removes OC's common-mode. No absolute threshold to match.
 
+## BENCH FIDELITY (2026-09-11): the headline below is an IDEAL-PASSIVE number
+
+The converter chains in this deck use ideal `CC 100f`, `RFB 20k`, `R_SER 1k`. The drawn cell
+(`ib_conv_v1_golden.spice`) uses `cap_mim_2f0_m4m5_noshield` and two `ppolyf_u_1k`. Nominal
+values agree, the models do not. Same circuit, same stimulus, modelled passives instead of
+ideal: **I_P swing 142 -> 131 mVpp (-7.7 %), duty 48.8 -> 49.5 % (+1.4 %), supply 22.4 ->
+22.118 mA (-1.3 %)**; f_out 2.500 GHz and I/Q 270.0 deg unchanged. Lifting the inline chain
+verbatim into a subckt reproduces 142 mVpp exactly, so the shift is the passive models and
+not the restructuring. Quote 131 mVpp when comparing against anything extracted.
+See `signoff/pex/ib_conv_v1/resim.md`.
+
 ## Headline (16-20 ns unless noted)
 TT I_P 142 mVpp, 2.500 GHz, duty 48.8%, I/Q 270.0 deg; FF 146 mVpp; SS 130 mVpp.
 Settled (24-28 ns) every corner incl 85C = exact 2.500 GHz / 270.0 deg.

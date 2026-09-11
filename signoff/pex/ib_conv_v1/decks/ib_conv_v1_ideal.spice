@@ -1,0 +1,24 @@
+* ib_conv_v1_ideal -- the inline converter chain from div2_sb_TT.spice lifted VERBATIM
+* into a subckt. Ideal passives (100f / 20k / 1k) exactly as the recorded TT baseline
+* used them. Internal node names match the golden (S1/S2/S3) so the same probe works.
+.subckt ib_conv_v1_ideal IBIAS INP INM OUT VDD VSS
+XM_NT NS IBIAS VSS VSS nfet_03v3 L=1u W=8u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0
+XM_BN1 DN1 INP NS VSS nfet_03v3 L=0.3u W=8u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0
+XM_BN2 OC INM NS VSS nfet_03v3 L=0.3u W=8u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0
+XM_BP1 DN1 DN1 VDD VDD pfet_03v3 L=0.3u W=8u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0
+XM_BP2 OC DN1 VDD VDD pfet_03v3 L=0.3u W=8u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0
+XM_IP1 S1 G1 VDD VDD pfet_03v3 L=0.3u W=10u nf=1
+CC OC G1 100f
+RFB S1 G1 20k
+XM_IN1 S1 G1 VSS VSS nfet_03v3 L=0.3u W=4u nf=1
+XM_IP2 S2 S1 VDD VDD pfet_03v3 L=0.3u W=26u nf=1
+XM_IN2 S2 S1 VSS VSS nfet_03v3 L=0.3u W=11u nf=1
+XM_IP3 S3 S2 VDD VDD pfet_03v3 L=0.3u W=44u nf=1
+XM_IN3 S3 S2 VSS VSS nfet_03v3 L=0.3u W=16u nf=1
+R_SER S3 OUT 1k
+.ends ib_conv_v1_ideal
