@@ -14,7 +14,7 @@ notes this document summarises.
 | Item | Outcome |
 |---|---|
 | **1 — loop sign + closed-loop lock** | §4.6.1–4.6.3. The loop **divides by 2 and nothing else**, so lock needs a 2.4–2.5 GHz reference where the PFD has **no usable phase-detection window**. Loop sign now stated as a concrete net swap; lock arithmetic done from measured I_CP/KVCO/N. **Closed-loop lock is not demonstrable on this die** — this is the most important finding in the document. |
-| **2 — DIV2 VSS current density** | §4.5. **Not shipped, but a working fix is now built.** The original M1 widening **fails LVS — it shorts `NS` to `VSS`** (it had been signed off on DRC + bbox alone, neither of which can see a same-layer short). An **M2 plate + 194 via1 stitch** replaces it: 4.93 → **1.000 mA/µm**, DRC 0, LVS 14/6/17 match uniquely, KLayout var-D clean, bbox unchanged. Collector plate still cannot be widened (10b). |
+| **2 — DIV2 VSS current density** | §4.5. **Not shipped, but a working fix is now built.** The original M1 widening **fails LVS — it shorts `NS` to `VSS`** (it had been signed off on DRC + bbox alone, neither of which can see a same-layer short). An **M2 plate + 193 via1 stitch** replaces it: 4.93 → **1.000 mA/µm**, DRC 0, LVS 14/6/17 match uniquely, KLayout var-D clean, bbox unchanged. Collector plate still cannot be widened (10b). |
 | **3 — PEX / re-simulation** | §4.2.1. **Done for `CP_v1`** (R+C): parasitics move the UP/DOWN match by ≤ 0.076 pp. Full-chip PEX not attempted. |
 | **4 — density fill + nmoscap waiver** | §2.5 and §6 item 13. Waiver evidence assembled and an acceptance request drafted; **density fill not started** and its ownership is unresolved. |
 
@@ -932,7 +932,8 @@ extends right of its own segment's `CVSS` tap x (4800 / 6400 / 8000).
 | S3 (`CVSS(I3)` 8000,−2430) | 0.60 | 2.36 | 2.96 | **1.000** | 4.93 |
 | spine | 0.60 | 2.36 | 2.96 | **1.000** | 4.93 |
 
-**via1 count: 194** — S1 48, S2 61, S3 75, spine 10, at 120 iu pitch.
+**via1 count: 193** — S1 48, S2 61, S3 75, spine 9, at 120 iu pitch. The spine column starts
+at y −1392, **not** at the VSS port (−1272); see the hierarchy note below.
 
 **Gates, all green.** Magic DRC **0**; `verify_cp.sh` LVS **14 devices / 6 ports / 17 nets,
 circuits match uniquely, 0 property errors** — identical to the unpatched control, and the
@@ -965,8 +966,34 @@ ceiling −1142 to the −2600 cell floor is 1458 iu shared by three stacked row
    The plate relieves that as a side effect. The binding width on the exit is now the DIV2-level
    tie itself, ≈80 iu = 0.40 µm, which is item 10b and is **not** addressed here.
 
-**Status: built and verified at cell level, NOT shipped.** No committed `.tcl`, `.mag` or `.gds`
-has been touched, and DIV2 has not been regenerated against it.
+**A defect only the parent could catch.** The first spine via was placed at the VSS port
+(y −1272) so that VSS had a via exit. Standalone the cell was **clean — Magic DRC 0, KLayout
+variant-D clean, LVS 14/6/17 match uniquely.** Regenerating `DIV2_QUAD_v1` against it returned
+**`DIV2_DRC=4`**, one per converter instance:
+
+```
+This layer can't abut or partially overlap between subcells
+    box -2414 -2028 -2330 -1976      (+3 more, one per instance)
+```
+
+`DIV2_QUAD_v1` paints its own via1 over the converter's VSS port at child x −1058…−1006,
+y −1298…−1246, and the new via **partially overlapped it by 20 iu in x**. Magic forbids contact
+tiles that abut or partly overlap **across a cell boundary** — a restriction that is invisible
+at cell level by construction, so no amount of standalone gating could have found it. The via
+was redundant anyway: the plate merges M2-to-M2 with the DIV2-level tie, so VSS already exits
+without it. Spine now starts at −1392, and the reason is written into the script so it cannot be
+re-added.
+
+**Gate rule that follows: after ANY change to a child cell, re-run parent-level Magic DRC.**
+Cell-level DRC, LVS and bbox are all structurally blind to cross-boundary contact conflicts,
+exactly as DRC and bbox were blind to the `NS` short. Recorded in `docs/tracking.md`.
+
+**Status: built, gated at both levels, and shipped to the repository sources.**
+`phase5/ib_conv_v1.tcl`, both `.mag`, `gds/ib_conv_v1.gds` (new) and `gds/DIV2_QUAD_v1.gds` are
+updated. `chip_top` is **NOT** re-integrated — that waits on item 10b so `route_chip` and the six
+gates run once. Note `DIV2_QUAD_v1.mag` changes only in its own timestamp and the four
+`use ib_conv_v1` instance stamps: the plate is entirely inside the child, so the parent carries
+no new geometry.
 
 ### WITHDRAWN 2026-09-10: `ib_div2.tcl` DOES reproduce the signed-off `DIV2_QUAD_v1`
 
@@ -1276,7 +1303,7 @@ Everything in this list is a real absence. None of it is mitigated by anything i
     differential-pair tail node `NS` to `VSS`** — netgen `DO NOT MATCH`, 16 nets against 17. It
     had been recorded as "verified at cell level" on Magic DRC 0 and an unchanged bbox;
     **neither check can see the defect and LVS was never run on it.** A **replacement is built
-    and green** — M2 plate + 194 via1 stitch, M1 untouched, **1.000 mA/µm** against the DRM 14.2
+    and green** — M2 plate + 193 via1 stitch, M1 untouched, **1.000 mA/µm** against the DRM 14.2
     110 °C figure, DRC 0 / LVS 14-6-17 match uniquely / KLayout var-D clean / bbox unchanged
     (§4.5). **Still not shipped:** no committed `.tcl`, `.mag` or `.gds` has been touched.
 10a. **WITHDRAWN 2026-09-10 — `ib_div2.tcl` DOES reproduce the signed-off `DIV2_QUAD_v1`.** This

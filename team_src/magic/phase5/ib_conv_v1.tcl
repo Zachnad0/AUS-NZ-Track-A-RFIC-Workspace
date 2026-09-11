@@ -117,6 +117,33 @@ set xVSSbus -1000
 hseg metal1 $xVSSbus -833 -1230 60
 foreach pfx {I1 I2 I3} { foreach {sx sy} $::CVSS($pfx) break ; hseg metal1 $xVSSbus $sx $sy 60 }
 set vlo [lindex $::CVSS(I3) 1] ; vseg metal1 $xVSSbus $vlo -1230 60
+
+# ---------- EM option 2: M2 VSS plate + via1 stitching (M1 UNCHANGED) ----------
+# The M1 hw stays 60. Growing M1 is what shorted NS to VSS; this adds conductor on M2
+# only, so no metal1 geometry moves. Staircase plate, each row 472 iu = 2.36 um tall
+# alongside the 0.60 um M1 = 2.96 um total per segment. Ceiling -1142 keeps 100 iu clear
+# of the INP/INM M2 riser pads at y -1042. No row extends right of its own CVSS tap x.
+proc via1_at {x y} {
+    box values [expr {$x-40}] [expr {$y-40}] [expr {$x+40}] [expr {$y+40}] ; paint metal1
+    box values [expr {$x-40}] [expr {$y-40}] [expr {$x+40}] [expr {$y+40}] ; paint metal2
+    box values [expr {$x-26}] [expr {$y-26}] [expr {$x+26}] [expr {$y+26}] ; paint m2contact
+}
+box values -1360 -1614 4800 -1142 ; paint metal2
+box values -1360 -2086 6400 -1614 ; paint metal2
+box values -1360 -2558 8000 -2086 ; paint metal2
+set VPITCH 120 ; set ::NVIA 0
+# stitch along the WHOLE M1/M2 overlap: without distributed vias the M1 still carries
+# full current between transfer points and the parallel M2 buys nothing.
+foreach {ytap xend} [list -1230 4800 -1930 6400 -2430 8000] {
+    for {set x -896} {$x <= $xend} {incr x $VPITCH} { via1_at $x $ytap ; incr ::NVIA }
+}
+# Spine column. It starts at -1392, NOT at the VSS port (-1272): DIV2_QUAD_v1 paints its own
+# via1 over the port at child x -1058..-1006 y -1298..-1246, and a via here partially overlaps
+# it by 20 iu in x -- magic "This layer can't abut or partially overlap between subcells", which
+# is clean standalone but fires 4x at DIV2 level, once per converter instance. No via is needed
+# at the port: the plate is the VSS exit, merging M2-to-M2 with the DIV2-level tie.
+for {set y -1392} {$y >= -2450} {incr y -$VPITCH} { via1_at -1000 $y ; incr ::NVIA }
+puts "NVIA=$::NVIA"
 # VDD bus on METAL2 (its high-y hseg's cross the RFB, whose guard-ring metal1 is VSS
 # bulk -- a metal1 VDD bus shorted VDD to VSS there; M2 crosses the RFB metal1 and the
 # cap M4/M5 inter-layer). m2contact ties the M2 bus to each metal1 CVDD strip.

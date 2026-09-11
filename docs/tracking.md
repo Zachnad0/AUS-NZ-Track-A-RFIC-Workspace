@@ -91,6 +91,11 @@ clean and documented beats four half-done** (`scope.md §6` fallback ladder).
 (5 gf180 cells, our topology, re-verified `verification.md §2.2`); **CP_v1 = manual
 Magic + netgen LVS** (full-custom analog). VCO/CP need the manual flow regardless.
 
+**GATE RULE (2026-09-10):** after ANY change to a child cell, re-run **parent-level Magic DRC** —
+magic's "this layer can't abut or partially overlap between subcells" fires only in hierarchy, so a
+child that is DRC/LVS/KLayout-clean standalone can still break its parent (`ib_conv_v1`'s M2 VSS
+plate → `DIV2_DRC=4`, one per converter instance; see `layout-review-sep01.md` §4.5).
+
 | Block | Status | Notes (updated 2026-08-15) |
 |-------|--------|--------|
 | **PFD (`PFD_lib`)** | ✅ **DONE** | **LibreLane layout DRC+LVS clean, all 4 gates passed** (`verification.md §2.3`): Magic/KLayout DRC 0, 2× inv_1 reset delay preserved, REF/FB symmetric (~36 fs), LVS matches golden. Signoff GDS `gds/PFD_lib.gds` |
