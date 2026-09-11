@@ -1,11 +1,24 @@
-# Draft comment for sscs-ose/sscs-chipathon-2026 issue 143
+# Outgoing messages, 2026-09-11
 
-Greg posts this. Paste everything between the markers. The sources block below the
-comment is working notes and is NOT part of the paste.
+Greg sends these. Each block between its markers is one paste. The sources block at the
+bottom is working notes and is NOT part of any paste.
 
-<!-- ===== BEGIN COMMENT ===== -->
+## Block A: issue #143 reply to the reviewer (Caglar Ozdag)
 
-**Item 2 closed: DIV2 VSS current density.** Criterion GF180MCU DRM 14.2 electromigration, 110 C unidirectional, 1.00 mA/um for M1 to TopMetal-1. Figures mA/um.
+<!-- ===== BEGIN A ===== -->
+
+**Scope reframed** at commit `80f14ad`, per your 9/11 feedback. Touched: `info.yaml` (title and
+description), `README.md`, `docs/scope.md`, `docs/layout-review-sep01.md`, `docs/pins.md`.
+
+Open-loop integer-N PLL characterization chip: LC-VCO, quadrature divider, PFD and charge pump.
+RF-block characterization chip containing the blocks of an integer-N PLL, brought out to pads for
+open-loop characterization. Closed-loop lock is not demonstrable on this die: the feedback
+divides by 2 only and the PFD has no usable phase-detection window at the ~2.5 GHz reference that
+would require. Not a functioning integer-N PLL. `info.yaml` pin, area and gds fields are
+unchanged.
+
+**Item 2, DIV2 VSS current density. Table unchanged from the previous update.** Criterion is
+GF180MCU DRM 14.2 electromigration, 110 C unidirectional, 1.00 mA/um for M1 to TopMetal-1.
 
 | path | before | after |
 |---|---:|---:|
@@ -15,58 +28,76 @@ comment is working notes and is NOT part of the paste.
 | DIV2 tie, I_P converter | not connected | 0.987 |
 | 7.5 um collector plate | 2.987 | 1.000 |
 
-The I_P converter VSS tie was drawn at the wrong y and reached nothing, so that instance returned its 2.96 mA through the p-substrate. LVS could not see it because the substrate is one global node. It is now metal-connected. Gates at ce09ccf: magic DRC 0, netgen LVS match uniquely (chip_top 10 devices, 11 ports, 0 property errors), KLayout variant-D 168 all waived, drc_delta 0 added 0 removed, landing_check 14/14, check_placement consistent.
+**Item 3, PEX and re-simulation.** R+C extracted for three blocks: CP_v1 38 devices / 265 caps /
+269 resistors, ib_conv_v1 14 / 70 / 526, vco_core 30 / 194 / 208. Every device count equals that
+block LVS device count. CP_v1 re-simulated: parasitics move the UP/DOWN current match by at most
+0.076 pp. Extracted re-simulation of the CML-to-CMOS converter does not reproduce schematic
+behaviour; the cause is characterized as resistive in the converter's VDD distribution, with no
+single element responsible. VDD-network relayout and extracted re-verification are in progress
+and I will report the numbers here before final release.
 
-**Item 4, nmoscap waiver.** Please confirm explicit acceptance.
+**Item 4, nmoscap waiver.** Posting the evidence separately in this thread as a request to the
+organizers for explicit acceptance.
+
+<!-- ===== END A ===== -->
+
+## Block B: issue #143 comment to the organizers
+
+<!-- ===== BEGIN B ===== -->
+
+Requesting explicit acceptance of the 168 PL.5a_LV / PL.5b_LV markers on A01.
 
 | | value |
 |---|---:|
 | KLayout variant-D items on chip_top | 168 |
-| bare nmoscap_3p3 unit | 2x PL.5a_LV + 2x PL.5b_LV = 4 |
+| bare single nmoscap_3p3 unit | 2x PL.5a_LV + 2x PL.5b_LV = 4 |
 | units in vco_varactors | 42, and 42 x 4 = 168 |
-| from bussing / from DIV2_QUAD_v1 | 0 / 0 |
-| magic on .mag / on flat GDS | 0 / 84, same PL.5a |
+| items contributed by bussing | 0 |
+| DIV2_QUAD_v1 KLayout items | 0 |
+| magic on .mag, gencell aware | 0 |
+| magic on flat GDS | 84, the same PL.5a items |
 
-No gencell parameter clears it: diffcov/polycov at 80/100/60, all four guard-contact flags off, and guard 0 all still give 4 per unit.
+All 168 are internal to the PDK nmoscap_3p3 gencell. The count is exactly 4 per unit across 42
+units, bussing contributes none, and no gencell parameter clears it: diffcov/polycov at
+80/100/60, all four guard-contact flags off, and guard 0 all still give 4 per unit. The waiver
+file accepts exactly these two rule names and no others.
 
-**Item 3, PEX.** R+C extracted for three blocks: CP_v1 38 devices / 265 caps / 269 resistors, ib_conv_v1 14 / 70 / 526, vco_core 30 / 194 / 208. Every device count equals that block LVS device count. CP_v1 re-simulated: parasitics move the UP/DOWN current match by at most 0.076 pp. ib_conv_v1 re-simulated in the DIV2 bench: the result does not reproduce the schematic and the cause is under investigation. No full-chip PEX.
+Please confirm whether these 168 markers are accepted for tapeout, or tell us what you need
+instead.
 
-**Item 4a, density.** Full die 1110.000 x 550.000 um = 610,500 um2, measure only, no fill generated. All eight are minimum-coverage floors, not max-density violations. MT.3 and M5.4 are one physical layer in this 5 metal stack, so their shortfalls are not additive. Is fill team-owned or integration-owned?
+<!-- ===== END B ===== -->
 
-| layer | rule | measured | floor | shortfall um2 |
-|---|---|---:|---:|---:|
-| COMP | DCF.1b | 1.622% | 25% | 142,720 |
-| Poly2 | PL.8 | 1.140% | 14% | 78,511 |
-| Metal1 | M1.4 | 0.790% | 30% | 178,325 |
-| Metal2 | M2.4 | 2.238% | 30% | 169,488 |
-| Metal3 | M3.4 | 0.371% | 30% | 180,885 |
-| Metal4 | M4.4 | 1.476% | 30% | 174,138 |
-| Metal5 / MetalTop | M5.4 / MT.3 | 7.835% | 30% | 135,317 |
+## Block C: Discord to Bailey
 
-**chip_top.** gds/chip_top.gds on main was updated 2026-09-11 at ce09ccf, DIV2 fixes only. Die bbox 1110 x 550 um and the 12-pin list are unchanged.
+<!-- ===== BEGIN C ===== -->
 
-<!-- ===== END COMMENT ===== -->
+Four things on A01. 1) The reviewer supports tapeout on #143, conditions in progress. 2) Our
+export form was corrected 9/2 to EAR99 and Complete, but the audit sheet still shows Q12 flagged
+and Unrestricted FALSE, so please refresh it. 3) The stray I_P top-level label the 20260907-1
+audit reported UNMATCHED is removed, source fix at commit 80f14ad and GDS regenerated at
+162faca; the pin list is unchanged at 12. 4) gds/chip_top.gds on main is updated; die bbox
+1110 x 550 um and the pin list are unchanged.
+
+<!-- ===== END C ===== -->
 
 ## Sources
 
 | claim | source |
 |---|---|
+| scope wording, files touched | commit `80f14ad`; `info.yaml`, `README.md`, `docs/scope.md`, `docs/layout-review-sep01.md`, `docs/pins.md` |
 | criterion 1.00 mA/um at 110 C | `docs/phase8-padframe-plan.md` 3q, GF180MCU DRM 14.2 |
-| bus 4.93 to 1.000; tie and plate before/after | `docs/layout-review-sep01.md` 4.5, DIV2-level VSS section |
-| I_P tie disconnected, substrate return, LVS-blind | `docs/layout-review-sep01.md` 6 item 10d |
-| chip_top gates at ce09ccf | `docs/layout-review-sep01.md` 4.5 chip_top section; commit `0a4b73b` |
-| 168 items, 42 units x 4, bussing 0, DIV2 0, magic 0 and 84 | `docs/layout-review-sep01.md` 2.5 |
-| waiver accepts exactly PL.5a_LV and PL.5b_LV | `team_src/magic/chip_top.waivers` |
-| CP_v1 PEX 38 / 265 / 269 | `signoff/pex/README.md` |
+| item 2 before/after table | `docs/layout-review-sep01.md` 4.5, DIV2-level VSS section |
+| CP_v1 PEX 38 / 265 / 269 and 0.076 pp | `signoff/pex/README.md` |
 | ib_conv_v1 PEX 14 / 70 / 526 | `signoff/pex/ib_conv_v1/README.md` |
 | vco_core PEX 30 / 194 / 208 | `signoff/pex/vco_core/README.md` |
-| density percentages and floors | `run_drc.py --density_only --variant=D` log, recorded at `docs/layout-review-sep01.md` 6 item 13 |
-| die 1110.000 x 550.000 um | `gds/chip_top.gds` bbox, KLayout |
-| shortfall um2 | computed as (floor - measured) x 610,500 um2 |
-| 12-pin list unchanged | `info.yaml` pins block |
+| converter re-sim result and cause | `signoff/pex/ib_conv_v1/resim.md`; `docs/layout-review-sep01.md` 6 item 23 |
+| 168 markers, 42 units x 4, bussing 0, magic 0 and 84 | `docs/layout-review-sep01.md` 2.5 |
+| waiver accepts exactly PL.5a_LV and PL.5b_LV | `team_src/magic/chip_top.waivers` |
+| I_P removed, 14 top-level labels, 12 pins | commits `80f14ad` and `162faca`; `info.yaml` pins block |
+| die bbox 1110 x 550 um | `gds/chip_top.gds` bbox, KLayout |
 
-## Not in the comment, deliberately
+## Not in any block, deliberately
 
-- Item 1 (loop lock) is not mentioned. It was answered 2026-09-01 and Caglar has not replied.
-- Item 10d is described by effect, not by our internal item number.
-- No claim that density passes. It does not. Only the measurement is reported.
+- No claim that density passes. It does not, and no block mentions it.
+- Item 23 is described by effect, not by our internal item number.
+- The export-form status in Block C is Greg's to confirm; it is not file-read from this repo.

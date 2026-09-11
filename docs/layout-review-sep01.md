@@ -1627,6 +1627,30 @@ Everything in this list is a real absence. None of it is mitigated by anything i
     problem**, but strapped by only **0.230 um of metal1**, which at the tech's 90 milliohms/sq
     is 187 squares = 16.8 ohm, fed by a 0.600 um M2 bus. Both populations reproduce from the
     tech sheet values on the drawn geometry, so the extraction is **consistent and real**.
+
+    **STATUS 2026-09-11: cause characterized, not yet fixed.** The cause is **resistive and
+    localized to the converter's VDD distribution**. The extracted converter does not reproduce
+    schematic behaviour, and **no single resistor group recovers it**: collapsing the INV2 feed
+    alone reaches **83 mVpp**, every VDD resistor **94 mVpp**, every parasitic resistor in the
+    cell **109 mVpp**, against a **131 mVpp** schematic reference. The degradation reaches
+    further back than the output: `S1` swings **534 mVpp** extracted against **1172 mVpp** in the
+    schematic.
+
+    A supply-to-bias gain of **4.15x** at `S2` is measured (an ideal 40 mV drop on INV2's VDD
+    moves `S2` by 166 mV, 1490.5 to 1324.3 mV) but is **not shown to be the mechanism**: at that
+    gain the extracted INV2 droop of 71.8 mV would put `S2` near 1192 mV, whereas it actually
+    sits at 862.9 mV, and the same 40 mV drop leaves the schematic output at a full 131 mVpp.
+
+    **The per-stage groups are not additive and that is unexplained.** Collapsing the INV1 feed
+    alone gives 19 mVpp and the INV3 feed alone 18 mVpp, both **worse** than the 25 mVpp of the
+    untouched extraction, while the INV2 feed alone gives 83; yet the full metal set, which
+    contains all three, gives 71, **below INV2 alone**. No model offered for that.
+
+    **Next step, recorded:** a **full VDD-network relayout** of `ib_conv_v1` (M2 plate, source
+    straps, nwell taps), which is the largest recoverable share at 94 of the 106 mVpp deficit,
+    followed by re-extraction and extracted re-simulation. The residual between that and the
+    109 mVpp all-resistor figure is to be characterized then. **No GDS change has been made for
+    item 23**; `gds/ib_conv_v1.gds` and `gds/DIV2_QUAD_v1.gds` are unchanged by it.
 23a. **`vco_core` PEX is extracted but not re-simulated, and a core-only re-sim would not be
     meaningful.** The extracted netlist exists (30 devices / 194 C / 208 R,
     `signoff/pex/vco_core/`). It is not re-simulated because `vco_core` is the cross-coupled pair
