@@ -29,7 +29,7 @@ The I_P converter VSS tie was drawn at the wrong y and reached nothing, so that 
 
 No gencell parameter clears it: diffcov/polycov at 80/100/60, all four guard-contact flags off, and guard 0 all still give 4 per unit.
 
-**Item 3, PEX.** CP_v1 38 devices / 265 caps / 269 resistors. ib_conv_v1 14 / 70 / 526. Both device counts equal the LVS device counts. vco_core is next.
+**Item 3, PEX.** R+C extracted for three blocks: CP_v1 38 devices / 265 caps / 269 resistors, ib_conv_v1 14 / 70 / 526, vco_core 30 / 194 / 208. Every device count equals that block LVS device count. No full-chip PEX.
 
 **Item 4a, density.** Full die 1110.000 x 550.000 um = 610,500 um2, measure only, no fill generated. All eight are minimum-coverage floors, not max-density violations. MT.3 and M5.4 are one physical layer in this 5 metal stack, so their shortfalls are not additive. Is fill team-owned or integration-owned?
 
@@ -59,6 +59,7 @@ No gencell parameter clears it: diffcov/polycov at 80/100/60, all four guard-con
 | waiver accepts exactly PL.5a_LV and PL.5b_LV | `team_src/magic/chip_top.waivers` |
 | CP_v1 PEX 38 / 265 / 269 | `signoff/pex/README.md` |
 | ib_conv_v1 PEX 14 / 70 / 526 | `signoff/pex/ib_conv_v1/README.md` |
+| vco_core PEX 30 / 194 / 208 | `signoff/pex/vco_core/README.md` |
 | density percentages and floors | `run_drc.py --density_only --variant=D` log, recorded at `docs/layout-review-sep01.md` 6 item 13 |
 | die 1110.000 x 550.000 um | `gds/chip_top.gds` bbox, KLayout |
 | shortfall um2 | computed as (floor - measured) x 610,500 um2 |
