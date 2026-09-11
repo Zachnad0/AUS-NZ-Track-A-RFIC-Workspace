@@ -190,7 +190,70 @@ down. Adding the full extracted `S1` capacitance to the golden costs **1 mVpp (0
 refuted.** Capacitive loading of the self-bias chain accounts for at most an eighth of the
 degradation, and the single node it would act through is demonstrably insensitive.
 
-**What remains.** Topology, parameters, `uic`, the run length, and now capacitive loading of the
+### Resistive test 2026-09-11: the cause is resistive, and it is the VDD network
+
+**Parasitic R inventory.** 526 resistors, 71,065.522263 Ω total, largest single element
+22,187.7 Ω. Identical count, sum and maximum in the `.option scale=5n` and `scale off`
+netlists, confirming `scale` does not touch resistor values.
+
+| net class | count | ΣR |
+|---|---:|---:|
+| VSS | 476 | 59,903.732 Ω |
+| VDD | 17 | 8,343.562 Ω |
+| signal (S2, S1, DN1, G1, INM, INP, S3, NS, OC, OUT) | 32 | 1,838.399 Ω |
+| IBIAS | 1 | 79.774 Ω |
+
+Largest five: R21 22,187.7 Ω (VSS.t4–VSS.n166), R22 18,727.5 (VSS.n165–VSS.n164),
+R23 7,638.22 (VSS.n164–VSS.t8), R24 4,092.47 (VSS.n169–VSS.n166), R4 4,010.79
+(VDD.n0–VDD.t4).
+
+**Run C and the bisect.** One run each, all parasitic C kept throughout.
+
+| run | R collapsed | count | ΣR collapsed | I_P swing | recovered |
+|---|---|---:|---:|---:|---:|
+| PEX, unmodified | none | 0 | — | 25 mVpp | — |
+| **VDD only** | VDD net | **17** | 8,344 Ω | **94 mVpp** | **69 of 106 mVpp** |
+| signal only | signal + IBIAS | 33 | 1,918 Ω | 38 mVpp | 13 mVpp |
+| **VSS only** | VSS net | **476** | **59,904 Ω** | **25 mVpp** | **0** |
+| all | everything | 526 | 71,066 Ω | 109 mVpp | 84 mVpp |
+| golden reference | — | — | — | 131 mVpp | — |
+
+**The VDD network carries it.** Seventeen resistors totalling 8.3 kΩ recover 65 % of the
+deficit. The 476-resistor, 59.9 kΩ VSS mesh recovers **nothing at all** — its total resistance
+is seven times VDD's, but it is a mesh with parallel paths, so its series contribution is small.
+Collapsing everything reaches 109 mVpp; the residual 22 mVpp to 131 is the parasitic
+capacitance, consistent with the 14 mVpp measured in run A.
+
+### VDD port-to-internal-node drop, which had never been measured
+
+Over 16–20 ns, against the VDD port:
+
+| node | average | peak |
+|---|---:|---:|
+| `VDD.t5` | **165.33 mV** | 182.78 mV |
+| `VDD.t4` | 80.72 mV | **200.17 mV** |
+| `VDD.t2` | 73.69 mV | 130.86 mV |
+| `VDD.t3` | 71.84 mV | 88.92 mV |
+| `VDD.t9` | 24.53 mV | 30.72 mV |
+| `VDD.t8` | 22.05 mV | 48.04 mV |
+| `VDD.t7` | 13.02 mV | 18.26 mV |
+| `VDD.t1` | 12.58 mV | 17.63 mV |
+| `VDD.t6` | 8.18 mV | 17.11 mV |
+| `VDD.t0` | 2.83 mV | 4.10 mV |
+
+For comparison the worst VSS node is `VSS.t3` at 33.68 mV average, 58.50 mV peak.
+
+**`VDD.t4` and `VDD.t5` are the two supply terminals of `X2`** —
+`X2 a_8030_n1600.t0 a_6430_n1100.t3 VDD.t5 VDD.t4 pfet_03v3 w=44u l=0.3u`, the **W44 INV3
+pfet**, the widest device in the cell. Its source sees 165 mV of average droop and its bulk
+200 mV of peak droop on a 3.3 V supply.
+
+**What this establishes and what it does not.** The degradation is resistive, and the VDD
+network is the group that carries it; the VSS mesh contributes none of it. That the largest
+drops land on the W44 INV3 pfet's supply terminals is measured, not inferred. No claim is made
+here about what in the layout produces that VDD resistance, and no design change is proposed.
+
+**What remains.** Topology, parameters, `uic`, the run length, and capacitive loading of the
 self-bias chain are all excluded. What has not
 been separated is whether the extracted parasitics themselves (the 526 R and 70 C, in particular
 around INV2 and its supply returns) are enough to park `S2` low, or whether something in the

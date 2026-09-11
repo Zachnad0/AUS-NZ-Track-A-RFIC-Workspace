@@ -1,0 +1,101 @@
+** sch_path: /foss/designs/AUS-NZ-integration/team_src/xschem/DIV2_QUAD_tb.sch
+**.subckt DIV2_QUAD_tb
+X1 CK CKB IBIAS I_P I_N Q_P Q_N VDD 0 DIV2_QUAD_v1
+V_VDD VDD 0 3.3
+.save i(v_vdd)
+V_CK CK 0 PULSE(0 3.3 0 5p 5p 95p 200p)
+V_CKB CKB 0 PULSE(3.3 0 0 5p 5p 95p 200p)
+I_BIAS VDD IBIAS 240u
+Cpad_I_P I_P 0 300f
+Rterm_I_P I_P 0 50
+Cpad_I_N I_N 0 300f
+Rterm_I_N I_N 0 50
+Cpad_Q_P Q_P 0 300f
+Rterm_Q_P Q_P 0 50
+Cpad_Q_N Q_N 0 300f
+Rterm_Q_N Q_N 0 50
+**** begin user architecture code
+
+
+.include /foss/pdks/gf180mcuD/libs.tech/ngspice/design.ngspice
+.include /foss/designs/_div2_work/resim/ib_conv_v1_pex_nor.spice
+.include /foss/designs/AUS-NZ-integration/team_src/magic/ib_conv_v1_golden.spice
+.lib /foss/pdks/gf180mcuD/libs.tech/ngspice/sm141064.ngspice typical
+.lib /foss/pdks/gf180mcuD/libs.tech/ngspice/sm141064.ngspice mimcap_typical
+.lib /foss/pdks/gf180mcuD/libs.tech/ngspice/sm141064.ngspice res_typical
+.save all i(V_VDD)
+
+
+**** end user architecture code
+**.ends
+
+* expanding   symbol:  DIV2_QUAD_v1.sym # of pins=9
+** sym_path: /foss/designs/AUS-NZ-integration/team_src/xschem/DIV2_QUAD_v1.sym
+** sch_path: /foss/designs/AUS-NZ-integration/team_src/xschem/DIV2_QUAD_v1.sch
+.subckt DIV2_QUAD_v1 CK CKB IBIAS I_P I_N Q_P Q_N VDD VSS
+*.ipin CK
+*.ipin CKB
+*.ipin IBIAS
+*.iopin VDD
+*.iopin VSS
+*.opin I_P
+*.opin I_N
+*.opin Q_P
+*.opin Q_N
+XMA1 OIB OQ nTA VSS nfet_03v3 L=0.3u W=40u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0
+XMA2 OI OQB nTA VSS nfet_03v3 L=0.3u W=40u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0
+XMA3 OIB OI nLA VSS nfet_03v3 L=0.3u W=40u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0
+XMA4 OI OIB nLA VSS nfet_03v3 L=0.3u W=40u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0
+XMA5 nTA CK TAILA VSS nfet_03v3 L=0.3u W=40u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0
+XMA6 nLA CKB TAILA VSS nfet_03v3 L=0.3u W=40u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0
+XMB1 OQB OIB nTB VSS nfet_03v3 L=0.3u W=40u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0
+XMB2 OQ OI nTB VSS nfet_03v3 L=0.3u W=40u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0
+XMB3 OQB OQ nLB VSS nfet_03v3 L=0.3u W=40u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0
+XMB4 OQ OQB nLB VSS nfet_03v3 L=0.3u W=40u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0
+XMB5 nTB CKB TAILB VSS nfet_03v3 L=0.3u W=40u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0
+XMB6 nLB CK TAILB VSS nfet_03v3 L=0.3u W=40u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0
+RA1 VDD OIB 300
+RA2 VDD OI 300
+RB1 VDD OQB 300
+RB2 VDD OQ 300
+XM_BREF IBIAS IBIAS VSS VSS nfet_03v3 L=1u W=4u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0
+XM_TAILA TAILA IBIAS VSS VSS nfet_03v3 L=1u W=40u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0
+XM_TAILB TAILB IBIAS VSS VSS nfet_03v3 L=1u W=40u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0
+* four converters as ib_conv_v1; each VSS return through a 0 V ammeter
+X_CONV_IP IBIAS OIB OI I_P VDD VSS_IP ib_conv_v1_pex_nor
+V_VSS_IP VSS_IP VSS 0
+X_CONV_IN IBIAS OI OIB I_N VDD VSS_IN ib_conv_v1
+V_VSS_IN VSS_IN VSS 0
+X_CONV_QP IBIAS OQB OQ Q_P VDD VSS_QP ib_conv_v1
+V_VSS_QP VSS_QP VSS 0
+X_CONV_QN IBIAS OQ OQB Q_N VDD VSS_QN ib_conv_v1
+V_VSS_QN VSS_QN VSS 0
+.ends
+
+.save all
+.control
+set num_threads=2
+tran 0.2p 20n uic
+wrdata /foss/designs/_div2_work/resim/runC_quad.dat v(I_P) v(I_N) v(Q_P) v(Q_N) v(x1.x_conv_ip.a_8030_n1600.t1) v(x1.x_conv_qp.s3)
+meas tran i_vdd_avg AVG i(v_vdd) from=16n to=20n
+meas tran i_ip_avg AVG i(v.x1.v_vss_ip) from=16n to=20n
+meas tran i_in_avg AVG i(v.x1.v_vss_in) from=16n to=20n
+meas tran i_qp_avg AVG i(v.x1.v_vss_qp) from=16n to=20n
+meas tran i_qn_avg AVG i(v.x1.v_vss_qn) from=16n to=20n
+.endc
+.end

@@ -1600,6 +1600,17 @@ Everything in this list is a real absence. None of it is mitigated by anything i
     25 to **39 mVpp**, recovering 14 mVpp of a 106 mVpp deficit; and adding the full extracted
     `S1` capacitance as a single lumped 6.516 fF to the **golden** costs **1 mVpp** (131 → 130).
     Capacitive loading of the self-bias chain accounts for at most an eighth of the degradation.
+
+    **Resistive test 2026-09-11: the cause IS resistive, and it is the VDD network.** Collapsing
+    every parasitic resistor (526 of them, 71,066 Ω) while keeping all capacitance recovers the
+    output from 25 to **109 mVpp** against the 131 mVpp reference. Bisected by net group, one run
+    each: **VDD alone — 17 resistors, 8,344 Ω — recovers 25 → 94 mVpp, 65 % of the deficit**;
+    signal + IBIAS recovers 13 mVpp; and **the VSS mesh recovers nothing at all (25 mVpp)**
+    despite carrying 476 resistors and 59,904 Ω, because it is a mesh with parallel paths rather
+    than a series bottleneck. The VDD port-to-internal drop, never previously measured, reaches
+    **165.33 mV average on `VDD.t5` and 200.17 mV peak on `VDD.t4`** — the two supply terminals
+    of the **W44 INV3 pfet**, the widest device in the cell — against 33.68 mV average on the
+    worst VSS node. What in the layout produces that VDD resistance is **not** established.
 23a. **`vco_core` PEX is extracted but not re-simulated, and a core-only re-sim would not be
     meaningful.** The extracted netlist exists (30 devices / 194 C / 208 R,
     `signoff/pex/vco_core/`). It is not re-simulated because `vco_core` is the cross-coupled pair
