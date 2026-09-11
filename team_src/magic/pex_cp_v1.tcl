@@ -37,6 +37,10 @@ extresist all
 # Retain everything: cthresh 0 keeps all coupling caps, rthresh 0 all parasitic R.
 ext2spice cthresh 0
 ext2spice rthresh 0
+# scale off: emit ABSOLUTE dimensions. With the default the netlist carries a GLOBAL
+# .option scale=5n, which silently rescales every OTHER device in a mixed deck -- it cannot
+# be combined with an absolute-unit bench. Counts are unchanged either way.
+ext2spice scale off
 ext2spice format ngspice
 ext2spice hierarchy off
 ext2spice extresist on

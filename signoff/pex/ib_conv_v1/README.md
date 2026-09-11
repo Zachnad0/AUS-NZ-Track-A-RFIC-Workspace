@@ -50,3 +50,12 @@ modelled, not an extraction anomaly.
 No testbench and no re-simulation. `CP_v1`'s PEX exists to produce an extracted **current
 match** number; this one is the extracted netlist only. Nothing in the review conditions asks
 for an `ib_conv_v1` operating-point number, and none is claimed here.
+
+## Units: emitted with `ext2spice scale off`
+
+These netlists carry **absolute** device dimensions (`w=8u l=0.3u`). Magic's default emits a
+global `.option scale=5n` with dimensions in internal units (`w=1600 l=60`). That option is
+**global to the deck**, so a scaled netlist cannot be combined with an absolute-unit bench: it
+would rescale every other device too. Earlier revisions of these files were scaled. The two
+forms describe the same devices (1600 x 5n = 8u, verified per device), and re-extraction with
+`scale off` gives identical counts.

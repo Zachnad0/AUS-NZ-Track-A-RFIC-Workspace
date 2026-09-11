@@ -93,3 +93,12 @@ Getting parasitic R needs a real extraction pass: `extract do resistance` → `e
 0 R** versus **265 caps / 269 R**. The earlier `PFD_lib` PEX (`pex_work/pex_pfd.tcl`,
 `verification.md` §2.3.3) used the short form and is therefore **capacitance-only** — which is
 adequate for the REF/FB coupling question it was asked, but is not a full PEX.
+
+## Units: emitted with `ext2spice scale off`
+
+These netlists carry **absolute** device dimensions (`w=8u l=0.3u`). Magic's default emits a
+global `.option scale=5n` with dimensions in internal units (`w=1600 l=60`). That option is
+**global to the deck**, so a scaled netlist cannot be combined with an absolute-unit bench: it
+would rescale every other device too. Earlier revisions of these files were scaled. The two
+forms describe the same devices (1600 x 5n = 8u, verified per device), and re-extraction with
+`scale off` gives identical counts.
