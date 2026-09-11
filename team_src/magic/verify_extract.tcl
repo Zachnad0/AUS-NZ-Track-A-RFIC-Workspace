@@ -49,6 +49,15 @@ puts "VERIFY_DRC_COUNT=$drccount"
 # That corrupts the baseline in the direction that HIDES shorts. Pin the output directory
 # instead; `cd` alone does not do it.
 extract path [pwd]
+# `extract all` ALONE merges two electrically-separate pieces of metal that carry the same
+# label into ONE node, so a net cut in half would still LVS "match uniquely" provided both
+# halves kept the label (layout-review-sep01.md 6 item 22). `unique noports` gives duplicate
+# NON-port labels distinct names for the extraction; ports are left alone, so subckt port
+# matching against the golden is unaffected. Verified 2026-09-11 to be a no-op on all five
+# blocks + chip_top: identical device/port/net counts and all six still match uniquely.
+# It does NOT cover splits between two PORT-labelled pieces -- only the metal-only
+# connectivity extraction does. Nothing is persisted: this script never saves.
+extract unique noports
 extract all
 ext2spice lvs
 ext2spice -o $outsp
