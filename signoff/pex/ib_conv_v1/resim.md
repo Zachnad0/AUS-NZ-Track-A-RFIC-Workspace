@@ -156,7 +156,42 @@ The no-`uic` run also emits `Warning: singular matrix: check node
 x1.x_conv_ip.m1_3129_7189#` — a metal1 island connected only through a 0.00196 fF parasitic cap,
 so it has no DC path. That is ordinary for an extracted view and is not the collapse.
 
-**What remains.** Topology, parameters, `uic` and the run length are all excluded. What has not
+### Cause test 2026-09-11: parasitic C on the self-bias chain is NOT the cause
+
+**Parasitic capacitance per node**, summed after collapsing the R network, against the gate
+capacitance on the same node. Cox is computed from the PDK's own `nfet_03v3_tox = 8e-009` and
+`pfet_03v3_tox = 7.9e-009` (4.31 and 4.37 fF/µm²).
+
+| node | parasitic C | gate C on that node | parasitic as % of gate | top three contributors |
+|---|---:|---:|---:|---|
+| `INP` | 0.960 fF | 10.3 fF (W8 nfet) | 9.3 % | C8 0.724→VSS, C68 0.160→VSS, C1 0.039→VDD |
+| `G1` | 3.870 fF | 18.3 fF (W10 p + W4 n) | 21.1 % | C20 2.600→VSS, C23 0.842→VSS, C21 0.209→VSS |
+| `S1` | 6.516 fF | 48.3 fF (W26 p + W11 n) | 13.5 % | C28 1.983→VSS, C25 1.829→VSS, C29 0.835→VSS |
+| `S2` | 10.568 fF | 78.4 fF (W44 p + W16 n) | 13.5 % | C17 3.234→VSS, C18 2.470→VSS, C14 1.680→VSS |
+| `S3` | 9.422 fF | none (drives RSER) | — | C32 4.681→VSS, C34 2.558→VSS, C33 1.930→VSS |
+
+Every parasitic total is a small fraction of the gate load already present, and essentially all
+of it is to VSS.
+
+**Two runs, and both refute the capacitive-loading hypothesis.**
+
+| run | change | I_P swing | duty | I/Q | INV3 span | I_P VSS |
+|---|---|---:|---:|---:|---|---:|
+| golden reference | — | 131 mVpp | 49.5 % | 270.0° | −31…2998 mV | 2.9735 mA |
+| PEX (unmodified) | — | 25 mVpp | 63.9 % | 290.7° | 2079…2677 mV | 2.7249 mA |
+| **A** | PEX, all 12 parasitic caps on `G1`+`S1` removed (10.39 fF) | **39 mVpp** | 66.1 % | 292.3° | 1757…2675 mV | 2.8435 mA |
+| **B** | golden + one lumped **6.516 fF** at `S1` | **130 mVpp** | 50.3 % | 267.8° | −19…2990 mV | 3.0283 mA |
+
+**A does not recover and B does not collapse.** Removing the entire parasitic capacitance from
+both self-bias nodes buys **14 mVpp of a 106 mVpp deficit (13 %)**; the output is still 70 %
+down. Adding the full extracted `S1` capacitance to the golden costs **1 mVpp (0.8 %)**.
+
+**The hypothesis that the cause is INV1's drive against the extracted load on `S1` is therefore
+refuted.** Capacitive loading of the self-bias chain accounts for at most an eighth of the
+degradation, and the single node it would act through is demonstrably insensitive.
+
+**What remains.** Topology, parameters, `uic`, the run length, and now capacitive loading of the
+self-bias chain are all excluded. What has not
 been separated is whether the extracted parasitics themselves (the 526 R and 70 C, in particular
 around INV2 and its supply returns) are enough to park `S2` low, or whether something in the
 bench's treatment of the extracted converter is at fault. No claim either way.

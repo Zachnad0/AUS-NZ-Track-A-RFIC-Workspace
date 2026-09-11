@@ -1591,6 +1591,15 @@ Everything in this list is a real absence. None of it is mitigated by anything i
     against a ~1650 mV trip point** and is flat there from 3 ns. **`uic` is excluded** — removing
     it reproduces every figure to the digit. Topology, parameters, `uic` and run length are ruled
     out; whether the extracted parasitics themselves park `S2` low is **not** established.
+
+    **Cause test 2026-09-11: parasitic capacitance is NOT the cause, and that hypothesis is
+    refuted.** Parasitic C per node is a small fraction of the gate load already on it —
+    `INP` 0.960 fF (9.3 % of gate), `G1` 3.870 (21.1 %), `S1` 6.516 (13.5 %), `S2` 10.568
+    (13.5 %), `S3` 9.422 — with Cox from the PDK's own `nfet_03v3_tox = 8e-009`. Two runs settle
+    it: removing **all** parasitic C from `G1` and `S1` (12 caps, 10.39 fF) moves the output from
+    25 to **39 mVpp**, recovering 14 mVpp of a 106 mVpp deficit; and adding the full extracted
+    `S1` capacitance as a single lumped 6.516 fF to the **golden** costs **1 mVpp** (131 → 130).
+    Capacitive loading of the self-bias chain accounts for at most an eighth of the degradation.
 23a. **`vco_core` PEX is extracted but not re-simulated, and a core-only re-sim would not be
     meaningful.** The extracted netlist exists (30 devices / 194 C / 208 R,
     `signoff/pex/vco_core/`). It is not re-simulated because `vco_core` is the cross-coupled pair
