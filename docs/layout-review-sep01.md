@@ -14,7 +14,7 @@ notes this document summarises.
 | Item | Outcome |
 |---|---|
 | **1 — loop sign + closed-loop lock** | §4.6.1–4.6.3. The loop **divides by 2 and nothing else**, so lock needs a 2.4–2.5 GHz reference where the PFD has **no usable phase-detection window**. Loop sign now stated as a concrete net swap; lock arithmetic done from measured I_CP/KVCO/N. **Closed-loop lock is not demonstrable on this die** — this is the most important finding in the document. |
-| **2 — DIV2 VSS current density** | §4.5. **Not shipped, but a working fix is now built.** The original M1 widening **fails LVS — it shorts `NS` to `VSS`** (it had been signed off on DRC + bbox alone, neither of which can see a same-layer short). An **M2 plate + 193 via1 stitch** replaces it: 4.93 → **1.000 mA/µm**. The DIV2-level ties (10b), the collector plate (10c) and the **disconnected IP tie (10d)** are now fixed too — every VSS path in the block is at **1.000 mA/µm or better**, DRC 0, LVS 149/9/22 match uniquely, KLayout var-D clean, bbox unchanged. `chip_top` not yet re-integrated. |
+| **2 — DIV2 VSS current density** | §4.5. **Not shipped, but a working fix is now built.** The original M1 widening **fails LVS — it shorts `NS` to `VSS`** (it had been signed off on DRC + bbox alone, neither of which can see a same-layer short). An **M2 plate + 193 via1 stitch** replaces it: 4.93 → **1.000 mA/µm**. The DIV2-level ties (10b), the collector plate (10c) and the **disconnected IP tie (10d)** are now fixed too — every VSS path in the block is at **1.000 mA/µm or better**, DRC 0, LVS 149/9/22 match uniquely, KLayout var-D clean, bbox unchanged. **`chip_top` re-integrated 2026-09-11**, all six gates green. |
 | **3 — PEX / re-simulation** | §4.2.1. **Done for `CP_v1`** (R+C): parasitics move the UP/DOWN match by ≤ 0.076 pp. Full-chip PEX not attempted. |
 | **4 — density fill + nmoscap waiver** | §2.5 and §6 item 13. Waiver evidence assembled and an acceptance request drafted; **density fill not started** and its ownership is unresolved. |
 
@@ -992,7 +992,7 @@ exactly as DRC and bbox were blind to the `NS` short. Recorded in `docs/tracking
 
 **Status: built, gated at both levels, and shipped to the repository sources.**
 `phase5/ib_conv_v1.tcl`, both `.mag`, `gds/ib_conv_v1.gds` (new) and `gds/DIV2_QUAD_v1.gds` are
-updated. `chip_top` is **NOT** re-integrated — 10b/10c/10d are now cleared, so `route_chip` and the six
+updated. **`chip_top` was re-integrated on 2026-09-11** — see the chip_top section below; `route_chip` and the six
 gates run once. Note `DIV2_QUAD_v1.mag` changes only in its own timestamp and the four
 `use ib_conv_v1` instance stamps: the plate is entirely inside the child, so the parent carries
 no new geometry.
@@ -1045,9 +1045,37 @@ lengths were already far from symmetric before this pass and remain so: **IN 6.3
 QP 86.48 µm**. Widths are now uniform at 2.96 µm; lengths are not, and equalising them would need
 re-floorplanning, not re-routing.
 
-**`chip_top` is NOT re-integrated.** The blocker named for it — 10b/10c/10d — is now cleared, so
-it is ready for `route_chip` plus the six gates, but that cycle has not been run and `chip_top`
-still carries the old DIV2.
+**`chip_top` RE-INTEGRATED 2026-09-11.** Rebuilt with `chip_merge.py` then `route_chip.py`; the
+merged die carries the new blocks — `ib_conv_v1` via1 **45 → 238** (the +193 stitch) and
+`DIV2_QUAD_v1` M2 165 → 169 — with the cell set unchanged at 26 and the die still
+**1110.000 × 550.000 µm**. All six gates green against the previous run:
+
+| gate | result | previous |
+|---|---|---|
+| `drc_boxset` + `drc_delta` | TOTAL 84, 252 boxes, **0 ADDED / 0 REMOVED** | same |
+| `klayout_signoff` var-D | 84 PL.5a_LV + 84 PL.5b_LV = **168, all waived** | same |
+| `verify_cp.sh chip_top` | DRC 0, 10 devices, 11 ports, match uniquely, 0 property errors | same |
+| `landing_check` (0831) | **14/14** targets, 0 nets failed | same |
+| `check_placement` | all five blocks reconcile | same |
+| `lane_conflicts` *(advisory)* | **0** net-vs-net same-layer overlaps | same |
+
+`chip_top.drcbase` was re-captured, as `docs/verification.md` §8.3 requires when a **block**
+GDS changes; the old
+baseline remains diffable at `d5588b2`. After the re-base, `drc_delta` reports matching
+provenance on both sides (blob `57fe1a59455e`, commit `5b523df0`) and a 0/0 delta.
+
+**A new gate was added: metal-only supply connectivity.** KLayout `LayoutToNetlist`, flattened,
+metal1–5 + via1–4 only (no diffusion, no well), text attached from all five metals at datatypes
+0 and 10. The die resolves to **19 metal-only nets**: VSS is **exactly one** net
+(`REF_IN_PU, VSSA, VSSD` — VSSA and VSSD are one on-chip node by design), and the two supply
+rails `VDDA` and `REF_IN_PD, VDDD` are each exactly one net and separate from each other by
+design. **The identical extraction on the pre-change `chip_top.gds` returns the same 19 nets
+with the same names**, so the supply topology is unchanged by the DIV2 work. This gate exists
+because LVS cannot see a missing supply tie — see 10d.
+
+**One pre-existing observation, not a regression: `IBIAS` resolves to TWO separate metal nets.**
+It is present identically in the pre-change GDS, so it predates this cycle. Under investigation;
+not yet written up as a finding.
 
 ### WITHDRAWN 2026-09-10: `ib_div2.tcl` DOES reproduce the signed-off `DIV2_QUAD_v1`
 
