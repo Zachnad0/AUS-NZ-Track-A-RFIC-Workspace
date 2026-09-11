@@ -1,0 +1,16 @@
+.subckt ib_conv_v1 IBIAS INP INM OUT VDD VSS
+X0 a_938_3424.t1 INP a_100_n800.t0 VSS nfet_03v3 ad=3.52p pd=16.88u as=3.52p ps=16.88u w=8u l=0.3u
+X1 a_938_3424.t1 a_938_3424.t1 VDD VDD pfet_03v3 ad=3.52p pd=16.88u as=3.52p ps=16.88u w=8u l=0.3u
+X2 a_8030_n1600.t1 a_6430_n1100.t1 VDD VDD pfet_03v3 ad=19.36p pd=88.88u as=19.36p ps=88.88u w=44u l=0.3u
+X3 a_8030_n1600.t1 a_6430_n1100.t1 VSS VSS nfet_03v3 ad=7.04p pd=32.88u as=7.04p ps=32.88u w=16u l=0.3u
+X4 a_6430_n1100.t1 a_2156_7176.t2 VDD VDD pfet_03v3 ad=11.44p pd=52.88u as=11.44p ps=52.88u w=26u l=0.3u
+X5 a_2430_n800.t0 INM a_100_n800.t0 VSS nfet_03v3 ad=3.52p pd=16.88u as=3.52p ps=16.88u w=8u l=0.3u
+X6 a_6430_n1100.t1 a_2156_7176.t2 VSS VSS nfet_03v3 ad=4.84p pd=22.88u as=4.84p ps=22.88u w=11u l=0.3u
+X7 OUT a_8030_n1600.t1 VSS ppolyf_u_1k r_width=2u r_length=2u
+X8 a_2156_7176.t2 a_1676_7176.t0 VSS VSS nfet_03v3 ad=1.76p pd=8.88u as=1.76p ps=8.88u w=4u l=0.3u
+X9 a_100_n800.t0 IBIAS VSS VSS nfet_03v3 ad=3.52p pd=16.88u as=3.52p ps=16.88u w=8u l=1u
+X10 a_2156_7176.t2 a_1676_7176.t0 VDD VDD pfet_03v3 ad=4.4p pd=20.88u as=4.4p ps=20.88u w=10u l=0.3u
+X11 a_2430_n800.t0 a_938_3424.t1 VDD VDD pfet_03v3 ad=3.52p pd=16.88u as=3.52p ps=16.88u w=8u l=0.3u
+X12 a_2430_n800.t0 a_1676_7176.t0 cap_mim_2f0_m4m5_noshield c_width=5u c_length=10u
+X13 a_2156_7176.t2 a_1676_7176.t0 VSS ppolyf_u_1k r_width=2u r_length=40.04u
+.ends ib_conv_v1

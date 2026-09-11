@@ -15,7 +15,7 @@ notes this document summarises.
 |---|---|
 | **1 — loop sign + closed-loop lock** | §4.6.1–4.6.3. The loop **divides by 2 and nothing else**, so lock needs a 2.4–2.5 GHz reference where the PFD has **no usable phase-detection window**. Loop sign now stated as a concrete net swap; lock arithmetic done from measured I_CP/KVCO/N. **Closed-loop lock is not demonstrable on this die** — this is the most important finding in the document. |
 | **2 — DIV2 VSS current density** | §4.5. **Not shipped, but a working fix is now built.** The original M1 widening **fails LVS — it shorts `NS` to `VSS`** (it had been signed off on DRC + bbox alone, neither of which can see a same-layer short). An **M2 plate + 193 via1 stitch** replaces it: 4.93 → **1.000 mA/µm**. The DIV2-level ties (10b), the collector plate (10c) and the **disconnected IP tie (10d)** are now fixed too — every VSS path in the block is at **1.000 mA/µm or better**, DRC 0, LVS 149/9/22 match uniquely, KLayout var-D clean, bbox unchanged. **`chip_top` re-integrated 2026-09-11**, all six gates green. |
-| **3 — PEX / re-simulation** | §4.2.1. R+C extracted for **three** blocks: `CP_v1` 38 dev / 265 C / 269 R, `ib_conv_v1` 14 / 70 / 526, `vco_core` 30 / 194 / 208; every device count equals that block's LVS count. Re-simulated: `CP_v1` match moves ≤ 0.076 pp; **`ib_conv_v1` in the DIV2 bench degrades badly — output swing 131 → 25 mVpp, duty +29 %, VSS current −8.4 %** (`signoff/pex/ib_conv_v1/resim.md`). `vco_core` re-sim deferred. Full-chip PEX not attempted. |
+| **3 — PEX / re-simulation** | §4.2.1. R+C extracted for **three** blocks: `CP_v1` 38 dev / 265 C / 269 R, `ib_conv_v1` 14 / 70 / 526, `vco_core` 30 / 194 / 208; every device count equals that block's LVS count. Re-simulated: `CP_v1` match moves ≤ 0.076 pp; **`ib_conv_v1` in the DIV2 bench degrades badly — output swing 131 → 25 mVpp, duty +29 %, VSS current −8.4 %** (`signoff/pex/ib_conv_v1/resim.md`); topology, parameters and `uic` excluded, `S2` parks at 862.9 mV, cause open (item 23). `vco_core` re-sim deferred, and core-only would not be meaningful without tank/varactor PEX (item 23a). Full-chip PEX not attempted. |
 | **4 — density fill + nmoscap waiver** | §2.5 and §6 item 13. Waiver evidence assembled and an acceptance request drafted; **density fill not started** and its ownership is unresolved. |
 
 **Nothing in this revision changed the shipped GDS.** `gds/chip_top.gds` is byte-identical to
@@ -1580,6 +1580,28 @@ Everything in this list is a real absence. None of it is mitigated by anything i
     simulation of it does not reproduce the schematic behaviour in this bench, which is either a
     real layout effect or a bench/extraction artefact, and which of those has not been
     established.
+
+    **Diagnosed 2026-09-11, three checks (`signoff/pex/ib_conv_v1/resim.md`).** (1) Collapsing
+    all 526 parasitic resistors by union-find leaves 13 nodes, the same as the golden, and netgen
+    reports **"Circuits match uniquely"**; the only single-connection nodes are the four signal
+    ports. (2) Every device and passive parameter matches the golden exactly, passives included —
+    `cap_mim` `c_width=5u c_length=10u` (100 fF), both `ppolyf_u_1k` at `r_width=2u`
+    `r_length=40.04u` / `2u`. (3) The `RFB` self-bias **holds**: `G1` and `S1` sit at 1577.9 mV,
+    equal to the digit. The chain departs at **`S2`, the INV3 input, which parks at 862.9 mV
+    against a ~1650 mV trip point** and is flat there from 3 ns. **`uic` is excluded** — removing
+    it reproduces every figure to the digit. Topology, parameters, `uic` and run length are ruled
+    out; whether the extracted parasitics themselves park `S2` low is **not** established.
+23a. **`vco_core` PEX is extracted but not re-simulated, and a core-only re-sim would not be
+    meaningful.** The extracted netlist exists (30 devices / 194 C / 208 R,
+    `signoff/pex/vco_core/`). It is not re-simulated because `vco_core` is the cross-coupled pair
+    alone: the oscillation frequency is set by the tank, and neither `vco_inductor_v2` nor
+    `vco_varactors` has been extracted, so a core-only PEX run would move `f` by an amount that
+    says nothing about the drawn oscillator. **There is also no committed VCO deck** —
+    `team_src/sim/` holds only `div2/`, `ibias/` and `ind_em/`, and `vco_tb.sch` contains no
+    `vco_core` instance, so a bench would have to be built as well as netlisted. **When it is
+    done, the reference is `docs/verification.md` §3.2, the f–VTUNE re-run on the current
+    netlist** (80 ns tran, settled 60–80 ns), not the `docs/verification.md` §3.1 `vco_tb` sweep;
+    those two differ and the gap between them is itself unclosed.
 
 ---
 

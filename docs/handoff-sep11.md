@@ -29,7 +29,7 @@ The I_P converter VSS tie was drawn at the wrong y and reached nothing, so that 
 
 No gencell parameter clears it: diffcov/polycov at 80/100/60, all four guard-contact flags off, and guard 0 all still give 4 per unit.
 
-**Item 3, PEX.** R+C extracted for three blocks: CP_v1 38 devices / 265 caps / 269 resistors, ib_conv_v1 14 / 70 / 526, vco_core 30 / 194 / 208. Every device count equals that block LVS device count. No full-chip PEX.
+**Item 3, PEX.** R+C extracted for three blocks: CP_v1 38 devices / 265 caps / 269 resistors, ib_conv_v1 14 / 70 / 526, vco_core 30 / 194 / 208. Every device count equals that block LVS device count. CP_v1 re-simulated: parasitics move the UP/DOWN current match by at most 0.076 pp. ib_conv_v1 re-simulated in the DIV2 bench: the result does not reproduce the schematic and the cause is under investigation. No full-chip PEX.
 
 **Item 4a, density.** Full die 1110.000 x 550.000 um = 610,500 um2, measure only, no fill generated. All eight are minimum-coverage floors, not max-density violations. MT.3 and M5.4 are one physical layer in this 5 metal stack, so their shortfalls are not additive. Is fill team-owned or integration-owned?
 

@@ -111,6 +111,56 @@ Across the 12 device-terminal nodes of the extracted VSS net, over 16–20 ns:
 The 12 nodes span 0.87 mV to 33.68 mV average. They are **not** tied together in the wrapper;
 tying them would remove exactly this drop.
 
+## Diagnosis, 2026-09-11
+
+Three checks, in order. The first two came back clean, which rules out whole classes of cause.
+
+**1. Topology and connectivity are correct.** Collapsing all 526 parasitic resistors by
+union-find (keeping the 14 devices, dropping the 70 parasitic caps) leaves **13 distinct nodes**
+— the same count as the golden — and netgen reports **"Circuits match uniquely"** against
+`ib_conv_v1_golden.spice`. The only device-terminal nodes with exactly one connection are
+`IBIAS`, `INP`, `INM` and `OUT`, which are the four signal ports and are supposed to have one
+internal connection each. **No dangling terminal, no mis-extraction.**
+
+**2. Every device and passive parameter is identical to the golden.**
+
+| device | golden | extracted |
+|---|---|---|
+| 11 MOSFETs | W8/L1; W8, W8, W8, W8 at L0.3; W10, W4, W26, W11, W44, W16 | **all match** |
+| `cap_mim_2f0_m4m5_noshield` | `c_width=5u c_length=10u` = 2 fF/µm² × 50 µm² = **100 fF** | **identical** |
+| `ppolyf_u_1k` (RFB) | `r_width=2u r_length=40.04u` | **identical** |
+| `ppolyf_u_1k` (RSER) | `r_width=2u r_length=2u` | **identical** |
+
+The earlier spot-check covered MOSFETs only; this covers the passives too. Nothing is mis-sized.
+
+**3. The self-bias holds; the node that leaves its trip point is `S2`, the INV3 input.**
+Averages over 16–20 ns, against a ~1650 mV trip point (VDD/2):
+
+| node | role | average | vs trip |
+|---|---|---:|---:|
+| `G1` (`a_1676_7176`) | INV1 input, RFB self-bias node | 1577.9 mV | −72 mV |
+| `S1` (`a_2156_7176`) | INV1 out / INV2 in | 1577.9 mV | −72 mV |
+| **`S2`** (`a_6430_n1100`) | **INV2 out / INV3 in** | **862.9 mV** | **−787 mV** |
+| `S3` (`a_8030_n1600`) | INV3 out | 2440.6 mV | +791 mV |
+
+`G1` and `S1` are equal to the digit, which is the `RFB` self-bias doing its job — it ties
+`G1` to `S1`, and it holds. The chain departs at **`S2`**. Per-nanosecond bins show `S2`
+oscillating for the first 2 ns and then settling to 840–880 mV from 3 ns onward, flat thereafter.
+
+**`uic` is not the cause.** Re-running the identical deck with `uic` removed gives results
+identical to the digit: I_P 25 mVpp, duty 63.9 %, I/Q 290.7°, `G1` 1577.9, `S1` 1577.9,
+`S2` 862.9, `S3` 2440.6 mV, I_P VSS current 2.72489 mA. The 20 ns stop is likewise excluded, the
+envelope being flat from 12 ns.
+
+The no-`uic` run also emits `Warning: singular matrix: check node
+x1.x_conv_ip.m1_3129_7189#` — a metal1 island connected only through a 0.00196 fF parasitic cap,
+so it has no DC path. That is ordinary for an extracted view and is not the collapse.
+
+**What remains.** Topology, parameters, `uic` and the run length are all excluded. What has not
+been separated is whether the extracted parasitics themselves (the 526 R and 70 C, in particular
+around INV2 and its supply returns) are enough to park `S2` low, or whether something in the
+bench's treatment of the extracted converter is at fault. No claim either way.
+
 ## What is reported and what is not
 
 These are measurements. No cause is asserted here beyond what was measured: the extracted
