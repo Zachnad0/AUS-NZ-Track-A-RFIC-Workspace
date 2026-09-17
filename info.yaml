@@ -17,6 +17,10 @@ project:
   discord: "gregorydaley_87272_39557"
   description: "RF-block characterization chip containing the blocks of an integer-N PLL (LC-VCO with varactor tuning, CML divide-by-2 quadrature divider, PFD, charge pump), brought out to pads for open-loop characterization. Closed-loop lock is not demonstrable on this die: the feedback divides by 2 only and the PFD has no usable phase-detection window at the ~2.5 GHz reference that would require. Not a functioning integer-N PLL."
   lvs_config: "lvs/lvs_config.json"
+  gf_def_ready: true
+  ws_def_ready: false
+  drc_ready: true
+  lvs_ready: true
 
 # ======================================================
 # Pad / pin list  (config B: 1/8 die, 16-pin total, 12 used, 4 spare)
