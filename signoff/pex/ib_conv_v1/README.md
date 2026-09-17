@@ -31,6 +31,7 @@ Source is the **committed** `gds/ib_conv_v1.gds`. The script writes only into
 
 | | value |
 |---|---|
+| extraction runtime | **~1 s** (measured 2026-09-17, `timeout 600` wall clock, in-container) |
 | devices | **14** |
 | parasitic caps | 70 |
 | parasitic resistors | 526 |

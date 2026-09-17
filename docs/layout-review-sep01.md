@@ -23,6 +23,14 @@ notes this document summarises.
 **Nothing in this revision changed the shipped GDS.** `gds/chip_top.gds` is byte-identical to
 the artifact all six gates were run against.
 
+> **AMENDED 2026-09-17.** That statement still holds for `gds/chip_top.gds`, which is
+> untouched. It no longer holds for the whole tree: the item 23 VDD fix (§6 item 23, commit
+> `9614947` on branch `item23`) **does** change `gds/ib_conv_v1.gds` and
+> `gds/DIV2_QUAD_v1.gds`. Both were re-gated (DRC 0, LVS match uniquely, KLayout variant-D
+> clean, bboxes unchanged), but **`chip_top` has NOT been re-integrated against them and is
+> therefore stale with respect to its own children.** Re-running `route_chip.py` / the
+> `chip_top` merge is a required follow-up before anything is submitted.
+
 **Reading rule used throughout.** Every number below is read from a named file. Where a check
 does not exist, the line says *not done* and the item is repeated in §6 (Gaps). §6 is not a
 formality — read it before drawing conclusions from §1–§5.
@@ -1649,8 +1657,63 @@ Everything in this list is a real absence. None of it is mitigated by anything i
     **Next step, recorded:** a **full VDD-network relayout** of `ib_conv_v1` (M2 plate, source
     straps, nwell taps), which is the largest recoverable share at 94 of the 106 mVpp deficit,
     followed by re-extraction and extracted re-simulation. The residual between that and the
-    109 mVpp all-resistor figure is to be characterized then. **No GDS change has been made for
-    item 23**; `gds/ib_conv_v1.gds` and `gds/DIV2_QUAD_v1.gds` are unchanged by it.
+    109 mVpp all-resistor figure is to be characterized then.
+
+    **STATUS 2026-09-17: the VDD relayout is PARTIALLY built and gated. The re-simulation
+    deficit is NOT closed and is not claimed to be.** Commit `9614947` on branch `item23`
+    changes `gds/ib_conv_v1.gds` and `gds/DIV2_QUAD_v1.gds` (superseding the "no GDS change"
+    statement that stood here). What was built, and what it does and does not buy:
+
+    *Survey first (read-only).* The VDD spine carried the full **2.96 mA** per converter
+    through a **0.60 um** M2 bus = **4.93 mA/um**, which is the *identical* number VSS had
+    before `11d3d7b`. PEX showed the VDD net as **17 parasitic resistors in a zero-loop tree**
+    where VSS now has **476 in a 191-loop mesh**, and cumulative port-to-inverter resistance
+    **8.5-10.4x** the VSS side, worst at INV3, the largest driver. Every via on the VDD path
+    was a **single cut** — 13 via1 against VSS's 198.
+
+    *Built.* An **M3 plate, 472 iu = 2.36 um**, over the M2 spine (0.60 + 2.36 = **2.96 um**
+    -> **1.000 mA/um**), **80 via2 stitch cuts** at 120 iu pitch, and the three inverter VDD
+    bus taps taken from **1 to 3 via1 cuts**. **METAL2 and METAL1 are untouched** — union-area
+    delta exactly **0 iu^2** — so the M1 widening that shorted `NS` to `VSS` is not repeated.
+
+    *A hierarchy-only defect found and fixed en route.* Nine of the 89 candidate stitch cuts
+    had to be skipped. `DIV2_QUAD_v1` drops its **own** via2 straight onto this cell's M2
+    spine (the top-level M4 branch lands on child metal, not on top-level metal), so a stitch
+    cut there is **clean standalone** but fires **8 parent-level errors**, 2 per instance —
+    `Via2 spacing < 48 (V2.2a - 2 * V2.3)` and `This layer can't abut or partially overlap
+    between subcells`. Same class as the VSS spine-start defect recorded in §4.5, and the
+    reason the keep-out windows are written into `phase5/ib_conv_v1.tcl` rather than tuned by
+    hand. Parent DRC went 8 -> 0.
+
+    *Measured, R+C PEX on the committed GDS* (14 devices = LVS count, 625 R; VDD net
+    **17 -> 116** resistors and **0 -> 33** independent loops):
+
+    | cumulative R, port -> source contact | before | after | change |
+    |---|---|---|---|
+    | INV1 (pfet 10u) | 35.45 O | **31.84 O** | -10.2 % |
+    | INV2 (pfet 26u) | 47.49 O | **41.72 O** | -12.2 % |
+    | INV3 (pfet 44u) | 60.91 O | **53.19 O** | -12.7 % |
+    | diff-pair X1 / X11 | 29.33 / 31.26 O | 29.33 / 31.26 O | -0.003 O |
+
+    The diff-pair branch is unmoved by construction: its path leaves the spine at the port and
+    runs east on the M1 rail, so a spine plate cannot help it.
+
+    **Why this does not close item 23.** The deficit is 25 -> 131 mVpp, and this document
+    already records that driving **every** VDD resistor to zero reaches only **94 mVpp**. A
+    **10-13 %** resistance reduction is a small fraction of that ceiling, so the expected swing
+    recovery is small. **No re-simulation was run** — the session that built this was
+    layout-and-gates only. Item 23 stays **open**: what changed is that the EM violation on the
+    VDD spine is now fixed (4.93 -> 1.000 mA/um) and the network is a mesh instead of a tree.
+    The source straps and nwell taps named in the original next-step are **still not rebuilt**,
+    and the 10 device-level via1 that carry each stage's current are **still single-cut** —
+    they have no M1/M2 enclosure room, and widening them needs new M1. Closing item 23 needs
+    that relayout plus an extracted re-simulation, in that order.
+
+    *Per-stage current caveat.* The 3-cut target on the bus taps is `ceil(0.74 / 0.28)`, where
+    0.74 mA is the **flat average** 2.96/4. The per-stage split is not measured and **no peak
+    current measurement exists anywhere in the repo** — every `.meas` in `team_src/sim/` and
+    `signoff/pex/ib_conv_v1/decks/` is `AVG`. INV3 (44u/16u) certainly draws more than its
+    quarter, so the target is provisional and every mA/um figure here is an average.
 23a. **`vco_core` PEX is extracted but not re-simulated, and a core-only re-sim would not be
     meaningful.** The extracted netlist exists (30 devices / 194 C / 208 R,
     `signoff/pex/vco_core/`). It is not re-simulated because `vco_core` is the cross-coupled pair
