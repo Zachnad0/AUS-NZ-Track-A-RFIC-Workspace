@@ -157,6 +157,68 @@ foreach pfx {I1 I2 I3} {
 }
 set vhi [lindex $::CVDD(I3) 1] ; vseg metal2 $xVDDbus [expr {$YP+1240}] $vhi 60
 
+# ---------- EM item 23: M3 VDD plate + via2 stitching (METAL2 UNCHANGED) ----------
+# Mirrors the VSS option-2 fix one layer up (M2 plate + via1 stitch, commit 11d3d7b).
+# The M2 spine half-width stays 60. Conductor is added on METAL3 only, so no metal2
+# geometry moves -- the same discipline that kept the VSS fix from repeating the M1
+# widening that shorted NS to VSS.
+#
+# Plate width 472 iu = 2.36 um alongside the 0.60 um M2 spine = 2.96 um total, which
+# takes the spine from 4.93 mA/um to 1.000 mA/um at the measured 2.96 mA per converter.
+# Headroom checked before writing this (survey.md step 1): the free M3 window east of
+# the spine is >= 2068 iu (10.34 um) at every y, and there is NO metal3, via2, metal4
+# or via3 anywhere within 400 iu of the spine. West is the cell edge (x=-1360), so the
+# plate grows east only.
+set ::VHW2 28          ;# via2 half-width (56 sq -- gf180 via2 min 56)
+set M3PLATE 472
+proc via2_at {x y} {
+    # metal2 (spine) and metal3 (plate) already cover this point; paint the cut only.
+    box values [expr {$x-$::VHW2}] [expr {$y-$::VHW2}] [expr {$x+$::VHW2}] [expr {$y+$::VHW2}] ; paint m3contact
+}
+box values [expr {$xVDDbus-60}] [expr {$YP+1240-60}] \
+           [expr {$xVDDbus-60+$M3PLATE}] [expr {$vhi+60}] ; paint metal3
+# Stitch the WHOLE M2/M3 overlap at 120 iu: without distributed cuts the M2 spine still
+# carries full current between transfer points and the parallel M3 buys nothing.
+set V2PITCH 120 ; set ::NVIA2 0 ; set ::NSKIP2 0
+# PARENT-LEVEL KEEP-OUTS -- the same hazard as the VSS spine start above, one layer up.
+# DIV2_QUAD_v1 paints its OWN via2 onto this cell's VDD spine (it drops the top-level M4
+# branch straight onto the child M2 rather than onto top-level metal). A stitch cut landing
+# there is clean standalone but fires at DIV2 level with BOTH
+#   "Via2 spacing < 48 (V2.2a - 2 * V2.3)"  and
+#   "This layer can't abut or partially overlap between subcells"
+# -- 8 errors, 2 per instance, invisible to any cell-level gate by construction.
+# Windows below are the union of the parent's via2 rects mapped back through all four
+# instance transforms (1 0 24860 / -1 0 -3388, at y -730 and -18400), padded by the 48 iu
+# V2.2a spacing. Derived, not guessed: see docs/layout-review-sep01.md item 23.
+set V2KEEPOUT [list -3546 -3394  -3326 -3174  3854 4006  4054 4206  4504 4656                     14124 14276  14344 14496  21524 21676  21724 21876  22174 22326]
+for {set y [expr {$YP+1240}]} {$y <= $vhi} {incr y $V2PITCH} {
+    set blocked 0
+    foreach {lo hi} $V2KEEPOUT {
+        if {($y+$::VHW2) > $lo && ($y-$::VHW2) < $hi} { set blocked 1 ; break }
+    }
+    if {$blocked} { incr ::NSKIP2 ; continue }
+    via2_at $xVDDbus $y ; incr ::NVIA2
+}
+puts "NVIA2=$::NVIA2 NSKIP2=$::NSKIP2"
+
+# ---------- EM item 23b: extra via1 cuts on the inverter VDD bus taps ----------
+# Target = ceil(I_stage / 0.28 mA/cut) = ceil(0.74/0.28) = 3 cuts per tap.
+# I_stage = 0.74 mA is the FLAT AVERAGE 2.96/4 (survey.md caveat 7): the per-stage
+# split is not measured and no peak measurement exists anywhere in the repo, so this
+# target is provisional. INV3 (44u/16u) certainly draws more than its quarter.
+# Only these three bus taps have M1/M2 room for extra cuts at 104 iu pitch with 12 iu
+# enclosure. The other ten via1 on the VDD net are device-level contacts hemmed in by
+# their own geometry; they are NOT touched, because the only way to widen them is to
+# grow M1, which is exactly what shorted NS to VSS.
+set ::NV1X 0
+foreach {tx ty} [list 4696 6404  4592 6404 \
+                      6296 10304 6192 10304 \
+                      7896 14404 7792 14404] {
+    box values [expr {$tx-26}] [expr {$ty-26}] [expr {$tx+26}] [expr {$ty+26}] ; paint m2contact
+    incr ::NV1X
+}
+puts "NV1X=$::NV1X"
+
 select top cell
 drc on ; drc euclidean on ; drc check ; drc catchup
 puts "CONV_DRC=[drc list count total]"
