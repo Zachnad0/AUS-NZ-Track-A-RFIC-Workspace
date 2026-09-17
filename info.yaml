@@ -85,25 +85,18 @@ pins:
   io_type: power
 - name: IBIAS
   io_type: analog
-  secondary_esd: false
 - name: ISS
   io_type: analog
-  secondary_esd: false
 - name: VTUNE
   io_type: analog
-  secondary_esd: false
 - name: CP_OUT
   io_type: analog
-  secondary_esd: false
 - name: Q_N
   io_type: analog
-  secondary_esd: false
 - name: I_N
   io_type: analog
-  secondary_esd: false
 - name: Q_P
   io_type: analog
-  secondary_esd: false
 - name: VSSD
   io_type: ground
 - name: VDDD
