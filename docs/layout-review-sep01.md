@@ -1169,6 +1169,91 @@ been re-integrated against it since `9614947`. `chip_top` and `route_chip.py` we
 instruction. Re-running the merge and route is a required follow-up before anything is
 submitted; the same note stands in §6 item 23.
 
+### DIV2-level VDD phase B2: M2+M3 plates + 16-cut row ties — BUILT and SHIPPED 2026-09-18
+
+Commit `a11e51f`. Where phase B removed the daisy chain, B2 addresses the bus itself. It is
+worth being explicit about why: **this was never an EM-only problem.** The IR model built from
+the PDK's own sheet and via values showed the worst converter losing **302 mV** before its
+supply reached the cell.
+
+**Sheet/via values** — `gf180mcuD.tech` extract section, `style ngspice` default variant, the
+same style `extresist` used for the committed PEX: metal1–4 **90 mΩ/sq**, metal5 40 mΩ/sq,
+via1/2/3/4 **4.5 Ω per cut**. Cross-check: `resim.md`'s 187 squares = 16.8 Ω reproduces.
+
+**Current split** — 22.4 mA total (`i(v_vdd)`, `div2_sb_TT`); four converters at 2.96 mA each
+= 11.84 mA, measured per converter as a VSS return. **The CML core is not measured separately**
+— no committed `.meas` isolates it — so the core + bias is the **10.56 mA remainder, split
+50/50 between latch A and latch B** because they are identical by construction. That split is
+an assumption, not a measurement.
+
+#### Bus width, before and after
+
+| path | before | after (M2 + M3 + M4, M4 not credited) |
+|---|---:|---|
+| port haul y3800 | 0.280 µm | **21.84 µm** |
+| east haul y6500 | 0.280 µm | 11.20 µm plated, 0.28 µm over its last 132 iu |
+| south haul / rail B | 0.280 µm | **14.24 µm** |
+| vertical x−1000 | 0.280 µm | **2.42 µm** (narrowest row; 11.2 µm elsewhere) |
+| IP riser x8700 | 0.280 µm | **5.44 µm** |
+| E riser x23560 | 0.280 µm | plated to y≈3006 only — see the gap note below |
+| every tie | 1 via2 + 1 via3 | **16 via2 + 16 via3**, 112 iu pitch |
+
+Plate area **M2 2646.17 µm², M3 2275.83 µm²**; plate stitch **346 via2 + 346 via3** at 120 iu
+pitch; tie cuts **64** (16 × 4). M4 haul geometry unchanged — a via3 lands directly on the bare
+56 iu haul, which is DRC-clean, whereas 84 iu landing pads at 120 pitch fail M4.2a spacing.
+
+#### IR drop, before and after
+
+| port → | before | after | factor |
+|---|---:|---:|---:|
+| IP (inst0) VDD pin | 265.34 mV | **24.30 mV** | 10.9× |
+| **QP (inst3) VDD pin** | **302.19 mV** | **36.68 mV** | **8.2×** |
+| IN (inst1) VDD pin | 150.00 mV | **3.20 mV** | 46.9× |
+| QN (inst2) VDD pin | 246.38 mV | **7.39 mV** | 33.4× |
+| CML latch-B feed | 284.82 mV | **7.07 mV** | 40.3× |
+
+Tie via stack: 9.0 Ω → **0.5625 Ω**, i.e. 26.64 mV → **1.67 mV**, and **0.185 mA per cut**
+against the 0.28 mA/cut limit.
+
+#### What is not met, and why
+
+The phase-B2 plan study (a read-only scratch document, not committed) predicted ≤ 1.00 mA/µm everywhere and QP ≈ 5 mV. **Neither is reached.** The east
+haul's last 132 iu and, more importantly, **the east riser above y≈3006 are unplated**, so they
+still sit at **21.1 mA/µm** and carry 30 of QP's 36.68 mV.
+
+The cause is identified, not guessed: the plate generator excludes the child's own VDD metal
+from its obstruction set so the plate may overlap it, and that exclusion list was dumped from
+`ib_conv_v1` **before** the phase-A M3 plate and stitch were added. Most of the child's
+post-phase-A VDD metal is therefore treated as foreign, and the east riser's plate stops at the
+inst0 boundary. Refreshing the exclusion to the current child does extend the plate (east riser
+M2 258 → 452 µm², M3 340 → 550 µm²) but reintroduces the hierarchy-only rule — 20 errors of
+`This layer can't abut or partially overlap between subcells` — because the plate stitch then
+lands on the child's via2 stitch column. Fixing that needs the plate stitch to skip the child's
+stitch columns; it does **not** need a child change. **That is the phase-B3 item.** The build
+committed here is the version that passes every gate.
+
+#### Gates — control run of the unpatched script first
+
+| gate | control | after |
+|---|---|---|
+| parent-level magic DRC after `drc catchup` | 0 | **0** |
+| `verify_cp.sh DIV2_QUAD_v1` | 149 / 9 / 22 match uniquely | **149 / 9 / 22 match uniquely** |
+| KLayout variant-D | clean | **clean** |
+| bbox | 237.360 × 174.170 µm | **unchanged** |
+| metal-only probe, all four tie pins | — | **same top-level net as the VDD port** |
+
+The control reproduces the committed `.mag` byte-for-byte apart from the timestamp.
+
+**Two defects were found by bisecting plates against ties**, as the gate procedure requires:
+plate slabs ending flush against foreign metal in x because the spacing margin was applied only
+in y; and a clamping bug that classified an obstruction as neither left nor right once expanded
+by the margin, which let the x−1000 riser's M3 plate cross the core VSS M3 spine and **short
+VDD to VSS** (LVS 8 ports / 21 nets, DO NOT MATCH). Both are fixed.
+
+**`chip_top` IS STILL STALE.** `gds/DIV2_QUAD_v1.gds` changed again here and `chip_top` has not
+been re-integrated since `9614947`. `chip_top`, `route_chip.py` and `phase5/ib_conv_v1.tcl` were
+untouched by instruction. Re-running the merge and route remains a required follow-up.
+
 ### WITHDRAWN 2026-09-10: `ib_div2.tcl` DOES reproduce the signed-off `DIV2_QUAD_v1`
 
 **This section previously reported a reproducibility gap. The claim was wrong and is withdrawn in
