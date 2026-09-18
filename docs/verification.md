@@ -434,7 +434,43 @@ convention). Sims require `UPRJ_ROOT` set to the clone root.
 | varactors in the PEX netlist | **42** (2 × 21 `cap_nmos_03v3_b`), correct |
 | schematic control, 80 ns at VTUNE 2.0 V | **not run** — measured 36.5 s per 5 ns, so 80 ns is **≈ 583 s (9.7 min)**, over the budget set for the attempt |
 | extracted startup, 80 ns | **not run** — the deck aborts at the initial transient timepoint inside the `cap_nmos_03v3_b` model (42 behavioural instances against `method=gear` / `reltol=1e-5` / `bypass=0`); no timepoints, so no envelope |
-| f0, swing, startup time, supply current | **still open** |
+| f0, swing, startup time, supply current | **measured 2026-09-18**, see below |
+
+**Startup, golden control vs extracted (2026-09-18, `signoff/sim/vco/README.md`).** Bench
+stimulus and options, DUT swapped for `vco_v1_golden.spice` (the netlist the layout is LVS'd
+to), `tran 5p 40n uic` with a ±10 mV differential kick, VTUNE 2.0 V, measured 30–40 ns. No
+solver option added.
+
+| | record, this §3.2 @ 2.0 V | control (golden) | extracted |
+|---|--:|--:|--:|
+| f0 | 4.929 GHz | **4.859 GHz** (−1.42 %) | — does not oscillate |
+| core differential swing | 4.09 Vpp | **4.211 Vpp** (+3.0 %) | **0.000 Vpp** |
+| startup to 90 % | — | **6.211 ns** | not reached |
+| supply current | — | **5.177 mA** | 4.197 mA (bias only) |
+| amplitude drift 30–35 vs 35–40 ns | — | **0.071 %**, settled | — |
+| runtime | — | 8 s | 21 s |
+
+The control is settled and is the same circuit the layout implements. It is **not** a
+reproduction of the sweep above — different DUT, different start, different window — so the
+−1.42 % should not be read as a discrepancy in the record.
+
+**The extracted netlist does not start.** The ±10 mV kick decays to zero within ~3 ns and never
+recovers, while the core stays correctly biased (tail 1.273 mA), so it is damped rather than
+broken. Extracted tank series resistance is **≈ 3.8 Ω** — coil 0.76, output leads 1.37,
+varactor branches 1.67 — against **0.76 Ω** for the golden, about 5× the loss; the varactor
+taps were left at 0.30 µm by `6573181`, which widened only the core leads. That is the likely
+cause and is **not proven**; no attempt was made to tune the deck into oscillating.
+
+One thing the attempt established that matters beyond this block: **magic's extraction contains
+no inductance.** `grep -c "^L"` on `vco_v1.pex.spice` and on the committed
+`vco_inductor_v2.ext` both return 0 — R and C only, with the coil modelled as two `tm11k`
+resistors. An extracted VCO tank therefore has no resonator unless the lumped model carrying
+the L is spliced back in, which is what the deck does.
+
+This does not establish that the fabricated VCO will not oscillate: the extracted deck is
+pessimistic in at least two known ways (`rthresh 0` keeps every parasitic resistor with no
+reduction; the lumped coil carries DC metal resistance only). Widening the varactor taps and
+re-measuring is the next step.
 
 So every number in this section remains unverified against layout. The bench work, the measured
 runtimes and a bench-vs-golden device delta (`ppolyf_u_3k` in `vco_tb.sch` against `ppolyf_u_1k`
