@@ -1254,6 +1254,94 @@ VDD to VSS** (LVS 8 ports / 21 nets, DO NOT MATCH). Both are fixed.
 been re-integrated since `9614947`. `chip_top`, `route_chip.py` and `phase5/ib_conv_v1.tcl` were
 untouched by instruction. Re-running the merge and route remains a required follow-up.
 
+### DIV2-level VDD phase B5: east riser and haul tail plated — BUILT and SHIPPED 2026-09-18
+
+Commit `c72f4a4`, closing what B2 left at 21.1 mA/µm. Two generator defects had to be found
+first; both are recorded below as invariants because each produced a *clean-DRC, LVS-shorted*
+build, which is the expensive failure mode.
+
+#### IR drop, the full progression
+
+Same PDK values throughout (`gf180mcuD.tech` `style ngspice` default: metal1–4 **90 mΩ/sq**,
+via **4.5 Ω/cut**) and the same current split (22.4 mA total; 4 × 2.96 mA measured per
+converter; the **10.56 mA remainder taken as CML core + bias and split 50/50 between the two
+latches, an assumption, not a measurement** — no committed `.meas` isolates the core).
+
+| port → | pre-B2 | B2 `a11e51f` | **B5 `c72f4a4`** | factor |
+|---|---:|---:|---:|---:|
+| IP (inst0) | 265.34 mV | 24.30 mV | **6.40 mV** | 41.5× |
+| **QP (inst3)** | **302.19 mV** | 36.68 mV | **9.93 mV** | **30.4×** |
+| IN (inst1) | 150.00 mV | 3.20 mV | **3.20 mV** | 46.9× |
+| QN (inst2) | 246.38 mV | 7.39 mV | **7.40 mV** | 33.3× |
+| CML latch-B feed | 284.82 mV | 7.07 mV | **7.08 mV** | 40.2× |
+
+Per segment, mA/µm after B5 — the east haul falls from **21.143 to 0.516** and the east riser
+upper from **21.143 to 0.970**:
+
+| segment | min width | mA/µm | IR |
+|---|---:|---:|---:|
+| rail A (four sub-segments) | 11.48–24.64 µm | 0.240–0.976 | 0.48 / 0.10 / 0.67 / 0.87 mV |
+| east haul y6500 | 11.48 µm | **0.516** | 1.83 mV |
+| E riser upper | 6.10 µm | **0.970** | 1.10 mV |
+| rail B | 14.24 µm | 0.371 | 1.35 mV |
+| **IP riser x8700** | 5.44 µm | **1.088** | 1.22 mV |
+| **vertical x−1000** | 2.42 µm | **3.405** | 4.20 mV |
+| **E riser lower** | 0.28 µm | **10.571** | 3.53 mV |
+
+Tie stacks 0.5625 Ω, **0.185 mA/cut** against the 0.28 limit.
+
+**Three segments remain over 1.00 mA/µm**, each a local neck rather than an unplated run, and
+together they contribute 8.9 mV:
+
+- **E riser lower, 0.28 µm** — a plate gap where the row-A tie zone and the `eris` M2 notch meet.
+- **vertical x−1000, 2.42 µm** — clamped by the core **VSS M3 spine at x −1206…−1094** and the
+  VSS_N tie strip; the plate cannot widen without shorting to VSS.
+- **IP riser x8700, 5.44 µm** — clamped by neighbouring foreign M4.
+
+#### Generator invariant 1 — the obstruction source must be the PRE-B2 design
+
+Measure plate room against `DIV2_QUAD_v1.mag` at **`c7c2635`**, never against the committed
+`.mag`. The committed cell already contains the plates, so they read as foreign and block every
+haul; the first B5 attempt produced **zero slabs** for the port haul before this was found. The
+child-VDD exclusion is refreshed from the current `ib_conv_v1.mag`, which is what lets the east
+riser plate cross the inst0 boundary at all.
+
+#### Generator invariant 2 — no tie box may be emitted inverted
+
+`b2_tie` paints its metal3 pad as `mx1 → s1` and `s2 → mx2` for each skip window. A window that
+falls **outside** `[mx1, mx2]` makes one of those boxes inverted, and magic silently normalises
+it into metal where the tie was meant to stay clear. For i0 the window `(23472, 23648)` against
+`mx1 = 23644` emitted metal3 at **x 23472…23644** — 172 iu west of the pad, straight across the
+child's spine. **DRC was 0 and LVS was shorted.**
+
+This is what actually broke B3, and it took a bisect with `verify_cp` as the oracle to find:
+erasing **all 46 plate slabs and all 350 stitch cuts** still left VDD merged with IBIAS, so the
+plates were never implicated. Clamping the windows to the pad range was **not** sufficient
+either, so the tie skip arguments are left at the literals B2 shipped, which are proven, and
+`b2_tie` now guards every metal3 box with an explicit `if {$s1 > $mx1}` / `if {$mx2 > $s2}`.
+
+A corollary worth keeping: `what -list`'s label field reports labels found in the selected
+*area*, not labels electrically on the net. The committed, LVS-passing B2 shows `IBIAS` in the
+VDD selection exactly as the failing B3 did, so **no label- or geometry-based flat probe can
+detect this class of short.** Only hierarchical extraction can.
+
+#### Gates — control first
+
+The committed generator run through the identical scratch harness passes (9 / 22 match
+uniquely), which is what makes the bisect trustworthy.
+
+| gate | control | B5 |
+|---|---|---|
+| parent magic DRC after `drc catchup` | 0 | **0** |
+| `verify_cp.sh DIV2_QUAD_v1` | 149 / 9 / 22 match uniquely | **149 / 9 / 22 match uniquely**, 0 property errors |
+| KLayout variant-D | clean | **clean** |
+| bbox | 237.360 × 174.170 µm | **unchanged** |
+| metal-only probe, four tie pins | — | **same top-level net as the VDD port** |
+
+**`chip_top` IS STILL STALE.** `gds/DIV2_QUAD_v1.gds` changed again; `chip_top` has not been
+re-integrated since `9614947`. `chip_top`, `route_chip.py` and `phase5/ib_conv_v1.tcl` untouched
+by instruction.
+
 ### WITHDRAWN 2026-09-10: `ib_div2.tcl` DOES reproduce the signed-off `DIV2_QUAD_v1`
 
 **This section previously reported a reproducibility gap. The claim was wrong and is withdrawn in
