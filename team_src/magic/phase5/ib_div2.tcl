@@ -236,7 +236,7 @@ hseg metal3 $inmEsc $ipINM $pY 28 ; via_m2m3 $ipINM $pY
 hseg metal3 21300 $ipIB -2540 28 ; vseg metal3 $ipIB -2540 $pY 28 ; via_m2m3 $ipIB $pY
 # VDD : riser @x8700 up to a M4 haul @6500 (above input hauls), east to the conv M2 bus
 vseg metal4 8700 3800 6500 28 ; hseg metal4 8700 $ipVbus 6500 28
-vseg metal4 $ipVbus 3850 6500 28 ; via_m2m4 $ipVbus 3850
+vseg metal4 $ipVbus 3850 6500 28   ;# B2: spine landing removed, tie moved to the child's M2 row
 # VSS : extend the M2 collector plate east under the conv VSS pin, via to its M1 bus
 # 10d FIX: the old strip sat at y -2100..-1900, 2400 iu ABOVE the plate (y -6000..-4500),
 # so it joined nothing and IP returned through the p-substrate. Rebuilt as a real metal path,
@@ -282,7 +282,7 @@ hseg metal5 $ipIBn 15450 7600 44 ; via_m3m5 $ipIBn 7600 ; vseg metal3 $ipIBn $pY
 # VDD riser sits in the path of the INP/INM/IBIAS hauls (that shorted OIB/IBIAS to VDD).
 # via_m2m4 paints NO metal2 -> paint an explicit M2 pad on the bus first for via2 enclosure.
 hseg metal4 $ipVbusN -1000 3400 28
-box values [expr {$ipVbusN-60}] 3340 [expr {$ipVbusN+60}] 3460 ; paint metal2 ; via_m2m4 $ipVbusN 3400
+# B2: the y3400 spine landing is removed; i1 rises to row C and lands there
 # VSS_N : tie IN VSS pin (M1) east to the core VSS M3 spine @x-1150 (y-2002 within its span)
 box values [expr {$ipVSSn-28}] -2566 -1122 -1974 ; paint metal2   ;# 10b: 56 -> 592 iu (2.96 um), grown down; VDD is 1574 iu below
 via_m1m2 $ipVSSn -2002 ; via_m2m3 -1150 -2002
@@ -313,7 +313,7 @@ hseg metal3 $qIB 15450 -16600 28 ; vseg metal3 $qIB -17070 -16600 28 ; via_m2m3 
 # VDD_Q <- latch-B VDD M4 rail (y-3200, x-1000..8700) : M4 hop then DOWN to the QN VDD bus, whose
 # top is ~-3996 (native 3840 -> OYNq+3840); via at -4200 (inside the bus), not -3200 (above it).
 hseg metal4 $qVbus -1000 -3200 28 ; vseg metal4 $qVbus -4200 -3200 28
-box values [expr {$qVbus-60}] -4260 [expr {$qVbus+60}] -4140 ; paint metal2 ; via_m2m4 $qVbus -4200
+# B2: the y-4200 spine landing is removed; i2 lands on row A
 # VSS_Q : extend the core VSS spine (M3 @x-1150) DOWN to QN's deep VSS pin, on M2 (so it crosses
 # the Q hauls -- INP M4, INM M5, IBIAS M3 -- all inter-layer instead of shorting IBIAS on M3).
 set qVSSy [expr {$OYNq-1272}]
@@ -345,7 +345,7 @@ via_m3m5 15450 -2540 ; vseg metal5 15450 -14800 -2540 44 ; via_m3m5 15450 -14800
 hseg metal3 15450 $qpIB -14800 28 ; vseg metal3 $qpIB -17070 -14800 28 ; via_m2m3 $qpIB $pYp
 # VDD_QP : connect QP VDD bus UP to IP's VDD bus (both M2 @23560) on M4 -- a straight M2 riser
 # crosses IP's VSS M2 plate-strip (y-2000, x21900..23880) and shorts VDD to VSS.
-box values [expr {$qpVbus-60}] -4050 [expr {$qpVbus+60}] -3900 ; paint metal2 ; via_m2m4 $qpVbus -3980
+# B2: the y-3980 spine landing is removed; i3 lands on row A
 # ---- Phase B (a): EAST-SIDE DAISY CHAIN REMOVED ----------------------------------------
 # This riser used to stop at y3200 and via DOWN onto ib_conv_v1_0's *internal* M2 trunk, so
 # QP's 2.96 mA entered IP's private 0.60 um spine at y3200 and left it at y3850 -- i.e. one
@@ -362,6 +362,124 @@ vseg metal4 $qpVbus -3980 3850 28
 set qpVSSy [expr {$OYP2-1272}]
 vseg metal2 21900 $qpVSSy -4500 296   ;# 10b: hw 56 -> 296 = 592 iu (2.96 um)
 box values 21604 [expr {$qpVSSy-28}] [expr {$qpVSS+28}] [expr {$qpVSSy+564}] ; paint metal2 ; via_m1m2 $qpVSS $qpVSSy   ;# 10b: 56 -> 592 iu
+
+
+# ================= Phase B2: M2+M3 VDD plates + row-landing tie arrays =================
+# Plates are emitted from the free-window measurement in b2_plan.md 2 (foreign paint only,
+# all four child transforms, 56 iu spacing margin). Heights are per-column maxima capped at
+# 2240 iu = 11.2 um; the south plate grows NORTH only, because inst1/inst2's VSS plate from
+# the 2026-09-11 work sits immediately below the haul. M4 haul geometry is UNCHANGED: a via3
+# lands directly on the bare 56 iu haul, which is DRC-clean (84 iu pads at 120 pitch are NOT
+# -- they fail M4.2a spacing).
+set ::B2_M2A 0 ; set ::B2_M3A 0 ; set ::B2_V2 0 ; set ::B2_V3 0
+proc b2_slab {lay x1 y1 x2 y2} {
+    box values $x1 $y1 $x2 $y2 ; paint $lay
+    if {$lay eq "metal2"} { set ::B2_M2A [expr {$::B2_M2A + ($x2-$x1)*($y2-$y1)}] } \
+                       else { set ::B2_M3A [expr {$::B2_M3A + ($x2-$x1)*($y2-$y1)}] }
+}
+proc b2_stitch {x y} {
+    box values [expr {$x-28}] [expr {$y-28}] [expr {$x+28}] [expr {$y+28}] ; paint m3contact ; incr ::B2_V2
+    box values [expr {$x-28}] [expr {$y-28}] [expr {$x+28}] [expr {$y+28}] ; paint via3     ; incr ::B2_V3
+}
+b2_slab metal2 -1028 2680 2500 4920
+b2_slab metal2 2500 2732 2724 4920
+b2_slab metal2 2724 2680 8604 4920
+b2_slab metal2 8604 2732 8744 4920
+b2_slab metal3 -1028 2680 2024 4920
+b2_slab metal3 2416 2680 2500 4920
+b2_slab metal3 2500 2732 2724 4920
+b2_slab metal3 2724 2680 8604 4920
+b2_slab metal3 8604 2732 8744 4920
+b2_slab metal2 8672 5380 23344 7620
+b2_slab metal3 8672 5380 9820 7620
+b2_slab metal3 10212 5380 15280 7620
+b2_slab metal3 15644 5380 23344 7620
+b2_slab metal2 -1860 -3228 -1020 -2646
+b2_slab metal2 -1020 -3228 8752 -988
+b2_slab metal3 -2028 -3228 -1356 -988
+b2_slab metal3 -908 -3228 -96 -988
+b2_slab metal3 -96 -3228 8752 -2508
+
+# plate stitch, 120 iu pitch along the full M2/M3/M4 overlap
+# port: 71 stitch columns
+foreach x {-728 -608 -488 -368 -248 -128 -8 112 232 352 472 592 712 832 952 1072 1192 1312 1432 1552 1672 1792 1912 2632 2872 2992 3112 3232 3352 3472 3592 3712 3832 3952 4072 4192 4312 4432 4552 4672 4792 4912 5032 5152 5272 5392 5512 5632 5752 5872 5992 6112 6232 6352 6472 6592 6712 6832 6952 7072 7192 7312 7432 7552 7672 7792 7912 8032 8152 8272 8392} { b2_stitch $x 3800 }
+# east: 113 stitch columns
+foreach x {8972 9092 9212 9332 9452 9572 9692 10292 10412 10532 10652 10772 10892 11012 11132 11252 11372 11492 11612 11732 11852 11972 12092 12212 12332 12452 12572 12692 12812 12932 13052 13172 13292 13412 13532 13652 13772 13892 14012 14132 14252 14372 14492 14612 14732 14852 14972 15092 15212 15692 15812 15932 16052 16172 16292 16412 16532 16652 16772 16892 17012 17132 17252 17372 17492 17612 17732 17852 17972 18092 18212 18332 18452 18572 18692 18812 18932 19052 19172 19292 19412 19532 19652 19772 19892 20012 20132 20252 20372 20492 20612 20732 20852 20972 21092 21212 21332 21452 21572 21692 21812 21932 22052 22172 22292 22412 22532 22652 22772 22892 23012 23132 23252} { b2_stitch $x 6500 }
+# south: 81 stitch columns
+foreach x {-1728 -1608 -1488 -768 -648 -528 -408 -288 -168 -48 72 192 312 432 552 672 792 912 1032 1152 1272 1392 1512 1632 1752 1872 1992 2112 2232 2352 2472 2592 2712 2832 2952 3072 3192 3312 3432 3552 3672 3792 3912 4032 4152 4272 4392 4512 4632 4752 4872 4992 5112 5232 5352 5472 5592 5712 5832 5952 6072 6192 6312 6432 6552 6672 6792 6912 7032 7152 7272 7392 7512 7632 7752 7872 7992 8112 8232 8352 8472} { b2_stitch $x -3200 }
+b2_slab metal2 -1948 -3172 120 -2640
+b2_slab metal2 -1042 -2640 120 -2108
+b2_slab metal2 -1028 -2108 120 -1856
+b2_slab metal2 -1948 -1856 120 -1772
+b2_slab metal2 -2120 -1772 120 -1156
+b2_slab metal2 -1028 -1156 120 -904
+b2_slab metal2 -2120 -904 120 -708
+b2_slab metal2 -2120 -708 -940 -484
+b2_slab metal2 -2120 -484 120 496
+b2_slab metal2 -2120 496 -940 720
+b2_slab metal2 -2120 720 120 776
+b2_slab metal2 -2120 1168 120 3100
+b2_slab metal2 -1948 3100 120 3772
+b2_slab metal3 -2120 -820 -108 496
+b2_slab metal3 -2120 496 -522 748
+b2_slab metal3 -2120 748 -108 860
+b2_slab metal3 -2120 860 -122 1084
+b2_slab metal3 -2120 1084 120 2988
+b2_slab metal3 -1948 2988 120 3772
+# vert riser: 27 stitch rows
+foreach y {-592 -352 -232 -112 8 128 248 368 608 1208 1328 1448 1568 1688 1808 1928 2048 2168 2288 2408 2528 2648 2768 2888 3248 3368 3488} { b2_stitch -1000 $y }
+b2_slab metal2 7580 3828 9820 6488
+b2_slab metal3 7580 3828 9820 6488
+# ipris riser: 20 stitch rows
+foreach y {4008 4128 4248 4368 4488 4608 4728 4848 4968 5088 5208 5328 5448 5568 5688 5808 5928 6048 6168 6288} { b2_stitch 8700 $y }
+b2_slab metal2 22440 -1614 24680 178
+b2_slab metal2 22440 178 24588 402
+b2_slab metal2 22440 542 24418 738
+b2_slab metal2 22440 738 24680 2986
+b2_slab metal3 22440 -3770 24680 -2706
+b2_slab metal3 22440 -2342 24517 486
+b2_slab metal3 22440 486 24503 738
+b2_slab metal3 22440 738 24680 2894
+# eris riser: 34 stitch rows
+foreach y {-1550 -1430 -1310 -1190 -1070 -950 -830 -710 -590 -470 -350 -230 -110 10 130 250 610 850 970 1090 1210 1330 1450 1570 1690 1810 1930 2050 2170 2290 2410 2530 2650 2770} { b2_stitch 23560 $y }
+
+# ---- tie re-route: >=16 stacked via2+via3 cuts at 112 iu pitch on the child's M2 rows ----
+# row C (child y6344..6464) for i0/i1 -> parent y5614..5734 ; row A (child y14344..14464)
+# for i2/i3 -> parent y-4056..-3936. Both are clear of the child's via2 stitch column
+# (child x-1328..-1272), so NO new child keep-out is required and the child is not rebuilt.
+set ::B2_TIE 0
+# mx1/mx2 bound the M2+M3 pad and every cut; px1/px2 bound the M4 pad, which alone may
+# cross the child's stitch column to reach the riser. Row C crosses the child's spine, and
+# the spine carries a via2 stitch cut every 120 iu, so M2/M3/vias must clear it by >=56 iu.
+proc b2_tie {name x0 y0 n pitch dir px1 px2 mx1 mx2 skips} {
+    box values $px1 [expr {$y0-60}] $px2 [expr {$y0+60}] ; paint metal4
+    box values $mx1 [expr {$y0-60}] $mx2 [expr {$y0+60}] ; paint metal2
+    if {[llength $skips]} {
+        foreach {s1 s2} $skips {
+            box values $mx1 [expr {$y0-60}] $s1 [expr {$y0+60}] ; paint metal3
+            box values $s2 [expr {$y0-60}] $mx2 [expr {$y0+60}] ; paint metal3
+        }
+    } else { box values $mx1 [expr {$y0-60}] $mx2 [expr {$y0+60}] ; paint metal3 }
+    set placed 0 ; set k 0
+    while {$placed < $n} {
+        set cx [expr {$x0 + $dir*$k*$pitch}] ; incr k
+        set bad 0
+        foreach {s1 s2} $skips { if {($cx+28) > $s1 && ($cx-28) < $s2} { set bad 1 } }
+        if {$bad} { continue }
+        box values [expr {$cx-28}] [expr {$y0-28}] [expr {$cx+28}] [expr {$y0+28}] ; paint m3contact
+        box values [expr {$cx-28}] [expr {$y0-28}] [expr {$cx+28}] [expr {$y0+28}] ; paint via3
+        incr placed
+    }
+    incr ::B2_TIE $placed
+    puts "B2_TIE_$name=$placed cuts"
+}
+# i1 needs a riser from its y3400 hop up to row C
+vseg metal4 -2088 3428 5734 28
+b2_tie i0_IP  23700 5674 16 112  1 23532 25500 23644 25500 {}
+b2_tie i1_IN  -2228 5674 16 112 -1 -4400 -2060 -4400 -2172 {-3245 -3061}
+b2_tie i2_QN  -2228 -3996 16 112 -1 -4100 -2060 -4100 -2172 {}
+b2_tie i3_QP  23700 -3996 16 112  1 23500 25500 23644 25500 {}
+puts "B2_PLATE_M2=$::B2_M2A iu2  B2_PLATE_M3=$::B2_M3A iu2  B2_STITCH_V2=$::B2_V2  B2_STITCH_V3=$::B2_V3  B2_TIECUTS=$::B2_TIE"
 
 select top cell
 drc on ; drc euclidean on ; drc check ; drc catchup
