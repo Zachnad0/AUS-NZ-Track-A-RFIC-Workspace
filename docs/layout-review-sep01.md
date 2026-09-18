@@ -1087,6 +1087,88 @@ because LVS cannot see a missing supply tie — see 10d.
 It is present identically in the pre-change GDS, so it predates this cycle. Under investigation;
 not yet written up as a finding.
 
+### DIV2-level VDD: daisy chain removed — BUILT and SHIPPED 2026-09-17; ties and bus NOT widened
+
+Phase B of item 23, the VDD counterpart of the DIV2-level VSS work above. **One of the three
+things attempted was built. The other two are blocked by in-plane congestion, and this section
+records the measurement that blocks them rather than a partial widening dressed up as a fix.**
+
+#### Measured before touching anything
+
+| item | value | limit | verdict |
+|---|---|---|---|
+| M4 VDD bus width (port haul y3772–3828, east haul y6472–6528, south haul y−3228…−3172) | **0.280 µm** each | — | — |
+| bus mA/µm at the measured 22.4 mA DIV2 supply | **80.0 mA/µm** | 1.00 mA/µm | **80× OVER** |
+| M4 needed for 1.00 mA/µm at 22.4 mA | **22.40 µm** | — | — |
+| tie metal, all four (M2 abutment) | 0.600 × 0.600 µm | 2.96 µm | **4.93× OVER** |
+| via2 cuts per tie | **1** | 11 (2.96 mA ÷ 0.28) | **10.6× OVER** |
+| via3 cuts per tie | **1** | 11 | **10.6× OVER** |
+
+#### (a) The east-side daisy chain — FIXED
+
+QP's riser stopped at y3200 and via'd **down onto `ib_conv_v1_0`'s internal M2 trunk**. QP's
+2.96 mA entered IP's private 0.60 µm spine at y3200 and left it at y3850, so IP's own trunk
+carried **5.92 mA** over that stretch and a hierarchy-blind `select net` saw two separate
+top-level fragments joined only through the child. The riser now runs to y3850 and merges with
+IP's own riser in the same column (`ipVbus == qpVbus == 23560`); the y3200 M2 pad and its via
+are deleted. One line in `phase5/ib_div2.tcl`.
+
+Metal-only probe (the 10b method) on each instance's VDD pin:
+
+| probe | before | after |
+|---|---|---|
+| `tie_IP` (inst0) | `23500 −4050 23620 3260` — **separate fragment** | `−2148 −4260 23620 6528` |
+| `tie_QP` (inst3) | `23500 −4050 23620 3260` — **separate fragment** | `−2148 −4260 23620 6528` |
+| `tie_IN` (inst1) | `−2148 −4260 23602 6528` | `−2148 −4260 23620 6528` |
+| `tie_QN` (inst2) | `−2148 −4260 23602 6528` | `−2148 −4260 23620 6528` |
+| VDD port | `−2148 −4260 23602 6528` | `−2148 −4260 23620 6528` |
+
+All four ties now land on **the same top-level net as the port**. No instance's current crosses
+another instance's internal metal.
+
+#### (b) and (c) — NOT BUILT, and why
+
+The target was every tie ≥ 2.96 µm with ≥ 16 via2 + 16 via3 cuts, and the M4 bus widened to
+1.00 mA/µm. **The M4 room is not there.** Each required footprint was intersected against all
+top-level M4/via3/via4/M5 and all four children's M4 mapped through their instance transforms:
+
+| required footprint | foreign geometry swallowed | verdict |
+|---|---|---|
+| rail B (latch-B, y−3228…−3172) widened to 22.40 µm | **11 via3 + 6 via4 + 26 M5 + 55 M4 rects** | **shorts VDD to many nets** |
+| rail A (latch-A, y3772…3828) widened to 22.40 µm | 2 via3 + 2 M5 + 14 M4 rects | not safe as drawn |
+| east haul widened 5.92 µm upward | via3+via4 at (15422,7572) and (9972,6972) — the IBIAS/INP hauls | not safe |
+| IP/QP riser widened to 5.92 µm | M5 INM haul y5756…5844 crosses it | needs inter-layer rework |
+
+This is the same conclusion `docs/tracking.md` reached for VSS — *"it is boxed in by bias/latch-B,
+no in-plane room… stack the plate on M2+M3+M4"* — and it applies to VDD for the same reason.
+The via-cut target has a second, independent blocker: a parent via2 onto a child VDD pin must
+land on child M2, and the child's VDD M2 at the IP and IN tie points is the **0.60 µm trunk**
+with the 120 iu via2 stitch column running down its middle, so only **one** parent cut fits per
+keep-out window. Landing 16 cuts needs the ties moved onto the child's full-width M2 rows
+(row A at child y 14344…14464 runs 9420 iu east and is clear), which is a re-route of all four
+ties, not a widening.
+
+**What a phase-B2 would have to do:** stack the VDD bus on M2+M3+M4 rather than widen M4
+in-plane, and move the four tie landings from the child's trunk onto its horizontal rows. Both
+are re-routes. Neither is attempted here.
+
+#### Gates — control run of the unpatched script first
+
+| gate | control | after |
+|---|---|---|
+| parent-level magic DRC after `drc catchup` | 0 | **0** |
+| `verify_cp.sh DIV2_QUAD_v1` | 149 / 9 / 22 match uniquely | **149 / 9 / 22 match uniquely** |
+| KLayout variant-D | clean | **clean** |
+| bbox | 237.360 × 174.170 µm | **unchanged** |
+| GDS cells | `['DIV2_QUAD_v1','ib_conv_v1']` | **unchanged** |
+
+The control reproduces the committed `.mag` byte-for-byte apart from the timestamp.
+
+**`chip_top` IS STILL STALE.** `gds/DIV2_QUAD_v1.gds` changed again here, and `chip_top` has not
+been re-integrated against it since `9614947`. `chip_top` and `route_chip.py` were untouched by
+instruction. Re-running the merge and route is a required follow-up before anything is
+submitted; the same note stands in §6 item 23.
+
 ### WITHDRAWN 2026-09-10: `ib_div2.tcl` DOES reproduce the signed-off `DIV2_QUAD_v1`
 
 **This section previously reported a reproducibility gap. The claim was wrong and is withdrawn in
