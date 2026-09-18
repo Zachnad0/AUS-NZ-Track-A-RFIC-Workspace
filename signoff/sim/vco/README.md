@@ -86,25 +86,39 @@ lumped model that does carry the 1.2 nH (`team_src/xschem/vco_inductor_v2.subckt
 0.60 n) in their place. Everything else — every lead, bus, via array and all 42 varactors — stays
 extracted. **The 0.000 Vpp above is from that corrected deck**, not the inductorless one.
 
-### Most likely cause, not proven
+### Series resistance in the tank loop
 
-Series resistance in the tank loop, extracted, by a Laplacian solve on the 683-resistor network:
+> **The table originally published here (≈ 3.8 Ω total) was wrong and is corrected below.**
+> Two errors in the Laplacian solve: the output leads were taken as the *minimum* effective
+> resistance over the branch's metal sub-nodes instead of to the device terminals, and the 21
+> varactor units per side were combined as `1/Σ(1/R)`. The units **share the tap wire**, so
+> they do not parallelise. The correct quantity is the effective resistance from the tank node
+> to all of a branch's device terminals shorted into one supernode.
 
-| | Ω |
+| tank branch | Ω |
 |---|--:|
-| coil (lumped model, two `tm11k`) | 0.76 |
-| output leads, OUT_p + OUT_n | 0.845 + 0.523 = 1.37 |
-| varactor branches, 21 units in parallel per side | 0.833 × 2 = 1.67 |
-| **total** | **≈ 3.8** |
+| lead, OUT_p → 30 `vco_core` drain terminals | 4.742 |
+| lead, OUT_n → 30 `vco_core` drain terminals | 6.530 |
+| varactor branch, OUT_p → 21 unit terminals | 3.550 |
+| varactor branch, OUT_n → 21 unit terminals | 3.550 |
+| coil (lumped model, two `tm11k`) | 0.760 |
+| **total** | **19.131** |
 
-against **0.76 Ω** for the golden, which has the coil and nothing else — about **5× the loss**.
-At ωL ≈ 30–48 Ω over the band that takes tank Q from roughly 40 to under 13, and the
-cross-coupled pair's negative resistance has to cover the difference.
+against **0.76 Ω** for the golden, which has the coil and nothing else — about **25× the loss**.
+At ωL ≈ 30–48 Ω over the band that puts tank Q below 2.5, and the cross-coupled pair's negative
+resistance cannot cover that.
 
-That is the obvious candidate but it is **not proven** here, and no attempt was made to tune the
-deck into oscillating. Note the individual varactor taps run 11.3–25.3 Ω each and were left at
-0.30 µm by `6573181`, which widened only the core leads; in parallel they come to 0.833 Ω per
-side, so they are roughly as costly as the leads and the coil combined.
+**The varactor taps are not the cause.** Only ≈ 1.46 Ω of the 19.131 is metal that
+`phase5/vco_v1.tcl` draws — leads 0.845 + 0.523, and the two varactor taps **0.046 Ω each**.
+About 11 Ω sits inside `vco_core` and 7 Ω inside `vco_varactors`. The 11.3–25.3 Ω per unit
+quoted in the original text is `vco_varactors`' own internal M3 rail, reached through the tap,
+not the tap itself; and there are **two** taps in `vco_v1.tcl`, not 42.
+
+Confirmed by simulation rather than argument: scaling **all** top-level tank routing R by 0.01
+still gives 0.000 Vpp, and widening the two taps 0.30 → 2.40 µm with 4×4 via arrays (built and
+fully gated, not landed) changed the extracted loop by **0.000 Ω**. What does start it is a
+broad reduction — scaling *every* parasitic resistor by ×0.3 does not oscillate, **×0.2 does**
+(1.78 Vpp, 4.40 GHz) — so the shortfall is cumulative and needs ~3–5× less total parasitic R.
 
 ## What this does and does not establish
 
@@ -113,5 +127,6 @@ not start in this bench at VTUNE 2.0 V**, and it gives the first measured runtim
 bench. It does **not** establish that the fabricated VCO will not oscillate: the extracted deck
 is pessimistic in at least two known ways — magic's R+C extraction with `rthresh 0` keeps every
 parasitic resistor with no reduction, and the lumped coil model carries only DC metal
-resistance with no frequency-dependent treatment. A proper answer needs the varactor taps
-widened and the tank re-measured, in that order.
+resistance with no frequency-dependent treatment. A proper answer needs the 18 Ω inside
+`vco_core` and `vco_varactors` either reduced or shown to be an extraction artifact; nothing
+reachable from `vco_v1.tcl` moves it.

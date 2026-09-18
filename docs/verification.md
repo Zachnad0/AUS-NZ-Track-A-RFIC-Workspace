@@ -430,7 +430,7 @@ convention). Sims require `UPRJ_ROOT` set to the clone root.
 | item | result |
 |---|---|
 | `vco_v1` R+C PEX on the corrected layout | **done** — 75 devices, 557 caps, 683 resistors, 2 s; `signoff/pex/vco_v1/README.md` |
-| lead R, extracted (Laplacian solve) | OUT_p **0.845 Ω**, OUT_n **0.523 Ω**, imbalance **0.321 Ω** (geometric: 2.333 / 1.733 / 0.600) |
+| lead R, extracted (Laplacian solve) | OUT_p **0.845 Ω**, OUT_n **0.523 Ω**, imbalance **0.321 Ω** (geometric: 2.333 / 1.733 / 0.600). These are tank-node → `vco_core` **entry**, i.e. the `vco_v1.tcl` metal only; the full branch to the drain terminals is 4.742 / 6.530 Ω — see the correction below |
 | varactors in the PEX netlist | **42** (2 × 21 `cap_nmos_03v3_b`), correct |
 | schematic control, 80 ns at VTUNE 2.0 V | **not run** — measured 36.5 s per 5 ns, so 80 ns is **≈ 583 s (9.7 min)**, over the budget set for the attempt |
 | extracted startup, 80 ns | **not run** — the deck aborts at the initial transient timepoint inside the `cap_nmos_03v3_b` model (42 behavioural instances against `method=gear` / `reltol=1e-5` / `bypass=0`); no timepoints, so no envelope |
@@ -456,10 +456,53 @@ reproduction of the sweep above — different DUT, different start, different wi
 
 **The extracted netlist does not start.** The ±10 mV kick decays to zero within ~3 ns and never
 recovers, while the core stays correctly biased (tail 1.273 mA), so it is damped rather than
-broken. Extracted tank series resistance is **≈ 3.8 Ω** — coil 0.76, output leads 1.37,
-varactor branches 1.67 — against **0.76 Ω** for the golden, about 5× the loss; the varactor
-taps were left at 0.30 µm by `6573181`, which widened only the core leads. That is the likely
-cause and is **not proven**; no attempt was made to tune the deck into oscillating.
+broken.
+
+**CORRECTION (2026-09-18, later run). The "≈ 3.8 Ω" figure published in `39138d3` is wrong,
+and so is the varactor-tap diagnosis that followed from it.** Two errors in the Laplacian
+solve: the output leads were taken as the *minimum* effective resistance over the branch's
+metal sub-nodes rather than to the device terminals, and the 21 varactor units per side were
+combined as `1/Σ(1/R)`. The units **share the tap wire**, so they do not parallelise — the
+correct quantity is the effective resistance from the tank node to all of a branch's device
+terminals shorted into one supernode. Redone that way on the same netlist
+(`signoff/pex/vco_v1/vco_v1.pex.spice`, 683 R / 557 C, `extresist tolerance 10`):
+
+| tank branch | series R |
+|---|--:|
+| lead, OUT_p → 30 `vco_core` drain terminals | **4.742 Ω** |
+| lead, OUT_n → 30 `vco_core` drain terminals | **6.530 Ω** |
+| varactor branch, OUT_p → 21 unit terminals | **3.550 Ω** |
+| varactor branch, OUT_n → 21 unit terminals | **3.550 Ω** |
+| coil (lumped model, two `tm11k`; not extracted) | 0.760 Ω |
+| **tank loop total** | **19.131 Ω** |
+
+That is **5× the published 3.8 Ω**, and its distribution moves the conclusion as well: only
+**≈ 1.46 Ω** is metal that `phase5/vco_v1.tcl` draws (leads 0.845 + 0.523, varactor taps
+0.046 each). **≈ 11 Ω is inside `vco_core` and ≈ 7 Ω inside `vco_varactors`** — neither of
+which the tank fix touched. The two varactor taps are therefore *not* the cause; the
+11.3–25.3 Ω per unit quoted in `39138d3` is `vco_varactors`' own internal M3 rail, not the
+tap. There are two taps in `vco_v1.tcl`, not 42.
+
+**Raising the tail current does not start it.** Bench nominal is `I0 GND vsg 1m` into a 1:1
+NMOS mirror (`XM2`→`XM1`, both W=100u m=4), which delivers 1.404 mA at the VCO's ISS pin in
+the golden control. Sweeping the reference, same deck, VTUNE 2.0 V, `tran 5p 40n uic`:
+
+| ISS | tail current | supply current | differential swing | oscillates |
+|---|--:|--:|--:|---|
+| 1.0× (1 mA) | 1.273 mA | 4.197 mA | 0.000 Vpp | **no** |
+| 1.5× | 1.755 mA | 5.746 mA | 0.000 Vpp | **no** |
+| 2.0× | 2.208 mA | 7.198 mA | 0.000 Vpp | **no** |
+| 3.0× | 3.062 mA | 9.928 mA | 0.000 Vpp | **no** |
+
+The tail tracks the mirror exactly, so the current *is* reaching the core; the residual
+amplitude is 1–2 × 10⁻⁸ Vpp, the solver floor. This is not current starvation.
+
+**What does start it is a broad reduction in parasitic resistance, not any single net.**
+Scaling *every* parasitic resistor in the extracted body by a common factor: **×0.3 does not
+oscillate** (≈ 15 mV survives at 40 ns), **×0.2 does** (1.78 Vpp, 4.40 GHz), ×0.1 gives
+3.00 Vpp. Scaling individual nets — the tank nets, GND, `cap_bias`, VDD, ISS — leaves it dead
+in every case. So the shortfall is **cumulative across the cell and needs roughly 3–5× less
+total parasitic R**, which no change confined to `vco_v1.tcl` can deliver.
 
 One thing the attempt established that matters beyond this block: **magic's extraction contains
 no inductance.** `grep -c "^L"` on `vco_v1.pex.spice` and on the committed
@@ -469,8 +512,11 @@ the L is spliced back in, which is what the deck does.
 
 This does not establish that the fabricated VCO will not oscillate: the extracted deck is
 pessimistic in at least two known ways (`rthresh 0` keeps every parasitic resistor with no
-reduction; the lumped coil carries DC metal resistance only). Widening the varactor taps and
-re-measuring is the next step.
+reduction; the lumped coil carries DC metal resistance only). The next step is **not** a
+routing change in `vco_v1.tcl` — widening the two varactor taps 0.30 → 2.40 µm with 4×4 via
+arrays was built and fully gated, and moved the extracted tank loop by **0.000 Ω** (19.131 →
+19.131), so it was not landed. What is needed is either a resistance reduction inside
+`vco_core` / `vco_varactors`, or evidence that `extresist` is overstating those two branches.
 
 So every number in this section remains unverified against layout. The bench work, the measured
 runtimes and a bench-vs-golden device delta (`ppolyf_u_3k` in `vco_tb.sch` against `ppolyf_u_1k`
