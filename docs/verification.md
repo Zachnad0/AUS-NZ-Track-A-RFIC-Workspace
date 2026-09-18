@@ -570,6 +570,93 @@ Only `verify_cp` on the **`.mag`** path caught it, as 5 ports / 10 nets, DO NOT 
 whose children changed must be LVS'd on both paths; the GDS path alone is not sufficient to
 prove two tank nets are still distinct.
 
+### 3.2.1 The extracted VCO oscillates — `cap_bias` was the binding term
+
+The 4.5 Ω tank did not start, so every resistor in that extraction was classified by net and
+each class scaled in turn, one run each, at ISS 1.0× / VTUNE 2.0 V / `tran 5p 40n uic`:
+
+| class | count | Σ R | scaled ×0.1 alone → |
+|---|--:|--:|---|
+| GND/VSS (substrate, the varactor guard ties) | 219 | 1 259 928 Ω | dead, 0.000 Vpp |
+| tank OUT_n | 408 | 4 617 Ω | — |
+| tank OUT_p | 353 | 4 513 Ω | — |
+| VDD | 30 | 452 Ω | dead, 0.000 Vpp |
+| **`cap_bias`** | **84** | **292 Ω** | **OSCILLATES — 1.329 Vpp, 4.299 GHz** |
+| ISS | 38 | 91 Ω | dead, 0.000 Vpp |
+| TUNE | 1 | 7 Ω | — |
+
+Control: all R ×0.2 oscillates at 2.659 Vpp / 4.459 GHz, so the deck matches the earlier test.
+`cap_bias` ×0.5 and ×0.3 are dead (×0.3 leaves 0.6 mV); adding GND to `cap_bias` changes almost
+nothing (1.372 vs 1.329 Vpp). There are no separate gate nets — in a complementary
+cross-coupled pair the gates **are** the tank nets, which the classification confirms: every
+resistor falls into one of the seven classes above.
+
+**`cap_bias` is the smallest class by summed R and the only one that matters**, because it is
+not a bypassed supply — it hangs off TUNE through a 1 kΩ `ppolyf` and acts as the varactor
+bank's differential virtual ground. The resistance that lands in the tank is therefore
+**bank-to-bank**: OUT_p's 21 `cap_bias` terminals to OUT_n's 21. Measured, that is **8.045 Ω —
+more than the entire 4.523 Ω tank loop.**
+
+Its geometry is the same pattern already fixed on the well side: six 0.38 µm metal2 gate
+columns 51.4 µm long (12.2 Ω end-to-end) each hung off **one** via2 cut, feeding a 0.42 µm
+metal3 rail 39.6 µm long (8.5 Ω end-to-end). Columns → 2.40 µm, rail → 2.40 µm grown **down**
+(its top edge at y 10398 is held, inside the cell's bbox top of 10412), via2 → 4×4 arrays:
+
+| | before | after | |
+|---|--:|--:|--:|
+| `cap_bias` bank-to-bank | 8.045 Ω | **1.765 Ω** | 4.6× |
+| `cap_bias` drive, tune resistor → bank | 2.817 Ω | 0.617 Ω | 4.6× |
+| tank loop | 4.523 Ω | **4.523 Ω** | unchanged, as intended |
+
+**The extracted VCO now starts.** At VTUNE 2.0 V, 200 ns, ±10 mV kick:
+
+| ISS | tail | supply | swing | f0 | startup to 90 % | drift |
+|---|--:|--:|--:|--:|--:|--:|
+| 0.70× | 0.96 mA | 3.19 mA | 0.000 Vpp | — | **does not start** | — |
+| 0.85× | 1.16 mA | 3.87 mA | 0.691 Vpp | 4.359 GHz | 123 ns | 0.26 % |
+| **1.00×** | 1.35 mA | 4.52 mA | **0.975 Vpp** | **4.373 GHz** | 83 ns | 0.13 % |
+| 1.50× | 1.89 mA | 6.28 mA | 1.633 Vpp | 4.367 GHz | 31 ns | 0.02 % |
+| 2.00× | 2.38 mA | 7.91 mA | 2.207 Vpp | 4.402 GHz | 21 ns | 0.05 % |
+
+**ISS margin: it starts at 0.85× and is dead at 0.70×**, so nominal carries ≥ 18 % margin at
+VTUNE 2.0 V. Band with parasitics, against the schematic record:
+
+| VTUNE | record | ISS 1.0× | ISS 2.0× |
+|---|--:|--:|--:|
+| 0.0 V | 6.378 GHz | **5.762 GHz** (−9.7 %), 1.969 Vpp | **5.728 GHz**, 3.038 Vpp |
+| 2.0 V | 4.929 GHz | **4.373 GHz** (−11.3 %), 0.975 Vpp | **4.402 GHz**, 2.207 Vpp |
+| 3.3 V | 4.047 GHz | **does not start** | **3.807 GHz** (−5.9 %), 1.026 Vpp |
+
+The consistent 6–11 % downshift is what +20 fF per tank node of extracted capacitance predicts.
+**Bring-up: set ISS to 2× the bench nominal** — `I0` 1 mA → 2 mA, tail ≈ 2.3 mA. At nominal the
+top of the tuning range does not start (at 1.5× VTUNE 3.3 V peaks at 50 ns and then decays).
+
+**This layout is NOT landed.** It is complete and gated in scratch, but the organizer-flow LVS
+regresses — see below.
+
+### 3.2.2 Blocking regression: the organizer flow loses a tank net
+
+`run_full_lvs` on the regenerated chip reports **51 layout nets against 53 source**, where the
+committed chip reports **53 / 53** (device counts are 81 / 83 in both — the two unmatched
+`cap_nmos_03v3_b`, unchanged). Diffing the net-name lists, the layout **loses
+`vco_v1_0/OUT_p`** and gains `ISS`.
+
+Bisected: a chip built with the new `vco_core` and the **committed** `vco_varactors` regresses
+identically, so it is the `vco_core` widening, not the varactor one.
+
+**Nothing in the block-level or phase-C gate set sees it.** All of these pass on the same
+layout: magic DRC 0 on all three cells and the chip; `verify_cp vco_core` 30/5/7 match uniquely
+on **both** the `.mag` and the GDS path; `verify_cp vco_varactors` 42/3/4; `verify_cp vco_v1`
+4/6/11 on **both** paths; `verify_cp chip_top` 10/11/25 on the `.mag` path; KLayout exactly 168
+waived; 25 labels, bbox 1110 × 550, metal2 corners and the DEF pin-landing check all unchanged;
+XOR 1047.601 µm² with **0.000 µm² outside** `vco_v1`. The merge only appears once `vco_core` is
+flattened into `chip_top`, which the `.mag` chip LVS cannot see by construction —
+`chip_top.mag` is a placement record with no chip-level metal.
+
+This is the third instance of one family: **a connectivity change that every local gate is
+blind to**. The organizer flow is the only check that covers it, and it must be run before any
+change inside a block is landed, not only when chip-level routing moves.
+
 One thing the attempt established that matters beyond this block: **magic's extraction contains
 no inductance.** `grep -c "^L"` on `vco_v1.pex.spice` and on the committed
 `vco_inductor_v2.ext` both return 0 — R and C only, with the coil modelled as two `tm11k`

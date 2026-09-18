@@ -1805,6 +1805,36 @@ flattens past it. Only `verify_cp` on the **`.mag`** path saw it, as **5 ports /
 NOT MATCH**. Toolchain invariant: **a cell whose children changed is LVS'd on both the `.mag`
 and the GDS path**; the GDS path alone cannot prove two tank nets are still distinct.
 
+#### `cap_bias` was the binding term, and the extracted VCO now oscillates
+
+Classifying every resistor in the 4.5 Ω extraction by net and scaling each class alone named
+**`cap_bias`** — the smallest class by summed R (292 Ω against GND's 1.26 MΩ) and the only one
+that starts the oscillator when relaxed. It is not a bypassed supply: it hangs off TUNE through
+a 1 kΩ `ppolyf` and is the varactor bank's differential virtual ground, so what lands in the
+tank is its **bank-to-bank** resistance — OUT_p's 21 terminals to OUT_n's 21 — measured at
+**8.045 Ω, more than the whole 4.523 Ω tank loop**.
+
+Its geometry is the pattern already fixed on the well side: six **0.38 µm** metal2 gate columns
+51.4 µm long, each hung off **one** via2 cut, into a **0.42 µm** metal3 rail. Columns and rail
+to 2.40 µm (the rail grown **down**, its top edge held inside the bbox) and 4×4 arrays on the
+six cuts: **8.045 → 1.765 Ω**, tank loop unchanged at 4.523 Ω. The extracted VCO then **starts
+at nominal ISS for the first time** — 0.975 Vpp at 4.373 GHz, startup 83 ns, settled — with
+≥ 18 % ISS margin, and covers the band at 2× nominal. Tables in `verification.md` §3.2.1.
+
+#### …and it still cannot be landed: the organizer flow loses `OUT_p`
+
+`run_full_lvs` on the regenerated chip gives **51 layout nets against 53 source**, where the
+committed chip gives **53 / 53**; the layout loses `vco_v1_0/OUT_p` and gains `ISS`. Bisected to
+the **`vco_core`** widening (the same chip with the committed `vco_varactors` regresses
+identically). Every other gate passes on that layout — DRC 0 everywhere, `verify_cp` 30/5/7,
+42/3/4, 4/6/11 on **both** paths, 10/11/25 at chip level, KLayout exactly 168, labels, bbox,
+corners, DEF pin landings, and an XOR of 1047.601 µm² with 0.000 µm² outside `vco_v1`.
+
+The merge appears only when `vco_core` is flattened into `chip_top`, which the `.mag` chip LVS
+cannot see because `chip_top.mag` carries no chip-level metal. **Third instance of the same
+family**: a connectivity change invisible to every local gate. Invariant: **run the organizer
+flow before landing any change inside a block**, not only when chip-level routing moves.
+
 ### 4.6 System-level: the loop, and the constraint that governs it
 
 > **Read §4.6.1 first.** The feedback path divides by **2 and nothing else**, which fixes the
