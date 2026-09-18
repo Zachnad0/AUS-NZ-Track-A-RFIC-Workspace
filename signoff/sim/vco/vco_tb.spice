@@ -1,0 +1,95 @@
+** sch_path: /foss/designs/AUS-NZ-integration/team_src/xschem/vco_tb.sch
+**.subckt vco_tb
+R1 out_p out_n 50
+V1 vdd GND 3.3
+.save i(v1)
+x1 vdd net1 net2 GND tune vss vco_v1
+V2 tune GND 1.5
+.save i(v2)
+XM2 vsg vsg GND GND nfet_03v3 L=0.28u W=100u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=4
+XM1 net3 vsg GND GND nfet_03v3 L=0.28u W=100u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=4
+Viss_meas vss net3 0
+.save i(viss_meas)
+I0 GND vsg 1m
+XM3 vdd net2 out_n out_n nfet_03v3 L=0.28u W=50u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=4
+XM4 out_n vsg GND GND nfet_03v3 L=0.28u W=100u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=4
+XM5 vdd net1 out_p out_p nfet_03v3 L=0.28u W=50u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=4
+XM6 out_p vsg GND GND nfet_03v3 L=0.28u W=100u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=4
+**** begin user architecture code
+
+
+*.option keepopinfo
+.option reltol=1e-5
+.option method=gear
+.option numparam jobs=4
+.option bypass=0
+
+.control
+  save all
+  op
+  let bias = v(x1.cap_bias) - v(out_p)
+  print out_p bias vss
+
+  echo "==============================================================="
+  *tran 5p 100n 40n 10p
+  tran 5p 1.04u 40n 5p
+  let out = v(out_p) - v(out_n)
+  let pow_out = out*out / 50
+  print mean(pow_out)
+  write vco_tb.raw
+
+  linearize v(out)
+  let out_fft = mag(fft(v(out)))
+  let pow_fft = 10*log10(out_fft*out_fft / 50 * 1e3)
+  *plot out_fft vs fft_scale xlimit 3G 7G
+  plot pow_fft vs fft_scale
+.endc
+
+
+
+
+.include /foss/pdks/gf180mcuD/libs.tech/ngspice/design.ngspice
+.lib /foss/pdks/gf180mcuD/libs.tech/ngspice/sm141064.ngspice typical
+.lib /foss/pdks/gf180mcuD/libs.tech/ngspice/sm141064.ngspice res_typical
+.lib /foss/pdks/gf180mcuD/libs.tech/ngspice/sm141064.ngspice moscap_typical
+
+
+**** end user architecture code
+**.ends
+
+* expanding   symbol:  vco_v1.sym # of pins=6
+** sym_path: /foss/designs/AUS-NZ-integration/team_src/xschem/vco_v1.sym
+** sch_path: /foss/designs/AUS-NZ-integration/team_src/xschem/vco_v1.sch
+.subckt vco_v1 VDD OUT_p OUT_n GND TUNE ISS
+*.iopin VDD
+*.iopin ISS
+*.iopin GND
+*.ipin TUNE
+*.opin OUT_p
+*.opin OUT_n
+XM1 OUT_p OUT_n ISS GND nfet_03v3 L=0.28u W=40u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0
+XM2 OUT_p OUT_n VDD VDD pfet_03v3 L=0.28u W=70u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0
+X1 OUT_n OUT_p GND vco_inductor_v2
+XM3 OUT_n OUT_p VDD VDD pfet_03v3 L=0.28u W=70u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0
+XM4 OUT_n OUT_p ISS GND nfet_03v3 L=0.28u W=40u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0
+XC1 cap_bias OUT_n cap_nmos_03v3_b c_width=5u c_length=5u m=21
+XC4 cap_bias OUT_p cap_nmos_03v3_b c_width=5u c_length=5u m=21
+XR2 TUNE cap_bias GND ppolyf_u_3k r_width=1u r_length=5u
+.ends
+
+
+* expanding   symbol:  vco_inductor_v2.sym # of pins=3
+** sym_path: /foss/designs/AUS-NZ-integration/team_src/xschem/vco_inductor_v2.sym
+.include $UPRJ_ROOT/team_src/xschem/vco_inductor_v2.subckt
+.GLOBAL GND
+.end

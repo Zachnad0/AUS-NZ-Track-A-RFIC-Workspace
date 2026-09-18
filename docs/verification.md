@@ -424,6 +424,45 @@ convention). Sims require `UPRJ_ROOT` set to the clone root.
 > imbalance, but **no re-simulation has been run against it**. Treat the band as unverified
 > against layout until an extracted tank is simulated. Details:
 > `layout-review-sep01.md`, §"The VCO tank was SHORTED — found and fixed 2026-09-18".
+
+**Tank-level re-extraction, status 2026-09-18.** The extraction is done; the simulation is not.
+
+| item | result |
+|---|---|
+| `vco_v1` R+C PEX on the corrected layout | **done** — 75 devices, 557 caps, 683 resistors, 2 s; `signoff/pex/vco_v1/README.md` |
+| lead R, extracted (Laplacian solve) | OUT_p **0.845 Ω**, OUT_n **0.523 Ω**, imbalance **0.321 Ω** (geometric: 2.333 / 1.733 / 0.600) |
+| varactors in the PEX netlist | **42** (2 × 21 `cap_nmos_03v3_b`), correct |
+| schematic control, 80 ns at VTUNE 2.0 V | **not run** — measured 36.5 s per 5 ns, so 80 ns is **≈ 583 s (9.7 min)**, over the budget set for the attempt |
+| extracted startup, 80 ns | **not run** — the deck aborts at the initial transient timepoint inside the `cap_nmos_03v3_b` model (42 behavioural instances against `method=gear` / `reltol=1e-5` / `bypass=0`); no timepoints, so no envelope |
+| f0, swing, startup time, supply current | **still open** |
+
+So every number in this section remains unverified against layout. The bench work, the measured
+runtimes and a bench-vs-golden device delta (`ppolyf_u_3k` in `vco_tb.sch` against `ppolyf_u_1k`
+in the golden and the layout) are recorded in `signoff/sim/vco/README.md`.
+
+**A GDS-only read cannot see the varactors at all, and that is a techfile asymmetry, not our
+layout.** The MOS-cap marker **MOS_CAP_MK = 166/5 is present** in `gds/vco_v1.gds` and
+`gds/chip_top.gds`, drawn over the 42 units. But in `gf180mcuD.tech`, `cifoutput` writes 166/5
+for *both* device families —
+
+```
+layer MOSCAP nvar,mvnvar,pvar,mvpvar,ncap,pcap,mvncap,mvpcap
+calma 166 5
+```
+
+— while `cifinput` only ever reconstructs the **cap** types (`layer ncap DIFF … and MOSCAP`,
+and the `pcap`/`mvncap`/`mvpcap` equivalents). **There is no `cifinput` rule that produces
+`nvaractor` or `pvaractor` at all.** The two devices are then keyed on different types:
+
+```
+device subcircuit cap_nmos_03v3_b nvaractor *nndiff  l=c_length w=c_width
+device subcircuit cap_nmos_03v3   ncap ndiff,ndc     l=c_length w=c_width
+```
+
+The write is many-to-one and the read is one-way, so a `cap_nmos_03v3_b` drawn in magic cannot
+come back as itself from its own GDS. This is why the `.mag` flow extracts 42 varactors and a
+GDS-only read extracts 0, and why the organizer-flow LVS shows `cap_nmos_03v3_b (42->2)` on the
+source side only (`signoff/lvs/README.md`). No fix attempted; it is a PDK issue.
 Current netlist (= `origin/main`, no diff), `vco_tb`, `.option method=gear`, at the
 ISM operating point **VTUNE = 2.15 V**. `tran 5p 80n`, settled 60–80 ns. File-read.
 

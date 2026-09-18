@@ -1,0 +1,1317 @@
+* NGSPICE file created from vco_v1.ext - technology: gf180mcuD
+
+X0 vco_tune_r_0/TUNE.t0 vco_tune_r_0/cap_bias.t0 vco_tune_r_0/GND.t0 ppolyf_u_1k r_width=1u r_length=15u
+X1 vco_varactors_0/cap_bias.t41 vco_varactors_0/OUT_n.t0 cap_nmos_03v3_b c_width=5u c_length=5u
+X2 vco_varactors_0/cap_bias.t19 vco_varactors_0/OUT_p.t10 cap_nmos_03v3_b c_width=5u c_length=5u
+X3 vco_varactors_0/cap_bias.t18 vco_varactors_0/OUT_p.t11 cap_nmos_03v3_b c_width=5u c_length=5u
+X4 vco_varactors_0/cap_bias.t3 vco_varactors_0/OUT_n.t20 cap_nmos_03v3_b c_width=5u c_length=5u
+X5 vco_varactors_0/cap_bias.t34 vco_varactors_0/OUT_n.t4 cap_nmos_03v3_b c_width=5u c_length=5u
+X6 vco_varactors_0/cap_bias.t33 vco_varactors_0/OUT_n.t5 cap_nmos_03v3_b c_width=5u c_length=5u
+X7 vco_varactors_0/cap_bias.t20 vco_varactors_0/OUT_p.t9 cap_nmos_03v3_b c_width=5u c_length=5u
+X8 vco_varactors_0/cap_bias.t29 vco_varactors_0/OUT_n.t6 cap_nmos_03v3_b c_width=5u c_length=5u
+X9 vco_varactors_0/cap_bias.t6 vco_varactors_0/OUT_p.t17 cap_nmos_03v3_b c_width=5u c_length=5u
+X10 vco_varactors_0/cap_bias.t22 vco_varactors_0/OUT_n.t10 cap_nmos_03v3_b c_width=5u c_length=5u
+X11 vco_varactors_0/cap_bias.t21 vco_varactors_0/OUT_n.t11 cap_nmos_03v3_b c_width=5u c_length=5u
+X12 vco_varactors_0/cap_bias.t8 vco_varactors_0/OUT_p.t15 cap_nmos_03v3_b c_width=5u c_length=5u
+X13 vco_varactors_0/cap_bias.t7 vco_varactors_0/OUT_p.t16 cap_nmos_03v3_b c_width=5u c_length=5u
+X14 vco_varactors_0/cap_bias.t17 vco_varactors_0/OUT_n.t12 cap_nmos_03v3_b c_width=5u c_length=5u
+X15 vco_varactors_0/cap_bias.t9 vco_varactors_0/OUT_n.t17 cap_nmos_03v3_b c_width=5u c_length=5u
+X16 vco_varactors_0/cap_bias.t5 vco_varactors_0/OUT_n.t18 cap_nmos_03v3_b c_width=5u c_length=5u
+X17 vco_varactors_0/cap_bias.t0 vco_varactors_0/OUT_p.t20 cap_nmos_03v3_b c_width=5u c_length=5u
+X18 vco_varactors_0/cap_bias.t10 vco_varactors_0/OUT_n.t16 cap_nmos_03v3_b c_width=5u c_length=5u
+X19 vco_varactors_0/cap_bias.t4 vco_varactors_0/OUT_n.t19 cap_nmos_03v3_b c_width=5u c_length=5u
+X20 vco_varactors_0/cap_bias.t38 vco_varactors_0/OUT_p.t0 cap_nmos_03v3_b c_width=5u c_length=5u
+X21 vco_varactors_0/cap_bias.t37 vco_varactors_0/OUT_p.t1 cap_nmos_03v3_b c_width=5u c_length=5u
+X22 vco_varactors_0/cap_bias.t36 vco_varactors_0/OUT_p.t2 cap_nmos_03v3_b c_width=5u c_length=5u
+X23 vco_varactors_0/cap_bias.t25 vco_varactors_0/OUT_p.t7 cap_nmos_03v3_b c_width=5u c_length=5u
+X24 vco_varactors_0/cap_bias.t24 vco_varactors_0/OUT_p.t8 cap_nmos_03v3_b c_width=5u c_length=5u
+X25 vco_varactors_0/cap_bias.t1 vco_varactors_0/OUT_p.t19 cap_nmos_03v3_b c_width=5u c_length=5u
+X26 vco_varactors_0/cap_bias.t40 vco_varactors_0/OUT_n.t1 cap_nmos_03v3_b c_width=5u c_length=5u
+X27 vco_varactors_0/cap_bias.t39 vco_varactors_0/OUT_n.t2 cap_nmos_03v3_b c_width=5u c_length=5u
+X28 vco_varactors_0/cap_bias.t35 vco_varactors_0/OUT_n.t3 cap_nmos_03v3_b c_width=5u c_length=5u
+X29 vco_varactors_0/cap_bias.t26 vco_varactors_0/OUT_p.t6 cap_nmos_03v3_b c_width=5u c_length=5u
+X30 vco_varactors_0/cap_bias.t12 vco_varactors_0/OUT_p.t14 cap_nmos_03v3_b c_width=5u c_length=5u
+X31 vco_varactors_0/cap_bias.t27 vco_varactors_0/OUT_n.t8 cap_nmos_03v3_b c_width=5u c_length=5u
+X32 vco_varactors_0/cap_bias.t23 vco_varactors_0/OUT_n.t9 cap_nmos_03v3_b c_width=5u c_length=5u
+X33 vco_varactors_0/cap_bias.t14 vco_varactors_0/OUT_p.t12 cap_nmos_03v3_b c_width=5u c_length=5u
+X34 vco_varactors_0/cap_bias.t13 vco_varactors_0/OUT_p.t13 cap_nmos_03v3_b c_width=5u c_length=5u
+X35 vco_varactors_0/cap_bias.t28 vco_varactors_0/OUT_n.t7 cap_nmos_03v3_b c_width=5u c_length=5u
+X36 vco_varactors_0/cap_bias.t16 vco_varactors_0/OUT_n.t13 cap_nmos_03v3_b c_width=5u c_length=5u
+X37 vco_varactors_0/cap_bias.t15 vco_varactors_0/OUT_n.t14 cap_nmos_03v3_b c_width=5u c_length=5u
+X38 vco_varactors_0/cap_bias.t11 vco_varactors_0/OUT_n.t15 cap_nmos_03v3_b c_width=5u c_length=5u
+X39 vco_varactors_0/cap_bias.t2 vco_varactors_0/OUT_p.t18 cap_nmos_03v3_b c_width=5u c_length=5u
+X40 vco_varactors_0/cap_bias.t32 vco_varactors_0/OUT_p.t3 cap_nmos_03v3_b c_width=5u c_length=5u
+X41 vco_varactors_0/cap_bias.t31 vco_varactors_0/OUT_p.t4 cap_nmos_03v3_b c_width=5u c_length=5u
+X42 vco_varactors_0/cap_bias.t30 vco_varactors_0/OUT_p.t5 cap_nmos_03v3_b c_width=5u c_length=5u
+X43 OUT_n vco_inductor_v2_0/m4_n14800_800# tm11k r_width=8u r_length=76u
+X44 vco_inductor_v2_0/m4_n14800_800# OUT_p tm11k r_width=8u r_length=76u
+X45 vco_core_0/OUT_n.t5 vco_core_0/OUT_p.t24 vco_core_0/ISS.t13 vco_core_0/GND.t0 nfet_03v3 ad=1.04p pd=4.52u as=1.76p ps=8.88u w=4u l=0.28u
+X46 vco_core_0/ISS.t14 vco_core_0/OUT_p.t17 vco_core_0/OUT_n.t12 vco_core_0/GND.t7 nfet_03v3 ad=1.04p pd=4.52u as=1.04p ps=4.52u w=4u l=0.28u
+X47 vco_core_0/OUT_p.t0 vco_core_0/OUT_n.t29 vco_core_0/VDD.t11 vco_core_0/VDD.t10 pfet_03v3 ad=3.64p pd=14.52u as=6.16p ps=28.88u w=14u l=0.28u
+X48 vco_core_0/OUT_n.t11 vco_core_0/OUT_p.t18 vco_core_0/ISS.t15 vco_core_0/GND.t6 nfet_03v3 ad=1.04p pd=4.52u as=1.04p ps=4.52u w=4u l=0.28u
+X49 vco_core_0/OUT_p.t5 vco_core_0/OUT_n.t25 vco_core_0/VDD.t19 vco_core_0/VDD.t18 pfet_03v3 ad=6.16p pd=28.88u as=3.64p ps=14.52u w=14u l=0.28u
+X50 vco_core_0/OUT_p.t9 vco_core_0/OUT_n.t27 vco_core_0/VDD.t15 vco_core_0/VDD.t14 pfet_03v3 ad=3.64p pd=14.52u as=3.64p ps=14.52u w=14u l=0.28u
+X51 vco_core_0/VDD.t17 vco_core_0/OUT_n.t26 vco_core_0/OUT_p.t6 vco_core_0/VDD.t16 pfet_03v3 ad=3.64p pd=14.52u as=3.64p ps=14.52u w=14u l=0.28u
+X52 vco_core_0/OUT_p.t4 vco_core_0/OUT_n.t24 vco_core_0/ISS.t3 vco_core_0/GND.t10 nfet_03v3 ad=1.04p pd=4.52u as=1.76p ps=8.88u w=4u l=0.28u
+X53 vco_core_0/OUT_n.t9 vco_core_0/OUT_p.t20 vco_core_0/ISS.t17 vco_core_0/GND.t4 nfet_03v3 ad=1.04p pd=4.52u as=1.04p ps=4.52u w=4u l=0.28u
+X54 vco_core_0/ISS.t0 vco_core_0/OUT_n.t15 vco_core_0/OUT_p.t1 vco_core_0/GND.t19 nfet_03v3 ad=1.76p pd=8.88u as=1.04p ps=4.52u w=4u l=0.28u
+X55 vco_core_0/VDD.t13 vco_core_0/OUT_n.t28 vco_core_0/OUT_p.t10 vco_core_0/VDD.t12 pfet_03v3 ad=3.64p pd=14.52u as=3.64p ps=14.52u w=14u l=0.28u
+X56 vco_core_0/ISS.t18 vco_core_0/OUT_p.t21 vco_core_0/OUT_n.t8 vco_core_0/GND.t3 nfet_03v3 ad=1.04p pd=4.52u as=1.04p ps=4.52u w=4u l=0.28u
+X57 vco_core_0/ISS.t16 vco_core_0/OUT_p.t19 vco_core_0/OUT_n.t10 vco_core_0/GND.t5 nfet_03v3 ad=1.04p pd=4.52u as=1.04p ps=4.52u w=4u l=0.28u
+X58 vco_core_0/OUT_p.t2 vco_core_0/OUT_n.t16 vco_core_0/ISS.t1 vco_core_0/GND.t18 nfet_03v3 ad=1.04p pd=4.52u as=1.04p ps=4.52u w=4u l=0.28u
+X59 vco_core_0/OUT_n.t4 vco_core_0/OUT_p.t27 vco_core_0/VDD.t5 vco_core_0/VDD.t4 pfet_03v3 ad=3.64p pd=14.52u as=3.64p ps=14.52u w=14u l=0.28u
+X60 vco_core_0/ISS.t2 vco_core_0/OUT_n.t23 vco_core_0/OUT_p.t3 vco_core_0/GND.t11 nfet_03v3 ad=1.04p pd=4.52u as=1.04p ps=4.52u w=4u l=0.28u
+X61 vco_core_0/OUT_n.t3 vco_core_0/OUT_p.t25 vco_core_0/VDD.t9 vco_core_0/VDD.t8 pfet_03v3 ad=6.16p pd=28.88u as=3.64p ps=14.52u w=14u l=0.28u
+X62 vco_core_0/OUT_p.t12 vco_core_0/OUT_n.t22 vco_core_0/ISS.t9 vco_core_0/GND.t12 nfet_03v3 ad=1.04p pd=4.52u as=1.04p ps=4.52u w=4u l=0.28u
+X63 vco_core_0/VDD.t3 vco_core_0/OUT_p.t28 vco_core_0/OUT_n.t1 vco_core_0/VDD.t2 pfet_03v3 ad=3.64p pd=14.52u as=3.64p ps=14.52u w=14u l=0.28u
+X64 vco_core_0/VDD.t7 vco_core_0/OUT_p.t26 vco_core_0/OUT_n.t0 vco_core_0/VDD.t6 pfet_03v3 ad=3.64p pd=14.52u as=3.64p ps=14.52u w=14u l=0.28u
+X65 vco_core_0/OUT_n.t7 vco_core_0/OUT_p.t22 vco_core_0/ISS.t19 vco_core_0/GND.t2 nfet_03v3 ad=1.04p pd=4.52u as=1.04p ps=4.52u w=4u l=0.28u
+X66 vco_core_0/ISS.t6 vco_core_0/OUT_n.t19 vco_core_0/OUT_p.t7 vco_core_0/GND.t15 nfet_03v3 ad=1.04p pd=4.52u as=1.04p ps=4.52u w=4u l=0.28u
+X67 vco_core_0/ISS.t10 vco_core_0/OUT_n.t17 vco_core_0/OUT_p.t13 vco_core_0/GND.t17 nfet_03v3 ad=1.04p pd=4.52u as=1.04p ps=4.52u w=4u l=0.28u
+X68 vco_core_0/ISS.t12 vco_core_0/OUT_p.t23 vco_core_0/OUT_n.t6 vco_core_0/GND.t1 nfet_03v3 ad=1.04p pd=4.52u as=1.04p ps=4.52u w=4u l=0.28u
+X69 vco_core_0/OUT_p.t14 vco_core_0/OUT_n.t18 vco_core_0/ISS.t11 vco_core_0/GND.t16 nfet_03v3 ad=1.04p pd=4.52u as=1.04p ps=4.52u w=4u l=0.28u
+X70 vco_core_0/ISS.t4 vco_core_0/OUT_p.t15 vco_core_0/OUT_n.t14 vco_core_0/GND.t9 nfet_03v3 ad=1.76p pd=8.88u as=1.04p ps=4.52u w=4u l=0.28u
+X71 vco_core_0/OUT_n.t13 vco_core_0/OUT_p.t16 vco_core_0/ISS.t5 vco_core_0/GND.t8 nfet_03v3 ad=1.04p pd=4.52u as=1.04p ps=4.52u w=4u l=0.28u
+X72 vco_core_0/ISS.t8 vco_core_0/OUT_n.t21 vco_core_0/OUT_p.t11 vco_core_0/GND.t13 nfet_03v3 ad=1.04p pd=4.52u as=1.04p ps=4.52u w=4u l=0.28u
+X73 vco_core_0/OUT_n.t2 vco_core_0/OUT_p.t29 vco_core_0/VDD.t1 vco_core_0/VDD.t0 pfet_03v3 ad=3.64p pd=14.52u as=6.16p ps=28.88u w=14u l=0.28u
+X74 vco_core_0/OUT_p.t8 vco_core_0/OUT_n.t20 vco_core_0/ISS.t7 vco_core_0/GND.t14 nfet_03v3 ad=1.04p pd=4.52u as=1.04p ps=4.52u w=4u l=0.28u
+C0 vco_inductor_v2_0/m4_n14800_800# vco_inductor_v2_0/m5_n22400_10400# 3.21608f
+C1 vco_tune_r_0/cap_bias OUT_p 36.34899f
+C2 vco_tune_r_0/cap_bias ISS 0.01998f
+C3 VDD OUT_p 9.20901f
+C4 vco_inductor_v2_0/m4_n14800_800# OUT_n 7.46091f
+C5 ISS OUT_p 3.92569f
+C6 TUNE OUT_p 0.00194f
+C7 OUT_n vco_tune_r_0/cap_bias 36.09603f
+C8 OUT_p vco_inductor_v2_0/GND 0.19984f
+C9 ISS VDD 0
+C10 OUT_n OUT_p 5.62581f
+C11 vco_inductor_v2_0/m4_n14800_800# vco_inductor_v2_0/m5_n1200_10400# 3.21608f
+C12 vco_inductor_v2_0/m4_n14800_800# OUT_p 7.46091f
+C13 OUT_n VDD 9.31159f
+C14 OUT_n ISS 3.98777f
+R0 vco_tune_r_0/cap_bias vco_tune_r_0/cap_bias.t0 7.20993
+R1 TUNE vco_tune_r_0/TUNE.t0 7.20993
+R2 GND vco_tune_r_0/GND.t0 122.831
+R3 vco_varactors_0/cap_bias.n12 vco_varactors_0/cap_bias.n5 6.92968
+R4 vco_varactors_0/cap_bias.n34 vco_varactors_0/cap_bias.t5 6.06359
+R5 vco_varactors_0/cap_bias.n27 vco_varactors_0/cap_bias.t4 6.06359
+R6 vco_varactors_0/cap_bias.n20 vco_varactors_0/cap_bias.t3 6.06359
+R7 vco_varactors_0/cap_bias.n13 vco_varactors_0/cap_bias.t2 6.06359
+R8 vco_varactors_0/cap_bias.n6 vco_varactors_0/cap_bias.t1 6.06359
+R9 vco_varactors_0/cap_bias.n0 vco_varactors_0/cap_bias.t0 6.06359
+R10 vco_varactors_0/cap_bias.n40 vco_varactors_0/cap_bias.n39 5.25825
+R11 vco_varactors_0/cap_bias.n33 vco_varactors_0/cap_bias.n32 5.25825
+R12 vco_varactors_0/cap_bias.n26 vco_varactors_0/cap_bias.n25 5.25825
+R13 vco_varactors_0/cap_bias.n19 vco_varactors_0/cap_bias.n18 5.25825
+R14 vco_varactors_0/cap_bias.n12 vco_varactors_0/cap_bias.n11 5.25825
+R15 vco_varactors_0/cap_bias.n39 vco_varactors_0/cap_bias.t41 4.37283
+R16 vco_varactors_0/cap_bias.n38 vco_varactors_0/cap_bias.t35 4.37283
+R17 vco_varactors_0/cap_bias.n37 vco_varactors_0/cap_bias.t29 4.37283
+R18 vco_varactors_0/cap_bias.n36 vco_varactors_0/cap_bias.t23 4.37283
+R19 vco_varactors_0/cap_bias.n35 vco_varactors_0/cap_bias.t17 4.37283
+R20 vco_varactors_0/cap_bias.n34 vco_varactors_0/cap_bias.t11 4.37283
+R21 vco_varactors_0/cap_bias.n32 vco_varactors_0/cap_bias.t40 4.37283
+R22 vco_varactors_0/cap_bias.n31 vco_varactors_0/cap_bias.t34 4.37283
+R23 vco_varactors_0/cap_bias.n30 vco_varactors_0/cap_bias.t28 4.37283
+R24 vco_varactors_0/cap_bias.n29 vco_varactors_0/cap_bias.t22 4.37283
+R25 vco_varactors_0/cap_bias.n28 vco_varactors_0/cap_bias.t16 4.37283
+R26 vco_varactors_0/cap_bias.n27 vco_varactors_0/cap_bias.t10 4.37283
+R27 vco_varactors_0/cap_bias.n25 vco_varactors_0/cap_bias.t39 4.37283
+R28 vco_varactors_0/cap_bias.n24 vco_varactors_0/cap_bias.t33 4.37283
+R29 vco_varactors_0/cap_bias.n23 vco_varactors_0/cap_bias.t27 4.37283
+R30 vco_varactors_0/cap_bias.n22 vco_varactors_0/cap_bias.t21 4.37283
+R31 vco_varactors_0/cap_bias.n21 vco_varactors_0/cap_bias.t15 4.37283
+R32 vco_varactors_0/cap_bias.n20 vco_varactors_0/cap_bias.t9 4.37283
+R33 vco_varactors_0/cap_bias.n18 vco_varactors_0/cap_bias.t38 4.37283
+R34 vco_varactors_0/cap_bias.n17 vco_varactors_0/cap_bias.t32 4.37283
+R35 vco_varactors_0/cap_bias.n16 vco_varactors_0/cap_bias.t26 4.37283
+R36 vco_varactors_0/cap_bias.n15 vco_varactors_0/cap_bias.t20 4.37283
+R37 vco_varactors_0/cap_bias.n14 vco_varactors_0/cap_bias.t14 4.37283
+R38 vco_varactors_0/cap_bias.n13 vco_varactors_0/cap_bias.t8 4.37283
+R39 vco_varactors_0/cap_bias.n11 vco_varactors_0/cap_bias.t37 4.37283
+R40 vco_varactors_0/cap_bias.n10 vco_varactors_0/cap_bias.t31 4.37283
+R41 vco_varactors_0/cap_bias.n9 vco_varactors_0/cap_bias.t25 4.37283
+R42 vco_varactors_0/cap_bias.n8 vco_varactors_0/cap_bias.t19 4.37283
+R43 vco_varactors_0/cap_bias.n7 vco_varactors_0/cap_bias.t13 4.37283
+R44 vco_varactors_0/cap_bias.n6 vco_varactors_0/cap_bias.t7 4.37283
+R45 vco_varactors_0/cap_bias.n5 vco_varactors_0/cap_bias.t36 4.37283
+R46 vco_varactors_0/cap_bias.n4 vco_varactors_0/cap_bias.t30 4.37283
+R47 vco_varactors_0/cap_bias.n3 vco_varactors_0/cap_bias.t24 4.37283
+R48 vco_varactors_0/cap_bias.n2 vco_varactors_0/cap_bias.t18 4.37283
+R49 vco_varactors_0/cap_bias.n1 vco_varactors_0/cap_bias.t12 4.37283
+R50 vco_varactors_0/cap_bias.n0 vco_varactors_0/cap_bias.t6 4.37283
+R51 vco_varactors_0/cap_bias.n39 vco_varactors_0/cap_bias.n38 1.69126
+R52 vco_varactors_0/cap_bias.n38 vco_varactors_0/cap_bias.n37 1.69126
+R53 vco_varactors_0/cap_bias.n37 vco_varactors_0/cap_bias.n36 1.69126
+R54 vco_varactors_0/cap_bias.n36 vco_varactors_0/cap_bias.n35 1.69126
+R55 vco_varactors_0/cap_bias.n35 vco_varactors_0/cap_bias.n34 1.69126
+R56 vco_varactors_0/cap_bias.n32 vco_varactors_0/cap_bias.n31 1.69126
+R57 vco_varactors_0/cap_bias.n31 vco_varactors_0/cap_bias.n30 1.69126
+R58 vco_varactors_0/cap_bias.n30 vco_varactors_0/cap_bias.n29 1.69126
+R59 vco_varactors_0/cap_bias.n29 vco_varactors_0/cap_bias.n28 1.69126
+R60 vco_varactors_0/cap_bias.n28 vco_varactors_0/cap_bias.n27 1.69126
+R61 vco_varactors_0/cap_bias.n25 vco_varactors_0/cap_bias.n24 1.69126
+R62 vco_varactors_0/cap_bias.n24 vco_varactors_0/cap_bias.n23 1.69126
+R63 vco_varactors_0/cap_bias.n23 vco_varactors_0/cap_bias.n22 1.69126
+R64 vco_varactors_0/cap_bias.n22 vco_varactors_0/cap_bias.n21 1.69126
+R65 vco_varactors_0/cap_bias.n21 vco_varactors_0/cap_bias.n20 1.69126
+R66 vco_varactors_0/cap_bias.n18 vco_varactors_0/cap_bias.n17 1.69126
+R67 vco_varactors_0/cap_bias.n17 vco_varactors_0/cap_bias.n16 1.69126
+R68 vco_varactors_0/cap_bias.n16 vco_varactors_0/cap_bias.n15 1.69126
+R69 vco_varactors_0/cap_bias.n15 vco_varactors_0/cap_bias.n14 1.69126
+R70 vco_varactors_0/cap_bias.n14 vco_varactors_0/cap_bias.n13 1.69126
+R71 vco_varactors_0/cap_bias.n11 vco_varactors_0/cap_bias.n10 1.69126
+R72 vco_varactors_0/cap_bias.n10 vco_varactors_0/cap_bias.n9 1.69126
+R73 vco_varactors_0/cap_bias.n9 vco_varactors_0/cap_bias.n8 1.69126
+R74 vco_varactors_0/cap_bias.n8 vco_varactors_0/cap_bias.n7 1.69126
+R75 vco_varactors_0/cap_bias.n7 vco_varactors_0/cap_bias.n6 1.69126
+R76 vco_varactors_0/cap_bias.n5 vco_varactors_0/cap_bias.n4 1.69126
+R77 vco_varactors_0/cap_bias.n4 vco_varactors_0/cap_bias.n3 1.69126
+R78 vco_varactors_0/cap_bias.n3 vco_varactors_0/cap_bias.n2 1.69126
+R79 vco_varactors_0/cap_bias.n2 vco_varactors_0/cap_bias.n1 1.69126
+R80 vco_varactors_0/cap_bias.n1 vco_varactors_0/cap_bias.n0 1.69126
+R81 vco_varactors_0/cap_bias.n19 vco_varactors_0/cap_bias.n12 1.67193
+R82 vco_varactors_0/cap_bias.n26 vco_varactors_0/cap_bias.n19 1.67193
+R83 vco_varactors_0/cap_bias.n33 vco_varactors_0/cap_bias.n26 1.67193
+R84 vco_varactors_0/cap_bias.n40 vco_varactors_0/cap_bias.n33 1.67193
+R85 vco_tune_r_0/cap_bias vco_varactors_0/cap_bias.n40 0.0455
+R86 vco_varactors_0/OUT_p.n12 vco_varactors_0/OUT_p.n5 7.48877
+R87 vco_varactors_0/OUT_p.n13 vco_varactors_0/OUT_p.t0 7.2343
+R88 vco_varactors_0/OUT_p.n6 vco_varactors_0/OUT_p.t1 7.2343
+R89 vco_varactors_0/OUT_p.n0 vco_varactors_0/OUT_p.t2 7.2343
+R90 vco_varactors_0/OUT_p.n19 vco_varactors_0/OUT_p.n18 5.81734
+R91 vco_varactors_0/OUT_p.n12 vco_varactors_0/OUT_p.n11 5.81734
+R92 vco_varactors_0/OUT_p.n13 vco_varactors_0/OUT_p.t3 5.45798
+R93 vco_varactors_0/OUT_p.n14 vco_varactors_0/OUT_p.t6 5.45798
+R94 vco_varactors_0/OUT_p.n15 vco_varactors_0/OUT_p.t9 5.45798
+R95 vco_varactors_0/OUT_p.n16 vco_varactors_0/OUT_p.t12 5.45798
+R96 vco_varactors_0/OUT_p.n17 vco_varactors_0/OUT_p.t15 5.45798
+R97 vco_varactors_0/OUT_p.n18 vco_varactors_0/OUT_p.t18 5.45798
+R98 vco_varactors_0/OUT_p.n6 vco_varactors_0/OUT_p.t4 5.45798
+R99 vco_varactors_0/OUT_p.n7 vco_varactors_0/OUT_p.t7 5.45798
+R100 vco_varactors_0/OUT_p.n8 vco_varactors_0/OUT_p.t10 5.45798
+R101 vco_varactors_0/OUT_p.n9 vco_varactors_0/OUT_p.t13 5.45798
+R102 vco_varactors_0/OUT_p.n10 vco_varactors_0/OUT_p.t16 5.45798
+R103 vco_varactors_0/OUT_p.n11 vco_varactors_0/OUT_p.t19 5.45798
+R104 vco_varactors_0/OUT_p.n0 vco_varactors_0/OUT_p.t5 5.45798
+R105 vco_varactors_0/OUT_p.n1 vco_varactors_0/OUT_p.t8 5.45798
+R106 vco_varactors_0/OUT_p.n2 vco_varactors_0/OUT_p.t11 5.45798
+R107 vco_varactors_0/OUT_p.n3 vco_varactors_0/OUT_p.t14 5.45798
+R108 vco_varactors_0/OUT_p.n4 vco_varactors_0/OUT_p.t17 5.45798
+R109 vco_varactors_0/OUT_p.n5 vco_varactors_0/OUT_p.t20 5.45798
+R110 vco_varactors_0/OUT_p.n14 vco_varactors_0/OUT_p.n13 1.77682
+R111 vco_varactors_0/OUT_p.n15 vco_varactors_0/OUT_p.n14 1.77682
+R112 vco_varactors_0/OUT_p.n16 vco_varactors_0/OUT_p.n15 1.77682
+R113 vco_varactors_0/OUT_p.n17 vco_varactors_0/OUT_p.n16 1.77682
+R114 vco_varactors_0/OUT_p.n18 vco_varactors_0/OUT_p.n17 1.77682
+R115 vco_varactors_0/OUT_p.n7 vco_varactors_0/OUT_p.n6 1.77682
+R116 vco_varactors_0/OUT_p.n8 vco_varactors_0/OUT_p.n7 1.77682
+R117 vco_varactors_0/OUT_p.n9 vco_varactors_0/OUT_p.n8 1.77682
+R118 vco_varactors_0/OUT_p.n10 vco_varactors_0/OUT_p.n9 1.77682
+R119 vco_varactors_0/OUT_p.n11 vco_varactors_0/OUT_p.n10 1.77682
+R120 vco_varactors_0/OUT_p.n1 vco_varactors_0/OUT_p.n0 1.77682
+R121 vco_varactors_0/OUT_p.n2 vco_varactors_0/OUT_p.n1 1.77682
+R122 vco_varactors_0/OUT_p.n3 vco_varactors_0/OUT_p.n2 1.77682
+R123 vco_varactors_0/OUT_p.n4 vco_varactors_0/OUT_p.n3 1.77682
+R124 vco_varactors_0/OUT_p.n5 vco_varactors_0/OUT_p.n4 1.77682
+R125 vco_varactors_0/OUT_p.n19 vco_varactors_0/OUT_p.n12 1.67193
+R126 OUT_p vco_varactors_0/OUT_p.n19 0.0455
+R127 vco_varactors_0/OUT_n.n12 vco_varactors_0/OUT_n.n5 7.48877
+R128 vco_varactors_0/OUT_n.n13 vco_varactors_0/OUT_n.t0 7.2343
+R129 vco_varactors_0/OUT_n.n6 vco_varactors_0/OUT_n.t1 7.2343
+R130 vco_varactors_0/OUT_n.n0 vco_varactors_0/OUT_n.t2 7.2343
+R131 vco_varactors_0/OUT_n.n19 vco_varactors_0/OUT_n.n18 5.81734
+R132 vco_varactors_0/OUT_n.n12 vco_varactors_0/OUT_n.n11 5.81734
+R133 vco_varactors_0/OUT_n.n13 vco_varactors_0/OUT_n.t3 5.45798
+R134 vco_varactors_0/OUT_n.n14 vco_varactors_0/OUT_n.t6 5.45798
+R135 vco_varactors_0/OUT_n.n15 vco_varactors_0/OUT_n.t9 5.45798
+R136 vco_varactors_0/OUT_n.n16 vco_varactors_0/OUT_n.t12 5.45798
+R137 vco_varactors_0/OUT_n.n17 vco_varactors_0/OUT_n.t15 5.45798
+R138 vco_varactors_0/OUT_n.n18 vco_varactors_0/OUT_n.t18 5.45798
+R139 vco_varactors_0/OUT_n.n6 vco_varactors_0/OUT_n.t4 5.45798
+R140 vco_varactors_0/OUT_n.n7 vco_varactors_0/OUT_n.t7 5.45798
+R141 vco_varactors_0/OUT_n.n8 vco_varactors_0/OUT_n.t10 5.45798
+R142 vco_varactors_0/OUT_n.n9 vco_varactors_0/OUT_n.t13 5.45798
+R143 vco_varactors_0/OUT_n.n10 vco_varactors_0/OUT_n.t16 5.45798
+R144 vco_varactors_0/OUT_n.n11 vco_varactors_0/OUT_n.t19 5.45798
+R145 vco_varactors_0/OUT_n.n0 vco_varactors_0/OUT_n.t5 5.45798
+R146 vco_varactors_0/OUT_n.n1 vco_varactors_0/OUT_n.t8 5.45798
+R147 vco_varactors_0/OUT_n.n2 vco_varactors_0/OUT_n.t11 5.45798
+R148 vco_varactors_0/OUT_n.n3 vco_varactors_0/OUT_n.t14 5.45798
+R149 vco_varactors_0/OUT_n.n4 vco_varactors_0/OUT_n.t17 5.45798
+R150 vco_varactors_0/OUT_n.n5 vco_varactors_0/OUT_n.t20 5.45798
+R151 vco_varactors_0/OUT_n.n14 vco_varactors_0/OUT_n.n13 1.77682
+R152 vco_varactors_0/OUT_n.n15 vco_varactors_0/OUT_n.n14 1.77682
+R153 vco_varactors_0/OUT_n.n16 vco_varactors_0/OUT_n.n15 1.77682
+R154 vco_varactors_0/OUT_n.n17 vco_varactors_0/OUT_n.n16 1.77682
+R155 vco_varactors_0/OUT_n.n18 vco_varactors_0/OUT_n.n17 1.77682
+R156 vco_varactors_0/OUT_n.n7 vco_varactors_0/OUT_n.n6 1.77682
+R157 vco_varactors_0/OUT_n.n8 vco_varactors_0/OUT_n.n7 1.77682
+R158 vco_varactors_0/OUT_n.n9 vco_varactors_0/OUT_n.n8 1.77682
+R159 vco_varactors_0/OUT_n.n10 vco_varactors_0/OUT_n.n9 1.77682
+R160 vco_varactors_0/OUT_n.n11 vco_varactors_0/OUT_n.n10 1.77682
+R161 vco_varactors_0/OUT_n.n1 vco_varactors_0/OUT_n.n0 1.77682
+R162 vco_varactors_0/OUT_n.n2 vco_varactors_0/OUT_n.n1 1.77682
+R163 vco_varactors_0/OUT_n.n3 vco_varactors_0/OUT_n.n2 1.77682
+R164 vco_varactors_0/OUT_n.n4 vco_varactors_0/OUT_n.n3 1.77682
+R165 vco_varactors_0/OUT_n.n5 vco_varactors_0/OUT_n.n4 1.77682
+R166 vco_varactors_0/OUT_n.n19 vco_varactors_0/OUT_n.n12 1.67193
+R167 OUT_n vco_varactors_0/OUT_n.n19 0.0455
+R168 vco_core_0/ISS.n11 vco_core_0/ISS.t3 7.21579
+R169 vco_core_0/ISS.n1 vco_core_0/ISS.t4 7.21579
+R170 vco_core_0/ISS.n9 vco_core_0/ISS.t0 6.7015
+R171 vco_core_0/ISS.n8 vco_core_0/ISS.t13 6.7015
+R172 vco_core_0/ISS.n11 vco_core_0/ISS.n10 6.292
+R173 vco_core_0/ISS.n13 vco_core_0/ISS.n12 6.292
+R174 vco_core_0/ISS.n15 vco_core_0/ISS.n14 6.292
+R175 vco_core_0/ISS.n17 vco_core_0/ISS.n16 6.292
+R176 vco_core_0/ISS.n7 vco_core_0/ISS.n6 6.292
+R177 vco_core_0/ISS.n5 vco_core_0/ISS.n4 6.292
+R178 vco_core_0/ISS.n3 vco_core_0/ISS.n2 6.292
+R179 vco_core_0/ISS.n1 vco_core_0/ISS.n0 6.292
+R180 vco_core_0/ISS.n9 vco_core_0/ISS.n8 2.2505
+R181 vco_core_0/ISS.n3 vco_core_0/ISS.n1 0.514786
+R182 vco_core_0/ISS.n5 vco_core_0/ISS.n3 0.514786
+R183 vco_core_0/ISS.n7 vco_core_0/ISS.n5 0.514786
+R184 vco_core_0/ISS.n8 vco_core_0/ISS.n7 0.514786
+R185 vco_core_0/ISS.n17 vco_core_0/ISS.n15 0.514786
+R186 vco_core_0/ISS.n15 vco_core_0/ISS.n13 0.514786
+R187 vco_core_0/ISS.n13 vco_core_0/ISS.n11 0.514786
+R188 vco_core_0/ISS.n10 vco_core_0/ISS.t9 0.41
+R189 vco_core_0/ISS.n10 vco_core_0/ISS.t2 0.41
+R190 vco_core_0/ISS.n12 vco_core_0/ISS.t7 0.41
+R191 vco_core_0/ISS.n12 vco_core_0/ISS.t8 0.41
+R192 vco_core_0/ISS.n14 vco_core_0/ISS.t11 0.41
+R193 vco_core_0/ISS.n14 vco_core_0/ISS.t6 0.41
+R194 vco_core_0/ISS.n16 vco_core_0/ISS.t1 0.41
+R195 vco_core_0/ISS.n16 vco_core_0/ISS.t10 0.41
+R196 vco_core_0/ISS.n6 vco_core_0/ISS.t19 0.41
+R197 vco_core_0/ISS.n6 vco_core_0/ISS.t12 0.41
+R198 vco_core_0/ISS.n4 vco_core_0/ISS.t17 0.41
+R199 vco_core_0/ISS.n4 vco_core_0/ISS.t18 0.41
+R200 vco_core_0/ISS.n2 vco_core_0/ISS.t15 0.41
+R201 vco_core_0/ISS.n2 vco_core_0/ISS.t16 0.41
+R202 vco_core_0/ISS.n0 vco_core_0/ISS.t5 0.41
+R203 vco_core_0/ISS.n0 vco_core_0/ISS.t14 0.41
+R204 ISS vco_core_0/ISS.n17 0.321929
+R205 ISS vco_core_0/ISS.n9 0.193357
+R206 vco_core_0/OUT_p.n13 vco_core_0/OUT_p.t25 208.757
+R207 vco_core_0/OUT_p.n13 vco_core_0/OUT_p.t26 182.5
+R208 vco_core_0/OUT_p.n14 vco_core_0/OUT_p.t27 182.5
+R209 vco_core_0/OUT_p.n15 vco_core_0/OUT_p.t28 182.5
+R210 vco_core_0/OUT_p.n16 vco_core_0/OUT_p.t29 182.5
+R211 vco_core_0/OUT_p.n17 vco_core_0/OUT_p.t15 92.6015
+R212 vco_core_0/OUT_p.n17 vco_core_0/OUT_p.t16 75.3469
+R213 vco_core_0/OUT_p.n18 vco_core_0/OUT_p.t17 75.3469
+R214 vco_core_0/OUT_p.n19 vco_core_0/OUT_p.t18 75.3469
+R215 vco_core_0/OUT_p.n20 vco_core_0/OUT_p.t19 75.3469
+R216 vco_core_0/OUT_p.n21 vco_core_0/OUT_p.t20 75.3469
+R217 vco_core_0/OUT_p.n22 vco_core_0/OUT_p.t21 75.3469
+R218 vco_core_0/OUT_p.n23 vco_core_0/OUT_p.t22 75.3469
+R219 vco_core_0/OUT_p.n24 vco_core_0/OUT_p.t23 75.3469
+R220 vco_core_0/OUT_p.n25 vco_core_0/OUT_p.t24 75.3469
+R221 vco_core_0/OUT_p.n26 vco_core_0/OUT_p.n16 57.4995
+R222 vco_core_0/OUT_p.n26 vco_core_0/OUT_p.n25 50.2257
+R223 vco_core_0/OUT_p.n14 vco_core_0/OUT_p.n13 23.2668
+R224 vco_core_0/OUT_p.n15 vco_core_0/OUT_p.n14 23.2668
+R225 vco_core_0/OUT_p.n16 vco_core_0/OUT_p.n15 23.2668
+R226 vco_core_0/OUT_p.n18 vco_core_0/OUT_p.n17 17.255
+R227 vco_core_0/OUT_p.n19 vco_core_0/OUT_p.n18 17.255
+R228 vco_core_0/OUT_p.n20 vco_core_0/OUT_p.n19 17.255
+R229 vco_core_0/OUT_p.n21 vco_core_0/OUT_p.n20 17.255
+R230 vco_core_0/OUT_p.n22 vco_core_0/OUT_p.n21 17.255
+R231 vco_core_0/OUT_p.n23 vco_core_0/OUT_p.n22 17.255
+R232 vco_core_0/OUT_p.n24 vco_core_0/OUT_p.n23 17.255
+R233 vco_core_0/OUT_p.n25 vco_core_0/OUT_p.n24 17.255
+R234 OUT_p vco_core_0/OUT_p.n3 8.77443
+R235 vco_core_0/OUT_p.n1 vco_core_0/OUT_p.t5 7.78437
+R236 vco_core_0/OUT_p.n3 vco_core_0/OUT_p.n2 7.14008
+R237 vco_core_0/OUT_p.n1 vco_core_0/OUT_p.n0 7.14008
+R238 vco_core_0/OUT_p.n6 vco_core_0/OUT_p.n4 6.80629
+R239 vco_core_0/OUT_p.n27 vco_core_0/OUT_p.n12 6.61871
+R240 vco_core_0/OUT_p.n12 vco_core_0/OUT_p.n11 6.292
+R241 vco_core_0/OUT_p.n10 vco_core_0/OUT_p.n9 6.292
+R242 vco_core_0/OUT_p.n8 vco_core_0/OUT_p.n7 6.292
+R243 vco_core_0/OUT_p.n6 vco_core_0/OUT_p.n5 6.292
+R244 vco_core_0/OUT_p.n27 vco_core_0/OUT_p.n26 4.28621
+R245 OUT_p vco_core_0/OUT_p.n27 0.844786
+R246 vco_core_0/OUT_p.n3 vco_core_0/OUT_p.n1 0.514786
+R247 vco_core_0/OUT_p.n8 vco_core_0/OUT_p.n6 0.514786
+R248 vco_core_0/OUT_p.n10 vco_core_0/OUT_p.n8 0.514786
+R249 vco_core_0/OUT_p.n12 vco_core_0/OUT_p.n10 0.514786
+R250 vco_core_0/OUT_p.n11 vco_core_0/OUT_p.t3 0.41
+R251 vco_core_0/OUT_p.n11 vco_core_0/OUT_p.t4 0.41
+R252 vco_core_0/OUT_p.n9 vco_core_0/OUT_p.t11 0.41
+R253 vco_core_0/OUT_p.n9 vco_core_0/OUT_p.t12 0.41
+R254 vco_core_0/OUT_p.n7 vco_core_0/OUT_p.t7 0.41
+R255 vco_core_0/OUT_p.n7 vco_core_0/OUT_p.t8 0.41
+R256 vco_core_0/OUT_p.n5 vco_core_0/OUT_p.t13 0.41
+R257 vco_core_0/OUT_p.n5 vco_core_0/OUT_p.t14 0.41
+R258 vco_core_0/OUT_p.n4 vco_core_0/OUT_p.t1 0.41
+R259 vco_core_0/OUT_p.n4 vco_core_0/OUT_p.t2 0.41
+R260 vco_core_0/OUT_p.n2 vco_core_0/OUT_p.t10 0.1305
+R261 vco_core_0/OUT_p.n2 vco_core_0/OUT_p.t0 0.1305
+R262 vco_core_0/OUT_p.n0 vco_core_0/OUT_p.t6 0.1305
+R263 vco_core_0/OUT_p.n0 vco_core_0/OUT_p.t9 0.1305
+R264 vco_core_0/OUT_n.n13 vco_core_0/OUT_n.t25 208.757
+R265 vco_core_0/OUT_n.n13 vco_core_0/OUT_n.t26 182.5
+R266 vco_core_0/OUT_n.n14 vco_core_0/OUT_n.t27 182.5
+R267 vco_core_0/OUT_n.n15 vco_core_0/OUT_n.t28 182.5
+R268 vco_core_0/OUT_n.n16 vco_core_0/OUT_n.t29 182.5
+R269 vco_core_0/OUT_n.n17 vco_core_0/OUT_n.t15 92.6015
+R270 vco_core_0/OUT_n.n17 vco_core_0/OUT_n.t16 75.3469
+R271 vco_core_0/OUT_n.n18 vco_core_0/OUT_n.t17 75.3469
+R272 vco_core_0/OUT_n.n19 vco_core_0/OUT_n.t18 75.3469
+R273 vco_core_0/OUT_n.n20 vco_core_0/OUT_n.t19 75.3469
+R274 vco_core_0/OUT_n.n21 vco_core_0/OUT_n.t20 75.3469
+R275 vco_core_0/OUT_n.n22 vco_core_0/OUT_n.t21 75.3469
+R276 vco_core_0/OUT_n.n23 vco_core_0/OUT_n.t22 75.3469
+R277 vco_core_0/OUT_n.n24 vco_core_0/OUT_n.t23 75.3469
+R278 vco_core_0/OUT_n.n25 vco_core_0/OUT_n.t24 75.3469
+R279 vco_core_0/OUT_n.n26 vco_core_0/OUT_n.n16 61.678
+R280 vco_core_0/OUT_n.n26 vco_core_0/OUT_n.n25 55.0471
+R281 vco_core_0/OUT_n.n14 vco_core_0/OUT_n.n13 23.2668
+R282 vco_core_0/OUT_n.n15 vco_core_0/OUT_n.n14 23.2668
+R283 vco_core_0/OUT_n.n16 vco_core_0/OUT_n.n15 23.2668
+R284 vco_core_0/OUT_n.n18 vco_core_0/OUT_n.n17 17.255
+R285 vco_core_0/OUT_n.n19 vco_core_0/OUT_n.n18 17.255
+R286 vco_core_0/OUT_n.n20 vco_core_0/OUT_n.n19 17.255
+R287 vco_core_0/OUT_n.n21 vco_core_0/OUT_n.n20 17.255
+R288 vco_core_0/OUT_n.n22 vco_core_0/OUT_n.n21 17.255
+R289 vco_core_0/OUT_n.n23 vco_core_0/OUT_n.n22 17.255
+R290 vco_core_0/OUT_n.n24 vco_core_0/OUT_n.n23 17.255
+R291 vco_core_0/OUT_n.n25 vco_core_0/OUT_n.n24 17.255
+R292 OUT_n vco_core_0/OUT_n.n3 13.0173
+R293 vco_core_0/OUT_n.n27 vco_core_0/OUT_n.n12 11.4401
+R294 vco_core_0/OUT_n.n2 vco_core_0/OUT_n.n0 7.65437
+R295 vco_core_0/OUT_n.n3 vco_core_0/OUT_n.t3 7.27008
+R296 vco_core_0/OUT_n.n2 vco_core_0/OUT_n.n1 7.14008
+R297 vco_core_0/OUT_n.n6 vco_core_0/OUT_n.n4 6.80629
+R298 vco_core_0/OUT_n.n6 vco_core_0/OUT_n.n5 6.292
+R299 vco_core_0/OUT_n.n8 vco_core_0/OUT_n.n7 6.292
+R300 vco_core_0/OUT_n.n10 vco_core_0/OUT_n.n9 6.292
+R301 vco_core_0/OUT_n.n12 vco_core_0/OUT_n.n11 6.292
+R302 vco_core_0/OUT_n.n27 vco_core_0/OUT_n.n26 4.92907
+R303 OUT_n vco_core_0/OUT_n.n27 0.523357
+R304 vco_core_0/OUT_n.n3 vco_core_0/OUT_n.n2 0.514786
+R305 vco_core_0/OUT_n.n12 vco_core_0/OUT_n.n10 0.514786
+R306 vco_core_0/OUT_n.n10 vco_core_0/OUT_n.n8 0.514786
+R307 vco_core_0/OUT_n.n8 vco_core_0/OUT_n.n6 0.514786
+R308 vco_core_0/OUT_n.n4 vco_core_0/OUT_n.t6 0.41
+R309 vco_core_0/OUT_n.n4 vco_core_0/OUT_n.t5 0.41
+R310 vco_core_0/OUT_n.n5 vco_core_0/OUT_n.t8 0.41
+R311 vco_core_0/OUT_n.n5 vco_core_0/OUT_n.t7 0.41
+R312 vco_core_0/OUT_n.n7 vco_core_0/OUT_n.t10 0.41
+R313 vco_core_0/OUT_n.n7 vco_core_0/OUT_n.t9 0.41
+R314 vco_core_0/OUT_n.n9 vco_core_0/OUT_n.t12 0.41
+R315 vco_core_0/OUT_n.n9 vco_core_0/OUT_n.t11 0.41
+R316 vco_core_0/OUT_n.n11 vco_core_0/OUT_n.t14 0.41
+R317 vco_core_0/OUT_n.n11 vco_core_0/OUT_n.t13 0.41
+R318 vco_core_0/OUT_n.n0 vco_core_0/OUT_n.t1 0.1305
+R319 vco_core_0/OUT_n.n0 vco_core_0/OUT_n.t2 0.1305
+R320 vco_core_0/OUT_n.n1 vco_core_0/OUT_n.t0 0.1305
+R321 vco_core_0/OUT_n.n1 vco_core_0/OUT_n.t4 0.1305
+R322 vco_core_0/VDD.t16 vco_core_0/VDD.t18 47.4782
+R323 vco_core_0/VDD.t14 vco_core_0/VDD.t16 47.4782
+R324 vco_core_0/VDD.t12 vco_core_0/VDD.t14 47.4782
+R325 vco_core_0/VDD.t10 vco_core_0/VDD.t12 47.4782
+R326 vco_core_0/VDD.t6 vco_core_0/VDD.t8 47.4782
+R327 vco_core_0/VDD.t4 vco_core_0/VDD.t6 47.4782
+R328 vco_core_0/VDD.t2 vco_core_0/VDD.t4 47.4782
+R329 vco_core_0/VDD.t0 vco_core_0/VDD.t2 47.4782
+R330 vco_core_0/VDD.n5 vco_core_0/VDD.t10 11.212
+R331 vco_core_0/VDD.n3 vco_core_0/VDD.t0 11.212
+R332 vco_core_0/VDD.n2 vco_core_0/VDD.n0 7.65437
+R333 vco_core_0/VDD.n5 vco_core_0/VDD.t11 7.34722
+R334 vco_core_0/VDD.n4 vco_core_0/VDD.t1 7.27008
+R335 vco_core_0/VDD.n7 vco_core_0/VDD.n6 7.14008
+R336 vco_core_0/VDD.n9 vco_core_0/VDD.n8 7.14008
+R337 vco_core_0/VDD.n2 vco_core_0/VDD.n1 7.14008
+R338 VDD vco_core_0/VDD.n4 2.60407
+R339 VDD vco_core_0/VDD.n9 1.18979
+R340 vco_core_0/VDD.n9 vco_core_0/VDD.n7 0.514786
+R341 vco_core_0/VDD.n3 vco_core_0/VDD.n2 0.334786
+R342 vco_core_0/VDD.n7 vco_core_0/VDD.n5 0.334786
+R343 vco_core_0/VDD.n6 vco_core_0/VDD.t15 0.1305
+R344 vco_core_0/VDD.n6 vco_core_0/VDD.t13 0.1305
+R345 vco_core_0/VDD.n8 vco_core_0/VDD.t19 0.1305
+R346 vco_core_0/VDD.n8 vco_core_0/VDD.t17 0.1305
+R347 vco_core_0/VDD.n1 vco_core_0/VDD.t5 0.1305
+R348 vco_core_0/VDD.n1 vco_core_0/VDD.t3 0.1305
+R349 vco_core_0/VDD.n0 vco_core_0/VDD.t9 0.1305
+R350 vco_core_0/VDD.n0 vco_core_0/VDD.t7 0.1305
+R351 vco_core_0/VDD.n4 vco_core_0/VDD.n3 0.0776429
+R352 vco_core_0/GND.n1 vco_core_0/GND.t0 862.245
+R353 vco_core_0/GND.t19 vco_core_0/GND.n1 862.245
+R354 vco_core_0/GND.t9 vco_core_0/GND.n0 323.325
+R355 GND vco_core_0/GND.t10 320.079
+R356 vco_core_0/GND.t8 vco_core_0/GND.t9 176.871
+R357 vco_core_0/GND.t7 vco_core_0/GND.t8 176.871
+R358 vco_core_0/GND.t6 vco_core_0/GND.t7 176.871
+R359 vco_core_0/GND.t5 vco_core_0/GND.t6 176.871
+R360 vco_core_0/GND.t4 vco_core_0/GND.t5 176.871
+R361 vco_core_0/GND.t3 vco_core_0/GND.t4 176.871
+R362 vco_core_0/GND.t2 vco_core_0/GND.t3 176.871
+R363 vco_core_0/GND.t1 vco_core_0/GND.t2 176.871
+R364 vco_core_0/GND.t0 vco_core_0/GND.t1 176.871
+R365 vco_core_0/GND.t18 vco_core_0/GND.t19 176.871
+R366 vco_core_0/GND.t17 vco_core_0/GND.t18 176.871
+R367 vco_core_0/GND.t16 vco_core_0/GND.t17 176.871
+R368 vco_core_0/GND.t15 vco_core_0/GND.t16 176.871
+R369 vco_core_0/GND.t14 vco_core_0/GND.t15 176.871
+R370 vco_core_0/GND.t13 vco_core_0/GND.t14 176.871
+R371 vco_core_0/GND.t12 vco_core_0/GND.t13 176.871
+R372 vco_core_0/GND.t11 vco_core_0/GND.t12 176.871
+R373 vco_core_0/GND.t10 vco_core_0/GND.t11 176.871
+R374 vco_core_0/GND.n1 vco_core_0/GND.n0 9.78339
+R375 GND vco_core_0/GND.n0 3.24693
+R376 OUT_n.n7 OUT_n.n6 208.757
+R377 OUT_n.n7 OUT_n.n5 182.5
+R378 OUT_n.n8 OUT_n.n4 182.5
+R379 OUT_n.n9 OUT_n.n3 182.5
+R380 OUT_n.n10 OUT_n.n2 182.5
+R381 OUT_n.n13 OUT_n.n11 92.6015
+R382 OUT_n.n13 OUT_n.n12 75.3469
+R383 OUT_n.n15 OUT_n.n14 75.3469
+R384 OUT_n.n17 OUT_n.n16 75.3469
+R385 OUT_n.n19 OUT_n.n18 75.3469
+R386 OUT_n.n21 OUT_n.n20 75.3469
+R387 OUT_n.n23 OUT_n.n22 75.3469
+R388 OUT_n.n25 OUT_n.n24 75.3469
+R389 OUT_n.n27 OUT_n.n26 75.3469
+R390 OUT_n.n29 OUT_n.n28 75.3469
+R391 OUT_n.n30 OUT_n.n10 61.678
+R392 OUT_n.n30 OUT_n.n29 55.0471
+R393 OUT_n.n8 OUT_n.n7 23.2668
+R394 OUT_n.n9 OUT_n.n8 23.2668
+R395 OUT_n.n10 OUT_n.n9 23.2668
+R396 OUT_n.n15 OUT_n.n13 17.255
+R397 OUT_n.n17 OUT_n.n15 17.255
+R398 OUT_n.n19 OUT_n.n17 17.255
+R399 OUT_n.n21 OUT_n.n19 17.255
+R400 OUT_n.n23 OUT_n.n21 17.255
+R401 OUT_n.n25 OUT_n.n23 17.255
+R402 OUT_n.n27 OUT_n.n25 17.255
+R403 OUT_n.n29 OUT_n.n27 17.255
+R404 OUT_n OUT_n.n40 16.1298
+R405 OUT_n OUT_n.n30 5.45193
+R406 OUT_n.n35 OUT_n.n32 4.5005
+R407 OUT_n.n37 OUT_n.n32 4.5005
+R408 OUT_n.n39 OUT_n.n32 4.5005
+R409 OUT_n.n38 OUT_n.n37 4.5005
+R410 OUT_n.n39 OUT_n.n38 4.5005
+R411 OUT_n.n37 OUT_n.n31 4.5005
+R412 OUT_n.n39 OUT_n.n31 4.5005
+R413 OUT_n.n40 OUT_n.n39 4.5005
+R414 OUT_n.n34 OUT_n.n33 2.24834
+R415 OUT_n.n33 OUT_n.n0 2.24834
+R416 OUT_n.n36 OUT_n.n35 2.24834
+R417 OUT_n.n40 OUT_n.n1 2.24502
+R418 OUT_n.n39 OUT_n 1.53051
+R419 OUT_n.n32 OUT_n 0.0511
+R420 OUT_n.n39 OUT_n.n33 0.0245
+R421 OUT_n.n37 OUT_n.n33 0.0245
+R422 OUT_n.n35 OUT_n.n1 0.0129681
+R423 OUT_n.n37 OUT_n.n1 0.0129681
+R424 OUT_n.n38 OUT_n.n34 0.00632702
+R425 OUT_n.n40 OUT_n.n0 0.00632702
+R426 OUT_n.n34 OUT_n.n32 0.00632702
+R427 OUT_n.n31 OUT_n.n0 0.00632702
+R428 OUT_n.n36 OUT_n.n31 0.00632702
+R429 OUT_n.n38 OUT_n.n36 0.00632702
+R430 OUT_p.n10 OUT_p.n9 208.757
+R431 OUT_p.n10 OUT_p.n8 182.5
+R432 OUT_p.n11 OUT_p.n7 182.5
+R433 OUT_p.n12 OUT_p.n6 182.5
+R434 OUT_p.n13 OUT_p.n5 182.5
+R435 OUT_p.n16 OUT_p.n14 92.6015
+R436 OUT_p.n16 OUT_p.n15 75.3469
+R437 OUT_p.n18 OUT_p.n17 75.3469
+R438 OUT_p.n20 OUT_p.n19 75.3469
+R439 OUT_p.n22 OUT_p.n21 75.3469
+R440 OUT_p.n24 OUT_p.n23 75.3469
+R441 OUT_p.n26 OUT_p.n25 75.3469
+R442 OUT_p.n28 OUT_p.n27 75.3469
+R443 OUT_p.n30 OUT_p.n29 75.3469
+R444 OUT_p.n32 OUT_p.n31 75.3469
+R445 OUT_p.n33 OUT_p.n13 57.4995
+R446 OUT_p.n33 OUT_p.n32 50.2257
+R447 OUT_p.n11 OUT_p.n10 23.2668
+R448 OUT_p.n12 OUT_p.n11 23.2668
+R449 OUT_p.n13 OUT_p.n12 23.2668
+R450 OUT_p OUT_p.n44 22.8137
+R451 OUT_p.n18 OUT_p.n16 17.255
+R452 OUT_p.n20 OUT_p.n18 17.255
+R453 OUT_p.n22 OUT_p.n20 17.255
+R454 OUT_p.n24 OUT_p.n22 17.255
+R455 OUT_p.n26 OUT_p.n24 17.255
+R456 OUT_p.n28 OUT_p.n26 17.255
+R457 OUT_p.n30 OUT_p.n28 17.255
+R458 OUT_p.n32 OUT_p.n30 17.255
+R459 OUT_p OUT_p.n33 5.1305
+R460 OUT_p.n37 OUT_p.n35 4.5005
+R461 OUT_p.n40 OUT_p.n35 4.5005
+R462 OUT_p.n40 OUT_p.n39 4.5005
+R463 OUT_p.n39 OUT_p.n4 4.5005
+R464 OUT_p.n36 OUT_p.n4 4.5005
+R465 OUT_p.n44 OUT_p.n43 4.5005
+R466 OUT_p.n43 OUT_p.n3 2.24834
+R467 OUT_p.n4 OUT_p.n0 2.24834
+R468 OUT_p.n38 OUT_p.n37 2.24834
+R469 OUT_p.n36 OUT_p.n2 2.24502
+R470 OUT_p.n44 OUT_p.n1 2.24502
+R471 OUT_p.n34 OUT_p 1.55062
+R472 OUT_p.n41 OUT_p.n40 1.1255
+R473 OUT_p.n37 OUT_p.n34 1.1255
+R474 OUT_p.n42 OUT_p.n41 0.5875
+R475 OUT_p.n41 OUT_p.n34 0.0245
+R476 OUT_p.n42 OUT_p.n4 0.013
+R477 OUT_p.n40 OUT_p.n1 0.0129681
+R478 OUT_p.n43 OUT_p.n2 0.0129681
+R479 OUT_p.n40 OUT_p.n2 0.0129681
+R480 OUT_p.n37 OUT_p.n1 0.0129681
+R481 OUT_p.n43 OUT_p.n42 0.0127493
+R482 OUT_p.n35 OUT_p.n3 0.00632702
+R483 OUT_p.n35 OUT_p.n0 0.00632702
+R484 OUT_p.n39 OUT_p.n3 0.00632702
+R485 OUT_p.n44 OUT_p.n0 0.00632702
+R486 OUT_p.n38 OUT_p.n36 0.00632702
+R487 OUT_p.n39 OUT_p.n38 0.00632702
+R488 OUT_p.n36 OUT_p 0.0061
+R489 GND.n75 GND.n25 15825.6
+R490 GND.n27 GND.n26 15825.6
+R491 GND.n65 GND.n33 15825.6
+R492 GND.n35 GND.n34 15825.6
+R493 GND.n55 GND.n40 15825.6
+R494 GND.n42 GND.n41 15825.6
+R495 GND.n98 GND.n7 14843.3
+R496 GND.n95 GND.n9 14843.3
+R497 GND.n92 GND.n10 14843.3
+R498 GND.n89 GND.n14 14843.3
+R499 GND.n86 GND.n15 14843.3
+R500 GND.n83 GND.n19 14843.3
+R501 GND.n21 GND.n19 14843.3
+R502 GND.n86 GND.n17 14843.3
+R503 GND.n30 GND.n14 14843.3
+R504 GND.n92 GND.n12 14843.3
+R505 GND.n37 GND.n9 14843.3
+R506 GND.n98 GND.n6 14843.3
+R507 GND.n29 GND.n25 14843.3
+R508 GND.n28 GND.n27 14843.3
+R509 GND.n33 GND.n32 14843.3
+R510 GND.n36 GND.n35 14843.3
+R511 GND.n50 GND.n6 14843.3
+R512 GND.n22 GND.n21 14843.3
+R513 GND.n29 GND.n22 14843.3
+R514 GND.n70 GND.n17 14843.3
+R515 GND.n70 GND.n28 14843.3
+R516 GND.n31 GND.n30 14843.3
+R517 GND.n32 GND.n31 14843.3
+R518 GND.n60 GND.n12 14843.3
+R519 GND.n60 GND.n36 14843.3
+R520 GND.n38 GND.n37 14843.3
+R521 GND.n39 GND.n38 14843.3
+R522 GND.n50 GND.n49 14843.3
+R523 GND.n49 GND.n42 14843.3
+R524 GND.n40 GND.n39 14843.3
+R525 GND.n77 GND.n76 13968.2
+R526 GND.n46 GND.n45 13348.6
+R527 GND.n82 GND.n20 12907.3
+R528 GND.n76 GND.n75 12361.3
+R529 GND.n74 GND.n26 12358
+R530 GND.n75 GND.n74 12358
+R531 GND.n66 GND.n65 12358
+R532 GND.n66 GND.n26 12358
+R533 GND.n64 GND.n34 12358
+R534 GND.n65 GND.n64 12358
+R535 GND.n54 GND.n41 12358
+R536 GND.n55 GND.n54 12358
+R537 GND.n56 GND.n55 12358
+R538 GND.n56 GND.n34 12358
+R539 GND.n46 GND.n41 12358
+R540 GND.n78 GND.n77 9319.85
+R541 GND.n78 GND.n20 9319.85
+R542 GND.n50 GND.n5 7254.46
+R543 GND.n51 GND.n50 7254.46
+R544 GND.n51 GND.n38 7254.46
+R545 GND.n59 GND.n38 7254.46
+R546 GND.n60 GND.n59 7254.46
+R547 GND.n61 GND.n60 7254.46
+R548 GND.n61 GND.n31 7254.46
+R549 GND.n69 GND.n31 7254.46
+R550 GND.n70 GND.n69 7254.46
+R551 GND.n71 GND.n70 7254.46
+R552 GND.n71 GND.n22 7254.46
+R553 GND.n79 GND.n22 7254.46
+R554 GND.n49 GND.n48 7254.46
+R555 GND.n52 GND.n49 7254.46
+R556 GND.n52 GND.n39 7254.46
+R557 GND.n58 GND.n39 7254.46
+R558 GND.n58 GND.n36 7254.46
+R559 GND.n62 GND.n36 7254.46
+R560 GND.n62 GND.n32 7254.46
+R561 GND.n68 GND.n32 7254.46
+R562 GND.n68 GND.n28 7254.46
+R563 GND.n72 GND.n28 7254.46
+R564 GND.n72 GND.n29 7254.46
+R565 GND.n29 GND.n23 7254.46
+R566 GND.n47 GND.n42 7254.46
+R567 GND.n53 GND.n42 7254.46
+R568 GND.n53 GND.n40 7254.46
+R569 GND.n57 GND.n40 7254.46
+R570 GND.n57 GND.n35 7254.46
+R571 GND.n63 GND.n35 7254.46
+R572 GND.n63 GND.n33 7254.46
+R573 GND.n67 GND.n33 7254.46
+R574 GND.n67 GND.n27 7254.46
+R575 GND.n73 GND.n27 7254.46
+R576 GND.n73 GND.n25 7254.46
+R577 GND.n25 GND.n24 7254.46
+R578 GND.n100 GND.n6 7254.46
+R579 GND.n8 GND.n6 7254.46
+R580 GND.n37 GND.n8 7254.46
+R581 GND.n37 GND.n11 7254.46
+R582 GND.n12 GND.n11 7254.46
+R583 GND.n13 GND.n12 7254.46
+R584 GND.n30 GND.n13 7254.46
+R585 GND.n30 GND.n16 7254.46
+R586 GND.n17 GND.n16 7254.46
+R587 GND.n18 GND.n17 7254.46
+R588 GND.n21 GND.n18 7254.46
+R589 GND.n80 GND.n21 7254.46
+R590 GND.n99 GND.n98 7254.46
+R591 GND.n98 GND.n97 7254.46
+R592 GND.n97 GND.n9 7254.46
+R593 GND.n93 GND.n9 7254.46
+R594 GND.n93 GND.n92 7254.46
+R595 GND.n92 GND.n91 7254.46
+R596 GND.n91 GND.n14 7254.46
+R597 GND.n87 GND.n14 7254.46
+R598 GND.n87 GND.n86 7254.46
+R599 GND.n86 GND.n85 7254.46
+R600 GND.n85 GND.n19 7254.46
+R601 GND.n81 GND.n19 7254.46
+R602 GND.n102 GND.n3 7205.59
+R603 GND.n5 GND.n4 5958.33
+R604 GND.n79 GND.n78 5958.33
+R605 GND.n48 GND.n43 5958.33
+R606 GND.n77 GND.n23 5958.33
+R607 GND.n47 GND.n44 5958.33
+R608 GND.n101 GND.n100 5958.33
+R609 GND.n80 GND.n20 5958.33
+R610 GND.n45 GND.n3 5162.15
+R611 GND.n3 GND.n0 3758.61
+R612 GND.n43 GND.n4 1352
+R613 GND.n102 GND.n101 1340.73
+R614 GND.n104 GND.n1 923.327
+R615 GND.n43 GND.n2 803.4
+R616 GND.n101 GND.n0 600.601
+R617 GND.n83 GND.n82 598.779
+R618 GND.n7 GND.n1 596.577
+R619 GND.n96 GND.n7 596.258
+R620 GND.n96 GND.n95 596.258
+R621 GND.n95 GND.n94 596.258
+R622 GND.n94 GND.n10 596.258
+R623 GND.n90 GND.n10 596.258
+R624 GND.n90 GND.n89 596.258
+R625 GND.n89 GND.n88 596.258
+R626 GND.n88 GND.n15 596.258
+R627 GND.n84 GND.n15 596.258
+R628 GND.n84 GND.n83 596.258
+R629 GND.n44 GND.n2 548.601
+R630 GND.n105 GND.n0 459.312
+R631 GND.n45 GND.n44 286
+R632 GND.n105 GND.n104 29.6996
+R633 GND.n103 GND.n2 13.8013
+R634 GND.n102 GND.n4 11.2672
+R635 GND.n104 GND 10.5548
+R636 GND.n103 GND.n102 9.78339
+R637 GND.n97 GND.n96 4.18571
+R638 GND.n94 GND.n93 4.18571
+R639 GND.n91 GND.n90 4.18571
+R640 GND.n88 GND.n87 4.18571
+R641 GND.n85 GND.n84 4.18571
+R642 GND.n100 GND.n99 4.18571
+R643 GND.n97 GND.n8 4.18571
+R644 GND.n93 GND.n11 4.18571
+R645 GND.n91 GND.n13 4.18571
+R646 GND.n87 GND.n16 4.18571
+R647 GND.n85 GND.n18 4.18571
+R648 GND.n81 GND.n80 4.18571
+R649 GND.n47 GND.n46 4.18571
+R650 GND.n57 GND.n56 4.18571
+R651 GND.n64 GND.n63 4.18571
+R652 GND.n67 GND.n66 4.18571
+R653 GND.n74 GND.n73 4.18571
+R654 GND.n54 GND.n53 4.18571
+R655 GND.n48 GND.n47 4.18571
+R656 GND.n53 GND.n52 4.18571
+R657 GND.n58 GND.n57 4.18571
+R658 GND.n63 GND.n62 4.18571
+R659 GND.n68 GND.n67 4.18571
+R660 GND.n73 GND.n72 4.18571
+R661 GND.n24 GND.n23 4.18571
+R662 GND.n100 GND.n5 4.18571
+R663 GND.n48 GND.n5 4.18571
+R664 GND.n51 GND.n8 4.18571
+R665 GND.n52 GND.n51 4.18571
+R666 GND.n59 GND.n11 4.18571
+R667 GND.n59 GND.n58 4.18571
+R668 GND.n61 GND.n13 4.18571
+R669 GND.n62 GND.n61 4.18571
+R670 GND.n69 GND.n16 4.18571
+R671 GND.n69 GND.n68 4.18571
+R672 GND.n71 GND.n18 4.18571
+R673 GND.n72 GND.n71 4.18571
+R674 GND.n80 GND.n79 4.18571
+R675 GND.n79 GND.n23 4.18571
+R676 GND.n99 GND.n1 3.86584
+R677 GND GND.n103 3.24693
+R678 GND.n106 GND.n105 1.98565
+R679 GND.n82 GND.n81 1.66516
+R680 GND.n76 GND.n24 0.920481
+R681 GND.n106 GND 0.162964
+R682 GND GND.n106 0.140623
+C15 GND.n0 vco_inductor_v2_0/VSUBS 0.0019f $ **FLOATING
+C16 GND.n1 vco_inductor_v2_0/VSUBS 0 $ **FLOATING
+C17 GND.n2 vco_inductor_v2_0/VSUBS 0 $ **FLOATING
+C18 GND.n3 vco_inductor_v2_0/VSUBS 0.00722f $ **FLOATING
+C19 GND.n4 vco_inductor_v2_0/VSUBS 0 $ **FLOATING
+C20 GND.n5 vco_inductor_v2_0/VSUBS 0 $ **FLOATING
+C21 GND.n6 vco_inductor_v2_0/VSUBS 0 $ **FLOATING
+C22 GND.n7 vco_inductor_v2_0/VSUBS 0 $ **FLOATING
+C23 GND.n8 vco_inductor_v2_0/VSUBS 0 $ **FLOATING
+C24 GND.n9 vco_inductor_v2_0/VSUBS 0 $ **FLOATING
+C25 GND.n10 vco_inductor_v2_0/VSUBS 0 $ **FLOATING
+C26 GND.n11 vco_inductor_v2_0/VSUBS 0 $ **FLOATING
+C27 GND.n12 vco_inductor_v2_0/VSUBS 0 $ **FLOATING
+C28 GND.n13 vco_inductor_v2_0/VSUBS 0 $ **FLOATING
+C29 GND.n14 vco_inductor_v2_0/VSUBS 0 $ **FLOATING
+C30 GND.n15 vco_inductor_v2_0/VSUBS 0 $ **FLOATING
+C31 GND.n16 vco_inductor_v2_0/VSUBS 0 $ **FLOATING
+C32 GND.n17 vco_inductor_v2_0/VSUBS 0 $ **FLOATING
+C33 GND.n18 vco_inductor_v2_0/VSUBS 0 $ **FLOATING
+C34 GND.n19 vco_inductor_v2_0/VSUBS 0 $ **FLOATING
+C35 GND.n20 vco_inductor_v2_0/VSUBS 0 $ **FLOATING
+C36 GND.n21 vco_inductor_v2_0/VSUBS 0 $ **FLOATING
+C37 GND.n22 vco_inductor_v2_0/VSUBS 0 $ **FLOATING
+C38 GND.n23 vco_inductor_v2_0/VSUBS 0 $ **FLOATING
+C39 GND.n24 vco_inductor_v2_0/VSUBS 0 $ **FLOATING
+C40 GND.n25 vco_inductor_v2_0/VSUBS 0 $ **FLOATING
+C41 GND.n26 vco_inductor_v2_0/VSUBS 0 $ **FLOATING
+C42 GND.n27 vco_inductor_v2_0/VSUBS 0 $ **FLOATING
+C43 GND.n28 vco_inductor_v2_0/VSUBS 0 $ **FLOATING
+C44 GND.n29 vco_inductor_v2_0/VSUBS 0 $ **FLOATING
+C45 GND.n30 vco_inductor_v2_0/VSUBS 0 $ **FLOATING
+C46 GND.n31 vco_inductor_v2_0/VSUBS 0 $ **FLOATING
+C47 GND.n32 vco_inductor_v2_0/VSUBS 0 $ **FLOATING
+C48 GND.n33 vco_inductor_v2_0/VSUBS 0 $ **FLOATING
+C49 GND.n34 vco_inductor_v2_0/VSUBS 0 $ **FLOATING
+C50 GND.n35 vco_inductor_v2_0/VSUBS 0 $ **FLOATING
+C51 GND.n36 vco_inductor_v2_0/VSUBS 0 $ **FLOATING
+C52 GND.n37 vco_inductor_v2_0/VSUBS 0 $ **FLOATING
+C53 GND.n38 vco_inductor_v2_0/VSUBS 0 $ **FLOATING
+C54 GND.n39 vco_inductor_v2_0/VSUBS 0 $ **FLOATING
+C55 GND.n40 vco_inductor_v2_0/VSUBS 0 $ **FLOATING
+C56 GND.n41 vco_inductor_v2_0/VSUBS 0 $ **FLOATING
+C57 GND.n42 vco_inductor_v2_0/VSUBS 0 $ **FLOATING
+C58 GND.n43 vco_inductor_v2_0/VSUBS 0 $ **FLOATING
+C59 GND.n44 vco_inductor_v2_0/VSUBS 0 $ **FLOATING
+C60 GND.n45 vco_inductor_v2_0/VSUBS 0 $ **FLOATING
+C61 GND.n46 vco_inductor_v2_0/VSUBS 0 $ **FLOATING
+C62 GND.n47 vco_inductor_v2_0/VSUBS 0 $ **FLOATING
+C63 GND.n48 vco_inductor_v2_0/VSUBS 0 $ **FLOATING
+C64 GND.n49 vco_inductor_v2_0/VSUBS 0 $ **FLOATING
+C65 GND.n50 vco_inductor_v2_0/VSUBS 0 $ **FLOATING
+C66 GND.n51 vco_inductor_v2_0/VSUBS 0 $ **FLOATING
+C67 GND.n52 vco_inductor_v2_0/VSUBS 0 $ **FLOATING
+C68 GND.n53 vco_inductor_v2_0/VSUBS 0 $ **FLOATING
+C69 GND.n54 vco_inductor_v2_0/VSUBS 0 $ **FLOATING
+C70 GND.n55 vco_inductor_v2_0/VSUBS 0 $ **FLOATING
+C71 GND.n56 vco_inductor_v2_0/VSUBS 0 $ **FLOATING
+C72 GND.n57 vco_inductor_v2_0/VSUBS 0 $ **FLOATING
+C73 GND.n58 vco_inductor_v2_0/VSUBS 0 $ **FLOATING
+C74 GND.n59 vco_inductor_v2_0/VSUBS 0 $ **FLOATING
+C75 GND.n60 vco_inductor_v2_0/VSUBS 0 $ **FLOATING
+C76 GND.n61 vco_inductor_v2_0/VSUBS 0 $ **FLOATING
+C77 GND.n62 vco_inductor_v2_0/VSUBS 0 $ **FLOATING
+C78 GND.n63 vco_inductor_v2_0/VSUBS 0 $ **FLOATING
+C79 GND.n64 vco_inductor_v2_0/VSUBS 0 $ **FLOATING
+C80 GND.n65 vco_inductor_v2_0/VSUBS 0 $ **FLOATING
+C81 GND.n66 vco_inductor_v2_0/VSUBS 0 $ **FLOATING
+C82 GND.n67 vco_inductor_v2_0/VSUBS 0 $ **FLOATING
+C83 GND.n68 vco_inductor_v2_0/VSUBS 0 $ **FLOATING
+C84 GND.n69 vco_inductor_v2_0/VSUBS 0 $ **FLOATING
+C85 GND.n70 vco_inductor_v2_0/VSUBS 0 $ **FLOATING
+C86 GND.n71 vco_inductor_v2_0/VSUBS 0 $ **FLOATING
+C87 GND.n72 vco_inductor_v2_0/VSUBS 0 $ **FLOATING
+C88 GND.n73 vco_inductor_v2_0/VSUBS 0 $ **FLOATING
+C89 GND.n74 vco_inductor_v2_0/VSUBS 0 $ **FLOATING
+C90 GND.n75 vco_inductor_v2_0/VSUBS 0 $ **FLOATING
+C91 GND.n76 vco_inductor_v2_0/VSUBS 0 $ **FLOATING
+C92 GND.n77 vco_inductor_v2_0/VSUBS 0 $ **FLOATING
+C93 GND.n78 vco_inductor_v2_0/VSUBS 0 $ **FLOATING
+C94 GND.n79 vco_inductor_v2_0/VSUBS 0 $ **FLOATING
+C95 GND.n80 vco_inductor_v2_0/VSUBS 0 $ **FLOATING
+C96 GND.n81 vco_inductor_v2_0/VSUBS 0 $ **FLOATING
+C97 GND.n82 vco_inductor_v2_0/VSUBS 0 $ **FLOATING
+C98 GND.n83 vco_inductor_v2_0/VSUBS 0 $ **FLOATING
+C99 GND.n84 vco_inductor_v2_0/VSUBS 0 $ **FLOATING
+C100 GND.n85 vco_inductor_v2_0/VSUBS 0 $ **FLOATING
+C101 GND.n86 vco_inductor_v2_0/VSUBS 0 $ **FLOATING
+C102 GND.n87 vco_inductor_v2_0/VSUBS 0 $ **FLOATING
+C103 GND.n88 vco_inductor_v2_0/VSUBS 0 $ **FLOATING
+C104 GND.n89 vco_inductor_v2_0/VSUBS 0 $ **FLOATING
+C105 GND.n90 vco_inductor_v2_0/VSUBS 0 $ **FLOATING
+C106 GND.n91 vco_inductor_v2_0/VSUBS 0 $ **FLOATING
+C107 GND.n92 vco_inductor_v2_0/VSUBS 0 $ **FLOATING
+C108 GND.n93 vco_inductor_v2_0/VSUBS 0 $ **FLOATING
+C109 GND.n94 vco_inductor_v2_0/VSUBS 0 $ **FLOATING
+C110 GND.n95 vco_inductor_v2_0/VSUBS 0 $ **FLOATING
+C111 GND.n96 vco_inductor_v2_0/VSUBS 0 $ **FLOATING
+C112 GND.n97 vco_inductor_v2_0/VSUBS 0 $ **FLOATING
+C113 GND.n98 vco_inductor_v2_0/VSUBS 0 $ **FLOATING
+C114 GND.n99 vco_inductor_v2_0/VSUBS 0 $ **FLOATING
+C115 GND.n100 vco_inductor_v2_0/VSUBS 0 $ **FLOATING
+C116 GND.n101 vco_inductor_v2_0/VSUBS 0 $ **FLOATING
+C117 GND.n102 vco_inductor_v2_0/VSUBS 0 $ **FLOATING
+C118 GND.n103 vco_inductor_v2_0/VSUBS 0 $ **FLOATING
+C119 GND.n104 vco_inductor_v2_0/VSUBS 0 $ **FLOATING
+C120 GND.n105 vco_inductor_v2_0/VSUBS 0 $ **FLOATING
+C121 GND.n106 vco_inductor_v2_0/VSUBS 0 $ **FLOATING
+C122 OUT_p.n4 vco_inductor_v2_0/VSUBS 0.00119f $ **FLOATING
+C123 OUT_p.n5 vco_inductor_v2_0/VSUBS 0.0025f $ **FLOATING
+C124 OUT_p.n6 vco_inductor_v2_0/VSUBS 0.0025f $ **FLOATING
+C125 OUT_p.n7 vco_inductor_v2_0/VSUBS 0.0025f $ **FLOATING
+C126 OUT_p.n8 vco_inductor_v2_0/VSUBS 0.0025f $ **FLOATING
+C127 OUT_p.n9 vco_inductor_v2_0/VSUBS 0.00263f $ **FLOATING
+C128 OUT_p.n10 vco_inductor_v2_0/VSUBS 0.0019f $ **FLOATING
+C129 OUT_p.n11 vco_inductor_v2_0/VSUBS 0.00104f $ **FLOATING
+C130 OUT_p.n12 vco_inductor_v2_0/VSUBS 0.00104f $ **FLOATING
+C131 OUT_p.n13 vco_inductor_v2_0/VSUBS 0.00147f $ **FLOATING
+C132 OUT_p.n14 vco_inductor_v2_0/VSUBS 0 $ **FLOATING
+C133 OUT_p.n15 vco_inductor_v2_0/VSUBS 0 $ **FLOATING
+C134 OUT_p.n16 vco_inductor_v2_0/VSUBS 0 $ **FLOATING
+C135 OUT_p.n17 vco_inductor_v2_0/VSUBS 0 $ **FLOATING
+C136 OUT_p.n18 vco_inductor_v2_0/VSUBS 0 $ **FLOATING
+C137 OUT_p.n19 vco_inductor_v2_0/VSUBS 0 $ **FLOATING
+C138 OUT_p.n20 vco_inductor_v2_0/VSUBS 0 $ **FLOATING
+C139 OUT_p.n21 vco_inductor_v2_0/VSUBS 0 $ **FLOATING
+C140 OUT_p.n22 vco_inductor_v2_0/VSUBS 0 $ **FLOATING
+C141 OUT_p.n23 vco_inductor_v2_0/VSUBS 0 $ **FLOATING
+C142 OUT_p.n24 vco_inductor_v2_0/VSUBS 0 $ **FLOATING
+C143 OUT_p.n25 vco_inductor_v2_0/VSUBS 0 $ **FLOATING
+C144 OUT_p.n26 vco_inductor_v2_0/VSUBS 0 $ **FLOATING
+C145 OUT_p.n27 vco_inductor_v2_0/VSUBS 0 $ **FLOATING
+C146 OUT_p.n28 vco_inductor_v2_0/VSUBS 0 $ **FLOATING
+C147 OUT_p.n29 vco_inductor_v2_0/VSUBS 0 $ **FLOATING
+C148 OUT_p.n30 vco_inductor_v2_0/VSUBS 0 $ **FLOATING
+C149 OUT_p.n31 vco_inductor_v2_0/VSUBS 0 $ **FLOATING
+C150 OUT_p.n32 vco_inductor_v2_0/VSUBS 0 $ **FLOATING
+C151 OUT_p.n33 vco_inductor_v2_0/VSUBS 0.01323f $ **FLOATING
+C152 OUT_p.n34 vco_inductor_v2_0/VSUBS 0.04457f $ **FLOATING
+C153 OUT_p.n35 vco_inductor_v2_0/VSUBS 0.00134f $ **FLOATING
+C154 OUT_p.n36 vco_inductor_v2_0/VSUBS 0.00101f $ **FLOATING
+C155 OUT_p.n37 vco_inductor_v2_0/VSUBS 0.00117f $ **FLOATING
+C156 OUT_p.n39 vco_inductor_v2_0/VSUBS 0.00134f $ **FLOATING
+C157 OUT_p.n40 vco_inductor_v2_0/VSUBS 0.00134f $ **FLOATING
+C158 OUT_p.n41 vco_inductor_v2_0/VSUBS 0.00372f $ **FLOATING
+C159 OUT_p.n42 vco_inductor_v2_0/VSUBS 0 $ **FLOATING
+C160 OUT_p.n43 vco_inductor_v2_0/VSUBS 0.00134f $ **FLOATING
+C161 OUT_p.n44 vco_inductor_v2_0/VSUBS 0.16019f $ **FLOATING
+C162 OUT_n.n2 vco_inductor_v2_0/VSUBS 0.00491f $ **FLOATING
+C163 OUT_n.n3 vco_inductor_v2_0/VSUBS 0.00491f $ **FLOATING
+C164 OUT_n.n4 vco_inductor_v2_0/VSUBS 0.00491f $ **FLOATING
+C165 OUT_n.n5 vco_inductor_v2_0/VSUBS 0.00491f $ **FLOATING
+C166 OUT_n.n6 vco_inductor_v2_0/VSUBS 0.00515f $ **FLOATING
+C167 OUT_n.n7 vco_inductor_v2_0/VSUBS 0.00373f $ **FLOATING
+C168 OUT_n.n8 vco_inductor_v2_0/VSUBS 0.00203f $ **FLOATING
+C169 OUT_n.n9 vco_inductor_v2_0/VSUBS 0.00203f $ **FLOATING
+C170 OUT_n.n10 vco_inductor_v2_0/VSUBS 0.00288f $ **FLOATING
+C171 OUT_n.n11 vco_inductor_v2_0/VSUBS 0.0017f $ **FLOATING
+C172 OUT_n.n12 vco_inductor_v2_0/VSUBS 0.00154f $ **FLOATING
+C173 OUT_n.n13 vco_inductor_v2_0/VSUBS 0.00162f $ **FLOATING
+C174 OUT_n.n14 vco_inductor_v2_0/VSUBS 0.00154f $ **FLOATING
+C175 OUT_n.n15 vco_inductor_v2_0/VSUBS 0 $ **FLOATING
+C176 OUT_n.n16 vco_inductor_v2_0/VSUBS 0.00154f $ **FLOATING
+C177 OUT_n.n17 vco_inductor_v2_0/VSUBS 0 $ **FLOATING
+C178 OUT_n.n18 vco_inductor_v2_0/VSUBS 0.00154f $ **FLOATING
+C179 OUT_n.n19 vco_inductor_v2_0/VSUBS 0 $ **FLOATING
+C180 OUT_n.n20 vco_inductor_v2_0/VSUBS 0.00154f $ **FLOATING
+C181 OUT_n.n21 vco_inductor_v2_0/VSUBS 0 $ **FLOATING
+C182 OUT_n.n22 vco_inductor_v2_0/VSUBS 0.00154f $ **FLOATING
+C183 OUT_n.n23 vco_inductor_v2_0/VSUBS 0 $ **FLOATING
+C184 OUT_n.n24 vco_inductor_v2_0/VSUBS 0.00154f $ **FLOATING
+C185 OUT_n.n25 vco_inductor_v2_0/VSUBS 0 $ **FLOATING
+C186 OUT_n.n26 vco_inductor_v2_0/VSUBS 0.00154f $ **FLOATING
+C187 OUT_n.n27 vco_inductor_v2_0/VSUBS 0 $ **FLOATING
+C188 OUT_n.n28 vco_inductor_v2_0/VSUBS 0.00154f $ **FLOATING
+C189 OUT_n.n29 vco_inductor_v2_0/VSUBS 0.00174f $ **FLOATING
+C190 OUT_n.n30 vco_inductor_v2_0/VSUBS 0.02684f $ **FLOATING
+C191 OUT_n.n31 vco_inductor_v2_0/VSUBS 0.00262f $ **FLOATING
+C192 OUT_n.n32 vco_inductor_v2_0/VSUBS 0.00592f $ **FLOATING
+C193 OUT_n.n33 vco_inductor_v2_0/VSUBS 0.00262f $ **FLOATING
+C194 OUT_n.n35 vco_inductor_v2_0/VSUBS 0.00229f $ **FLOATING
+C195 OUT_n.n37 vco_inductor_v2_0/VSUBS 0.00262f $ **FLOATING
+C196 OUT_n.n38 vco_inductor_v2_0/VSUBS 0.00262f $ **FLOATING
+C197 OUT_n.n39 vco_inductor_v2_0/VSUBS 0.07931f $ **FLOATING
+C198 OUT_n.n40 vco_inductor_v2_0/VSUBS 0.42233f $ **FLOATING
+C199 ISS vco_inductor_v2_0/VSUBS 3.02528f
+C200 VDD vco_inductor_v2_0/VSUBS 30.13025f
+C201 vco_core_0/VDD.t9 vco_inductor_v2_0/VSUBS 0.10496f $ **FLOATING
+C202 vco_core_0/VDD.t7 vco_inductor_v2_0/VSUBS 0.10496f $ **FLOATING
+C203 vco_core_0/VDD.n0 vco_inductor_v2_0/VSUBS 0.37582f $ **FLOATING
+C204 vco_core_0/VDD.t5 vco_inductor_v2_0/VSUBS 0.10496f $ **FLOATING
+C205 vco_core_0/VDD.t3 vco_inductor_v2_0/VSUBS 0.10496f $ **FLOATING
+C206 vco_core_0/VDD.n1 vco_inductor_v2_0/VSUBS 0.37227f $ **FLOATING
+C207 vco_core_0/VDD.n2 vco_inductor_v2_0/VSUBS 0.09195f $ **FLOATING
+C208 vco_core_0/VDD.t8 vco_inductor_v2_0/VSUBS 2.42926f $ **FLOATING
+C209 vco_core_0/VDD.t6 vco_inductor_v2_0/VSUBS 0.77736f $ **FLOATING
+C210 vco_core_0/VDD.t4 vco_inductor_v2_0/VSUBS 0.77736f $ **FLOATING
+C211 vco_core_0/VDD.t2 vco_inductor_v2_0/VSUBS 0.77736f $ **FLOATING
+C212 vco_core_0/VDD.t0 vco_inductor_v2_0/VSUBS 2.4267f $ **FLOATING
+C213 vco_core_0/VDD.n3 vco_inductor_v2_0/VSUBS 0.04647f $ **FLOATING
+C214 vco_core_0/VDD.t1 vco_inductor_v2_0/VSUBS 0.51022f $ **FLOATING
+C215 vco_core_0/VDD.n4 vco_inductor_v2_0/VSUBS 0.09614f $ **FLOATING
+C216 vco_core_0/VDD.t11 vco_inductor_v2_0/VSUBS 0.5106f $ **FLOATING
+C217 vco_core_0/VDD.t18 vco_inductor_v2_0/VSUBS 2.42926f $ **FLOATING
+C218 vco_core_0/VDD.t16 vco_inductor_v2_0/VSUBS 0.77736f $ **FLOATING
+C219 vco_core_0/VDD.t14 vco_inductor_v2_0/VSUBS 0.77736f $ **FLOATING
+C220 vco_core_0/VDD.t12 vco_inductor_v2_0/VSUBS 0.77736f $ **FLOATING
+C221 vco_core_0/VDD.t10 vco_inductor_v2_0/VSUBS 2.4267f $ **FLOATING
+C222 vco_core_0/VDD.n5 vco_inductor_v2_0/VSUBS 0.08232f $ **FLOATING
+C223 vco_core_0/VDD.t15 vco_inductor_v2_0/VSUBS 0.10496f $ **FLOATING
+C224 vco_core_0/VDD.t13 vco_inductor_v2_0/VSUBS 0.10496f $ **FLOATING
+C225 vco_core_0/VDD.n6 vco_inductor_v2_0/VSUBS 0.37227f $ **FLOATING
+C226 vco_core_0/VDD.n7 vco_inductor_v2_0/VSUBS 0.04274f $ **FLOATING
+C227 vco_core_0/VDD.t19 vco_inductor_v2_0/VSUBS 0.10496f $ **FLOATING
+C228 vco_core_0/VDD.t17 vco_inductor_v2_0/VSUBS 0.10496f $ **FLOATING
+C229 vco_core_0/VDD.n8 vco_inductor_v2_0/VSUBS 0.37227f $ **FLOATING
+C230 vco_core_0/VDD.n9 vco_inductor_v2_0/VSUBS 0.06422f $ **FLOATING
+C231 vco_core_0/OUT_n.t1 vco_inductor_v2_0/VSUBS 0.26175f $ **FLOATING
+C232 vco_core_0/OUT_n.t2 vco_inductor_v2_0/VSUBS 0.26175f $ **FLOATING
+C233 vco_core_0/OUT_n.n0 vco_inductor_v2_0/VSUBS 0.93688f $ **FLOATING
+C234 vco_core_0/OUT_n.t0 vco_inductor_v2_0/VSUBS 0.26175f $ **FLOATING
+C235 vco_core_0/OUT_n.t4 vco_inductor_v2_0/VSUBS 0.26175f $ **FLOATING
+C236 vco_core_0/OUT_n.n1 vco_inductor_v2_0/VSUBS 0.92842f $ **FLOATING
+C237 vco_core_0/OUT_n.n2 vco_inductor_v2_0/VSUBS 0.23532f $ **FLOATING
+C238 vco_core_0/OUT_n.t3 vco_inductor_v2_0/VSUBS 1.27244f $ **FLOATING
+C239 vco_core_0/OUT_n.n3 vco_inductor_v2_0/VSUBS 0.37476f $ **FLOATING
+C240 vco_core_0/OUT_n.t6 vco_inductor_v2_0/VSUBS 0.07479f $ **FLOATING
+C241 vco_core_0/OUT_n.t5 vco_inductor_v2_0/VSUBS 0.07479f $ **FLOATING
+C242 vco_core_0/OUT_n.n4 vco_inductor_v2_0/VSUBS 0.3189f $ **FLOATING
+C243 vco_core_0/OUT_n.t8 vco_inductor_v2_0/VSUBS 0.07479f $ **FLOATING
+C244 vco_core_0/OUT_n.t7 vco_inductor_v2_0/VSUBS 0.07479f $ **FLOATING
+C245 vco_core_0/OUT_n.n5 vco_inductor_v2_0/VSUBS 0.31049f $ **FLOATING
+C246 vco_core_0/OUT_n.n6 vco_inductor_v2_0/VSUBS 0.20612f $ **FLOATING
+C247 vco_core_0/OUT_n.t10 vco_inductor_v2_0/VSUBS 0.07479f $ **FLOATING
+C248 vco_core_0/OUT_n.t9 vco_inductor_v2_0/VSUBS 0.07479f $ **FLOATING
+C249 vco_core_0/OUT_n.n7 vco_inductor_v2_0/VSUBS 0.31049f $ **FLOATING
+C250 vco_core_0/OUT_n.n8 vco_inductor_v2_0/VSUBS 0.10324f $ **FLOATING
+C251 vco_core_0/OUT_n.t12 vco_inductor_v2_0/VSUBS 0.07479f $ **FLOATING
+C252 vco_core_0/OUT_n.t11 vco_inductor_v2_0/VSUBS 0.07479f $ **FLOATING
+C253 vco_core_0/OUT_n.n9 vco_inductor_v2_0/VSUBS 0.31049f $ **FLOATING
+C254 vco_core_0/OUT_n.n10 vco_inductor_v2_0/VSUBS 0.10324f $ **FLOATING
+C255 vco_core_0/OUT_n.t14 vco_inductor_v2_0/VSUBS 0.07479f $ **FLOATING
+C256 vco_core_0/OUT_n.t13 vco_inductor_v2_0/VSUBS 0.07479f $ **FLOATING
+C257 vco_core_0/OUT_n.n11 vco_inductor_v2_0/VSUBS 0.31049f $ **FLOATING
+C258 vco_core_0/OUT_n.n12 vco_inductor_v2_0/VSUBS 0.24722f $ **FLOATING
+C259 vco_core_0/OUT_n.t29 vco_inductor_v2_0/VSUBS 0.41397f $ **FLOATING
+C260 vco_core_0/OUT_n.t28 vco_inductor_v2_0/VSUBS 0.41397f $ **FLOATING
+C261 vco_core_0/OUT_n.t27 vco_inductor_v2_0/VSUBS 0.41397f $ **FLOATING
+C262 vco_core_0/OUT_n.t26 vco_inductor_v2_0/VSUBS 0.41397f $ **FLOATING
+C263 vco_core_0/OUT_n.t25 vco_inductor_v2_0/VSUBS 0.43412f $ **FLOATING
+C264 vco_core_0/OUT_n.n13 vco_inductor_v2_0/VSUBS 0.31379f $ **FLOATING
+C265 vco_core_0/OUT_n.n14 vco_inductor_v2_0/VSUBS 0.17109f $ **FLOATING
+C266 vco_core_0/OUT_n.n15 vco_inductor_v2_0/VSUBS 0.17109f $ **FLOATING
+C267 vco_core_0/OUT_n.n16 vco_inductor_v2_0/VSUBS 0.24295f $ **FLOATING
+C268 vco_core_0/OUT_n.t15 vco_inductor_v2_0/VSUBS 0.14307f $ **FLOATING
+C269 vco_core_0/OUT_n.t16 vco_inductor_v2_0/VSUBS 0.12987f $ **FLOATING
+C270 vco_core_0/OUT_n.n17 vco_inductor_v2_0/VSUBS 0.13672f $ **FLOATING
+C271 vco_core_0/OUT_n.t17 vco_inductor_v2_0/VSUBS 0.12987f $ **FLOATING
+C272 vco_core_0/OUT_n.n18 vco_inductor_v2_0/VSUBS 0.07907f $ **FLOATING
+C273 vco_core_0/OUT_n.t18 vco_inductor_v2_0/VSUBS 0.12987f $ **FLOATING
+C274 vco_core_0/OUT_n.n19 vco_inductor_v2_0/VSUBS 0.07907f $ **FLOATING
+C275 vco_core_0/OUT_n.t19 vco_inductor_v2_0/VSUBS 0.12987f $ **FLOATING
+C276 vco_core_0/OUT_n.n20 vco_inductor_v2_0/VSUBS 0.07907f $ **FLOATING
+C277 vco_core_0/OUT_n.t20 vco_inductor_v2_0/VSUBS 0.12987f $ **FLOATING
+C278 vco_core_0/OUT_n.n21 vco_inductor_v2_0/VSUBS 0.07907f $ **FLOATING
+C279 vco_core_0/OUT_n.t21 vco_inductor_v2_0/VSUBS 0.12987f $ **FLOATING
+C280 vco_core_0/OUT_n.n22 vco_inductor_v2_0/VSUBS 0.07907f $ **FLOATING
+C281 vco_core_0/OUT_n.t22 vco_inductor_v2_0/VSUBS 0.12987f $ **FLOATING
+C282 vco_core_0/OUT_n.n23 vco_inductor_v2_0/VSUBS 0.07907f $ **FLOATING
+C283 vco_core_0/OUT_n.t23 vco_inductor_v2_0/VSUBS 0.12987f $ **FLOATING
+C284 vco_core_0/OUT_n.n24 vco_inductor_v2_0/VSUBS 0.07907f $ **FLOATING
+C285 vco_core_0/OUT_n.t24 vco_inductor_v2_0/VSUBS 0.12987f $ **FLOATING
+C286 vco_core_0/OUT_n.n25 vco_inductor_v2_0/VSUBS 0.14693f $ **FLOATING
+C287 vco_core_0/OUT_n.n26 vco_inductor_v2_0/VSUBS 2.14979f $ **FLOATING
+C288 vco_core_0/OUT_n.n27 vco_inductor_v2_0/VSUBS 1.18248f $ **FLOATING
+C289 vco_core_0/OUT_p.t5 vco_inductor_v2_0/VSUBS 1.31061f $ **FLOATING
+C290 vco_core_0/OUT_p.t6 vco_inductor_v2_0/VSUBS 0.26804f $ **FLOATING
+C291 vco_core_0/OUT_p.t9 vco_inductor_v2_0/VSUBS 0.26804f $ **FLOATING
+C292 vco_core_0/OUT_p.n0 vco_inductor_v2_0/VSUBS 0.95073f $ **FLOATING
+C293 vco_core_0/OUT_p.n1 vco_inductor_v2_0/VSUBS 0.22792f $ **FLOATING
+C294 vco_core_0/OUT_p.t10 vco_inductor_v2_0/VSUBS 0.26804f $ **FLOATING
+C295 vco_core_0/OUT_p.t0 vco_inductor_v2_0/VSUBS 0.26804f $ **FLOATING
+C296 vco_core_0/OUT_p.n2 vco_inductor_v2_0/VSUBS 0.95073f $ **FLOATING
+C297 vco_core_0/OUT_p.n3 vco_inductor_v2_0/VSUBS 0.4135f $ **FLOATING
+C298 vco_core_0/OUT_p.t1 vco_inductor_v2_0/VSUBS 0.07658f $ **FLOATING
+C299 vco_core_0/OUT_p.t2 vco_inductor_v2_0/VSUBS 0.07658f $ **FLOATING
+C300 vco_core_0/OUT_p.n4 vco_inductor_v2_0/VSUBS 0.32656f $ **FLOATING
+C301 vco_core_0/OUT_p.t13 vco_inductor_v2_0/VSUBS 0.07658f $ **FLOATING
+C302 vco_core_0/OUT_p.t14 vco_inductor_v2_0/VSUBS 0.07658f $ **FLOATING
+C303 vco_core_0/OUT_p.n5 vco_inductor_v2_0/VSUBS 0.31795f $ **FLOATING
+C304 vco_core_0/OUT_p.n6 vco_inductor_v2_0/VSUBS 0.21107f $ **FLOATING
+C305 vco_core_0/OUT_p.t7 vco_inductor_v2_0/VSUBS 0.07658f $ **FLOATING
+C306 vco_core_0/OUT_p.t8 vco_inductor_v2_0/VSUBS 0.07658f $ **FLOATING
+C307 vco_core_0/OUT_p.n7 vco_inductor_v2_0/VSUBS 0.31795f $ **FLOATING
+C308 vco_core_0/OUT_p.n8 vco_inductor_v2_0/VSUBS 0.10572f $ **FLOATING
+C309 vco_core_0/OUT_p.t11 vco_inductor_v2_0/VSUBS 0.07658f $ **FLOATING
+C310 vco_core_0/OUT_p.t12 vco_inductor_v2_0/VSUBS 0.07658f $ **FLOATING
+C311 vco_core_0/OUT_p.n9 vco_inductor_v2_0/VSUBS 0.31795f $ **FLOATING
+C312 vco_core_0/OUT_p.n10 vco_inductor_v2_0/VSUBS 0.10572f $ **FLOATING
+C313 vco_core_0/OUT_p.t3 vco_inductor_v2_0/VSUBS 0.07658f $ **FLOATING
+C314 vco_core_0/OUT_p.t4 vco_inductor_v2_0/VSUBS 0.07658f $ **FLOATING
+C315 vco_core_0/OUT_p.n11 vco_inductor_v2_0/VSUBS 0.31795f $ **FLOATING
+C316 vco_core_0/OUT_p.n12 vco_inductor_v2_0/VSUBS 0.2401f $ **FLOATING
+C317 vco_core_0/OUT_p.t29 vco_inductor_v2_0/VSUBS 0.42392f $ **FLOATING
+C318 vco_core_0/OUT_p.t28 vco_inductor_v2_0/VSUBS 0.42392f $ **FLOATING
+C319 vco_core_0/OUT_p.t27 vco_inductor_v2_0/VSUBS 0.42392f $ **FLOATING
+C320 vco_core_0/OUT_p.t26 vco_inductor_v2_0/VSUBS 0.42392f $ **FLOATING
+C321 vco_core_0/OUT_p.t25 vco_inductor_v2_0/VSUBS 0.44456f $ **FLOATING
+C322 vco_core_0/OUT_p.n13 vco_inductor_v2_0/VSUBS 0.32133f $ **FLOATING
+C323 vco_core_0/OUT_p.n14 vco_inductor_v2_0/VSUBS 0.1752f $ **FLOATING
+C324 vco_core_0/OUT_p.n15 vco_inductor_v2_0/VSUBS 0.1752f $ **FLOATING
+C325 vco_core_0/OUT_p.n16 vco_inductor_v2_0/VSUBS 0.24939f $ **FLOATING
+C326 vco_core_0/OUT_p.t15 vco_inductor_v2_0/VSUBS 0.14651f $ **FLOATING
+C327 vco_core_0/OUT_p.t16 vco_inductor_v2_0/VSUBS 0.13299f $ **FLOATING
+C328 vco_core_0/OUT_p.n17 vco_inductor_v2_0/VSUBS 0.14f $ **FLOATING
+C329 vco_core_0/OUT_p.t17 vco_inductor_v2_0/VSUBS 0.13299f $ **FLOATING
+C330 vco_core_0/OUT_p.n18 vco_inductor_v2_0/VSUBS 0.08097f $ **FLOATING
+C331 vco_core_0/OUT_p.t18 vco_inductor_v2_0/VSUBS 0.13299f $ **FLOATING
+C332 vco_core_0/OUT_p.n19 vco_inductor_v2_0/VSUBS 0.08097f $ **FLOATING
+C333 vco_core_0/OUT_p.t19 vco_inductor_v2_0/VSUBS 0.13299f $ **FLOATING
+C334 vco_core_0/OUT_p.n20 vco_inductor_v2_0/VSUBS 0.08097f $ **FLOATING
+C335 vco_core_0/OUT_p.t20 vco_inductor_v2_0/VSUBS 0.13299f $ **FLOATING
+C336 vco_core_0/OUT_p.n21 vco_inductor_v2_0/VSUBS 0.08097f $ **FLOATING
+C337 vco_core_0/OUT_p.t21 vco_inductor_v2_0/VSUBS 0.13299f $ **FLOATING
+C338 vco_core_0/OUT_p.n22 vco_inductor_v2_0/VSUBS 0.08097f $ **FLOATING
+C339 vco_core_0/OUT_p.t22 vco_inductor_v2_0/VSUBS 0.13299f $ **FLOATING
+C340 vco_core_0/OUT_p.n23 vco_inductor_v2_0/VSUBS 0.08097f $ **FLOATING
+C341 vco_core_0/OUT_p.t23 vco_inductor_v2_0/VSUBS 0.13299f $ **FLOATING
+C342 vco_core_0/OUT_p.n24 vco_inductor_v2_0/VSUBS 0.08097f $ **FLOATING
+C343 vco_core_0/OUT_p.t24 vco_inductor_v2_0/VSUBS 0.13299f $ **FLOATING
+C344 vco_core_0/OUT_p.n25 vco_inductor_v2_0/VSUBS 0.13662f $ **FLOATING
+C345 vco_core_0/OUT_p.n26 vco_inductor_v2_0/VSUBS 2.06997f $ **FLOATING
+C346 vco_core_0/OUT_p.n27 vco_inductor_v2_0/VSUBS 1.06418f $ **FLOATING
+C347 vco_core_0/ISS.t4 vco_inductor_v2_0/VSUBS 0.46281f $ **FLOATING
+C348 vco_core_0/ISS.t5 vco_inductor_v2_0/VSUBS 0.08571f $ **FLOATING
+C349 vco_core_0/ISS.t14 vco_inductor_v2_0/VSUBS 0.08571f $ **FLOATING
+C350 vco_core_0/ISS.n0 vco_inductor_v2_0/VSUBS 0.35583f $ **FLOATING
+C351 vco_core_0/ISS.n1 vco_inductor_v2_0/VSUBS 0.27555f $ **FLOATING
+C352 vco_core_0/ISS.t15 vco_inductor_v2_0/VSUBS 0.08571f $ **FLOATING
+C353 vco_core_0/ISS.t16 vco_inductor_v2_0/VSUBS 0.08571f $ **FLOATING
+C354 vco_core_0/ISS.n2 vco_inductor_v2_0/VSUBS 0.35583f $ **FLOATING
+C355 vco_core_0/ISS.n3 vco_inductor_v2_0/VSUBS 0.11831f $ **FLOATING
+C356 vco_core_0/ISS.t17 vco_inductor_v2_0/VSUBS 0.08571f $ **FLOATING
+C357 vco_core_0/ISS.t18 vco_inductor_v2_0/VSUBS 0.08571f $ **FLOATING
+C358 vco_core_0/ISS.n4 vco_inductor_v2_0/VSUBS 0.35583f $ **FLOATING
+C359 vco_core_0/ISS.n5 vco_inductor_v2_0/VSUBS 0.11831f $ **FLOATING
+C360 vco_core_0/ISS.t19 vco_inductor_v2_0/VSUBS 0.08571f $ **FLOATING
+C361 vco_core_0/ISS.t12 vco_inductor_v2_0/VSUBS 0.08571f $ **FLOATING
+C362 vco_core_0/ISS.n6 vco_inductor_v2_0/VSUBS 0.35583f $ **FLOATING
+C363 vco_core_0/ISS.n7 vco_inductor_v2_0/VSUBS 0.11831f $ **FLOATING
+C364 vco_core_0/ISS.t13 vco_inductor_v2_0/VSUBS 0.45074f $ **FLOATING
+C365 vco_core_0/ISS.n8 vco_inductor_v2_0/VSUBS 0.26668f $ **FLOATING
+C366 vco_core_0/ISS.t0 vco_inductor_v2_0/VSUBS 0.45074f $ **FLOATING
+C367 vco_core_0/ISS.n9 vco_inductor_v2_0/VSUBS 0.2436f $ **FLOATING
+C368 vco_core_0/ISS.t3 vco_inductor_v2_0/VSUBS 0.46281f $ **FLOATING
+C369 vco_core_0/ISS.t9 vco_inductor_v2_0/VSUBS 0.08571f $ **FLOATING
+C370 vco_core_0/ISS.t2 vco_inductor_v2_0/VSUBS 0.08571f $ **FLOATING
+C371 vco_core_0/ISS.n10 vco_inductor_v2_0/VSUBS 0.35583f $ **FLOATING
+C372 vco_core_0/ISS.n11 vco_inductor_v2_0/VSUBS 0.27555f $ **FLOATING
+C373 vco_core_0/ISS.t7 vco_inductor_v2_0/VSUBS 0.08571f $ **FLOATING
+C374 vco_core_0/ISS.t8 vco_inductor_v2_0/VSUBS 0.08571f $ **FLOATING
+C375 vco_core_0/ISS.n12 vco_inductor_v2_0/VSUBS 0.35583f $ **FLOATING
+C376 vco_core_0/ISS.n13 vco_inductor_v2_0/VSUBS 0.11831f $ **FLOATING
+C377 vco_core_0/ISS.t11 vco_inductor_v2_0/VSUBS 0.08571f $ **FLOATING
+C378 vco_core_0/ISS.t6 vco_inductor_v2_0/VSUBS 0.08571f $ **FLOATING
+C379 vco_core_0/ISS.n14 vco_inductor_v2_0/VSUBS 0.35583f $ **FLOATING
+C380 vco_core_0/ISS.n15 vco_inductor_v2_0/VSUBS 0.11831f $ **FLOATING
+C381 vco_core_0/ISS.t1 vco_inductor_v2_0/VSUBS 0.08571f $ **FLOATING
+C382 vco_core_0/ISS.t10 vco_inductor_v2_0/VSUBS 0.08571f $ **FLOATING
+C383 vco_core_0/ISS.n16 vco_inductor_v2_0/VSUBS 0.35583f $ **FLOATING
+C384 vco_core_0/ISS.n17 vco_inductor_v2_0/VSUBS 0.10447f $ **FLOATING
+C385 vco_inductor_v2_0/m5_n1200_10400# vco_inductor_v2_0/VSUBS 6.6891f
+C386 vco_inductor_v2_0/m5_n22400_10400# vco_inductor_v2_0/VSUBS 6.6891f
+C387 vco_inductor_v2_0/m4_n14800_800# vco_inductor_v2_0/VSUBS 70.1544f $ **FLOATING
+C388 OUT_p vco_inductor_v2_0/VSUBS 0.13537p
+C389 OUT_n vco_inductor_v2_0/VSUBS 0.13168p
+C390 vco_varactors_0/OUT_n.t2 vco_inductor_v2_0/VSUBS 1.54811f $ **FLOATING
+C391 vco_varactors_0/OUT_n.t5 vco_inductor_v2_0/VSUBS 1.52352f $ **FLOATING
+C392 vco_varactors_0/OUT_n.n0 vco_inductor_v2_0/VSUBS 0.22854f $ **FLOATING
+C393 vco_varactors_0/OUT_n.t8 vco_inductor_v2_0/VSUBS 1.52352f $ **FLOATING
+C394 vco_varactors_0/OUT_n.n1 vco_inductor_v2_0/VSUBS 0.153f $ **FLOATING
+C395 vco_varactors_0/OUT_n.t11 vco_inductor_v2_0/VSUBS 1.52352f $ **FLOATING
+C396 vco_varactors_0/OUT_n.n2 vco_inductor_v2_0/VSUBS 0.153f $ **FLOATING
+C397 vco_varactors_0/OUT_n.t14 vco_inductor_v2_0/VSUBS 1.52352f $ **FLOATING
+C398 vco_varactors_0/OUT_n.n3 vco_inductor_v2_0/VSUBS 0.153f $ **FLOATING
+C399 vco_varactors_0/OUT_n.t17 vco_inductor_v2_0/VSUBS 1.52352f $ **FLOATING
+C400 vco_varactors_0/OUT_n.n4 vco_inductor_v2_0/VSUBS 0.153f $ **FLOATING
+C401 vco_varactors_0/OUT_n.t20 vco_inductor_v2_0/VSUBS 1.52352f $ **FLOATING
+C402 vco_varactors_0/OUT_n.n5 vco_inductor_v2_0/VSUBS 0.19138f $ **FLOATING
+C403 vco_varactors_0/OUT_n.t1 vco_inductor_v2_0/VSUBS 1.54811f $ **FLOATING
+C404 vco_varactors_0/OUT_n.t4 vco_inductor_v2_0/VSUBS 1.52352f $ **FLOATING
+C405 vco_varactors_0/OUT_n.n6 vco_inductor_v2_0/VSUBS 0.22854f $ **FLOATING
+C406 vco_varactors_0/OUT_n.t7 vco_inductor_v2_0/VSUBS 1.52352f $ **FLOATING
+C407 vco_varactors_0/OUT_n.n7 vco_inductor_v2_0/VSUBS 0.153f $ **FLOATING
+C408 vco_varactors_0/OUT_n.t10 vco_inductor_v2_0/VSUBS 1.52352f $ **FLOATING
+C409 vco_varactors_0/OUT_n.n8 vco_inductor_v2_0/VSUBS 0.153f $ **FLOATING
+C410 vco_varactors_0/OUT_n.t13 vco_inductor_v2_0/VSUBS 1.52352f $ **FLOATING
+C411 vco_varactors_0/OUT_n.n9 vco_inductor_v2_0/VSUBS 0.153f $ **FLOATING
+C412 vco_varactors_0/OUT_n.t16 vco_inductor_v2_0/VSUBS 1.52352f $ **FLOATING
+C413 vco_varactors_0/OUT_n.n10 vco_inductor_v2_0/VSUBS 0.153f $ **FLOATING
+C414 vco_varactors_0/OUT_n.t19 vco_inductor_v2_0/VSUBS 1.52352f $ **FLOATING
+C415 vco_varactors_0/OUT_n.n11 vco_inductor_v2_0/VSUBS 0.17369f $ **FLOATING
+C416 vco_varactors_0/OUT_n.n12 vco_inductor_v2_0/VSUBS 0.19986f $ **FLOATING
+C417 vco_varactors_0/OUT_n.t0 vco_inductor_v2_0/VSUBS 1.54811f $ **FLOATING
+C418 vco_varactors_0/OUT_n.t3 vco_inductor_v2_0/VSUBS 1.52352f $ **FLOATING
+C419 vco_varactors_0/OUT_n.n13 vco_inductor_v2_0/VSUBS 0.22854f $ **FLOATING
+C420 vco_varactors_0/OUT_n.t6 vco_inductor_v2_0/VSUBS 1.52352f $ **FLOATING
+C421 vco_varactors_0/OUT_n.n14 vco_inductor_v2_0/VSUBS 0.153f $ **FLOATING
+C422 vco_varactors_0/OUT_n.t9 vco_inductor_v2_0/VSUBS 1.52352f $ **FLOATING
+C423 vco_varactors_0/OUT_n.n15 vco_inductor_v2_0/VSUBS 0.153f $ **FLOATING
+C424 vco_varactors_0/OUT_n.t12 vco_inductor_v2_0/VSUBS 1.52352f $ **FLOATING
+C425 vco_varactors_0/OUT_n.n16 vco_inductor_v2_0/VSUBS 0.153f $ **FLOATING
+C426 vco_varactors_0/OUT_n.t15 vco_inductor_v2_0/VSUBS 1.52352f $ **FLOATING
+C427 vco_varactors_0/OUT_n.n17 vco_inductor_v2_0/VSUBS 0.153f $ **FLOATING
+C428 vco_varactors_0/OUT_n.t18 vco_inductor_v2_0/VSUBS 1.52352f $ **FLOATING
+C429 vco_varactors_0/OUT_n.n18 vco_inductor_v2_0/VSUBS 0.17369f $ **FLOATING
+C430 vco_varactors_0/OUT_n.n19 vco_inductor_v2_0/VSUBS 0.07602f $ **FLOATING
+C431 vco_varactors_0/OUT_p.t2 vco_inductor_v2_0/VSUBS 1.58105f $ **FLOATING
+C432 vco_varactors_0/OUT_p.t5 vco_inductor_v2_0/VSUBS 1.55594f $ **FLOATING
+C433 vco_varactors_0/OUT_p.n0 vco_inductor_v2_0/VSUBS 0.2334f $ **FLOATING
+C434 vco_varactors_0/OUT_p.t8 vco_inductor_v2_0/VSUBS 1.55594f $ **FLOATING
+C435 vco_varactors_0/OUT_p.n1 vco_inductor_v2_0/VSUBS 0.15626f $ **FLOATING
+C436 vco_varactors_0/OUT_p.t11 vco_inductor_v2_0/VSUBS 1.55594f $ **FLOATING
+C437 vco_varactors_0/OUT_p.n2 vco_inductor_v2_0/VSUBS 0.15626f $ **FLOATING
+C438 vco_varactors_0/OUT_p.t14 vco_inductor_v2_0/VSUBS 1.55594f $ **FLOATING
+C439 vco_varactors_0/OUT_p.n3 vco_inductor_v2_0/VSUBS 0.15626f $ **FLOATING
+C440 vco_varactors_0/OUT_p.t17 vco_inductor_v2_0/VSUBS 1.55594f $ **FLOATING
+C441 vco_varactors_0/OUT_p.n4 vco_inductor_v2_0/VSUBS 0.15626f $ **FLOATING
+C442 vco_varactors_0/OUT_p.t20 vco_inductor_v2_0/VSUBS 1.55594f $ **FLOATING
+C443 vco_varactors_0/OUT_p.n5 vco_inductor_v2_0/VSUBS 0.19545f $ **FLOATING
+C444 vco_varactors_0/OUT_p.t1 vco_inductor_v2_0/VSUBS 1.58105f $ **FLOATING
+C445 vco_varactors_0/OUT_p.t4 vco_inductor_v2_0/VSUBS 1.55594f $ **FLOATING
+C446 vco_varactors_0/OUT_p.n6 vco_inductor_v2_0/VSUBS 0.2334f $ **FLOATING
+C447 vco_varactors_0/OUT_p.t7 vco_inductor_v2_0/VSUBS 1.55594f $ **FLOATING
+C448 vco_varactors_0/OUT_p.n7 vco_inductor_v2_0/VSUBS 0.15626f $ **FLOATING
+C449 vco_varactors_0/OUT_p.t10 vco_inductor_v2_0/VSUBS 1.55594f $ **FLOATING
+C450 vco_varactors_0/OUT_p.n8 vco_inductor_v2_0/VSUBS 0.15626f $ **FLOATING
+C451 vco_varactors_0/OUT_p.t13 vco_inductor_v2_0/VSUBS 1.55594f $ **FLOATING
+C452 vco_varactors_0/OUT_p.n9 vco_inductor_v2_0/VSUBS 0.15626f $ **FLOATING
+C453 vco_varactors_0/OUT_p.t16 vco_inductor_v2_0/VSUBS 1.55594f $ **FLOATING
+C454 vco_varactors_0/OUT_p.n10 vco_inductor_v2_0/VSUBS 0.15626f $ **FLOATING
+C455 vco_varactors_0/OUT_p.t19 vco_inductor_v2_0/VSUBS 1.55594f $ **FLOATING
+C456 vco_varactors_0/OUT_p.n11 vco_inductor_v2_0/VSUBS 0.17739f $ **FLOATING
+C457 vco_varactors_0/OUT_p.n12 vco_inductor_v2_0/VSUBS 0.20411f $ **FLOATING
+C458 vco_varactors_0/OUT_p.t0 vco_inductor_v2_0/VSUBS 1.58105f $ **FLOATING
+C459 vco_varactors_0/OUT_p.t3 vco_inductor_v2_0/VSUBS 1.55594f $ **FLOATING
+C460 vco_varactors_0/OUT_p.n13 vco_inductor_v2_0/VSUBS 0.2334f $ **FLOATING
+C461 vco_varactors_0/OUT_p.t6 vco_inductor_v2_0/VSUBS 1.55594f $ **FLOATING
+C462 vco_varactors_0/OUT_p.n14 vco_inductor_v2_0/VSUBS 0.15626f $ **FLOATING
+C463 vco_varactors_0/OUT_p.t9 vco_inductor_v2_0/VSUBS 1.55594f $ **FLOATING
+C464 vco_varactors_0/OUT_p.n15 vco_inductor_v2_0/VSUBS 0.15626f $ **FLOATING
+C465 vco_varactors_0/OUT_p.t12 vco_inductor_v2_0/VSUBS 1.55594f $ **FLOATING
+C466 vco_varactors_0/OUT_p.n16 vco_inductor_v2_0/VSUBS 0.15626f $ **FLOATING
+C467 vco_varactors_0/OUT_p.t15 vco_inductor_v2_0/VSUBS 1.55594f $ **FLOATING
+C468 vco_varactors_0/OUT_p.n17 vco_inductor_v2_0/VSUBS 0.15626f $ **FLOATING
+C469 vco_varactors_0/OUT_p.t18 vco_inductor_v2_0/VSUBS 1.55594f $ **FLOATING
+C470 vco_varactors_0/OUT_p.n18 vco_inductor_v2_0/VSUBS 0.17739f $ **FLOATING
+C471 vco_varactors_0/OUT_p.n19 vco_inductor_v2_0/VSUBS 0.07764f $ **FLOATING
+C472 vco_varactors_0/cap_bias.t0 vco_inductor_v2_0/VSUBS 1.32933f $ **FLOATING
+C473 vco_varactors_0/cap_bias.t6 vco_inductor_v2_0/VSUBS 1.20078f $ **FLOATING
+C474 vco_varactors_0/cap_bias.n0 vco_inductor_v2_0/VSUBS 0.80982f $ **FLOATING
+C475 vco_varactors_0/cap_bias.t12 vco_inductor_v2_0/VSUBS 1.20078f $ **FLOATING
+C476 vco_varactors_0/cap_bias.n1 vco_inductor_v2_0/VSUBS 0.47731f $ **FLOATING
+C477 vco_varactors_0/cap_bias.t18 vco_inductor_v2_0/VSUBS 1.20078f $ **FLOATING
+C478 vco_varactors_0/cap_bias.n2 vco_inductor_v2_0/VSUBS 0.47731f $ **FLOATING
+C479 vco_varactors_0/cap_bias.t24 vco_inductor_v2_0/VSUBS 1.20078f $ **FLOATING
+C480 vco_varactors_0/cap_bias.n3 vco_inductor_v2_0/VSUBS 0.47731f $ **FLOATING
+C481 vco_varactors_0/cap_bias.t30 vco_inductor_v2_0/VSUBS 1.20078f $ **FLOATING
+C482 vco_varactors_0/cap_bias.n4 vco_inductor_v2_0/VSUBS 0.47731f $ **FLOATING
+C483 vco_varactors_0/cap_bias.t36 vco_inductor_v2_0/VSUBS 1.20078f $ **FLOATING
+C484 vco_varactors_0/cap_bias.n5 vco_inductor_v2_0/VSUBS 0.47736f $ **FLOATING
+C485 vco_varactors_0/cap_bias.t1 vco_inductor_v2_0/VSUBS 1.32933f $ **FLOATING
+C486 vco_varactors_0/cap_bias.t7 vco_inductor_v2_0/VSUBS 1.20078f $ **FLOATING
+C487 vco_varactors_0/cap_bias.n6 vco_inductor_v2_0/VSUBS 0.80982f $ **FLOATING
+C488 vco_varactors_0/cap_bias.t13 vco_inductor_v2_0/VSUBS 1.20078f $ **FLOATING
+C489 vco_varactors_0/cap_bias.n7 vco_inductor_v2_0/VSUBS 0.47731f $ **FLOATING
+C490 vco_varactors_0/cap_bias.t19 vco_inductor_v2_0/VSUBS 1.20078f $ **FLOATING
+C491 vco_varactors_0/cap_bias.n8 vco_inductor_v2_0/VSUBS 0.47731f $ **FLOATING
+C492 vco_varactors_0/cap_bias.t25 vco_inductor_v2_0/VSUBS 1.20078f $ **FLOATING
+C493 vco_varactors_0/cap_bias.n9 vco_inductor_v2_0/VSUBS 0.47731f $ **FLOATING
+C494 vco_varactors_0/cap_bias.t31 vco_inductor_v2_0/VSUBS 1.20078f $ **FLOATING
+C495 vco_varactors_0/cap_bias.n10 vco_inductor_v2_0/VSUBS 0.47731f $ **FLOATING
+C496 vco_varactors_0/cap_bias.t37 vco_inductor_v2_0/VSUBS 1.20078f $ **FLOATING
+C497 vco_varactors_0/cap_bias.n11 vco_inductor_v2_0/VSUBS 0.44729f $ **FLOATING
+C498 vco_varactors_0/cap_bias.n12 vco_inductor_v2_0/VSUBS 0.30217f $ **FLOATING
+C499 vco_varactors_0/cap_bias.t2 vco_inductor_v2_0/VSUBS 1.32933f $ **FLOATING
+C500 vco_varactors_0/cap_bias.t8 vco_inductor_v2_0/VSUBS 1.20078f $ **FLOATING
+C501 vco_varactors_0/cap_bias.n13 vco_inductor_v2_0/VSUBS 0.80982f $ **FLOATING
+C502 vco_varactors_0/cap_bias.t14 vco_inductor_v2_0/VSUBS 1.20078f $ **FLOATING
+C503 vco_varactors_0/cap_bias.n14 vco_inductor_v2_0/VSUBS 0.47731f $ **FLOATING
+C504 vco_varactors_0/cap_bias.t20 vco_inductor_v2_0/VSUBS 1.20078f $ **FLOATING
+C505 vco_varactors_0/cap_bias.n15 vco_inductor_v2_0/VSUBS 0.47731f $ **FLOATING
+C506 vco_varactors_0/cap_bias.t26 vco_inductor_v2_0/VSUBS 1.20078f $ **FLOATING
+C507 vco_varactors_0/cap_bias.n16 vco_inductor_v2_0/VSUBS 0.47731f $ **FLOATING
+C508 vco_varactors_0/cap_bias.t32 vco_inductor_v2_0/VSUBS 1.20078f $ **FLOATING
+C509 vco_varactors_0/cap_bias.n17 vco_inductor_v2_0/VSUBS 0.47731f $ **FLOATING
+C510 vco_varactors_0/cap_bias.t38 vco_inductor_v2_0/VSUBS 1.20078f $ **FLOATING
+C511 vco_varactors_0/cap_bias.n18 vco_inductor_v2_0/VSUBS 0.44729f $ **FLOATING
+C512 vco_varactors_0/cap_bias.n19 vco_inductor_v2_0/VSUBS 0.20755f $ **FLOATING
+C513 vco_varactors_0/cap_bias.t3 vco_inductor_v2_0/VSUBS 1.32933f $ **FLOATING
+C514 vco_varactors_0/cap_bias.t9 vco_inductor_v2_0/VSUBS 1.20078f $ **FLOATING
+C515 vco_varactors_0/cap_bias.n20 vco_inductor_v2_0/VSUBS 0.80982f $ **FLOATING
+C516 vco_varactors_0/cap_bias.t15 vco_inductor_v2_0/VSUBS 1.20078f $ **FLOATING
+C517 vco_varactors_0/cap_bias.n21 vco_inductor_v2_0/VSUBS 0.47731f $ **FLOATING
+C518 vco_varactors_0/cap_bias.t21 vco_inductor_v2_0/VSUBS 1.20078f $ **FLOATING
+C519 vco_varactors_0/cap_bias.n22 vco_inductor_v2_0/VSUBS 0.47731f $ **FLOATING
+C520 vco_varactors_0/cap_bias.t27 vco_inductor_v2_0/VSUBS 1.20078f $ **FLOATING
+C521 vco_varactors_0/cap_bias.n23 vco_inductor_v2_0/VSUBS 0.47731f $ **FLOATING
+C522 vco_varactors_0/cap_bias.t33 vco_inductor_v2_0/VSUBS 1.20078f $ **FLOATING
+C523 vco_varactors_0/cap_bias.n24 vco_inductor_v2_0/VSUBS 0.47731f $ **FLOATING
+C524 vco_varactors_0/cap_bias.t39 vco_inductor_v2_0/VSUBS 1.20078f $ **FLOATING
+C525 vco_varactors_0/cap_bias.n25 vco_inductor_v2_0/VSUBS 0.44729f $ **FLOATING
+C526 vco_varactors_0/cap_bias.n26 vco_inductor_v2_0/VSUBS 0.20755f $ **FLOATING
+C527 vco_varactors_0/cap_bias.t4 vco_inductor_v2_0/VSUBS 1.32933f $ **FLOATING
+C528 vco_varactors_0/cap_bias.t10 vco_inductor_v2_0/VSUBS 1.20078f $ **FLOATING
+C529 vco_varactors_0/cap_bias.n27 vco_inductor_v2_0/VSUBS 0.80982f $ **FLOATING
+C530 vco_varactors_0/cap_bias.t16 vco_inductor_v2_0/VSUBS 1.20078f $ **FLOATING
+C531 vco_varactors_0/cap_bias.n28 vco_inductor_v2_0/VSUBS 0.47731f $ **FLOATING
+C532 vco_varactors_0/cap_bias.t22 vco_inductor_v2_0/VSUBS 1.20078f $ **FLOATING
+C533 vco_varactors_0/cap_bias.n29 vco_inductor_v2_0/VSUBS 0.47731f $ **FLOATING
+C534 vco_varactors_0/cap_bias.t28 vco_inductor_v2_0/VSUBS 1.20078f $ **FLOATING
+C535 vco_varactors_0/cap_bias.n30 vco_inductor_v2_0/VSUBS 0.47731f $ **FLOATING
+C536 vco_varactors_0/cap_bias.t34 vco_inductor_v2_0/VSUBS 1.20078f $ **FLOATING
+C537 vco_varactors_0/cap_bias.n31 vco_inductor_v2_0/VSUBS 0.47731f $ **FLOATING
+C538 vco_varactors_0/cap_bias.t40 vco_inductor_v2_0/VSUBS 1.20078f $ **FLOATING
+C539 vco_varactors_0/cap_bias.n32 vco_inductor_v2_0/VSUBS 0.44729f $ **FLOATING
+C540 vco_varactors_0/cap_bias.n33 vco_inductor_v2_0/VSUBS 0.20755f $ **FLOATING
+C541 vco_varactors_0/cap_bias.t5 vco_inductor_v2_0/VSUBS 1.32933f $ **FLOATING
+C542 vco_varactors_0/cap_bias.t11 vco_inductor_v2_0/VSUBS 1.20078f $ **FLOATING
+C543 vco_varactors_0/cap_bias.n34 vco_inductor_v2_0/VSUBS 0.80982f $ **FLOATING
+C544 vco_varactors_0/cap_bias.t17 vco_inductor_v2_0/VSUBS 1.20078f $ **FLOATING
+C545 vco_varactors_0/cap_bias.n35 vco_inductor_v2_0/VSUBS 0.47731f $ **FLOATING
+C546 vco_varactors_0/cap_bias.t23 vco_inductor_v2_0/VSUBS 1.20078f $ **FLOATING
+C547 vco_varactors_0/cap_bias.n36 vco_inductor_v2_0/VSUBS 0.47731f $ **FLOATING
+C548 vco_varactors_0/cap_bias.t29 vco_inductor_v2_0/VSUBS 1.20078f $ **FLOATING
+C549 vco_varactors_0/cap_bias.n37 vco_inductor_v2_0/VSUBS 0.47731f $ **FLOATING
+C550 vco_varactors_0/cap_bias.t35 vco_inductor_v2_0/VSUBS 1.20078f $ **FLOATING
+C551 vco_varactors_0/cap_bias.n38 vco_inductor_v2_0/VSUBS 0.47731f $ **FLOATING
+C552 vco_varactors_0/cap_bias.t41 vco_inductor_v2_0/VSUBS 1.20078f $ **FLOATING
+C553 vco_varactors_0/cap_bias.n39 vco_inductor_v2_0/VSUBS 0.44729f $ **FLOATING
+C554 vco_varactors_0/cap_bias.n40 vco_inductor_v2_0/VSUBS 0.12021f $ **FLOATING
+C555 vco_tune_r_0/cap_bias vco_inductor_v2_0/VSUBS 85.90425f
+C556 TUNE vco_inductor_v2_0/VSUBS 0.33864f
