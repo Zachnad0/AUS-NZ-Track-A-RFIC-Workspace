@@ -1,5 +1,63 @@
-* NGSPICE file created from vco_v1.ext - technology: gf180mcuD
+** sch_path: /foss/designs/AUS-NZ-integration/team_src/xschem/vco_tb.sch
+**.subckt vco_tb
+R1 out_p out_n 50
+V1 vdd GND 3.3
+.save i(v1)
+x1 vdd net1 net2 GND tune vss vco_v1
+V2 tune GND 2.0
+.save i(v2)
+XM2 vsg vsg GND GND nfet_03v3 L=0.28u W=100u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=4
+XM1 net3 vsg GND GND nfet_03v3 L=0.28u W=100u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=4
+Viss_meas vss net3 0
+.save i(viss_meas)
+I0 GND vsg 1m
+XM3 vdd net2 out_n out_n nfet_03v3 L=0.28u W=50u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=4
+XM4 out_n vsg GND GND nfet_03v3 L=0.28u W=100u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=4
+XM5 vdd net1 out_p out_p nfet_03v3 L=0.28u W=50u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=4
+XM6 out_p vsg GND GND nfet_03v3 L=0.28u W=100u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=4
+.ic v(net1)=0.01 v(net2)=-0.01
+**** begin user architecture code
 
+
+*.option keepopinfo
+.option reltol=1e-5
+.option method=gear
+.option numparam jobs=4
+.option bypass=0
+
+.control
+save all
+set num_threads=2
+tran 5p 200n uic
+wrdata r_final.dat v(net1) v(net2) v(out_p) v(out_n) i(v1) i(viss_meas)
+.endc
+
+
+
+
+.include /foss/pdks/gf180mcuD/libs.tech/ngspice/design.ngspice
+.lib /foss/pdks/gf180mcuD/libs.tech/ngspice/sm141064.ngspice typical
+.lib /foss/pdks/gf180mcuD/libs.tech/ngspice/sm141064.ngspice res_typical
+.lib /foss/pdks/gf180mcuD/libs.tech/ngspice/sm141064.ngspice moscap_typical
+
+
+**** end user architecture code
+**.ends
+
+* expanding   symbol:  vco_v1.sym # of pins=6
+** sym_path: /foss/designs/AUS-NZ-integration/team_src/xschem/vco_v1.sym
+** sch_path: /foss/designs/AUS-NZ-integration/team_src/xschem/vco_v1.sch
+* ---- DUT: signoff/pex/vco_v1/vco_v1.pex.spice (R+C extracted) with the coil's
+* ---- R/C-only representation swapped for the lumped model that carries the L.
+.subckt vco_v1 VDD OUT_p OUT_n GND TUNE ISS
+V_vsubs vco_inductor_v2_0/VSUBS GND 0
+X_ind OUT_p OUT_n GND vco_inductor_v2
 X0 vco_tune_r_0/TUNE.t0 vco_tune_r_0/cap_bias.t0 vco_tune_r_0/GND.t0 ppolyf_u_1k r_width=1u r_length=15u
 X1 vco_varactors_0/cap_bias.t41 vco_varactors_0/OUT_n.t0 cap_nmos_03v3_b c_width=5u c_length=5u
 X2 vco_varactors_0/cap_bias.t19 vco_varactors_0/OUT_p.t10 cap_nmos_03v3_b c_width=5u c_length=5u
@@ -43,8 +101,6 @@ X39 vco_varactors_0/cap_bias.t2 vco_varactors_0/OUT_p.t18 cap_nmos_03v3_b c_widt
 X40 vco_varactors_0/cap_bias.t32 vco_varactors_0/OUT_p.t3 cap_nmos_03v3_b c_width=5u c_length=5u
 X41 vco_varactors_0/cap_bias.t31 vco_varactors_0/OUT_p.t4 cap_nmos_03v3_b c_width=5u c_length=5u
 X42 vco_varactors_0/cap_bias.t30 vco_varactors_0/OUT_p.t5 cap_nmos_03v3_b c_width=5u c_length=5u
-X43 OUT_n vco_inductor_v2_0/m4_n14800_800# tm11k r_width=8u r_length=76u
-X44 vco_inductor_v2_0/m4_n14800_800# OUT_p tm11k r_width=8u r_length=76u
 X45 vco_core_0/OUT_n.t5 vco_core_0/OUT_p.t24 vco_core_0/ISS.t12 vco_core_0/GND.t10 nfet_03v3 ad=1.04p pd=4.52u as=1.76p ps=8.88u w=4u l=0.28u
 X46 vco_core_0/ISS.t15 vco_core_0/OUT_p.t17 vco_core_0/OUT_n.t12 vco_core_0/GND.t17 nfet_03v3 ad=1.04p pd=4.52u as=1.04p ps=4.52u w=4u l=0.28u
 X47 vco_core_0/OUT_p.t9 vco_core_0/OUT_n.t29 vco_core_0/VDD.t1 vco_core_0/VDD.t0 pfet_03v3 ad=3.64p pd=14.52u as=6.16p ps=28.88u w=14u l=0.28u
@@ -78,8 +134,6 @@ X74 vco_core_0/OUT_p.t6 vco_core_0/OUT_n.t20 vco_core_0/ISS.t10 vco_core_0/GND.t
 C0 VDD OUT_n 10.00115f
 C1 ISS OUT_p 4.02678f
 C2 vco_tune_r_0/cap_bias OUT_n 39.83544f
-C3 vco_inductor_v2_0/m5_n1200_10400# vco_inductor_v2_0/m4_n14800_800# 3.21608f
-C4 vco_inductor_v2_0/m4_n14800_800# OUT_p 7.46091f
 C5 VDD OUT_p 10.13264f
 C6 TUNE OUT_p 0.00194f
 C7 VDD ISS 0
@@ -88,8 +142,6 @@ C9 ISS vco_tune_r_0/cap_bias 0.02028f
 C10 OUT_p vco_inductor_v2_0/GND 0.19984f
 C11 OUT_p OUT_n 10.73769f
 C12 ISS OUT_n 4.07113f
-C13 vco_inductor_v2_0/m5_n22400_10400# vco_inductor_v2_0/m4_n14800_800# 3.21608f
-C14 vco_inductor_v2_0/m4_n14800_800# OUT_n 7.46091f
 R0 vco_tune_r_0/cap_bias vco_tune_r_0/cap_bias.t0 7.20993
 R1 TUNE vco_tune_r_0/TUNE.t0 7.20993
 R2 GND vco_tune_r_0/GND.t0 122.831
@@ -1865,9 +1917,6 @@ C527 vco_core_0/ISS.t17 vco_inductor_v2_0/VSUBS 0.08773f $ **FLOATING
 C528 vco_core_0/ISS.t11 vco_inductor_v2_0/VSUBS 0.08773f $ **FLOATING
 C529 vco_core_0/ISS.n16 vco_inductor_v2_0/VSUBS 0.36421f $ **FLOATING
 C530 vco_core_0/ISS.n17 vco_inductor_v2_0/VSUBS 0.10693f $ **FLOATING
-C531 vco_inductor_v2_0/m5_n1200_10400# vco_inductor_v2_0/VSUBS 6.6891f
-C532 vco_inductor_v2_0/m5_n22400_10400# vco_inductor_v2_0/VSUBS 6.6891f
-C533 vco_inductor_v2_0/m4_n14800_800# vco_inductor_v2_0/VSUBS 70.1544f $ **FLOATING
 C534 OUT_p vco_inductor_v2_0/VSUBS 0.14162p
 C535 OUT_n vco_inductor_v2_0/VSUBS 0.13661p
 C536 vco_varactors_0/OUT_n.n0 vco_inductor_v2_0/VSUBS 0.04831f $ **FLOATING
@@ -2138,3 +2187,11 @@ C800 vco_varactors_0/cap_bias.n114 vco_inductor_v2_0/VSUBS 0.00117f $ **FLOATING
 C801 vco_varactors_0/cap_bias.n115 vco_inductor_v2_0/VSUBS 0.05987f $ **FLOATING
 C802 vco_tune_r_0/cap_bias vco_inductor_v2_0/VSUBS 89.68935f
 C803 TUNE vco_inductor_v2_0/VSUBS 0.33864f
+.ends
+
+
+* expanding   symbol:  vco_inductor_v2.sym # of pins=3
+** sym_path: /foss/designs/AUS-NZ-integration/team_src/xschem/vco_inductor_v2.sym
+.include $UPRJ_ROOT/team_src/xschem/vco_inductor_v2.subckt
+.GLOBAL GND
+.end

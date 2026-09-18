@@ -4,7 +4,15 @@
 Run 2026-09-18 at commit `77b62bb`, the tank-level check `docs/verification.md` §3.2 has needed
 since the tank short was fixed in `6573181`.
 
-**Result: the control oscillates and is settled; the extracted netlist does not start.**
+**Result (2026-09-19, `f0f0281`): the extracted netlist oscillates at nominal ISS.**
+0.974 Vpp at 4.372 GHz, startup to 90 % in 83 ns, amplitude drift 0.13 % over the last
+10 ns of a 200 ns run. The band needs 2x the bench nominal tail to cover VTUNE 3.3 V; see
+`docs/verification.md` §3.2.1. **Runs must be 200 ns** — at 40 ns the envelope has only
+reached 0.14 Vpp and is still growing, which reads as a failure.
+
+The text below is the 2026-09-18 state, when the tank measured 19.131 Ω and did not start.
+It is kept because the deck, the runtimes and the magic-has-no-inductance finding are all
+still current.
 
 ## Files
 
@@ -14,7 +22,8 @@ since the tank short was fixed in `6573181`.
 | `mkdeck2.py` | builds the run decks — stimulus and options from the bench, DUT swapped for the golden or the extracted netlist |
 | `analyze.py` | f0, swing, startup, supply current and amplitude drift from the `wrdata` dump |
 | `ctrl40.spice` | the control deck as run |
-| `pex40.spice` | the extracted deck as run |
+| `pex40.spice` | the 40 ns extracted deck, as run on 2026-09-18 |
+| `pex200.spice` | the **200 ns** extracted deck on the landed low-R tank, as run |
 | `mkdeck.py` | the earlier 80 ns deck builder, kept for the runtime record below |
 
 ## The deck, and how it differs from the `docs/verification.md` §3.2 bench

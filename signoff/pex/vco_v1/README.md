@@ -1,8 +1,10 @@
 # `signoff/pex/vco_v1/` — R+C parasitic extraction of `vco_v1` (the whole tank)
 
 **Team A01 · AUS/NZ Track A RFIC · GF180MCU (gf180mcuD)**
-Generated 2026-09-18 from `team_src/magic/vco_v1.mag` at commit `6dfb71f`, the first
-extraction of the VCO **after** the tank short was fixed (`6573181`).
+Regenerated 2026-09-19 from `team_src/magic/vco_v1.mag` at commit `f0f0281`, the low-R
+tank: 2.40 um buses and 4x4 via arrays throughout `vco_core` and `vco_varactors`, and the
+widened `cap_bias` path. First extracted in `6dfb71f`, after the tank short was fixed
+(`6573181`).
 
 `vco_v1` is the whole LC tank: `vco_core` (the cross-coupled pair), `vco_varactors`
 (42 `cap_nmos_03v3_b` units), `vco_tune_r`, the 1.2 nH spiral, and the two output leads that
@@ -13,7 +15,29 @@ extraction of the VCO **after** the tank short was fixed (`6573181`).
 
 | File | What it is |
 |---|---|
-| `vco_v1.pex.spice` | **R+C extracted netlist** — **75 devices, 557 parasitic caps, 683 parasitic resistors**, 1318 lines. Magic `ext2spice`, `cthresh 0 rthresh 0`, `scale off`, `hierarchy off`. |
+| `vco_v1.pex.spice` | **R+C extracted netlist** — **75 devices, 804 parasitic caps, 1259 parasitic resistors**. Magic `ext2spice`, `cthresh 0 rthresh 0`, `scale off`, `hierarchy off`. (At `6dfb71f` this was 557 caps / 683 resistors; the via arrays and wider buses add both.) |
+
+## The R table, solved and read
+
+**A PEX is not signed off until its R table has been solved and read.** This netlist's
+predecessor sat in the repo for a week with the answer in it: re-solving the 2026-09-11
+`../vco_core/vco_core.pex.spice` today gives exactly the 4.742 / 6.530 Ω that explained why
+the VCO would not start, and nobody had computed it. Effective resistance, port to all of a
+branch's device terminals shorted into one supernode:
+
+| branch | at `39138d3` | **landed** |
+|---|--:|--:|
+| lead, OUT_p → 30 `vco_core` drain terminals | 4.742 Ω | **1.213 Ω** |
+| lead, OUT_n → 30 `vco_core` drain terminals | 6.530 Ω | **1.325 Ω** |
+| varactor branch, per side | 3.550 Ω | **0.669 Ω** |
+| coil (lumped model, not extracted) | 0.760 Ω | 0.760 Ω |
+| **tank loop** | **19.131 Ω** | **4.635 Ω** |
+| `cap_bias` bank-to-bank | 8.045 Ω | **1.765 Ω** |
+
+`cap_bias` is measured **bank-to-bank** — OUT_p's 21 terminals to OUT_n's 21 — because it is
+not a bypassed supply: it hangs off TUNE through a 1 kΩ `ppolyf` and is the bank's
+differential virtual ground. Measured from its driver instead it reads 0.617 Ω and the
+8 Ω in the tank is invisible.
 
 ## Invocation, and the one difference from the other three recipes
 

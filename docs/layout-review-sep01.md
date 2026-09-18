@@ -1793,9 +1793,10 @@ at x −1342 *is* the cell's bbox left edge, its metal4 bus at x 4342 has 0.13 �
 right, and `vco_varactors`' metal3 rail bottom at y −482 *is* that cell's bbox bottom. The two
 `vco_core` hauls grow in **opposite** directions — metal3 down, metal4 up — because grown the
 same way they overlap ≈ 13.9 µm² of metal3-on-metal4, a direct OUT_p-to-OUT_n capacitance
-across the tank. Result: **loop 19.131 → 4.523 Ω (4.2×)**, all gates green, all three bboxes
-and every port label byte-identical. It still gives **0.000 Vpp at ISS 1.0× and 1.5×**. The
-layout is complete in scratch and **was not landed**. Numbers in `verification.md` §3.2.
+across the tank. Result: **loop 19.131 → 4.635 Ω (4.1×)** as landed, all gates green, all
+three bboxes and every port label byte-identical. On its own that was still **0.000 Vpp at
+ISS 1.0× and 1.5×** — `cap_bias` was the term that actually bound. Numbers in
+`verification.md` §3.2.
 
 **A short that magic DRC and the GDS LVS both missed.** An intermediate version of the widened
 `vco_varactors` put a 4×4 via2 array's metal3 pad 23 internal units *over* `vco_v1`'s OUT_n
@@ -1821,19 +1822,36 @@ six cuts: **8.045 → 1.765 Ω**, tank loop unchanged at 4.523 Ω. The extracted
 at nominal ISS for the first time** — 0.975 Vpp at 4.373 GHz, startup 83 ns, settled — with
 ≥ 18 % ISS margin, and covers the band at 2× nominal. Tables in `verification.md` §3.2.1.
 
-#### …and it still cannot be landed: the organizer flow loses `OUT_p`
+#### Landed in `f0f0281`, after two chip-level shorts the organizer flow caught
 
-`run_full_lvs` on the regenerated chip gives **51 layout nets against 53 source**, where the
-committed chip gives **53 / 53**; the layout loses `vco_v1_0/OUT_p` and gains `ISS`. Bisected to
-the **`vco_core`** widening (the same chip with the committed `vco_varactors` regresses
-identically). Every other gate passes on that layout — DRC 0 everywhere, `verify_cp` 30/5/7,
-42/3/4, 4/6/11 on **both** paths, 10/11/25 at chip level, KLayout exactly 168, labels, bbox,
-corners, DEF pin landings, and an XOR of 1047.601 µm² with 0.000 µm² outside `vco_v1`.
+Both were created by growing a bus **toward the block boundary**:
 
-The merge appears only when `vco_core` is flattened into `chip_top`, which the `.mag` chip LVS
-cannot see because `chip_top.mag` carries no chip-level metal. **Third instance of the same
-family**: a connectivity change invisible to every local gate. Invariant: **run the organizer
-flow before landing any change inside a block**, not only when chip-level routing moves.
+- the OUT_p metal3 right-gate riser, widened **west** to core x 403.745, landed on
+  `route_chip.py`'s **vco.VDD metal3 column** at core x 404.750–405.250 → `run_full_lvs` **51**
+  layout nets vs 53. It now grows **east** (local x 2658..3138), where metal3 is empty, with
+  0.475 µm to the VDD column. The riser carries gate current, so **no R cost**.
+- the metal2 drain hauls, grown **down** to local y 148 = core y 64.07, overlapped chip-level
+  metal2 topping out at core y 64.30 by **0.23 µm**, picking up `vco_v1_0/ISS` → **52** vs 53.
+  They now stop at local y 380 (core 65.23), still covering the second via1 at local y 474,
+  0.93 µm clear. Cost: **+0.112 Ω**, tank loop 4.523 → **4.635 Ω**.
+
+**No block-level or chip-level gate sees either.** Magic DRC is 0 (a same-layer overlap is
+connectivity, not spacing); `verify_cp` passes on **both** the `.mag` and the GDS path at every
+level — 30/5/7, 42/3/4, 4/6/11, 10/11/25; KLayout is exactly 168; labels, bbox, metal2 corners
+and the DEF pin landings are unchanged; the XOR is confined to `vco_v1`'s interior. The merge
+exists only once `vco_core` is flattened into `chip_top`, and `chip_top.mag` carries no
+chip-level metal.
+
+Both were located from the runner's own `.ext` files: `vco_core.ext` and `vco_v1.ext` were
+byte-identical between runs, so the merge had to be in `chip_top.ext`, and diffing its `merge`
+records against the committed chip named the joined nets. After the fixes the organizer reports
+**53/53 nets, 81/83 devices, 11 ports**, with a `merge` list byte-identical to the committed
+chip.
+
+**Third instance of the same family**: a connectivity change invisible to every local gate.
+Invariant: **run the organizer flow before landing any change inside a block**, not only when
+chip-level routing moves. A block's buses can be widened freely in the layers the block owns,
+but growth *toward its boundary* walks into chip-level routing no block-level gate models.
 
 ### 4.6 System-level: the loop, and the constraint that governs it
 

@@ -534,12 +534,12 @@ DRC 0, `verify_cp` 30/5/7, 42/3/4 and 4/6/11 all match uniquely, KLayout 168 wai
 
 | tank branch | before | after | |
 |---|--:|--:|--:|
-| lead, OUT_p → 30 `vco_core` drain terminals | 4.742 Ω | **1.154 Ω** | 4.1× |
-| lead, OUT_n → 30 `vco_core` drain terminals | 6.530 Ω | **1.271 Ω** | 5.1× |
+| lead, OUT_p → 30 `vco_core` drain terminals | 4.742 Ω | **1.213 Ω** | 3.9× |
+| lead, OUT_n → 30 `vco_core` drain terminals | 6.530 Ω | **1.325 Ω** | 4.9× |
 | varactor branch, OUT_p → 21 unit terminals | 3.550 Ω | **0.669 Ω** | 5.3× |
 | varactor branch, OUT_n → 21 unit terminals | 3.550 Ω | **0.669 Ω** | 5.3× |
 | coil (lumped model) | 0.760 Ω | 0.760 Ω | — |
-| **tank loop total** | **19.131 Ω** | **4.523 Ω** | **4.2×** |
+| **tank loop total** | **19.131 Ω** | **4.635 Ω** | **4.1×** |
 
 Tank-node capacitance rises with it: OUT_p 250.9 → **272.3 fF**, OUT_n 246.4 → **266.4 fF**.
 That is +20.7 fF per node, about 2.6× the +7.9 fF predicted from areacap-to-substrate alone —
@@ -606,7 +606,7 @@ metal3 rail 39.6 µm long (8.5 Ω end-to-end). Columns → 2.40 µm, rail → 2.
 |---|--:|--:|--:|
 | `cap_bias` bank-to-bank | 8.045 Ω | **1.765 Ω** | 4.6× |
 | `cap_bias` drive, tune resistor → bank | 2.817 Ω | 0.617 Ω | 4.6× |
-| tank loop | 4.523 Ω | **4.523 Ω** | unchanged, as intended |
+| tank loop | 4.523 Ω | **4.635 Ω** | +0.112 Ω, see §3.2.2 |
 
 **The extracted VCO now starts.** At VTUNE 2.0 V, 200 ns, ±10 mV kick:
 
@@ -631,31 +631,54 @@ The consistent 6–11 % downshift is what +20 fF per tank node of extracted capa
 **Bring-up: set ISS to 2× the bench nominal** — `I0` 1 mA → 2 mA, tail ≈ 2.3 mA. At nominal the
 top of the tuning range does not start (at 1.5× VTUNE 3.3 V peaks at 50 ns and then decays).
 
-**This layout is NOT landed.** It is complete and gated in scratch, but the organizer-flow LVS
-regresses — see below.
+**This layout is landed** (`f0f0281`), after two chip-level shorts found by the organizer flow
+and fixed — see §3.2.2. The final numbers, measured on the landed extraction, are the tables
+above with the tank loop at **4.635 Ω**.
 
-### 3.2.2 Blocking regression: the organizer flow loses a tank net
+Band with parasitics, measured on the landed layout:
 
-`run_full_lvs` on the regenerated chip reports **51 layout nets against 53 source**, where the
-committed chip reports **53 / 53** (device counts are 81 / 83 in both — the two unmatched
-`cap_nmos_03v3_b`, unchanged). Diffing the net-name lists, the layout **loses
-`vco_v1_0/OUT_p`** and gains `ISS`.
+| VTUNE | schematic record | ISS 1.0× | ISS 2.0× |
+|---|--:|--:|--:|
+| 0.0 V | 6.378 GHz | 5.762 GHz (−9.7 %), 1.969 Vpp | 5.728 GHz, 3.038 Vpp |
+| 2.0 V | 4.929 GHz | **4.372 GHz** (−11.3 %), **0.974 Vpp** | 4.402 GHz, 2.207 Vpp |
+| 3.3 V | 4.047 GHz | **does not start** | 3.807 GHz (−5.9 %), 1.026 Vpp |
 
-Bisected: a chip built with the new `vco_core` and the **committed** `vco_varactors` regresses
-identically, so it is the `vco_core` widening, not the varactor one.
+> **Bring-up: set the tail reference `I0` from 1 mA to 2 mA.** At nominal the VCO starts and
+> settles at VTUNE 0.0 and 2.0 V, but the top of the tuning range does not (at 1.5× VTUNE 3.3 V
+> peaks around 50 ns and then decays). At 2× the whole band runs, tail ≈ 2.3 mA. Allow **200 ns**
+> before reading: startup to 90 % is 83 ns at nominal, against the schematic control's 6.2 ns.
 
-**Nothing in the block-level or phase-C gate set sees it.** All of these pass on the same
-layout: magic DRC 0 on all three cells and the chip; `verify_cp vco_core` 30/5/7 match uniquely
-on **both** the `.mag` and the GDS path; `verify_cp vco_varactors` 42/3/4; `verify_cp vco_v1`
-4/6/11 on **both** paths; `verify_cp chip_top` 10/11/25 on the `.mag` path; KLayout exactly 168
-waived; 25 labels, bbox 1110 × 550, metal2 corners and the DEF pin-landing check all unchanged;
-XOR 1047.601 µm² with **0.000 µm² outside** `vco_v1`. The merge only appears once `vco_core` is
-flattened into `chip_top`, which the `.mag` chip LVS cannot see by construction —
-`chip_top.mag` is a placement record with no chip-level metal.
+### 3.2.2 Two chip-level shorts that only the organizer flow could see
 
-This is the third instance of one family: **a connectivity change that every local gate is
-blind to**. The organizer flow is the only check that covers it, and it must be run before any
-change inside a block is landed, not only when chip-level routing moves.
+Both were created by widening a bus **toward the block boundary**, and both were invisible to
+every block-level and chip-level gate.
+
+| | what it hit | symptom | fix |
+|---|---|---|---|
+| OUT_p metal3 right-gate riser, widened **west** to core x 403.745 | `route_chip.py`'s **vco.VDD metal3 column** at core x 404.750–405.250 | `run_full_lvs` **51** layout nets vs 53; OUT_p joins the nwell/VDD class | grow **east** instead (local x 2658..3138); core x 406.145–408.125 is empty on metal3, west edge clears VDD by 0.475 µm. **No R cost** — the riser carries gate current. |
+| metal2 drain hauls, grown **down** to local y 148 = core y 64.07 | chip-level **metal2** under the VCO, topping out at core y 64.30 — a 0.23 µm overlap | **52** vs 53; OUT_p joins `vco_v1_0/ISS` | stop them at local y 380 (core 65.23), still covering the second via1 at local y 474, 0.93 µm clear. Costs **+0.112 Ω** on the tank loop. |
+
+**Nothing local sees either one.** Magic DRC reports 0 — a same-layer overlap is connectivity,
+not a spacing error. `verify_cp` passes on **both** the `.mag` and the GDS path at every level:
+`vco_core` 30/5/7, `vco_varactors` 42/3/4, `vco_v1` 4/6/11, `chip_top` 10/11/25. KLayout is
+exactly 168, the labels, bbox, metal2 corners and DEF pin landings are unchanged, and the XOR
+is confined to `vco_v1`'s interior with 0.000 µm² outside. The merge exists only once
+`vco_core` is flattened into `chip_top`, and `chip_top.mag` is a placement record with no
+chip-level metal, so the chip `.mag` LVS is blind to it by construction.
+
+They were located from the runner's own `.ext` files: `vco_core.ext` and `vco_v1.ext` were
+byte-identical between the two runs, so the merge had to be in `chip_top.ext`, and diffing its
+`merge` records against the committed chip named the joined nets directly.
+
+After the fixes `run_full_lvs` reports **53 / 53 nets, 81 / 83 devices, 11 ports**, with a
+`merge` list **byte-identical to the committed chip**. (The flow still ends in "Top level cell
+failed pin matching" and the 81/83 device gap — both pre-existing, identical on the committed
+chip, and explained above: a GDS-only read cannot reconstruct `cap_nmos_03v3_b`.)
+
+**Toolchain invariant, now third of its family: run the organizer flow before landing any
+change inside a block, not only when chip-level routing moves.** A block's buses can be widened
+freely in the layers the block owns, but growth *toward its boundary* walks into chip-level
+routing that no block-level gate models.
 
 One thing the attempt established that matters beyond this block: **magic's extraction contains
 no inductance.** `grep -c "^L"` on `vco_v1.pex.spice` and on the committed
