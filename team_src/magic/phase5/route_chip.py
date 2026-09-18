@@ -650,13 +650,21 @@ R.box(chip, ly, (36, 0), 494.0, 349.0, 494.96, 350.0)          # lands ON the PD
 R.vwire(chip, ly, 2, 340.0, 349.0, 494.48, w=1.0)
 R.hwire(chip, ly, 2, 367.0, 494.48, 340.0, w=1.0)              # west to VDDD's riser
 R.via_stack(chip, ly, 2, 4, 367.0, 340.0)                      # joins VDDD -- same net
-chip.shapes(ly.layer(36, 10)).insert(pya.DText("REF_IN_PD", pya.DTrans(pya.DVector(494.48, 349.5))))
+# REF_IN_PD text on 36/0, NOT 36/10 -- same demotion as VSSD above, same reason. PD is TIED
+# to VDDD (that is the whole point of the weak pull-down), so on /10 magic promotes it to a
+# chip_top port and the organizer-flow netgen reports `Pins REF_IN_PD and VDDD are shorted`,
+# failing top-level pin matching against a golden that declares 11 ports and neither tie.
+# On /0 the text is still in the GDS for Bailey's top_cell_text scrape, it just never
+# competes for a port name.
+chip.shapes(ly.layer(36, 0)).insert(pya.DText("REF_IN_PD", pya.DTrans(pya.DVector(494.48, 349.5))))
 
 R.box(chip, ly, (36, 0), 498.4, 349.0, 499.3, 350.0)           # lands ON the PU finger
 R.vwire(chip, ly, 2, 328.0, 349.0, 498.845, w=1.0)
 R.hwire(chip, ly, 2, 267.5, 498.845, 328.0, w=1.0)             # west to VSSD's riser
 R.via_stack(chip, ly, 2, 4, 267.5, 328.0)                      # joins VSSD -- same net
-chip.shapes(ly.layer(36, 10)).insert(pya.DText("REF_IN_PU", pya.DTrans(pya.DVector(498.845, 349.5))))
+# REF_IN_PU likewise on 36/0: it is tied to VSSD, which is VSSA, so on /10 it read as
+# `Pins REF_IN_PU and VSSA are shorted`.
+chip.shapes(ly.layer(36, 0)).insert(pya.DText("REF_IN_PU", pya.DTrans(pya.DVector(498.845, 349.5))))
 print("(f) VSSD/VDDD/REF_IN + PU->VSSD, PD->VDDD landed on the 13-pin DEF fingers")
 print("   PHASE C via inventory (pitch %.2f um; DRM V*.2b array space 0.36):" % C_PITCH)
 for _k in sorted(C_CUTS):
