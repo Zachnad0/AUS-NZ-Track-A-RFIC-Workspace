@@ -1527,6 +1527,17 @@ diagnostic (see "Two harness traps found in B6" above).
 | metal2 corners | SW 218.24, NW 219.90 µm², SE/NE empty | **unchanged** |
 | XOR vs control | — | 8577 µm², **0 µm² outside the VDDD path** |
 
+**Organizer-flow LVS (2026-09-18).** Separately from the gates above, the efabless
+`mpw_precheck` `run_full_lvs` check was run against `lvs/lvs_config.json`. It **does not pass**,
+and it fails identically at `c7eb341`, so nothing here was introduced by item 23. One of its
+three causes was ours and is fixed in `aa470c3` — `REF_IN_PD` / `REF_IN_PU` were on the port
+datatype 36/10 and extracted as two extra `chip_top` ports shorted to VDDD and VSSA; demoted
+to 36/0 the layout now extracts the golden's own 11 ports with no pin shorts. The other two —
+the spiral shorting `OUT_p` to `OUT_n` when the GDS is read as geometry, and the standard
+cells extracting as `*_06v0` against a PDK netlist that models them as `*_05v0` — are a tool-flow
+gap and a PDK inconsistency respectively, neither expressible in the organizer config
+schema. Full recipe, run table and evidence: `signoff/lvs/README.md`, §"The organizer flow".
+
 `chip_top.mag` is a **584-byte placement record with no chip-level metal**, and `route_chip.py`
 never writes one — so the `.mag` LVS is blind to chip routing by construction and is unchanged by
 this phase except in its timestamps. What actually constrains phase C is the KLayout variant-D

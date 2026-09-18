@@ -61,6 +61,104 @@ resistor, and the two ESD diode groups (`diode_nd2ps_03v3 (8->2)`,
 There is **one DRC waiver**, unrelated to LVS: 168 KLayout `PL.5a_LV`/`PL.5b_LV` items
 internal to the PDK's `nmoscap_3p3` gencell. See `../../docs/layout-review-sep01.md` §2.5.
 
+## The organizer flow (`mpw_precheck run_full_lvs`) — recipe and result
+
+Run 2026-09-18 at `aa470c3`. **This is a different check from `verify_cp.sh` above and it does
+not pass yet.** `verify_cp.sh` compares `chip_top` against `chip_top_golden.spice` alone, with
+every block a black box; the organizer flow additionally reads the PDK standard-cell netlist and
+so compares the inside of `PFD_lib` too.
+
+### Runner
+
+`efabless/mpw_precheck` at commit `0941bdc1b62b5c3f99c8683bd11199d330af2ef3`. The scripts are
+under `checks/be_checks/`, not `checks/lvs_check/`; `LVS_ROOT` is that directory.
+
+**Caveat, and it is not ours: **set_lvs_env.py**, under the runner's `checks/be_checks/`, cannot be obtained.** It is
+listed in mpw_precheck's own `.gitignore`, has never been committed to any branch or tag
+(checked `gfmpw-1a`…`1d` and `2024.09.*`), and nothing in the repo or its `dependencies/Dockerfile`
+generates or fetches it. Every `run_*` entry point sources it, so the config path
+(`run_full_lvs <config>`) is unusable as shipped.
+
+The workaround uses `run_full_lvs`'s own documented alternative — *"if config file not specified,
+skip and use current environment"* — so the runner script itself is unmodified:
+
+```bash
+export PDK=gf180mcuD PDK_ROOT=/foss/pdks
+export UPRJ_ROOT=<repo root>
+export LVS_ROOT=<clone>/checks/be_checks
+source <(python3 mk_lvs_env.py $UPRJ_ROOT/lvs/lvs_config.json)   # see note below
+export WORK_ROOT=<scratch> LOG_ROOT=$WORK_ROOT SIGNOFF_ROOT=$WORK_ROOT
+$LVS_ROOT/run_full_lvs            # no arguments
+```
+
+**mk_lvs_env.py** is the one reconstructed piece: it reads `lvs/lvs_config.json` and the
+`INCLUDE_CONFIGS` base, and emits the `export` lines **set_lvs_env.py** would have. Merge rule:
+scalars override, list variables are a **union**, and `[""]` means "adds nothing" — which is the
+only reading under which efabless's own reference configs work, since
+`caravel_user_project_analog` sets `EXTRACT_FLATGLOB` to `[""]` while depending on the base
+config to supply the real patterns. It lives in scratch, not in this repo, because it is a
+stand-in for a file the organizers are expected to have.
+
+Runtime is **8–10 s** per run on this host.
+
+### Result
+
+| run | change | devices (layout/source) | nets | ports | verdict |
+|---|---|---|---|---|---|
+| 0 | none (`152f812`) | 79 / 84 | 52 / 53 | **13 / 11** | fail, 2 pin shorts |
+| 1 | `REF_IN_PD/PU` → 36/0 | 79 / 84 | 52 / 53 | **11 / 11** | fail, **no pin shorts** |
+| 2 | `LVS_IGNORE += vco_inductor_v2` | 79 / **83** | 52 / 53 | 11 / 11 | fail |
+
+Runs 3 and 4 tried `EXTRACT_ABSTRACT` for `vco_inductor_v2` and then `vco_varactors`; neither
+changed the verdict and both were reverted (see the `lvs_config` commit message).
+
+**The identical run on `c7eb341`, the commit `item23` branched from, fails the same way** — 79/84,
+52/53, both pin shorts. None of this was introduced by item 23.
+
+### What is still mismatched, and why
+
+Two causes remain. Neither is expressible in the organizer config schema.
+
+**1. `OUT_p` and `OUT_n` are one net when the GDS is read as geometry.** The extracted
+`vco_v1` is
+
+```
+.subckt vco_v1 TUNE GND VDD ISS OUT_p          <- 5 ports; the golden has 6
+Xvco_core_0 ISS VDD GND OUT_p OUT_p vco_core   <- OUT_n merged into OUT_p
+```
+
+`verify_cp.sh` does not see this because `team_src/magic/chip_top.abstract` says
+`PRELOAD=vco_varactors vco_inductor_v2`, and `verify_extract.tcl` implements that as `load` of
+those `.mag` masters plus `gds noduplicates true`, so the GDS read keeps the abstract and never
+traverses the spiral. **The organizer schema has no PRELOAD equivalent**: `EXTRACT_ABSTRACT`
+black-boxes a cell that is already in the stream, it does not substitute a `.mag` master for it.
+Tried directly — abstracting `vco_inductor_v2` produced the abstract but left `OUT_n` merged and
+added a dangling `vco_inductor_v2_0/PORT1`; abstracting `vco_varactors` as well changed nothing.
+
+**2. The standard cells extract as `*_06v0` and the PDK models them as `*_05v0`.** 34 `nfet` and
+34 `pfet` on each side, same devices, different class name. They are the standard cells inside
+`PFD_lib` — `gf180mcu_fd_sc_mcu7t5v0__dffrnq_1` (28), `__nand2_1` (4), `__inv_1` (2), `__tieh`
+(2). `PFD_lib` itself compares **68 / 68 devices, 38 / 38 nets and matches**; only the flattened
+chip-level tally splits.
+
+This one is entirely inside the PDK. Both `gf180mcuD` spice views of the library —
+`libs.ref/gf180mcu_fd_sc_mcu7t5v0/spice/*.spice` and `.../cdl/*.cdl` — use `nfet_05v0` /
+`pfet_05v0`, while magic's extraction of those same cells yields `nfet_06v0` / `pfet_06v0` and
+the PDK's netgen setup declares **only** the `*_06v0` classes (`05v0` appears zero times in it).
+The fix is a netgen `equate classes nfet_05v0 nfet_06v0`, which belongs in the setup `.tcl` the
+runner copies from the PDK — **the config schema does not expose it**, and there is no alternate
+PDK file that would make the two agree.
+
+`verify_cp.sh` never hits this because it feeds netgen only `chip_top_golden.spice`, with no
+standard-cell netlist at all, so `PFD_lib`'s 68 devices are never compared.
+
+### Reading this honestly
+
+The port fix in `aa470c3` is a real correction to the deliverable and is gated on its own merits.
+The two remaining causes are a tool-flow gap and a PDK naming inconsistency; neither indicates a
+defect in `gds/chip_top.gds`. Whether the organizer flow passes for anyone on gf180mcuD with a
+standard-cell block is worth asking the organizers before treating cause 2 as ours.
+
 ## Regenerating
 
 Inside the `iic-osic-tools` container, from the repo root:
