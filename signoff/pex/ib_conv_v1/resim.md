@@ -414,6 +414,8 @@ The three **inverter input nets** are `G1` + `S1` + `S2` = **15 resistors, 1,897
 | **(b) VSS R only** | `VSS` net | 476 | 59,903.7 Ω | **28 mVpp** | 2016…2692 mV | 593…1237 mV | 64.6 % | 290.0° | 22.803 mA | 2.8199 mA | 46 s |
 | **(c) inverter-input R only** | `G1`+`S1`+`S2` | 15 | 1,897.4 Ω | **37 mVpp** | 1849…2725 mV | 475…1332 mV | 67.2 % | 297.0° | 22.753 mA | 2.7905 mA | 61 s |
 | **(d) all C** | every parasitic C | 136 | 190.5 fF | **61 mVpp** | 1233…2683 mV | 607…1449 mV | 65.0 % | 290.4° | 22.778 mA | 3.0522 mA | 62 s |
+| **(e) VDD-metal only** | VDD supply metal | 111 | 309.5 Ω | **70 mVpp** | 1047…2696 mV | 892…1605 mV | 59.3 % | 261.9° | 23.205 mA | 3.5909 mA | 59 s |
+| **(f) VDD-tap only** | VDD nwell/bulk taps | 5 | 8,168.3 Ω | **44 mVpp** | 1646…2694 mV | 610…1336 mV | 66.0 % | 273.1° | 22.778 mA | 2.9058 mA | 63 s |
 | golden reference | — | — | — | 131 mVpp | −31…2998 mV | — | 49.5 % | 270.0° | 22.118 mA | 2.9735 mA | — |
 
 `I_N` / `Q_P` / `Q_N` are 131 mVpp in every run (golden converters — the bench control).
@@ -462,6 +464,72 @@ feeding `PFD_lib`'s FB pin, i.e. the CLK input of a
 net's 18 → 121 nodes, not new coupling. The whole +4.17 fF is the **VDD–VSS element**
 (115.9 → 120.1 fF), i.e. the M3 plate acting as a little extra decoupling. Every signal net's
 parasitic C is unchanged to the digit (`S1` 3.26, `S2` 5.28, `S3` 4.71 fF in both).
+
+### VDD-class split 2026-09-17: supply metal vs nwell taps
+
+The VDD class was split by the **pfet bulk terminal** (PDK order `d g s b`). Bulks are
+`VDD.t0/t2/t4/t6/t8` (X11/X1/X2/X10/X4), sources are `VDD.t1/t3/t5/t7/t9`. A resistor is
+**VDD-tap** if it lies on a branch that serves only a bulk node — found by iteratively peeling
+degree-1 nodes that are neither the VDD port nor a pfet source contact — and **VDD-metal**
+otherwise. After the peel no bulk node remains in the metal graph and all five source contacts
+are still reachable from the port.
+
+| class | count | ΣR (ohm) | share of ohms | I_P gain when collapsed | share of the gain |
+|---|---:|---:|---:|---:|---:|
+| **VDD-tap** (nwell/bulk) | **5** | **8,168.327** | **96.3 %** | **+15 mVpp** | 27 % |
+| **VDD-metal** (supply) | **111** | **309.501** | **3.7 %** | **+41 mVpp** | 73 % |
+| total | 116 | 8,477.828 | 100 % | — | — |
+
+The tap resistors are `R4` 4,010.79 (X2 W44), `R5` 2,510.79 (X4 W26), `R6` 1,177.45 (X10 W10),
+`R7` 468.75 (X1↔X11 shared well) and `R51` 0.547.
+
+**Ohms are a bad predictor here, and that is the point.** 96 % of the VDD resistance sits in the
+well taps and delivers 27 % of the recovery; the 3.7 % that is supply metal delivers 73 %. That
+is consistent with the geometry finding already recorded above — a bulk path carries no DC
+current — but it **refines** the earlier wording "those three kilo-ohm elements are not the
+mechanism". They are not the *main* mechanism, yet they are worth **+15 mVpp**, roughly a third
+again of what the whole `9614947` fix bought (+4 mVpp). The taps pass displacement current
+through the well junction and modulate the pfet body, and that is not nothing.
+
+**(f) does NOT carry most of the recovery, so the trigger for a tap-strip block is not met on
+these numbers.** (e) at +41 mVpp is the larger share. Both are recorded because 15 mVpp is
+still worth more than the VDD fix itself delivered.
+
+**For the PFD feedback clock** (see the trip-point note above, ≈1.65 V): (e) brings the INV3
+output minimum to **1047 mV**, comfortably across the trip point, so the extracted feedback
+clock would toggle. (f) reaches **1646 mV** — within 4 mV of the trip point, i.e. marginal at
+best. Supply metal is what decides whether the PFD clocks at all.
+
+### Where the nwell taps sit, from `team_src/magic/ib_conv_v1.mag` (read-only)
+
+Every pfet is drawn `nf = 1`, one tall finger, and **each nwell has exactly one tap strip, at
+one end of the finger**. There are no taps along the length.
+
+| device | nwell island | source `pdiffc` column | finger length | tap strip | tap width | gap, source end → tap | ΣR (PEX) |
+|---|---|---|---:|---|---:|---:|---:|
+| X2 INV3 W44 | (7400,4832)-(8600,14564), 6.00 × 48.66 µm | (7895,5185)-(7941,13959) | **43.87 µm** | (7617,14297)-(8383,14471) | 3.83 µm | 1.69 µm | **4,010.79 Ω** |
+| X4 INV2 W26 | (5800,4332)-(7000,10464), 6.00 × 30.66 µm | (6295,4685)-(6341,9859) | **25.87 µm** | (6017,10197)-(6783,10371) | 3.83 µm | 1.69 µm | **2,510.79 Ω** |
+| X10 INV1 W10 | (4200,3632)-(5400,6564), 6.00 × 14.66 µm | (4695,3985)-(4741,5959) | **9.87 µm** | (4417,6297)-(5183,6471) | 3.83 µm | 1.69 µm | **1,177.45 Ω** |
+| X1/X11 difpair W8 | (-900,1400)-(3300,3960), 21.00 × 12.80 µm | (1095,1813)-(1141,3387) | 7.87 µm | (-816,3773)-(3216,3867) | **20.16 µm** | 1.93 µm | 468.75 Ω (shared) |
+
+**The pattern is legible in one line: tap resistance tracks finger length.** 43.87 µm → 4,011 Ω,
+25.87 → 2,511, 9.87 → 1,177. The three inverter wells each get a single **3.83 µm** strip at the
+top while the well runs up to **48.66 µm**, so well current from the far end of the finger
+crosses the whole island to reach one contact. The diff-pair well is the counter-example that
+proves it: its tap strip is **20.16 µm**, five times wider, running the length of a 21 µm well —
+and its tap resistance is the lowest of the four despite serving two devices.
+
+**M1 path to VDD.** Each tap strip carries M1 (the `nsubdiffcont` tile implies it), and that M1
+reaches the VDD bus through the inverter bus tap via1 — which `9614947` widened from 1 cut to
+**3 cuts** at each of the three inverter taps (at x 4566/4670/4774, 6166/6270/6374,
+7766/7870/7974). The tap-to-bus connection is therefore no longer the narrow point; the well
+crossing is.
+
+**What a next block would do, if it takes this up:** add nwell tap strips along the length of
+the three inverter wells rather than one strip at the end. Taps at both ends alone should
+quarter the well resistance; strips at intervals would do better. This is a **layout change and
+is not proposed here** — the measurement says it is worth at most the 15 mVpp of run (f), and
+run (e) says the supply metal is the larger prize.
 
 ### Method notes
 
