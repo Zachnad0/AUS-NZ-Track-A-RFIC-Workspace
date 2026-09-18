@@ -346,8 +346,17 @@ hseg metal3 15450 $qpIB -14800 28 ; vseg metal3 $qpIB -17070 -14800 28 ; via_m2m
 # VDD_QP : connect QP VDD bus UP to IP's VDD bus (both M2 @23560) on M4 -- a straight M2 riser
 # crosses IP's VSS M2 plate-strip (y-2000, x21900..23880) and shorts VDD to VSS.
 box values [expr {$qpVbus-60}] -4050 [expr {$qpVbus+60}] -3900 ; paint metal2 ; via_m2m4 $qpVbus -3980
-vseg metal4 $qpVbus -3980 3200 28
-box values [expr {$qpVbus-60}] 3110 [expr {$qpVbus+60}] 3260 ; paint metal2 ; via_m2m4 $qpVbus 3200
+# ---- Phase B (a): EAST-SIDE DAISY CHAIN REMOVED ----------------------------------------
+# This riser used to stop at y3200 and via DOWN onto ib_conv_v1_0's *internal* M2 trunk, so
+# QP's 2.96 mA entered IP's private 0.60 um spine at y3200 and left it at y3850 -- i.e. one
+# instance's supply current crossed another instance's internal metal, and IP's own trunk
+# carried 5.92 mA over that stretch. survey.md 3.1 measured it; a hierarchy-blind `select
+# net` shows it as two separate top-level fragments joined only through the child.
+# The riser now runs up to y3850, where it merges with IP's own riser in the SAME column
+# (ipVbus == qpVbus == 23560). IP and QP each tap the shared parent M4 riser through their
+# own via stack, and no instance's current crosses another's internal metal.
+# The old y3200 M2 pad + via_m2m4 into IP's trunk is deleted with it.
+vseg metal4 $qpVbus -3980 3850 28
 # VSS_QP : drop from the core VSS plate's east edge (x21900, plate y-6000..-4500), MERGED with it
 # (not a separate near-by M2 -> M2.2a spacing), down to QP's deep VSS pin, then east to the pin.
 set qpVSSy [expr {$OYP2-1272}]
