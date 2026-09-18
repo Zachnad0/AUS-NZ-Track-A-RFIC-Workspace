@@ -280,23 +280,37 @@ R.via_stack(chip, ly, 2, 3, 405.0, 74.85)         # vco.VDD M2 -> M3
 R.vwire(chip, ly, 3, 74.85, 199.0, 405.0, w=0.4)  # M3 up the clear column to the VDDA bus y
 R.via_stack(chip, ly, 3, 5, 405.0, 199.0)         # to M5 onto the VDDA bus (BUS_X VDDA ends at 405)
 
-# VCO_OUTP/N: the 337um differential pair. OUT_p/n leads at y94.5 escape UP on their M3 columns
-# (x401.8 / x398 clear y95-179; spiral is M5, the underpass bar is M4) to the band, M4 across to
-# the DIV2 CK/CKB M3 columns (x65 / x130 clear), down onto CK/CKB. Lanes y181 (OUT_p) / y184 (OUT_n).
-for outnet, xv, xd, ylane in [("OUT_p", 401.8, 65.0, 181.0), ("OUT_n", 398.0, 130.0, 184.0)]:
-    R.via_stack(chip, ly, 3, 5, xv, 94.5)             # tap the OUT lead (M5) -> M3
-    R.vwire(chip, ly, 3, 94.5, ylane, xv, w=0.4)      # M3 up the clear vco column into the band
+# VCO_OUTP/N: the differential pair. OUT_p/n leads at y95.5 escape UP on their M3 columns
+# (clear y95-179; spiral is M5, the underpass bar is M4) to the band, M4 across to the DIV2
+# CK/CKB M3 columns (x65 / x130 clear), down onto CK/CKB. Lanes y181 (OUT_p) / y184 (OUT_n).
+#
+# MOVED 2026-09-18. These x were 401.8 and 398.0, which are vco_v1 local -0.2 and -4.0 um --
+# the OLD bus positions, taken (like vco_v1.tcl's own P1x/P2x) from the abstract's 10x-wrong
+# port labels. Both sat inside the coil's EAST terminal pad, so at chip level OUT_p and OUT_n
+# were the same node, exactly as inside vco_v1. With vco_v1 rebuilt onto the real terminals
+# the taps follow: the buses are at vco_v1 local -40.0 (OUT_p, west terminal) and -2.0 (OUT_n,
+# east terminal), and vco_v1's bbox-LL (-112,-119.48) is placed at core (290,0), so
+# core x = local x + 402 -> 362.0 and 400.0. Derived from the built gds/vco_v1.gds by
+# team_src/magic/analysis/vco_tank_proof.py's sibling check, not pasted.
+for outnet, xv, xd, ylane in [("OUT_p", 362.0, 65.0, 181.0), ("OUT_n", 400.0, 130.0, 184.0)]:
+    R.via_stack(chip, ly, 3, 5, xv, 95.5)             # tap the OUT lead (M5) -> M3
+    R.vwire(chip, ly, 3, 95.5, ylane, xv, w=0.4)      # M3 up the clear vco column into the band
     R.via_stack(chip, ly, 3, 4, xv, ylane)            # -> M4 for the long band crossing
     if outnet == "OUT_n":
-        # LENGTH-MATCH (item 3): OUT_n's path is 431.5um vs OUT_p's 494.3um -- 62.8um (12.7%) short.
-        # Add a ~64um M4 notch UP into the clear right margin: east of the VDDA bus (ends x405),
-        # west of the die edge (x423). All M4, same net; it crosses only the vco.VDD M3 column at
-        # x405 and OUT_p's M3 up-column at x401.8, both on a DIFFERENT layer (no short). The down
-        # leg at x398 stacks over OUT_n's own M3 column (same net). New OUT_n ~= 495.5um (Delta 0.2%).
-        R.hwire(chip, ly, 4, xv, 416.0, ylane, w=0.4)      # east  y184: 398 -> 416  (+18)
-        R.vwire(chip, ly, 4, ylane, 198.0, 416.0, w=0.4)   # up    x416: 184 -> 198  (+14, 1um below VDDA)
-        R.hwire(chip, ly, 4, 398.0, 416.0, 198.0, w=0.4)   # west  y198: 416 -> 398  (+18)
-        R.vwire(chip, ly, 4, 198.0, ylane, 398.0, w=0.4)   # down  x398: 198 -> 184  (+14)
+        # LENGTH-MATCH (item 3), RETUNED 2026-09-18 for the moved taps. Path lengths are
+        # (ylane - 95.5) + |xv - xd| + (ylane - 110.0):
+        #   OUT_p  85.5 + 297.0 + 71.0 = 453.5 um   (was 86.5 + 336.8 + 71.0 = 494.3)
+        #   OUT_n  88.5 + 270.0 + 74.0 = 432.5 um   (was 89.5 + 268.0 + 74.0 = 431.5)
+        # so the shortfall is 21.0 um, not the old 62.8. The notch shrinks to match: east 6.0,
+        # up 4.5, west 6.0, down 4.5 = +21.0 um exactly -> OUT_n 453.5 um, Delta 0.0 %.
+        # Corridor measured clear on M4 over core x399-408, y183-189.5: the only other things
+        # there are vco.VDD's M3 column at x405 and this net's own y184 lane, and the notch
+        # stays south of the VDDD M5 bus (y182-194 runs only to x236) and well west of the die
+        # edge at x423.
+        R.hwire(chip, ly, 4, xv, 406.0, ylane, w=0.4)      # east  y184: 400 -> 406    (+6.0)
+        R.vwire(chip, ly, 4, ylane, 188.5, 406.0, w=0.4)   # up    x406: 184 -> 188.5  (+4.5)
+        R.hwire(chip, ly, 4, xv, 406.0, 188.5, w=0.4)      # west  y188.5: 406 -> 400  (+6.0)
+        R.vwire(chip, ly, 4, 188.5, ylane, xv, w=0.4)      # down  x400: 188.5 -> 184  (+4.5)
     R.hwire(chip, ly, 4, xd, xv, ylane, w=0.4)        # M4 across the band (below the y188 bus) to DIV2
     R.via_stack(chip, ly, 3, 4, xd, ylane)            # -> M3 at the DIV2 CK/CKB column
     R.vwire(chip, ly, 3, ylane, 110.0, xd, w=0.4)     # M3 down the clear DIV2 column

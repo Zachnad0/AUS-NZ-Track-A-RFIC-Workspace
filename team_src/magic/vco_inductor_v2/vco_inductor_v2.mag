@@ -3,15 +3,15 @@ tech gf180mcuD
 magscale 1 2
 timestamp 1787161791
 << metal5 >>
-rect -176 -96 -144 208
-rect -99 -111 -69 -81
-rect -24 -96 8 208
+rect -1760 -960 -1440 2080
+rect -990 -960 -690 -660
+rect -240 -960 80 2080
 << labels >>
-rlabel metal5 -162 -96 -158 -94 0 PORT1
+rlabel metal5 -1620 -960 -1580 -940 0 PORT1
 port 1 nsew
-rlabel metal5 -10 -96 -6 -94 0 PORT2
+rlabel metal5 -100 -960 -60 -940 0 PORT2
 port 2 nsew
-rlabel metal5 -86 -98 -82 -94 0 GND
+rlabel metal5 -860 -830 -820 -790 0 GND
 port 3 nsew
 << properties >>
 string FIXED_BBOX -4480 -960 2800 2400
