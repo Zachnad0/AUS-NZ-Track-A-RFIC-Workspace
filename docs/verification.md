@@ -504,6 +504,72 @@ oscillate** (≈ 15 mV survives at 40 ns), **×0.2 does** (1.78 Vpp, 4.40 GHz), 
 in every case. So the shortfall is **cumulative across the cell and needs roughly 3–5× less
 total parasitic R**, which no change confined to `vco_v1.tcl` can deliver.
 
+Two further ISS points, for the record: **4.0× / 5.0× / 6.0×** also give 0.000 Vpp, at tails
+of 3.870 / 4.642 / 5.376 mA and supply currents up to 17.4 mA. Across that range the bench
+mirror compresses (delivered/requested falls from 0.97 to 0.90) and its drain falls from
+0.698 V to 0.475 V, so there is no bench fallback at any tail current.
+
+### The 4.5 Ω tank, built and measured (2026-09-18)
+
+`extresist` was first calibrated on four structures of known resistance, because everything
+above rests on it: a 100 µm × 1.0 µm metal3 wire reads **8.9105 Ω** against 9.000 by hand, the
+same wire at 3.0 µm reads **2.9705** against 3.000, a **single** via3 cut between two 20 µm
+leads reads **8.1005** against 8.100, and a **4×4 array** in the same leads reads **3.8542**
+against 3.881. It is accurate to ≤ 1 % and it does model cut *count*, so the 19.131 Ω is real
+geometry. (One artifact to know: for a net carrying more than one port, `ext2spice` writes the
+whole R network once **per port** — a 3-port wire came out with each segment written three
+times. `vco_v1`'s nets carry one port each and its resistors contain no duplicates.)
+
+An independent hand model from GDS geometry — 90 mΩ/sq and 4.5 Ω/cut, fingers treated as
+parallel branches off a shared bus and solved as a ladder — gives **3.482 / 4.716 Ω** for the
+two core branches and **3.350 Ω** per varactor side, i.e. 0.72–0.94 × what `extresist` says;
+the hand model reads low because it stops at the metal1/contact interface while `extresist`
+runs to the device terminals. The dominant term in every branch is **single via cuts**, then
+0.42 µm bus metal; the metal1 fingers contribute under 0.06 Ω.
+
+Both cells were then rebuilt with 2.40 µm tank buses and 4×4 via arrays on the bus-level cuts
+(plus a second via1 on each nfet drain finger). **All gates pass on all three cells** — magic
+DRC 0, `verify_cp` 30/5/7, 42/3/4 and 4/6/11 all match uniquely, KLayout 168 waived on
+`vco_v1`, every bbox and port label unchanged, `vco_tank_proof` PASS:
+
+| tank branch | before | after | |
+|---|--:|--:|--:|
+| lead, OUT_p → 30 `vco_core` drain terminals | 4.742 Ω | **1.154 Ω** | 4.1× |
+| lead, OUT_n → 30 `vco_core` drain terminals | 6.530 Ω | **1.271 Ω** | 5.1× |
+| varactor branch, OUT_p → 21 unit terminals | 3.550 Ω | **0.669 Ω** | 5.3× |
+| varactor branch, OUT_n → 21 unit terminals | 3.550 Ω | **0.669 Ω** | 5.3× |
+| coil (lumped model) | 0.760 Ω | 0.760 Ω | — |
+| **tank loop total** | **19.131 Ω** | **4.523 Ω** | **4.2×** |
+
+Tank-node capacitance rises with it: OUT_p 250.9 → **272.3 fF**, OUT_n 246.4 → **266.4 fF**.
+That is +20.7 fF per node, about 2.6× the +7.9 fF predicted from areacap-to-substrate alone —
+the difference is overlap onto the metal1/metal2 nets underneath, which the areacap estimate
+explicitly excluded. Referred across the differential it is ΔC ≈ +10.4 fF on a 869 fF tank,
+so **Δf/f ≈ −0.6 %**, still negligible against a 4.05–6.38 GHz range.
+
+**It still does not oscillate.** At VTUNE 2.0 V, `tran 5p 40n uic`, ±10 mV kick:
+
+| ISS | tail | supply | swing | oscillates |
+|---|--:|--:|--:|---|
+| 1.0× | 1.273 mA | 4.197 mA | 0.000 Vpp | **no** |
+| 1.5× | 1.755 mA | 5.746 mA | 0.000 Vpp | **no** |
+| 2.0× | 2.452 mA | — | 0.000 Vpp by 5–7 ns | **no** (run aborted at 8.09 ns on a `cap_nmos_03v3_b` convergence failure, already decayed) |
+
+Envelope at 1.0×, peak-to-peak per 2 ns: `1ns:0.04  3ns:0.00  5ns:0.00 … 39ns:0.00` — the same
+shape as at 19 Ω. So a **4.2× reduction in tank loop resistance is not sufficient**, and the
+earlier "×0.2 of all parasitic R oscillates" result does not transfer: that scaling also
+reduced GND, `cap_bias`, VDD and ISS, which this change does not touch. The layout is built
+and fully gated but **has not been landed**; only these measurements are recorded.
+
+**One toolchain finding from the attempt, worth more than the numbers.** An intermediate
+version of the widened `vco_varactors` shorted OUT_p to OUT_n: a 4×4 via2 array's metal3 pad
+overlapped `vco_v1`'s OUT_n `via_m3m5` pad by 23 internal units. **Magic DRC reported 0** —
+same-layer overlap is connectivity, not a spacing error — **and `verify_cp` on the GDS path
+reported 4 devices / 6 ports / 11 nets, match uniquely**, because that flow flattens past it.
+Only `verify_cp` on the **`.mag`** path caught it, as 5 ports / 10 nets, DO NOT MATCH. A cell
+whose children changed must be LVS'd on both paths; the GDS path alone is not sufficient to
+prove two tank nets are still distinct.
+
 One thing the attempt established that matters beyond this block: **magic's extraction contains
 no inductance.** `grep -c "^L"` on `vco_v1.pex.spice` and on the committed
 `vco_inductor_v2.ext` both return 0 — R and C only, with the coil modelled as two `tm11k`

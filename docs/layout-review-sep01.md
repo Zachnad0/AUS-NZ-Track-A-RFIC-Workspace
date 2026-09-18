@@ -1772,12 +1772,38 @@ neither of which this change touched.
 Three results make that conclusion hard rather than inferred. Scaling all top-level tank
 routing R by **×0.01** still gives 0.000 Vpp. Raising the tail current to 1.5 / 2.0 / 3.0× the
 bench nominal gives 0.000 Vpp at every point (tails 1.755 / 2.208 / 3.062 mA — the current
-does arrive). And widening the two varactor taps 0.30 → 2.40 µm with 4×4 via arrays — built
-in scratch, magic DRC 0, `verify_cp` 4/6/11 match uniquely, KLayout 168 waived, bbox
-unchanged, `vco_tank_proof` PASS, chip XOR 173.833 µm² with 0.000 µm² outside `vco_v1` —
-moved the extracted loop by **0.000 Ω** and was therefore **not landed**. What does start it is
-a broad reduction: ×0.3 on every parasitic resistor does not oscillate, **×0.2 does** (1.78 Vpp,
-4.40 GHz). Full tables: `verification.md` §3.2, `signoff/sim/vco/README.md`.
+does arrive), and so do 4.0 / 5.0 / 6.0×. And widening the two varactor taps 0.30 → 2.40 µm
+with 4×4 via arrays — built in scratch, magic DRC 0, `verify_cp` 4/6/11 match uniquely,
+KLayout 168 waived, bbox unchanged, `vco_tank_proof` PASS, chip XOR 173.833 µm² with
+0.000 µm² outside `vco_v1` — moved the extracted loop by **0.000 Ω** and was therefore **not
+landed**. What does start it is a broad reduction: ×0.3 on every parasitic resistor does not
+oscillate, **×0.2 does** (1.78 Vpp, 4.40 GHz). Full tables: `verification.md` §3.2,
+`signoff/sim/vco/README.md`.
+
+#### A 4.5 Ω tank was built and gated — and still does not start
+
+`vco_core` and `vco_varactors` were rebuilt with **2.40 µm tank buses and 4×4 via arrays on
+every bus-level cut**, plus a second via1 on each nfet drain finger. Both cells are built from
+0.42 µm metal hung off single 4.5 Ω via cuts, which is where the loss is: an ablation of the
+hand model puts via cuts first (−1.95 / −3.25 / −2.49 Ω per branch), bus metal second
+(≈ −1.7 Ω each) and the metal1 fingers nowhere (< 0.06 Ω).
+
+Every widening grows **inward**, because three edges are load-bearing: `vco_core`'s metal3 bus
+at x −1342 *is* the cell's bbox left edge, its metal4 bus at x 4342 has 0.13 µm to the bbox
+right, and `vco_varactors`' metal3 rail bottom at y −482 *is* that cell's bbox bottom. The two
+`vco_core` hauls grow in **opposite** directions — metal3 down, metal4 up — because grown the
+same way they overlap ≈ 13.9 µm² of metal3-on-metal4, a direct OUT_p-to-OUT_n capacitance
+across the tank. Result: **loop 19.131 → 4.523 Ω (4.2×)**, all gates green, all three bboxes
+and every port label byte-identical. It still gives **0.000 Vpp at ISS 1.0× and 1.5×**. The
+layout is complete in scratch and **was not landed**. Numbers in `verification.md` §3.2.
+
+**A short that magic DRC and the GDS LVS both missed.** An intermediate version of the widened
+`vco_varactors` put a 4×4 via2 array's metal3 pad 23 internal units *over* `vco_v1`'s OUT_n
+`via_m3m5` pad. Magic DRC reported **0** — same-layer overlap is connectivity, not spacing —
+and `verify_cp` on the **GDS** path reported **4 / 6 / 11 match uniquely**, because that flow
+flattens past it. Only `verify_cp` on the **`.mag`** path saw it, as **5 ports / 10 nets, DO
+NOT MATCH**. Toolchain invariant: **a cell whose children changed is LVS'd on both the `.mag`
+and the GDS path**; the GDS path alone cannot prove two tank nets are still distinct.
 
 ### 4.6 System-level: the loop, and the constraint that governs it
 
