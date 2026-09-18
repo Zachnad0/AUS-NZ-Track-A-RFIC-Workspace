@@ -364,6 +364,7 @@ vseg metal2 21900 $qpVSSy -4500 296   ;# 10b: hw 56 -> 296 = 592 iu (2.96 um)
 box values 21604 [expr {$qpVSSy-28}] [expr {$qpVSS+28}] [expr {$qpVSSy+564}] ; paint metal2 ; via_m1m2 $qpVSS $qpVSSy   ;# 10b: 56 -> 592 iu
 
 
+
 # ================= Phase B2: M2+M3 VDD plates + row-landing tie arrays =================
 # Plates are emitted from the free-window measurement in b2_plan.md 2 (foreign paint only,
 # all four child transforms, 56 iu spacing margin). Heights are per-column maxima capped at
@@ -390,10 +391,10 @@ b2_slab metal3 2416 2680 2500 4920
 b2_slab metal3 2500 2732 2724 4920
 b2_slab metal3 2724 2680 8604 4920
 b2_slab metal3 8604 2732 8744 4920
-b2_slab metal2 8672 5380 23344 7620
+b2_slab metal2 8672 5380 23596 7620
 b2_slab metal3 8672 5380 9820 7620
 b2_slab metal3 10212 5380 15280 7620
-b2_slab metal3 15644 5380 23344 7620
+b2_slab metal3 15644 5380 23596 7620
 b2_slab metal2 -1860 -3228 -1020 -2646
 b2_slab metal2 -1020 -3228 8752 -988
 b2_slab metal3 -2028 -3228 -1356 -988
@@ -418,16 +419,14 @@ b2_slab metal2 -2120 -708 -940 -484
 b2_slab metal2 -2120 -484 120 496
 b2_slab metal2 -2120 496 -940 720
 b2_slab metal2 -2120 720 120 776
-b2_slab metal2 -2120 1168 120 3100
-b2_slab metal2 -1948 3100 120 3772
+b2_slab metal2 -2120 1168 120 3772
 b2_slab metal3 -2120 -820 -108 496
 b2_slab metal3 -2120 496 -522 748
 b2_slab metal3 -2120 748 -108 860
 b2_slab metal3 -2120 860 -122 1084
-b2_slab metal3 -2120 1084 120 2988
-b2_slab metal3 -1948 2988 120 3772
-# vert riser: 27 stitch rows
-foreach y {-592 -352 -232 -112 8 128 248 368 608 1208 1328 1448 1568 1688 1808 1928 2048 2168 2288 2408 2528 2648 2768 2888 3248 3368 3488} { b2_stitch -1000 $y }
+b2_slab metal3 -2120 1084 120 3772
+# vert riser: 29 stitch rows
+foreach y {-592 -352 -232 -112 8 128 248 368 608 1208 1328 1448 1568 1688 1808 1928 2048 2168 2288 2408 2528 2648 2768 2888 3008 3128 3248 3368 3488} { b2_stitch -1000 $y }
 b2_slab metal2 7580 3828 9820 6488
 b2_slab metal3 7580 3828 9820 6488
 # ipris riser: 20 stitch rows
@@ -436,12 +435,13 @@ b2_slab metal2 22440 -1614 24680 178
 b2_slab metal2 22440 178 24588 402
 b2_slab metal2 22440 542 24418 738
 b2_slab metal2 22440 738 24680 2986
-b2_slab metal3 22440 -3770 24680 -2706
+b2_slab metal2 22440 3234 24680 6478
+b2_slab metal3 22440 -3938 24680 -2706
 b2_slab metal3 22440 -2342 24517 486
 b2_slab metal3 22440 486 24503 738
-b2_slab metal3 22440 738 24680 2894
-# eris riser: 34 stitch rows
-foreach y {-1550 -1430 -1310 -1190 -1070 -950 -830 -710 -590 -470 -350 -230 -110 10 130 250 610 850 970 1090 1210 1330 1450 1570 1690 1810 1930 2050 2170 2290 2410 2530 2650 2770} { b2_stitch 23560 $y }
+b2_slab metal3 22440 738 24680 6478
+# eris riser: 36 stitch rows
+foreach y {-1478 -1358 -1238 -1118 -998 -878 -758 -638 -518 -398 -278 -158 -38 82 322 682 802 922 1042 1162 1282 1402 1522 1642 1762 1882 2002 2122 2242 2362 2482 2602 2722 2842 3322 3442} { b2_stitch 23560 $y }
 
 # ---- tie re-route: >=16 stacked via2+via3 cuts at 112 iu pitch on the child's M2 rows ----
 # row C (child y6344..6464) for i0/i1 -> parent y5614..5734 ; row A (child y14344..14464)
@@ -456,8 +456,8 @@ proc b2_tie {name x0 y0 n pitch dir px1 px2 mx1 mx2 skips} {
     box values $mx1 [expr {$y0-60}] $mx2 [expr {$y0+60}] ; paint metal2
     if {[llength $skips]} {
         foreach {s1 s2} $skips {
-            box values $mx1 [expr {$y0-60}] $s1 [expr {$y0+60}] ; paint metal3
-            box values $s2 [expr {$y0-60}] $mx2 [expr {$y0+60}] ; paint metal3
+            if {$s1 > $mx1} { box values $mx1 [expr {$y0-60}] $s1 [expr {$y0+60}] ; paint metal3 }
+            if {$mx2 > $s2} { box values $s2 [expr {$y0-60}] $mx2 [expr {$y0+60}] ; paint metal3 }
         }
     } else { box values $mx1 [expr {$y0-60}] $mx2 [expr {$y0+60}] ; paint metal3 }
     set placed 0 ; set k 0
