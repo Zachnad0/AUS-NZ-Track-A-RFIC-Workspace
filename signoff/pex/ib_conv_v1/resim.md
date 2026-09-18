@@ -375,6 +375,104 @@ under any reading tried here, and since the VSS net is byte-identical between th
 there is nothing for the fix to have changed. Rather than publish a number that cannot be
 reconciled with the 2026-09-11 definition, it is left as recorded.
 
+## Category bisect 2026-09-17 on the `9614947` netlist
+
+Same zeroing method as the 2026-09-11 bisect: the class's resistors are **deleted** and the
+nodes they joined are **merged by union-find**, one class per run, everything else intact.
+Deck `div2_mix.spice`, `tran 0.2p 20n uic`, `set num_threads=2`, golden converters untouched.
+Runs already on record were not repeated.
+
+### Every R in the netlist, by net prefix
+
+625 resistors, 71,199.788 ohm. Schematic names from `ib_conv_v1_golden.spice`.
+
+| class | net prefix | count | ΣR (ohm) |
+|---|---|---:|---:|
+| VSS | `VSS` | **476** | **59,903.732** |
+| VDD | `VDD` | **116** | **8,477.828** |
+| **S2** — INV3 input | `a_6430_n1100` | 5 | 921.570 |
+| **S1** — INV2 input | `a_2156_7176` | 6 | 650.054 |
+| DN1 — diff-pair mirror | `a_938_3424` | 5 | 353.324 |
+| **G1** — INV1 input, RFB node | `a_1676_7176` | 4 | 325.787 |
+| INM | `INM` | 1 | 163.077 |
+| INP | `INP` | 1 | 163.077 |
+| IBIAS | `IBIAS` | 1 | 79.774 |
+| S3 — INV3 output | `a_8030_n1600` | 3 | 73.018 |
+| NS — tail | `a_100_n800` | 3 | 42.843 |
+| OC — diff-pair output | `a_2430_n800` | 3 | 42.079 |
+| OUT | `OUT` | 1 | 3.625 |
+| **total** | | **625** | **71,199.788** |
+
+The three **inverter input nets** are `G1` + `S1` + `S2` = **15 resistors, 1,897.411 ohm**.
+
+### Runs
+
+| run | collapsed / removed | count | Σ | I_P swing | INV3 (S3) span | S2 span | duty | I/Q | supply | I_P VSS | runtime |
+|---|---|---:|---:|---:|---|---|---:|---:|---:|---:|---:|
+| baseline PEX `9614947` | — | — | — | **29 mVpp** | 1989…2687 mV | not probed | 64.5 % | 289.6° | 22.791 mA | 2.8204 mA | 74 s |
+| **(a) all R** | every parasitic R | 625 | 71,199.8 Ω | **109 mVpp** | **370…2919 mV** | 676…1793 mV | 59.9 % | 255.4° | 23.043 mA | 3.5362 mA | 40 s |
+| **(b) VSS R only** | `VSS` net | 476 | 59,903.7 Ω | **28 mVpp** | 2016…2692 mV | 593…1237 mV | 64.6 % | 290.0° | 22.803 mA | 2.8199 mA | 46 s |
+| **(c) inverter-input R only** | `G1`+`S1`+`S2` | 15 | 1,897.4 Ω | **37 mVpp** | 1849…2725 mV | 475…1332 mV | 67.2 % | 297.0° | 22.753 mA | 2.7905 mA | 61 s |
+| **(d) all C** | every parasitic C | 136 | 190.5 fF | **61 mVpp** | 1233…2683 mV | 607…1449 mV | 65.0 % | 290.4° | 22.778 mA | 3.0522 mA | 62 s |
+| golden reference | — | — | — | 131 mVpp | −31…2998 mV | — | 49.5 % | 270.0° | 22.118 mA | 2.9735 mA | — |
+
+`I_N` / `Q_P` / `Q_N` are 131 mVpp in every run (golden converters — the bench control).
+
+### What the bisect says
+
+**The VSS mesh still buys nothing, on the rebuilt netlist too.** 476 resistors and 59.9 kΩ —
+84 % of all the parasitic resistance in the cell — move I_P from 29 to **28 mVpp**, i.e. not at
+all. This reproduces the 2026-09-11 result on a netlist whose VSS section is byte-identical, so
+it is a repeat measurement, not an independent one; it is recorded because it rules the VSS
+network out for the *post-fix* netlist as well.
+
+**Fifteen resistors on the inverter input nets buy more than 476 on VSS.** `G1`+`S1`+`S2`,
+1.9 kΩ total, are worth **+8 mVpp** against VSS's +0 (in fact −1). Per resistor that is roughly
+250× the leverage, and it is the same group the 2026-09-11 "signal only" run (33 R, 38 mVpp)
+was pointing at.
+
+**Capacitance is worth 32 mVpp, and this is the first time the whole set has been removed.**
+The 2026-09-11 run A removed only the 12 caps on `G1`+`S1` and bought 14 mVpp; removing all
+136 buys **32 mVpp** (29 → 61). Capacitance is therefore a larger share of the remaining
+deficit than that run implied.
+
+**The all-R ceiling did NOT move.** Collapsing every resistor gives **109 mVpp**, the same
+number the 2026-09-11 netlist gave. The `9614947` VDD fix moved the *baseline* (25 → 29) but
+left the ceiling where it was, so it removed some of the resistive deficit without changing
+what resistance can account for at all. The residual 109 → 131 remains the capacitance, and
+runs (a) and (d) are **not additive**: +80 mVpp (R) and +32 mVpp (C) against a 102 mVpp
+deficit. The non-additivity first recorded on 2026-09-11 persists.
+
+**`S2` moves with the swing, as expected, and only run (a) lifts it.** Its 16–20 ns average is
+911 mV in (b) and 903 mV in (c) — both still parked low, near the 863 mV of the unmodified
+2026-09-11 run — against 1235 mV in (a). Nothing short of removing all resistance gets `S2`
+back toward a trip point.
+
+**Consequence for the PFD feedback clock.** `I_P` is not a monitor pad: it is an internal net
+feeding `PFD_lib`'s FB pin, i.e. the CLK input of a
+`gf180mcu_fd_sc_mcu7t5v0__dffrnq_1`, an ordinary CMOS std-cell input tripping near VDD/2
+≈ 1.65 V. The INV3 output minimum is **1989 mV** at baseline, **2016 mV** in (b) and
+**1849 mV** in (c) — all *above* the trip point, so in those cases the extracted feedback clock
+**never toggles at all**. Only (d) at 1233 mV and (a) at 370 mV bring it below. (`I_N`, `Q_P`,
+`Q_N` have no such constraint — `docs/pins.md` §1: they are single-ended monitor outputs into a
+1 kΩ → 50 Ω instrument, with no on-chip load and no trip point.)
+
+**Capacitance accounting, for the record.** Total parasitic C is **186.34 fF before the fix and
+190.51 fF after** — the 70 → 136 element count is the same charge redistributed over the VDD
+net's 18 → 121 nodes, not new coupling. The whole +4.17 fF is the **VDD–VSS element**
+(115.9 → 120.1 fF), i.e. the M3 plate acting as a little extra decoupling. Every signal net's
+parasitic C is unchanged to the digit (`S1` 3.26, `S2` 5.28, `S3` 4.71 fF in both).
+
+### Method notes
+
+Runs (a) and (b) collapse the `VSS.tN` nodes, so the `mixvss.dat` `wrdata` line — which probes
+exactly those nodes — was dropped from all four decks. `S2` was added as the **last** `wrdata`
+variable so `analyze.awk`, which reads columns 1–12, is unaffected. The union-find
+representative was chosen to keep the two probe node names (`a_8030_n1600.t0`,
+`a_6430_n1100.t3`) alive in every variant, which is free — any member of a merged group names
+the same node. Device count is 14 in all four variants and every device keeps its model and
+W/L.
+
 ## What is reported and what is not
 
 These are measurements. No cause is asserted here beyond what was measured: the extracted
