@@ -217,6 +217,7 @@ R23 7,638.22 (VSS.n164–VSS.t8), R24 4,092.47 (VSS.n169–VSS.n166), R4 4,010.7
 | **VSS only** | VSS net | **476** | **59,904 Ω** | **25 mVpp** | **0** |
 | all | everything | 526 | 71,066 Ω | 109 mVpp | 84 mVpp |
 | golden reference | — | — | — | 131 mVpp | — |
+| **PEX rebuilt at `9614947`** | none — real VDD relayout | — | — | **29 mVpp** | **4 of 106 mVpp** |
 
 **The VDD network carries it.** Seventeen resistors totalling 8.3 kΩ recover 65 % of the
 deficit. The 476-resistor, 59.9 kΩ VSS mesh recovers **nothing at all** — its total resistance
@@ -306,6 +307,73 @@ self-bias chain are all excluded. What has not
 been separated is whether the extracted parasitics themselves (the 526 R and 70 C, in particular
 around INV2 and its supply returns) are enough to park `S2` low, or whether something in the
 bench's treatment of the extracted converter is at fault. No claim either way.
+
+## Re-run 2026-09-17: R+C with the `9614947` VDD fix
+
+Only the **R+C case** was re-run — `div2_mix.spice`, the deck the 25 mVpp and 94 mVpp rows
+above were both measured on (`div2_run_vdd` is likewise a mix deck: I_P extracted, the other
+three golden). The schematic and C-only cases were not re-run; their numbers stand.
+
+**What changed:** the converter's PEX netlist, rebuilt from `gds/ib_conv_v1.gds` at commit
+`9614947` (item 23 VDD fix: M3 plate 2.36 um over the M2 spine, 80 via2 stitch cuts, inverter
+bus taps 1 -> 3 via1 cuts). Deck, `.meas` statements, `tran 0.2p 20n uic`, `set num_threads=2`
+and the golden converters are all unchanged. Netlist 14 devices / 136 C / **625 R**
+(was 14 / 70 / 526); the VDD net goes **17 -> 116** resistors and **0 -> 33** independent
+loops, while the **VSS net is byte-identical** at 476 R / 59,903.732 ohm.
+
+| metric | (b) golden ref | old PEX (2026-09-11) | **PEX at `9614947`** | vs golden | vs old PEX |
+|---|---:|---:|---:|---:|---:|
+| **I_P swing** | 131 mVpp | 25 mVpp | **29 mVpp** | **−77.9 %** | **+4 mVpp** |
+| I_N / Q_P / Q_N swing | 131 mVpp | 131 mVpp | 131 mVpp | 0 % | 0 |
+| f_out | 2.500 GHz | 2.500 GHz | **2.500 GHz** | 0 | 0 |
+| duty | 49.5 % | 63.9 % | **64.5 %** | +30.3 % | +0.6 pp |
+| I/Q phase | 270.0° | 290.7° | **289.6°** | +7.3 % | −1.1° |
+| INV3 output span | −31…2998 mV | 2079…2677 mV | **1989…2687 mV** | — | span 598 → 698 mV |
+| VSS current, I_P | 2.9735 mA | 2.7249 mA | **2.8204 mA** | **−5.15 %** | **+0.0955 mA** |
+| VSS current, I_N | 2.9735 mA | 2.9754 mA | 2.9754 mA | +0.06 % | 0 |
+| VSS current, Q_P | 2.9732 mA | 2.9732 mA | 2.9732 mA | 0 % | 0 |
+| VSS current, Q_N | 2.9735 mA | 2.9747 mA | 2.9747 mA | +0.04 % | 0 |
+| supply | 22.118 mA | 22.717 mA | **22.791 mA** | +3.04 % | +0.074 mA |
+| runtime | 32.5 s | 52.1 s | **74 s** | — | — |
+
+Settled: the I_P envelope is flat to 0.03 mV from 10 ns to 20 ns (87.09…116.41 mV in every
+2 ns bin from 10 ns on), so this is a steady state. The three golden converters reproduce the
+2026-09-11 mix run **to the digit** (2.9754 / 2.9732 / 2.9747 mA), which is the bench control.
+
+**The result against the three references: 25 → 29 mVpp, against a 94 mVpp all-VDD-R-zeroed
+ceiling and a 131 mVpp schematic.** The fix recovers **4 of the 106 mVpp deficit (3.8 %)**, and
+**4 of the 69 mVpp (5.8 %)** that removing the VDD resistance entirely is shown above to buy.
+**Item 23 is not closed by this.** The direction is right and nothing regressed, but the
+magnitude is what §6 of `docs/layout-review-sep01.md` predicted from the resistance change
+alone: cumulative port-to-source R fell only 10.2 / 12.2 / 12.7 % (INV1/INV2/INV3), and a
+~13 % cut against a ceiling that needs R → 0 cannot move the swing far.
+
+**The supply current moved much more than the swing.** I_P's VSS return recovers
+**38 % of its deficit** (2.7249 → 2.8204 against 2.9735) while the output swing recovers 3.8 %.
+The extracted converter still parks its INV3 output mid-rail — the span is 1989…2687 mV, up
+from 2079…2677 mV but nowhere near the golden's −31…2998 mV — so rise/fall remain undefined
+against 20/80 % thresholds. Whatever holds `S2` low survives a 13 % reduction in VDD
+resistance.
+
+*Derived, not measured in this deck:* the INV3-source droop implied by the extracted R and the
+measured current is 53.19 Ω × 2.8204 mA = **150.0 mV**, against 60.91 Ω × 2.7249 mA =
+**166.0 mV** before. The 2026-09-11 run validated that product against a measured 165.33 mV to
+0.4 %, but `div2_mix.spice` writes no VDD-node probe, so 150.0 mV is arithmetic here.
+
+**Two fidelity notes.**
+
+*Terminal re-indexing.* The extractor renumbers device terminals when the layout changes. On
+the INV3 output net `a_8030_n1600`, the R_SER tap was `.t1` before and is `.t0` now (`.t1` is
+now the INV3 nfet drain). The one `wrdata` probe was moved `.t1 → .t0` so the INV3-output-span
+metric measures the same physical tap; that is the **only** difference between the deck run
+here and the committed `decks/div2_mix.spice`. No `.meas` statement is affected — they read
+ammeters in the wrapper — and `v(I_P)` is a port node.
+
+*The VSS port-to-internal-node sub-analysis above was not re-derived.* Its peak reproduces
+(~58 mV both runs) but its "average" column does not follow from the deck's `wrdata` output
+under any reading tried here, and since the VSS net is byte-identical between the two netlists
+there is nothing for the fix to have changed. Rather than publish a number that cannot be
+reconciled with the 2026-09-11 definition, it is left as recorded.
 
 ## What is reported and what is not
 
