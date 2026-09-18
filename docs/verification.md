@@ -413,6 +413,17 @@ expands `$UPRJ_ROOT`; portable across the 3 clones, matches the Phase 7.2 lvs
 convention). Sims require `UPRJ_ROOT` set to the clone root.
 
 ### 3.2 VCO characterization (2026-08-12) — power/swing/startup/PVT measured; 2 gaps
+
+> **⚠️ These VCO results predate the tank fix of 2026-09-18 (`6573181`) and need a tank-level
+> re-extraction.** Until that commit both VCO outputs were routed into the *same* inductor
+> terminal and the other terminal was unconnected: OUT_p and OUT_n were one node and the 1.2 nH
+> coil was a floating stub. Every number in this section — band edges, swing, startup, PVT —
+> was taken from a schematic-level or abstract-extracted netlist in which the tank was intact,
+> so none of it describes the layout that was actually shipped. The layout now matches the
+> intended topology, and the lead resistance is 2.333 Ω (OUT_p) / 1.733 Ω (OUT_n) with a 0.600 Ω
+> imbalance, but **no re-simulation has been run against it**. Treat the band as unverified
+> against layout until an extracted tank is simulated. Details:
+> `layout-review-sep01.md`, §"The VCO tank was SHORTED — found and fixed 2026-09-18".
 Current netlist (= `origin/main`, no diff), `vco_tb`, `.option method=gear`, at the
 ISM operating point **VTUNE = 2.15 V**. `tran 5p 80n`, settled 60–80 ns. File-read.
 

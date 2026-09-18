@@ -1423,6 +1423,31 @@ one. This is the same root cause as the withdrawn reproducibility claim below �
 master not being on magic's cell search path — in a different disguise.
 
 
+#### Toolchain invariant — an abstract's labels are checked against the GDS pin geometry
+
+Adopted 2026-09-18 after the VCO tank short. A magic ABSTRACT (`LEFview true` + `GDS_FILE`)
+carries port labels that the *parent* routes to, while the real pins live in the streamed GDS.
+Nothing in the flow compares the two, so a scaling error in the abstract is invisible: the parent
+routes to the abstract's labels, the `.mag` extraction matches by construction, and only a
+geometry read of the stream disagrees. `vco_inductor_v2.mag` held its labels **and their metal5
+paint** at 1/10 scale for the whole project.
+
+**Rule: whenever a cell is abstracted, assert its label positions against the pin geometry in the
+file `GDS_FILE` points at.** `team_src/magic/analysis/vco_tank_proof.py` does this for the VCO
+tank and is the pattern to copy. A `FIXED_BBOX` that converts correctly proves nothing about the
+labels — it did convert correctly here.
+
+#### Toolchain invariant — hard-coded block coordinates are checked against the stream
+
+Same root cause, one level up. `phase5/route_chip.py` hard-coded the VCO tap positions
+(`x 401.8 / 398.0`) rather than deriving them, so when the block's buses moved the taps silently
+stopped reaching them — and the only symptom was a single `MT.2a` spacing error, because
+`chip_top.mag` is placement-only and the `.mag` LVS cannot see chip routing at all.
+
+**Rule: a coordinate in `route_chip.py` that names a point inside a block is derived from that
+block's built GDS, or it is asserted against it.** The taps in the VCO section above are derived;
+the rest of the file has not been audited for the same pattern.
+
 #### Gates — control first
 
 The committed generator run through the identical scratch harness passes (9 / 22 match
@@ -1606,6 +1631,112 @@ collector carrying all ~22.4 mA at **80 mA/µm**. It is now a **40-point tap on 
 across DIV2's two VDD collectors, each a 0.4 µm M4 riser → via4 → 0.44 µm M5 hop to the VDDD
 bus. Peak per-wire is now ~0.97 mA/µm on the collector, 1.27–1.40 mA/µm on the riser stubs,
 1.9 mA/µm on the VDDD M5 bus. DRC 0, LVS match uniquely, and **DIV2 was not reopened**.
+
+### The VCO tank was SHORTED — found and fixed 2026-09-18
+
+Commit `6573181`. **Both VCO outputs were routed into the same inductor terminal and the other
+terminal was left unconnected.** OUT_p and OUT_n were one node; the 1.2 nH coil was a floating
+stub, not a resonator. This is a layout defect in the deliverable, not an extraction artifact.
+
+#### The defect
+
+`gds/vco_inductor_v2.gds` is a correct two-terminal spiral: metal5 in two polygons joined by a
+single metal4 crossunder through 242 via4 (121 per half). Each polygon meets the cell's bottom
+edge (y −24.000 µm) in one 8.000 µm pad:
+
+| | cell x | vco_v1 x |
+|---|---|---|
+| west terminal | −44.000 … −36.000 | 68.000 … 76.000 |
+| east terminal | −6.000 … +2.000 | 106.000 … 114.000 |
+
+Terminal pitch **38.000 µm**. `vco_v1` routed both buses to 107.78–108.22 and 111.58–112.02 —
+both inside the **east** pad. Measured on the shipped GDS, vco_v1's own metal5 interacted with
+the east terminal in 2 shapes and with the west terminal in **0**.
+
+#### The cause: the same 10× in three files
+
+| file | what it held | correct |
+|---|---|---|
+| `vco_inductor_v2.mag` (the abstract) | PORT1/PORT2 label rects **and their metal5 paint** at 1/10 scale | ×10 |
+| `phase5/vco_v1.tcl` | `P1x -800`, `P2x -40`, `Py -480` | `-8000`, `-400`, `-4800` |
+| `phase5/route_chip.py` | chip taps at core x **401.8 / 398.0** = vco_v1 local −0.2 / −4.0 | **362.0 / 400.0** |
+
+The abstract's `FIXED_BBOX` was already correct, and so was the committed
+`vco_inductor_v2.ext`, whose ports have always read `-8000 -4800` and `-400 -4800`. Only the
+label/paint block was wrong, and `vco_v1.tcl` took its bus positions from it rather than from
+the `.ext` or the stream.
+
+**Nothing in the gate set could see it.** The `.mag` flow extracts the inductor as an abstract
+with no coil, and its label rects sat exactly where `vco_v1.tcl` routed the buses — so PORT1 and
+PORT2 matched by construction and OUT_p/OUT_n came out distinct. The abstract world was
+self-consistent and wrong. `vco_v1.tcl`'s own header claimed a *"1a geometry proof: each bus
+intersects ONLY its own port lead"*; that proof ran against the abstract.
+
+#### Why option (b-ii)
+
+Three options were measured against the coil axis (x 91.000, the midpoint of the two terminals).
+vco_core's outputs are 28.000 µm apart centred at 109.935 and the varactors' pins 23.400 µm apart
+centred at 99.440 — **different** centres, neither on the axis — so no single instance shift
+centres both:
+
+| option | OUT_p | OUT_n | mismatch |
+|---|--:|--:|--:|
+| (b-i) OUT_p→east, OUT_n→west | 34.85 | 87.32 | 85.9 % |
+| **(b-ii) OUT_p→west, OUT_n→east** | 82.72 | 55.85 | **38.8 %** |
+| (a) shift vco_core 19 µm west | 53.85 | 68.32 | 23.7 % |
+| (c) centre core **and** varactors, buses cross | 55.35 | 55.35 | 0.0 % |
+
+(b-ii) was taken as the best option that keeps every placement and crosses no buses. (c) is the
+only one that reaches 0 %, and it is a re-floorplan of `vco_v1` plus crossing differential buses
+— out of scope, and it would need the tank re-simulated to justify.
+
+#### Lead resistance, before and after
+
+Lead = core pin → M5 bus → terminal. Leads widened 0.30 → 2.40 µm; every transition on that path
+is a 4×4 array at the phase C large-array pitch (V\*.2b 0.36 µm space; magic models the via3/via4
+contact at 0.28 µm, so the cut is 56 and the pitch 128 internal units). 48 lead cuts in all.
+
+| | before | after |
+|---|--:|--:|
+| OUT_p | 21.55 Ω | **2.333 Ω** |
+| OUT_n | 14.07 Ω | **1.733 Ω** |
+| ΔR | 7.48 Ω | **0.600 Ω** |
+| per transition | 4.50 Ω | **0.281 Ω** |
+
+Targets ≤ 2.5 Ω per side, ΔR ≤ 1.5 Ω, ≤ 0.3 Ω per transition: all met. 0.281 Ω of the 0.600 Ω is
+structural — `vco_core` presents OUT_p on metal3 and OUT_n on metal4, so OUT_p needs one
+transition more, and `vco_core` was not touched. The buses stay 2.000 µm and equal.
+
+Residual imbalance on the whole routed net (taps included): ΔL 27.30 µm, **ΔC 1.68 fF = 0.32 % of
+tank C** (519–1287 fF over the 4.05–6.38 GHz band), against an inductor series R of 0.76 Ω.
+The "before" column is informational only: in that layout there was no resonator.
+
+#### Chip level — the taps and the retuned match
+
+`route_chip.py`'s two taps move to core x **362.0** and **400.0**, derived from the built
+`gds/vco_v1.gds`, and up the bus from y 94.5 to **95.5** so they clear the new via-array pads
+(0.07 µm otherwise — M3.2a/M4.2a fire on same-net geometry). Path lengths are
+`(ylane − 95.5) + |xv − xd| + (ylane − 110.0)`:
+
+| | before | after |
+|---|--:|--:|
+| OUT_p | 494.3 µm | 453.5 µm |
+| OUT_n (with notch) | 495.5 µm | **453.5 µm** |
+| Δ | 0.2 % | **0.0 %** |
+
+The item-3 metal4 notch shrinks from +64 µm to **+21.0 µm** (east 6.0, up 4.5, west 6.0, down
+4.5), in a corridor measured clear on metal4 over core x 399–408, y 183–189.5.
+
+A geometry read of the chip stream now gives `vco_v1` **six** ports with OUT_p and OUT_n
+separate, and DIV2's CK/CKB on `vco_v1_0/OUT_p` and `vco_v1_0/OUT_n` — two nets where there was
+one. The organizer-flow LVS moves with it: nets **52/53 mismatched → 53/53 matched**, device gap
+**5 → 2**. It still fails on the standard-cell `05v0`-vs-`06v0` split, which is unrelated
+(`signoff/lvs/README.md`).
+
+#### What is NOT done
+
+**The tank has not been re-simulated.** Every VCO frequency result on record was taken against a
+netlist that does not describe the layout this replaces. See `verification.md` §3.2.
 
 ### 4.6 System-level: the loop, and the constraint that governs it
 
