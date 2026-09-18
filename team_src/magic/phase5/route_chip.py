@@ -49,6 +49,52 @@ gnd_tap(120.0, 8.0, 2, "down", 23.0)    # DIV2.VSS (22.4 mA) -> bottom ring
 gnd_tap(2.0, 209.5, 2, "left", 2.0)     # ibias.VSS (1 mA) reaches x0.7 -> left ring
 gnd_tap(233.0, 262.0, 4, "up", 2.0)     # PFD.VSS (0.5 mA) -> top ring
 
+
+# ============================ PHASE C: the VDDD power path ============================
+# item 23. The pad->DIV2 VDDD path was four SINGLE via cuts (22.9 mA/cut, 82x the 0.28
+# mA/cut limit) carrying 412 mV of a 706 mV total drop. Everything below replaces those
+# with arrays and puts metal in parallel wherever a MEASURED window allows it.
+#
+# Array pitch 0.63 um = 0.26 via + 0.37 space. The DRM DOES define a large-array spacing --
+# V2.2b / V3.2b / V4.2b, "via space in a 4x4 or larger array : 0.36 um" -- so 0.36 is the
+# binding number, not 2x the 0.26 minimum. 0.63 is the pitch route_chip already uses for the
+# ESD via1 plates, kept for consistency; it clears V*.2b by 0.01.
+C_PITCH = 0.63
+C_ENC = 0.10            # metal enclosure of a via inside an array plate
+C_CLR = 0.56            # centre-to-centre keep-away from a CHILD contact
+                        # = 0.13 + 0.30 (60 iu, the B6 generator margin) + 0.13
+
+
+def c_array(m_lo, m_hi, x1, y1, x2, y2, px=C_PITCH, py=C_PITCH, skip_x=(), plates=()):
+    """Via array between adjacent metals m_lo/m_hi filling [x1,x2]x[y1,y2].
+    Cut centres are inset by C_ENC + via/2 so the landing plates cover every cut.
+    skip_x drops any column within C_CLR of a listed x (child contacts / corridors).
+    plates paints a solid landing plate on each listed metal over the whole window."""
+    v = R.VIA_SIZE / 2.0
+    m = v + C_ENC
+    xs = []
+    x = x1 + m
+    while x <= x2 - m + 1e-9:
+        xs.append(round(x, 4))
+        x += px
+    ys = []
+    y = y1 + m
+    while y <= y2 - m + 1e-9:
+        ys.append(round(y, 4))
+        y += py
+    xs = [x for x in xs if all(abs(x - t) >= C_CLR for t in skip_x)]
+    vl = R.VIA_BETWEEN[m_lo]
+    for x in xs:
+        for y in ys:
+            R.box(chip, ly, vl, x - v, y - v, x + v, y + v)
+    for mm in plates:
+        R.box(chip, ly, R.METAL[mm], x1, y1, x2, y2)
+    return len(xs) * len(ys)
+
+
+C_CUTS = {}
+# ============================ end PHASE C preamble ============================
+
 # --- buses in the clear y[180,205] band (M5), EM-sized ---
 BUS = {"VDDA": 199.0, "VDDD": 188.0}
 BUS_W = {"VDDA": 3.0, "VDDD": 12.0}
@@ -83,15 +129,38 @@ def corridor_tap(tx, ty, tm, cx, jm, net, w):
 # funnels all 22.4mA -> 80 mA/um. Instead inject at MANY clear M4 columns (3um pitch) so each
 # collector segment carries only its local ~3um-span current (~0.28mA -> ~1 mA/um). Each tap: M4
 # riser from the collector up its clear column to the VDDD bus, via4 onto the bus.
-DIV2_VDD_TAPS = ([(x, 137.5) for x in range(113, 183, 3)]     # y137.5 collector (x108-183): 24 cols
-                 + [(x, 124.0) for x in range(60, 106, 3)])   # y124 collector (x60-108): 16 cols
-#                (x108-110 junction taps dropped -- they abut the collector edge = M4.2a)
-for tx, ty in DIV2_VDD_TAPS:
-    R.vwire(chip, ly, 4, ty, 178.0, float(tx), w=0.4)         # M4 riser collector -> y178 (BELOW the
-    R.via1_at(chip, ly, 4, 5, float(tx), 178.0)               #   OUT M4 lanes at y181/184). w0.4: 0.56mA
-    R.vwire(chip, ly, 5, 178.0, BUS["VDDD"], float(tx), w=0.44)  # riser = 1.4 mA/um -- a 57x cut vs the
-    #  old single 0.28um collector (80 mA/um); widening to 0.6 tripped one M4.2a. M5 up to the bus,
-    #  crossing the OUT M4 lanes on a DIFFERENT layer.
+# PHASE C: the 40 x 0.40 um M4 finger comb (1.43 mA/um, landing by abutment on DIV2's bare
+# 0.28 um M4 haul) is REPLACED by a via-array landing on DIV2's two M2/M3 VDD plate bands.
+# Band geometry is the B5/B6 generator's own `b2_slab metal3` output, in chip core coords
+# (core = DIV2 iu/200 + (65,105)):
+#   lower band  y 118.40..123.86   (DIV2 iu 2680..3772)
+#   upper band  y 124.14..129.60   (DIV2 iu 3828..4920)
+#   bare M4 haul between them      y 123.86..124.14   (0.28 um -- NOT landed on)
+# The plate is continuous in x over 59.86..108.72 EXCEPT the CK corridor at x 63.78..66.44,
+# which is where chip_top drives VCO_OUTP down through the block (B6 generator invariant 3).
+# The only child contacts inside the bands are the B6 stitch columns at x 59.87, 77.87 and
+# 108.37; C_CLR keeps every parent cut 60 iu clear of them, and the haul-centreline stitch
+# at y 124.0 is outside both bands by construction.
+C_LAND_X = [(66.90, 74.60), (79.10, 107.50)]     # inside the plate, clear of 63.78-66.44 and
+C_LAND_SKIP = (59.87, 77.87, 108.37)             #   of every child contact column
+for bx1, bx2 in C_LAND_X:
+    for by1, by2 in ((118.86, 123.40), (124.60, 129.14)):
+        C_CUTS["land_v3"] = C_CUTS.get("land_v3", 0) + c_array(
+            3, 4, bx1, by1, bx2, by2, px=1.26)
+# One parent M4 plate over both bands AND the bare haul between them: same net, so overlapping
+# the 0.28 um haul is a bonus connection, not a violation. The same plate continues north as
+# the feeder riser -- the comb's 40 x 0.4 um risers at 3 um pitch are gone, so the whole
+# channel is free. The only other-net M4 left in it are the two via4 pads of the I/Q M5 hauls
+# at x 75.78-76.22 and x 114.78-115.00; C_LAND_X clears both by 0.78 um. Feeder width
+# 7.7 + 28.4 = 36.1 um -> 0.63 mA/um, R = 0.09 * 48.3/36.1 = 0.12 ohm.
+for bx1, bx2 in C_LAND_X:
+    R.box(chip, ly, R.METAL[4], bx1, 118.66, bx2, 177.40)
+# M5 plate on top of the feeder, merging into the VDDD bus, with a via4 array into it. M5 is
+# measured free over y 172..178 in this channel (the I/Q M5 hauls are down at y 139.8-143.2).
+for bx1, bx2 in C_LAND_X:
+    R.box(chip, ly, R.METAL[5], bx1, 172.00, bx2, BUS["VDDD"])
+    C_CUTS["land_v4"] = C_CUTS.get("land_v4", 0) + c_array(
+        4, 5, bx1, 172.40, bx2, 177.20, px=1.26)
 # vco.VDD: DEFERRED. The ONLY M5-riser-able column over vco is x[388,394] (OUT_p/OUT_n M5 fill
 # x[396,472]; spiral fills x<=366). But vco.VDD's M2 there is a 1.5um wire interleaved with
 # other-net active M2 at ~0.14um, so a via pad lands 0.14um off it (M2.2a) and does not merge --
@@ -498,17 +567,61 @@ chip.shapes(ly.layer(36, 0)).insert(pya.DText("VSSD", pya.DTrans(pya.DVector(267
 # The rise column die x408 is the ibias(<=381.76) / CP(>=410) gap and carries NO M4 (measured).
 # The east lane at die y505 must cross VSSD's M4 riser at die x567.5 -- same layer, different
 # net -- so it hops to M5 for 30 um. M5 is free there, above the ring top at die y487.5.
-R.via_stack(chip, ly, 4, 5, 208.0, 188.0)                      # onto the VDDD bus, die (408,388)
+# PHASE C: single via stack removed -- replaced by the rail_bus_v4 array.
 R.vwire(chip, ly, 4, 188.0, 305.0, 208.0, w=3.0)               # M4 riser, die y388 -> 505
 R.hwire(chip, ly, 4, 208.0, 260.0, 305.0, w=3.0)
-R.via_stack(chip, ly, 4, 5, 260.0, 305.0)
+# PHASE C: single via stack removed -- replaced by the rail_jw_v4 array.
 R.hwire(chip, ly, 5, 260.0, 275.0, 305.0, w=3.0)               # M5 hop over VSSD's M4 riser
-R.via_stack(chip, ly, 4, 5, 275.0, 305.0)
+# PHASE C: single via stack removed -- replaced by the rail_je_v4 array.
 R.hwire(chip, ly, 4, 275.0, 367.0, 305.0, w=3.0)
 R.vwire(chip, ly, 4, 305.0, 347.0, 367.0, w=3.0)               # M4 riser, die x667
-R.via_stack(chip, ly, 2, 4, 367.0, 347.0)
+# PHASE C -- the rail.
+# The two VERTICAL legs cannot take a parallel M5 strap: ANY vertical M5 between the VDDD bus
+# (y182-194) and the y305 lane has to cross VDDA's M5 bus (y197.5-200.5, x60-405) AND the GND
+# ring top (y272.5-287.5), both same-layer different-net. Measured, not assumed. So the legs
+# get M4 width instead, out to the nearest measured neighbour:
+#   x208 leg: next M4 east is x218.48 (y198-232.6)  -> widen 3.00 -> 11.50 um, 1.99 mA/um
+#   x367 leg: nothing on M4 east of x368.5          -> widen 3.00 -> 11.50 um, 1.99 mA/um
+# The M4 at y182.7-184.2 crossing x196-224 is another net, so the x208 plate starts at y185.
+R.box(chip, ly, R.METAL[4], 206.5, 185.0, 218.0, 306.5)
+R.box(chip, ly, R.METAL[4], 365.5, 303.5, 377.0, 348.5)
+# The HORIZONTAL y305 lane is the one place M5 is free -- measured: the only M5 in
+# core x[200,375] y[293,317] is route_chip's own 18 um jumper. A 12 um strap in parallel with
+# the 3 um M4, spanning the whole lane, so the VSSD-riser gap at core x267.5 (die x567.5) is
+# bridged on M5 exactly as the original jumper did and stays clear of M4 and via4.
+R.box(chip, ly, R.METAL[5], 206.5, 299.0, 377.0, 311.0)
+C_CUTS["rail_bus_v4"] = c_array(4, 5, 206.9, 185.4, 217.6, 193.6)   # onto the M5 bus
+C_CUTS["rail_w_v4"] = c_array(4, 5, 206.9, 299.4, 217.6, 306.1)     # strap west end
+# The x367 leg CAN carry M5 -- measured: no M5 at all in core x[350,400] y[300,352]. So the
+# strap simply continues up it to the pad-descent plate, and the leg becomes M4 || M5.
+R.box(chip, ly, R.METAL[5], 365.5, 299.0, 377.0, 348.0)
+C_CUTS["rail_e_v4"] = c_array(4, 5, 366.0, 304.0, 376.6, 347.6, px=1.26, py=1.26)
+# The x208 leg cannot be strapped end to end, but it CAN be strapped between the two things
+# that block it: VDDA's M5 bus tops out at y200.5 and the GND ring top starts at y272.5, and
+# the 71 um in between is measured free of M5 at this x (the nearest M5 is x>=227). That
+# shorts out 71 um of the 117 um leg with 11.5 um of M5 at 40 mOhm/sq.
+R.box(chip, ly, R.METAL[5], 206.5, 201.5, 218.0, 271.5)
+C_CUTS["rail_n_v4"] = c_array(4, 5, 206.9, 201.9, 217.6, 205.6)     # south end of that strip
+C_CUTS["rail_s_v4"] = c_array(4, 5, 206.9, 267.4, 217.6, 271.1)     # north end of that strip
+# The rail M4 either side of the jumper is only the 3 um hwire (y303.5-306.5), so these
+# arrays stay inside that band and spread ALONG the rail rather than stacking tall --
+# which is also what makes the M4 and the M5 strap conduct in parallel over the whole
+# span instead of only at the ends. The x261.2..280.0 gap keeps core x267.5 clear.
+C_CUTS["rail_jw_v4"] = c_array(4, 5, 220.0, 303.9, 261.2, 306.1, px=1.26)
+C_CUTS["rail_je_v4"] = c_array(4, 5, 280.0, 303.9, 364.0, 306.1, px=1.26)
+# PHASE C: single via stack removed -- replaced by the pad_v2/pad_v3 array.
 R.vwire(chip, ly, 2, 347.0, 348.0, 367.0, w=3.0)   # ditto
 R.box(chip, ly, (36, 0), 331.36, 349.0, 403.64, 350.0)         # N07 finger-row bar
+# PHASE C: the descent was ONE via2 + ONE via3 at (367,347) -- 22.9 mA/cut, 206 mV of the
+# 706 mV total. Drop the whole 72.28 um finger-row bar instead: M2 is extended DOWN from the
+# bar to y344 (the nearest other-net M2 is the REF_IN_PD tie at y339.5-340.5), and M3/M4
+# plates are painted under it, the M4 merging with the existing 3 um riser. Measured clear:
+# the only other geometry in core x[320,415] y[330,352] is that riser and the PD tie.
+R.box(chip, ly, (36, 0), 331.36, 344.0, 403.64, 350.0)         # M2 collector under the bar
+R.box(chip, ly, R.METAL[3], 331.36, 344.0, 403.64, 349.0)
+R.box(chip, ly, R.METAL[4], 331.36, 344.0, 403.64, 349.0)
+C_CUTS["pad_v2"] = c_array(2, 3, 331.36, 345.40, 403.64, 348.20, px=1.26)
+C_CUTS["pad_v3"] = c_array(3, 4, 331.36, 345.40, 403.64, 348.20, px=1.26)
 chip.shapes(ly.layer(36, 10)).insert(pya.DText("VDDD", pya.DTrans(pya.DVector(367.0, 349.5))))
 
 # REF_IN -- N08 in_c. THREE separate pins in one slot, ONE 0.38 um finger each, no row to bar
@@ -545,6 +658,11 @@ R.hwire(chip, ly, 2, 267.5, 498.845, 328.0, w=1.0)             # west to VSSD's 
 R.via_stack(chip, ly, 2, 4, 267.5, 328.0)                      # joins VSSD -- same net
 chip.shapes(ly.layer(36, 10)).insert(pya.DText("REF_IN_PU", pya.DTrans(pya.DVector(498.845, 349.5))))
 print("(f) VSSD/VDDD/REF_IN + PU->VSSD, PD->VDDD landed on the 13-pin DEF fingers")
+print("   PHASE C via inventory (pitch %.2f um; DRM V*.2b array space 0.36):" % C_PITCH)
+for _k in sorted(C_CUTS):
+    print("      %-14s %5d cut(s)" % (_k, C_CUTS[_k]))
+print("      %-14s %5d cut(s)  TOTAL (was 4 single cuts + a 40-finger comb)"
+      % ("all PHASE C", sum(C_CUTS.values())))
 
 # --- PHASE 8 (g): CP_OUT to N01 ---------------------------------------------------------------
 # The last declared pin. Found MISSING by analysis/landing_check.py: CP_OUT was declared in
