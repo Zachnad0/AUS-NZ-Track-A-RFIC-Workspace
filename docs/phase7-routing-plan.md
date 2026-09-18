@@ -137,14 +137,22 @@ short M-jog or a lower-layer thread; flagged.
 
 | net | segment | width | I (mA) | mA/µm | verdict |
 |---|---|--:|--:|--:|---|
-| GND | M5 bus | 15 µm | 26.4 | 1.76 | OK |
-| VDDD | M5 bus | 12 µm | 22.9 | 1.91 | OK |
-| VDDA | M5 bus | 3 µm | 3.5 | 1.17 | OK |
-| VDDD | DIV2.VDD riser | **23 µm** | 22.4 | 0.97 | OK (22 µm was 1.02, over) |
+| GND | M5 bus | 15 µm | 26.4 | 1.76 | **OVER** — 1.76× the limit |
+| VDDD | M5 bus | 12 µm | 22.9 | 1.91 | **OVER** — 1.91× the limit; band is full (see Band-fit) |
+| VDDA | M5 bus | 3 µm | 3.5 | 1.17 | **OVER** — 1.17× the limit |
+| VDDD | DIV2.VDD landing | 406 via3 onto DIV2's M2/M3 plate bands | 22.4 | 0.06 mA/cut | OK — rebuilt in phase C, `75b44d9` |
 | GND | DIV2.VSS riser | **23 µm** | 22.4 | 0.97 | OK |
 | VDDA | vco.VDD riser | 2 µm | 2.0 | 1.00 | OK |
 | ISS | vco.ISS riser | 2 µm | 1.0 | 0.50 | OK |
 | — | PFD/CP/ibias risers | 1–2 µm | ≤1.0 | ≤0.5 | OK |
+
+**Verdict column reconciled 2026-09-18 to the 1.00 mA/µm limit (DRM 14.2, 110 °C) used
+everywhere else in this repo.** The three M5 buses were previously recorded as "OK" at
+1.17–1.91 mA/µm against no stated limit; they are over, they have been over since this
+table was written, and the y[180,205] band cannot hold more copper (see **Band-fit**
+below). Closing them needs a wider power band or a second supply pad — a frame change.
+The per-segment consequences are worked through in `layout-review-sep01.md`,
+§"Phase C — the chip-level VDDD path, pad to DIV2".
 
 Currents: **VDDA 3.5, VDDD 22.9, GND 26.4, ISS 1.0 mA** (DIV2 22.4 on record; vco/CP/ibias/PFD
 estimated from bias structure). **Band-fit:** GND15+VDDD12+VDDA3+spacing = 32 µm > the 25 µm
