@@ -19,6 +19,7 @@
 	],
 	"LVS_IGNORE": [
 		"vco_inductor_v2",
+		"cap_nmos_03v3_b",
 		"gf180mcu_fd_sc_mcu7t5v0__fill_*",
 		"gf180mcu_fd_sc_mcu7t5v0__fillcap_*",
 		"gf180mcu_fd_sc_mcu7t5v0__decap_*",

@@ -61,10 +61,98 @@ resistor, and the two ESD diode groups (`diode_nd2ps_03v3 (8->2)`,
 There is **one DRC waiver**, unrelated to LVS: 168 KLayout `PL.5a_LV`/`PL.5b_LV` items
 internal to the PDK's `nmoscap_3p3` gencell. See `../../docs/layout-review-sep01.md` §2.5.
 
-## The organizer flow (`mpw_precheck run_full_lvs`) — recipe and result
+## The organizer flow — `extra_be_checks`, and it PASSES
 
-Run 2026-09-18 at `aa470c3`. **This is a different check from `verify_cp.sh` above and it does
-not pass yet.** `verify_cp.sh` compares `chip_top` against `chip_top_golden.spice` alone, with
+**Superseding the `mpw_precheck` section below.** Per Bailey (issue #143, 2026-09-18) the check
+to run is his `extra_be_checks`, not `mpw_precheck`. It ships the **set_lvs_env.py** helper that
+`mpw_precheck` never published, so the config path works as documented.
+
+### Runner
+
+```
+git clone -b chipathon2025 https://github.com/d-m-bailey/extra_be_checks
+export LVS_ROOT=<clone>            # the repo root, not checks/be_checks
+export PDK=gf180mcuD PDK_ROOT=/foss/pdks
+export UPRJ_ROOT=<this repo>
+$LVS_ROOT/run_full_lvs $UPRJ_ROOT/lvs/lvs_config.json
+```
+
+`d-m-bailey/extra_be_checks` branch `chipathon2025` at commit
+`7d1f5efb270003208956e764765f403b755281d7` (2025-11-28). Runs in ~10 s.
+
+### Result, 2026-09-19 at `da08e9e`
+
+**`Circuits match uniquely.`** `chip_top` 10 devices / 20 nets on both sides, every cell's pin
+lists equivalent, every sub-block matched — `vco_v1` 5 devices / 7 nets, `CP_v1` 8 / 10,
+`DIV2_QUAD_v1`, `ibias_gen_v1`, `PFD_lib` all matched.
+
+Two things this runner fixes that `mpw_precheck` could not:
+
+- **The `05v0`/`06v0` standard-cell split is gone.** Under `mpw_precheck` the layout extracted
+  34 `nfet_06v0` + 34 `pfet_06v0` against the PDK netlist's `*_05v0`, an unresolvable 68-device
+  difference. Bailey's `tech/gf180mcuD/gf180mcuD_setup.tcl` compares the standard cells
+  hierarchically instead of flattening them, so `PFD_lib` matches as a subcircuit and the device
+  classes never collide. There is still **no** `equate classes` for `nfet_05v0`/`nfet_06v0` in
+  that branch — the only device equivalence it defines is the MiM-cap pair. The split is
+  avoided, not equated.
+- **Net counts match everywhere**, where `mpw_precheck` never resolved the device gap.
+
+### The one waiver this needs: `cap_nmos_03v3_b`
+
+`LVS_IGNORE` carries `cap_nmos_03v3_b` in addition to `vco_inductor_v2` and the standard-cell
+fill/decap/antenna globs. Without it the run is otherwise clean but reports
+**`cap_nmos_03v3_b` 0 in the layout against 2 in the source** — the 42 varactors.
+
+**This is a PDK techfile gap, not a layout defect.** `gf180mcuD.tech` writes GDS `166/5`
+(`MOS_CAP_MK`) for *both* device families but its `cifinput` only ever reconstructs the **cap**
+types; there is no `cifinput` rule that produces `nvaractor` at all, so a `cap_nmos_03v3_b`
+drawn in magic cannot come back as itself from its own GDS.
+Detail: `../../docs/verification.md` §3.2.
+
+What is lost and what still covers it: the 42 varactor **devices** are not compared by this
+flow. They remain covered by `verify_cp.sh vco_varactors` on the **`.mag`** path — 42 devices /
+3 ports / 4 nets, match uniquely — and by `verify_cp.sh vco_v1` (4 / 6 / 11). Their **nets** are
+still compared here: `cap_bias`, `OUT_p` and `OUT_n` all exist and match on both sides inside
+`vco_v1`.
+
+The alternative was `EXTRACT_ABSTRACT` on `vco_varactors` with the golden's two
+`cap_nmos_03v3_b` instances collapsed into a black-box `vco_varactors` subckt. That also gives
+`Circuits match uniquely`, and it was rejected: it would make the committed golden stop
+describing the real circuit, for no more coverage than the one-line waiver above.
+
+### The inductor, measured
+
+`LVS_IGNORE vco_inductor_v2` is required, and this was verified rather than assumed. Extracting
+`gds/vco_inductor_v2.gds` with the PDK techfile gives **`PORT1` and `PORT2` as separate nodes**
+— so the two `Metal5_Res` markers (GDS `110/15`, two 76 × 8 µm, one per coil half) **do** break
+the metal — **but no resistor device is created**. The techfile needs
+`rm5 = MET5 and RESDEF and MET5RES`; `m5` is `MET5 and-not MET5RES`, so the marker subtracts the
+metal, while `rm5` never appears (checked after the GDS read: the cell holds only `metal4`,
+`via4`, `metal5`). `RESDEF` is mapped `calma RESDEF 110 *`, a wildcard datatype that does not
+match on input. The result is an **open**, not the two `tm11k` resistors that
+`team_src/magic/vco_inductor_v2/vco_inductor_v2.ext` supplies in the `.mag` flow.
+
+So the "generic metal resistor break" is half-present: the break works, the resistor does not.
+Two alternatives were tried and both are worse than ignoring the cell:
+
+| config | result |
+|---|---|
+| `LVS_IGNORE vco_inductor_v2` (**landed**) | `Circuits match uniquely` |
+| `+ EXTRACT_ABSTRACT vco_inductor_v2` | identical — no effect, see the gate below |
+| `LVS_IGNORE` removed, golden subckt vs extracted metal | 14 vs 17 devices, **`Top level cell failed pin matching`** |
+
+`EXTRACT_ABSTRACT` has no effect on this cell because of the gate in `run_extract`:
+`if { $instance_count > 0 || [llength $port_list] > 10 }`. Only cells with **child instances**
+or **more than 10 ports** take the complex path, which deletes the children by grid, deletes
+non-port layers and writes a LEF that is later `lef read` back. A **leaf with ≤ 10 ports** —
+which `vco_inductor_v2` is, at 2 ports and 0 children — skips that body entirely: no LEF is
+written, so nothing is read back, and the only thing that happens is `property LEFview true`
+after the GDS read. `vco_varactors`, with 42 child instances, *does* take the complex path.
+
+## The older `mpw_precheck` attempt — recipe and result
+
+Run 2026-09-18 at `aa470c3`. **This is a different check from `verify_cp.sh` above and it did
+not pass.** `verify_cp.sh` compares `chip_top` against `chip_top_golden.spice` alone, with
 every block a black box; the organizer flow additionally reads the PDK standard-cell netlist and
 so compares the inside of `PFD_lib` too.
 
