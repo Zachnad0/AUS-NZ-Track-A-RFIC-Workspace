@@ -179,6 +179,15 @@ XR_SER_QN INVO3_QN Q_N VSS ppolyf_u_1k r_width=2.0u r_length=2.0u
 .ends DIV2_QUAD_v1
 
 * ---- inlined: vco_v1_golden.spice ----
+* vco_inductor_v2 as the layout extracts it: two tm11k (one per 110/15 Metal5_Res marker)
+* in series through the metal4 crossunder. LVS only -- no L; simulation uses the 3-pin
+* lumped model team_src/xschem/vco_inductor_v2.subckt (its GND pin is the substrate-cap
+* reference, which has no layout terminal).
+.subckt vco_inductor_v2 PORT1 PORT2
+X0 PORT2 MID tm11k r_width=8u r_length=76u
+X1 MID PORT1 tm11k r_width=8u r_length=76u
+.ends
+
 .subckt vco_v1 VDD OUT_p OUT_n GND TUNE ISS
 XM1 OUT_p OUT_n ISS GND nfet_03v3 L=0.28u W=40u nf=1
 XM4 OUT_n OUT_p ISS GND nfet_03v3 L=0.28u W=40u nf=1
@@ -186,7 +195,7 @@ XM2 OUT_p OUT_n VDD VDD pfet_03v3 L=0.28u W=70u nf=1
 XM3 OUT_n OUT_p VDD VDD pfet_03v3 L=0.28u W=70u nf=1
 XC1 cap_bias OUT_n cap_nmos_03v3_b c_width=5u c_length=5u m=21
 XC4 cap_bias OUT_p cap_nmos_03v3_b c_width=5u c_length=5u m=21
-X1 OUT_n OUT_p GND vco_inductor_v2
+X1 OUT_p OUT_n vco_inductor_v2
 XR2 TUNE cap_bias GND ppolyf_u_1k r_width=1u r_length=15u
 .ends
 

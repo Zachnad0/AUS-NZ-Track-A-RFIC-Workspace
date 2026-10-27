@@ -27,8 +27,15 @@ s = re.sub(r"^V2 tune GND [0-9.]+", "V2 tune GND %s" % vtune, s, count=1, flags=
 if dut == "golden":
     body = io.open(GOLDEN, encoding="utf-8").read()
     m = re.search(r"^\.subckt vco_v1 .*?^\.ends\s*$", body, flags=re.M | re.S)
+    # The golden's coil is the 2-pin LVS view (two tm11k, no L). Swap it for the 3-pin lumped
+    # model that carries the L, as the PEX branch does. The model is symmetric (L0=L1, C3=C4),
+    # so PORT1 on OUT_p here is the same circuit as the old golden's PORT1 on OUT_n.
+    dut_body, n = re.subn(r"^X1 OUT_p OUT_n vco_inductor_v2$", "X1 OUT_p OUT_n GND vco_inductor_v2",
+                          m.group(0), flags=re.M)
+    if n != 1:
+        raise SystemExit("golden coil instance not found in vco_v1 subckt")
     new = ("* ---- DUT: team_src/magic/vco_v1_golden.spice (the netlist the layout is LVS'd to)\n"
-           + m.group(0).rstrip() + "\n")
+           + dut_body.rstrip() + "\n")
 else:
     b = io.open(PEX, encoding="utf-8").read()
     # The extraction carries NO inductance -- magic extracts R and C only, and the committed

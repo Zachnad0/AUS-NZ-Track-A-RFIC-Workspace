@@ -149,6 +149,56 @@ which `vco_inductor_v2` is, at 2 ports and 0 children — skips that body entire
 written, so nothing is read back, and the only thing that happens is `property LEFview true`
 after the GDS read. `vco_varactors`, with 42 child instances, *does* take the complex path.
 
+### 2026-10-27: 2-pin `vco_inductor_v2` golden, and the `rm5` techfile fix
+
+Since `f7be3d5` (2026-09-25, Bailey #143) `lvs/lvs_config.json` no longer ignores
+`vco_inductor_v2` or `cap_nmos_03v3_b`. The sections above, from "Result, 2026-09-19" on,
+describe the config before that.
+
+**Golden change.** `team_src/magic/vco_v1_golden.spice` now defines
+`vco_inductor_v2 PORT1 PORT2` as two `tm11k` (`r_width=8u r_length=76u`) in series through one
+internal node, exactly as the layout extracts it, and instances it with 2 pins, PORT1 on `OUT_p`
+and PORT2 on `OUT_n` (the mapping read from the extracted layout). `chip_top_golden.spice` is
+regenerated from it by `team_src/xschem/chip_top/assemble_chip_golden.py`. The old third pin,
+GND, came from the xschem symbol's simulation model `team_src/xschem/vco_inductor_v2.subckt`,
+where it is only the reference for the coil's substrate capacitors; the layout has no such
+terminal. `signoff/sim/vco/mkdeck2.py` puts the 3-pin lumped model (the one carrying the L) back
+for simulation. The `.mag`-path gates are unchanged: `verify_cp.sh vco_v1` 4 / 6 / 11 and
+`chip_top` 10 / 11 / 25, match uniquely (the inductor is still an ignore class there).
+
+**Organizer flow on this golden**, `extra_be_checks@7d1f5ef`:
+
+| techfile | devices (layout / source) | nets | ports | verdict |
+|---|---|---|---|---|
+| stock | 14 / 18 | 21 / 22 | 11 / 11, VTUNE unpaired | failed pin matching |
+| `rm5` fix below | 15 / 17 | 21 / 21 | 11 / 11, all paired | do not match |
+
+For reference, stock techfile with the old 3-pin golden (2026-09-25): 14 / 17, 21 / 21, VSSA and
+VTUNE pins swapped. With the stock techfile the coil is still the open described above, so the
+golden's two `tm11k` have no layout counterpart. With the fix, `vco_inductor_v2` matches
+uniquely.
+
+**The `rm5` fix** is one line in `gf180mcuD.tech` (Bailey's file; not landed anywhere):
+
+```
+ layer rm5 MET5
+- and RESDEF
+ and MET5RES
+```
+
+Magic appears to map each GDS layer/datatype to a single cifinput layer: `110/15` reaches
+`MET5RES` but never `RESDEF` (`calma RESDEF 110 *`), so the three-way AND is always empty. With
+the term dropped, `gds/vco_inductor_v2.gds` extracts as two `tm11k`, 76 µm x 8 µm, PORT2 to
+the metal4 crossunder to PORT1. That mapping rule is inferred from runs; the magic tech-file
+manual does not document it.
+
+**Still open:**
+
+- **Varactors.** `cap_nmos_03v3_b` is 0 in the layout against 2 (42 -> 2) in the source, the
+  techfile gap described above. It leaves VTUNE, `cap_bias`, VCO_OUTP and VCO_OUTN unpaired.
+- **`tm11k` is a black box on both sides.** Neither netlist has a model for it, so netgen
+  compares the inductor's topology but not its `r_width` / `r_length`.
+
 ## The older `mpw_precheck` attempt — recipe and result
 
 Run 2026-09-18 at `aa470c3`. **This is a different check from `verify_cp.sh` above and it did
