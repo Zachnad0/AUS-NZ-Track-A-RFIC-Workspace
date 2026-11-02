@@ -1,0 +1,38 @@
+* VDDA current of CP_v1 (R+C extracted) + ibias_gen_v1 (schematic), each behind its own
+* 0 V ammeter. IBIAS reference 240 uA from a separate source (not VDDA). IB_DIV2 loaded by
+* the ibias_op.spice replica. CP_OUT held at 1.65 V. CORNER substituted by sed.
+.param fnoicor=0
+.param sw_stat_global=0
+.param sw_stat_mismatch=0
+.param sw_mc_global=0
+.param sw_mc_mismatch=0
+.include /foss/pdks/gf180mcuD/libs.tech/ngspice/design.ngspice
+.lib /foss/pdks/gf180mcuD/libs.tech/ngspice/sm141064.ngspice CORNER
+.include /foss/designs/AUS-NZ-integration/signoff/pex/CP_v1.pex.spice
+.include /foss/designs/AUS-NZ-integration/team_src/sim/ibias/ibias_sub.spice
+
+V_VDDA VDDA 0 3.3
+V_CPM  VDDA VDD 0
+V_IBM  VDDA VDD_IB 0
+V_VSS  VSS 0 0
+V_EXT  VEXT 0 3.3
+I_BIAS VEXT IBIAS 240u
+X1 IBIAS VGP VGN IB_DIV2 VDD_IB 0 ibias_gen_v1
+XM_BREF_rep IB_DIV2 IB_DIV2 ibd_s 0 nfet_03v3 L=1u W=4u nf=1
+V_IBD ibd_s 0 0
+V_UP   UP   0 0
+V_DOWN DOWN 0 0
+V_OUT  CP_OUT 0 1.65
+
+.control
+op
+print i(v_cpm) i(v_ibm) i(v_vdda) i(v_out) i(v_ibd)
+alter v_up = 3.3
+op
+print i(v_cpm) i(v_ibm) i(v_vdda) i(v_out)
+alter v_up = 0
+alter v_down = 3.3
+op
+print i(v_cpm) i(v_ibm) i(v_vdda) i(v_out)
+.endc
+.end
