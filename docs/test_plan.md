@@ -309,6 +309,10 @@ at with the VCO stopped was not simulated.
   check above.
 - The band a reading starts in after power-up is not itself a pass/fail criterion, because the
   power-up state is undetermined.
+- **PFD state with the VCO running: report only** (team decision 11/2). With `FB` at the
+  ~2 GHz divider output the PFD is far outside its simulated range, so which band `CP_OUT`
+  settles in is recorded, not judged. The three-band check above still applies to the reading
+  itself.
 
 The DC values in the table above sit in these bands: idle at picoamps; UP +48.1 to +50.3 µA;
 DOWN −48.1 to −50.5 µA. The block-level values below are context.
