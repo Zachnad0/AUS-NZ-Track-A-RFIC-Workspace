@@ -23,13 +23,19 @@ Decks are committed at `signoff/pex/ib_conv_v1/decks/`. Each includes its conver
 bare filename from that same directory, and writes its `.dat` files to the current directory.
 Run in-container from a scratch copy of that directory:
 
-> **Which netlist the committed decks use (noted 2026-11-02).** The converter netlists in
-> `decks/` are the **2026-09-11** extraction (`ib_conv_v1_pex.spice`: 526 R / 70 C), so the decks
-> reproduce the 2026-09-11 rows below (25 mVpp). The **2026-09-17 re-extraction at `9614947`**
-> (625 R / 136 C) behind the "Re-run 2026-09-17" rows (29 mVpp), and its `_noc` / `_norvss`
-> variants, were never committed. They exist only in the author's local scratch directory, so
-> the 29 mVpp result cannot be reproduced from this repository alone. Until 2026-11-02 the decks
-> pointed at that scratch directory by absolute path.
+> **Which netlist each committed deck uses (noted 2026-11-02).** The converter netlists named
+> `ib_conv_v1_pex*.spice` in `decks/` are the **2026-09-11** extraction (526 R / 70 C), so those
+> decks reproduce the 2026-09-11 rows below (25 mVpp).
+>
+> The **2026-09-17 re-extraction of the shipped layout at `9614947`** is committed as
+> `decks/ib_conv_v1_pex_9614947.spice`: 14 devices / 136 C / 625 R, VDD net 116 R, VSS net
+> 476 R / 59,903.732 Ω, all as recorded below. It is driven by `decks/div2_mix_9614947.spice`,
+> the 2026-09-17 mix deck as run with only its paths made relative; its internal probe is
+> `a_8030_n1600.t0` because node names changed in this extraction. Run it with
+> `decks/run_mix_9614947.sh` (one job, 2 threads). **Re-run 2026-11-02: I_P 29 mVpp, I_N / Q_P /
+> Q_N 131 mVpp, INV3 1989…2687 mV, duty 64.5 %, I/Q 289.6°, 2.500 GHz, 55.6 s**, matching the
+> "Re-run 2026-09-17" row exactly. The 2026-09-17 `_noc` / `_norvss` variants are still only in
+> the author's scratch directory.
 
 ```
 ngspice -b div2_sch.spice      # set num_threads=2 is in-deck
