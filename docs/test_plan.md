@@ -58,7 +58,7 @@ IBIAS generator's outputs `VGP`/`VGN`/`IB_DIV2` (`docs/pins.md` §1;
 |---|---|---|
 | `VDDA` | 3.3 V | `docs/scope.md` §4.1 (single 3.3 V rail); all sims TT / 3.3 V / 27 °C (`docs/verification.md` §2.6, §3.1) |
 | `VDDD` | 3.3 V | `docs/scope.md` §4.1 |
-| `VDDA`/`VDDD` current limit | TODO | — |
+| `VDDA`/`VDDD` current limit | **VDDA 6 mA, VDDD 50 mA** (team decision 11/2) | — |
 | Expected supply current, chip | ≈ 25 mA core-only, against a ~50 mA budget | `docs/layout-review-sep01.md` §4 "Power budget" |
 | Expected supply current, `VDDD` | 22.9 mA = DIV2 22.4 mA (simulated, `i(v_vdd)` of `div2_sb_TT`) + PFD ≈ 0.5 mA (inferred, not simulated). Later DIV2 runs: 22.118 mA with modelled passives, 22.791 mA with one converter extracted | `docs/layout-review-sep01.md` "Phase C — the chip-level VDDD path"; `docs/phase7-routing-plan.md`; `signoff/pex/ib_conv_v1/resim.md` |
 | Expected supply current, `VDDA` | **1.90 mA at ISS 1.0×, 2.93 mA at ISS 2.0×** (TT, 3.3 V, VTUNE 2.0 V, CP idle or sinking). Simulated, and covers all three blocks on `VDDA` (`team_src/magic/chip_top_golden.spice`): VCO 1.300 / 2.332 mA (extracted `vco_v1`, bench buffer on its own supply) + CP 0.050 mA + IBIAS generator 0.549 mA. CP sourcing (UP on) adds 0.050 mA. CP + IBIAS over corners: 0.595 (SS) to 0.600 (FF) mA idle; the VCO was run at TT only. Not included: the 240 µA `IBIAS` reference (add it if the source is powered from `VDDA`) and ESD-diode leakage. The VCO's share leaves the die through the `ISS` pin, not `VSSA`. Replaces the 3.5 mA estimate in `docs/phase7-routing-plan.md` | `signoff/sim/vdda/` (`run_vdda.sh`), run 2026-11-02 |
@@ -70,11 +70,12 @@ IBIAS generator's outputs `VGP`/`VGN`/`IB_DIV2` (`docs/pins.md` §1;
 | `ISS` tail current, nominal (sim "1.0×") | 1.35 mA tail, from a 1 mA reference into a 1:1 NMOS mirror on the bench | `docs/verification.md` §3.2, §3.2.1 |
 | `ISS` tail current, bring-up (sim "2.0×") | ≈ 2.3–2.38 mA tail (reference 1 mA → 2 mA); needed for the top of the tuning range to start | `docs/verification.md` §3.2.1 |
 | `ISS` off-chip circuit (mirror or current sink) | TODO | — |
-| `ISS` node voltage / required sink compliance | v(ISS) 1.0–1.42 V across all simulated points; the sink must regulate at **≤ 1.0 V** (minimum observed 1.009 V). Full table in §5.1. (The 0.698–0.475 V figures in `docs/verification.md` §3.2 come from the pre-landing extraction and do not apply.) | `signoff/sim/iss/`, run 2026-11-02 |
+| `ISS` node voltage / required sink compliance | v(ISS) 1.0–1.42 V across all simulated points (minimum observed 1.009 V). **The sink must regulate down to 0.8 V** (team decision 11/2). Full table in §5.1. (The 0.698–0.475 V figures in `docs/verification.md` §3.2 come from the pre-landing extraction and do not apply.) | `signoff/sim/iss/`, run 2026-11-02 |
 | `VTUNE` range | 0–3.3 V (simulated sweep range) | `docs/verification.md` §3.1, §3.2.1 |
-| `REF_IN` amplitude / levels | TODO | — |
-| `REF_IN` frequency | TODO (PFD simulated at 1 MHz and 2 MHz) | `docs/layout-review-sep01.md` §4.6.1 |
-| Power-up sequencing | TODO | — |
+| `VTUNE` step | **0.1 V** (34 points over 0–3.3 V) (team decision 11/2) | — |
+| `REF_IN` amplitude / levels | **0 V / 3.3 V** square wave, 100 ps edges in simulation, as the PFD sims used (team decision 11/2) | `team_src/xschem/PFD_tb.sch`, `PFD_CP_tb.sch` (`PULSE(0 3.3 … 100p 100p 500n 1u)`); `docs/verification.md` §2 |
+| `REF_IN` frequency | **1 MHz, 50 % duty** (500 ns high, 1 µs period), as the PFD sims used (team decision 11/2). The library-cell PFD was also re-simulated at 2 MHz | same; `docs/verification.md` §2, §2.1, §2.2 |
+| Power-up sequencing | **(1) grounds (`VSSA`, `VSSD`); (2) `VDDA` and `VDDD`, current-limited per above; (3) `IBIAS`; (4) `ISS`; (5) `VTUNE`; (6) `REF_IN`** (team decision 11/2). Power down in reverse | — |
 | Settling before reading outputs | ≥ 30 ns for the divider; ≥ 200 ns (startup 83 ns) for the VCO | `docs/scope.md` §7; `docs/verification.md` §3.2.1 |
 
 ## 4. Required equipment
@@ -94,16 +95,26 @@ Generic only; models and settings are `TODO`.
 
 ## 5. Per-block tests
 
-Each "expected" value is a simulation or PEX result. **The repo defines no acceptance
-tolerances, so every pass/fail limit is `TODO`.** Where a schematic number and a layout-extracted
-number both exist, the extracted one is listed first, because it describes the shipped layout.
+Each "expected" value is a simulation or PEX result. Pass/fail limits are the team decisions of
+11/2, marked as such; where none was made, the limit is `TODO`. Where a schematic number and a
+layout-extracted number both exist, the extracted one is listed first, because it describes the
+shipped layout.
+
+**Supply currents (all blocks)** (team decision 11/2): pass if each measured supply current is
+within **±30 % of simulation**:
+- `VDDD`: 22.9 mA, so the window is 16.0–29.8 mA.
+- `VDDA` at VTUNE 2.0 V: 1.90 mA at ISS 1.0× (window 1.33–2.47 mA) and 2.93 mA at ISS 2.0×
+  (window 2.05–3.81 mA).
+
+The simulated values are in §3. Measure `VDDA` with the `IBIAS` reference supplied separately,
+as simulated.
 
 ### 5.1 VCO — frequency vs VTUNE, output power, phase noise
 
 The VCO has no pad of its own. It is observed at `I_N` / `Q_P` / `Q_N`, at **f_VCO / 2**.
 
-**Procedure.** Set the supplies and IBIAS (§3). Set the ISS tail. Step `VTUNE` with the DC source
-across 0–3.3 V (step size: TODO). Wait ≥ 200 ns per point. Read the ÷2 frequency and power on the
+**Procedure.** Power up in the §3 order. Set the ISS tail. Step `VTUNE` with the DC source
+across 0–3.3 V in **0.1 V steps** (team decision 11/2). Wait ≥ 200 ns per point. Read the ÷2 frequency and power on the
 spectrum analyzer. Repeat at nominal and at 2× ISS.
 
 **Expected — extracted, landed layout** (`docs/verification.md` §3.2.1, measured on the
@@ -164,11 +175,10 @@ What this means for the off-chip sink:
   band. At VTUNE 2.0 V an ideal sink needs about 1.15 mA to oscillate; 1.00 mA does not
   sustain one within 200 ns.
 - **Compliance.** The ISS node never went below **1.009 V** in any oscillating case (2.0×,
-  VTUNE 3.3 V), and sits at 1.0–1.42 V across all runs. **The sink must therefore regulate
-  with its terminal at 1.0 V or lower.** Margin beyond that is TODO; the bench mirror used in
-  simulation met it.
+  VTUNE 3.3 V), and sits at 1.0–1.42 V across all runs. **The sink must regulate down to
+  0.8 V** (team decision 11/2), about 0.2 V below the lowest simulated point.
 - **Settable range.** v(ISS) falls as current rises, by ~0.15 V from 1.0 to 2.35 mA, so a sink
-  that regulates at 1.0 V covers every point simulated. Corners and temperature were not run.
+  that regulates down to 0.8 V covers every point simulated. Corners and temperature were not run.
 - An ideal sink gives somewhat less swing than the mirror at the same current (0.898 Vpp at
   1.30 mA vs 0.974 Vpp at 1.302 mA). This is likely the mirror's finite output impedance
   letting the tail current move with the oscillation; it is not investigated further here.
@@ -176,10 +186,18 @@ What this means for the off-chip sink:
 **Output power.** The pads are reached through the divider's output converters, so output power
 is a DIV2 measurement (§5.2). No VCO-core output power is observable.
 
-**Phase noise.** Measured at the ÷2 output. Expected value: **TODO**. No simulation exists
-(`docs/verification.md` §3.2 GAP 2).
+**Phase noise.** Measured at the ÷2 output and **reported only** (team decision 11/2). No
+simulation exists (`docs/verification.md` §3.2 GAP 2).
 
-**Pass/fail limits:** TODO (frequency tolerance, minimum tuning range, startup threshold).
+**Pass/fail limits** (team decision 11/2):
+- **Oscillates at ISS 2.0× at every VTUNE step from 0 to 3.3 V**, seen as a tone at the ÷2
+  outputs.
+- **Band within ±10 % of the extracted 3.806–5.760 GHz.** VTUNE 3.3 V must land in
+  3.425–4.187 GHz (1.713–2.093 GHz at ÷2), and VTUNE 0 V in 5.184–6.336 GHz (2.592–3.168 GHz at
+  ÷2). The endpoints come from `signoff/sim/iss/`, run 2026-11-02: 3.806 GHz at 2.0× / 3.3 V and
+  5.760 GHz at 1.0× / 0 V. The 2.0× / 0 V point simulated at 5.725 GHz, also inside the window.
+- **Frequency monotonic decreasing in VTUNE** across the 0.1 V steps.
+- **Output power and phase noise: report only.**
 
 ### 5.2 DIV2 — I/Q outputs, phase error
 
@@ -208,7 +226,15 @@ after VCO power-up.
 - The DIV2 core is schematic in every one of these runs; only the converters are extracted
   (`signoff/pex/ib_conv_v1/resim.md`).
 
-**Pass/fail limits:** TODO (minimum swing, duty-cycle window, I/Q phase error limit).
+**Pass/fail limits** (team decision 11/2):
+- **A tone at f_VCO / 2 on both the I output (`I_N`) and a Q output (`Q_P` / `Q_N`).**
+- **Quadrature phase 90° ± 10°.**
+- Swing and duty cycle: report only.
+
+Note against the simulations above: the all-four-extracted and schematic cases sit at exactly
+quadrature (270.0°, i.e. 90°). The one-converter-extracted case (289.6°) is 19.6° off, which would
+fail. That case models only one converter extracted, which a fabricated die cannot have, so it is
+a sensitivity indicator rather than an expected result.
 
 ### 5.3 PFD + CP — UP/DOWN response, pump current
 
@@ -216,11 +242,15 @@ after VCO power-up.
 (f_VCO / 2). The only observable is `CP_OUT`. The simulated three-region PFD response used
 `REF`/`FB` at 1 MHz with direct `UP`/`DOWN` probes, which the die cannot reproduce.
 
-**Procedure:** TODO. The repo contains no simulated or documented procedure for driving the PFD
-open-loop on this die, given `FB` is the ~2 GHz divider output. One untested option would be to
-hold one PFD input static (VCO stopped, or `REF_IN` held low by its pull-down) so that one pump
-direction stays on, then force `CP_OUT` with a voltage source and measure its current. No
-simulation supports this, so it is not a plan yet.
+**Scope: a `CP_OUT`-only partial test** (team decision 11/2). The PFD's three-region response
+and the UP/DOWN pulses are not tested; only what `CP_OUT` shows is.
+
+**Procedure.** Hold `CP_OUT` with an SMU (voltage-force, current-measure) inside the simulated
+0.32–3.00 V compliance window. Drive `REF_IN` per §3 (0/3.3 V, 1 MHz), and also hold it low
+(its weak pull-down does this when undriven). With the VCO running and with it stopped (ISS sink
+off), record the `CP_OUT` current in each combination. The repo contains no simulation of this
+open-loop arrangement, with `FB` the ~2 GHz divider output, so the expected currents for these
+states are TODO. The block-level values below are context, not targets.
 
 **Expected (block-level, not reproducible as-is at the pads):**
 
@@ -235,7 +265,7 @@ simulation supports this, so it is not a plan yet.
 | PFD reset pulse | 0.50 ns typ, 0.39 ns ff (internal, not observable) | `docs/layout-review-sep01.md` §4.6.1 |
 | Loop sign | REF-lead → UP → CP sources → CP_OUT rises | `docs/verification.md` §2.1 |
 
-**Pass/fail limits:** TODO.
+**Pass/fail limits:** TODO (none decided; partial test).
 
 ### 5.4 IBIAS
 
@@ -267,13 +297,18 @@ IBIAS share of the supply current from the other blocks on the same rail is TODO
 | `IBIAS` pin voltage at 240 µA | 2.066 V TT (1.787 FF, 2.349 SS), independent of VDD; `team_src/sim/ibias/ibias_pin.spice.in` |
 | VGN branch at SS, VDD 3.0 V | 48.30 µA at 240 µA and 59.72 µA at 360 µA (VGP stays 50.00 / 75.00), so the PMOS-mirror path runs out of headroom at low supply in the slow corner; same deck |
 
-**Pass/fail limits:** TODO.
+**Pass/fail limits** (team decision 11/2): **`IBIAS` pin voltage 1.6–2.5 V at 240 µA.** The
+simulated FF–SS spread is 1.787–2.349 V.
 
 ## 6. Results publishing
 
-Matching `README.md` ("Testing commitment"): **Team A01 is committed to testing the fabricated
-chip and publishing the measurement results in this repository.** Location and format inside the
-repo: TODO.
+Matching the commitment in `README.md` ("Testing commitment"): the fabricated chip will be tested
+and the measurement results published in this repository. Team A01 currently has a single active
+member, who carries out the testing and publishing.
+
+**Location and format** (team decision 11/2): a top-level **`results/`** directory. Each test
+gets a **Markdown summary** and the **raw data as CSV**. Each summary records the **date** and the
+**equipment used** (make, model, settings).
 
 ## 7. Known simulation gaps that limit these targets
 
