@@ -280,15 +280,38 @@ sources current out of `CP_OUT`; negative means it sinks.
 | 1.65 V | +12.2 pA | +50.21 µA | −50.24 µA |
 | 3.00 V | −5.6 pA | +48.12 µA | −50.54 µA |
 
-**Pass/fail** (team decision 11/2): **within ±30 % of these simulated `CP_OUT` currents.** For the
-idle case that is ±30 % of tens of picoamps, and the value changes sign across the window. That
-is below the leakage of the pad, ESD diodes and package, and below a typical SMU noise floor, so
-the idle limit cannot be checked as written; see the TODO below. For a state that holds UP or
-DOWN on, ±30 % gives 35–65 µA in magnitude.
+**Single-edge check** (`signoff/sim/cp_out/pfd_cp_edge.spice`, run 2026-11-02: `PFD_lib` from
+the layout golden with the gf180 7-track standard cells, extracted `CP_v1`, `ibias_gen_v1` at
+240 µA, `CP_OUT` held at 1.65 V, `FB` held low, one `REF_IN` rising edge 0 → 3.3 V at 50 ns,
+TT):
 
-Which pump state the die is in for each `REF_IN` / VCO combination has not been simulated. The
-PFD's flip-flops have no external reset, so the idle state is not guaranteed at power-up. That
-mapping is TODO. The block-level values below are context.
+| | UP | DOWN | `CP_OUT` current |
+|---|---|---|---|
+| before the edge (20–45 ns) | 0 V | 0 V | +12.2 pA (idle) |
+| after the edge (150–200 ns) | 3.3 V | 0 V | **+50.21 µA (UP)** |
+
+With `FB` static, the reference flip-flop sets and nothing resets it, so the pump stays on UP. In
+this simulation the t = 0 operating point happened to start idle. On silicon the starting state
+is **undetermined: the PFD has no external reset**, so any of idle, UP or DOWN may come up at
+power-on. Holding `FB` low models the VCO stopped (ISS sink off). The level `I_P` actually rests
+at with the VCO stopped was not simulated.
+
+**Pass/fail — three-band check** (team decision 11/2; replaces the ±30 % idle limit):
+
+| Band | `CP_OUT` current |
+|---|---|
+| idle | \|I\| < 1 µA |
+| UP | +35 … +65 µA |
+| DOWN | −35 … −65 µA |
+
+- **Every reading must land in one of the three bands.**
+- **With the VCO stopped, one `REF_IN` rising edge must give UP**, matching the single-edge
+  check above.
+- The band a reading starts in after power-up is not itself a pass/fail criterion, because the
+  power-up state is undetermined.
+
+The DC values in the table above sit in these bands: idle at picoamps; UP +48.1 to +50.3 µA;
+DOWN −48.1 to −50.5 µA. The block-level values below are context.
 
 **Expected (block-level, not reproducible as-is at the pads):**
 
@@ -303,8 +326,7 @@ mapping is TODO. The block-level values below are context.
 | PFD reset pulse | 0.50 ns typ, 0.39 ns ff (internal, not observable) | `docs/layout-review-sep01.md` §4.6.1 |
 | Loop sign | REF-lead → UP → CP sources → CP_OUT rises | `docs/verification.md` §2.1 |
 
-**Pass/fail limits:** `CP_OUT` current within ±30 % of the table above (team decision 11/2).
-TODO: an absolute limit for the idle case, which is at picoamp level.
+**Pass/fail limits:** the three-band check above (team decision 11/2).
 
 ### 5.4 IBIAS
 
@@ -377,3 +399,4 @@ Done on 2026-11-02:
   an ideal current sink stepped over 1.0–2.35 mA rather than a swept voltage source: a voltage
   source on `ISS` sets the tail current itself and so does not measure a sink's compliance.
 - `CP_OUT` DC currents: §5.3. One ngspice job, 0.3 s.
+- PFD + CP single `REF_IN` edge: §5.3. One ngspice job, 11 s.

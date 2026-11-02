@@ -7,6 +7,11 @@ Run 2026-11-02 at `5defbaf`. ngspice-46, TT, 27 °C, 3.3 V, DC operating points.
 |---|---|
 | `cp_out_op.spice` | extracted `CP_v1` (`signoff/pex/CP_v1.pex.spice`) biased by `ibias_gen_v1` (schematic, `team_src/sim/ibias/ibias_sub.spice`) at a 240 µA reference; `CP_OUT` forced to 0.32 / 1.65 / 3.00 V in the idle, UP-only and DOWN-only states |
 | `run_cp_out.sh` | runs it in-container (one job, 2 threads, ~0.3 s); log in `/tmp/cp_out` |
+| `pfd_cp_edge.spice` | `PFD_lib` (layout golden, gf180 7-track std cells) + extracted `CP_v1` + `ibias_gen_v1`; `CP_OUT` at 1.65 V, `FB` low, one `REF_IN` rising edge at 50 ns, 200 ns transient |
+| `run_pfd_cp_edge.sh` | runs it (one job, 2 threads, 120 s timeout; ~11 s) |
+
+Single edge: before it, UP = DOWN = 0 and `CP_OUT` +12.2 pA (idle); after it, UP = 3.3 V and
+`CP_OUT` **+50.21 µA**. The edge drives the pump to UP.
 
 Results (positive = the CP sources current out of `CP_OUT`):
 

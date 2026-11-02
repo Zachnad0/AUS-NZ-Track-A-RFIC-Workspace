@@ -1,0 +1,50 @@
+* PFD_lib + CP_v1 (R+C extracted) + ibias_gen_v1 (schematic): one REF_IN rising edge, FB static low.
+* CP_OUT held at 1.65 V. IBIAS 240 uA from a separate source. TT, 27 C, VDDA = VDDD = 3.3 V.
+* No `uic`: the t=0 operating point sets the PFD's starting state (the die has no PFD reset).
+* i(v_out) > 0: the CP sources current out of CP_OUT (UP); < 0: it sinks (DOWN).
+.param fnoicor=0
+.param sw_stat_global=0
+.param sw_stat_mismatch=0
+.param sw_mc_global=0
+.param sw_mc_mismatch=0
+.include /foss/pdks/gf180mcuD/libs.tech/ngspice/design.ngspice
+.lib /foss/pdks/gf180mcuD/libs.tech/ngspice/sm141064.ngspice typical
+.include /foss/pdks/gf180mcuD/libs.ref/gf180mcu_fd_sc_mcu7t5v0/spice/gf180mcu_fd_sc_mcu7t5v0.spice
+.include /foss/designs/AUS-NZ-integration/signoff/pex/CP_v1.pex.spice
+.include /foss/designs/AUS-NZ-integration/team_src/sim/ibias/ibias_sub.spice
+
+* PFD_lib, verbatim from team_src/magic/chip_top_golden.spice (the LVS golden of the layout)
+.subckt PFD_lib REF FB UP DOWN VDD VSS
+XTIE1 DHI1 VDD VDD VSS VSS gf180mcu_fd_sc_mcu7t5v0__tieh
+XTIE2 DHI2 VDD VDD VSS VSS gf180mcu_fd_sc_mcu7t5v0__tieh
+X1 DHI1 RSTN REF  UP   VDD VDD VSS VSS gf180mcu_fd_sc_mcu7t5v0__dffrnq_1
+X2 DHI2 RSTN FB   DOWN VDD VDD VSS VSS gf180mcu_fd_sc_mcu7t5v0__dffrnq_1
+XN UP DOWN NANDO VDD VDD VSS VSS gf180mcu_fd_sc_mcu7t5v0__nand2_1
+XI1 NANDO NDLY VDD VDD VSS VSS gf180mcu_fd_sc_mcu7t5v0__inv_1
+XI2 NDLY  RSTN VDD VDD VSS VSS gf180mcu_fd_sc_mcu7t5v0__inv_1
+.ends PFD_lib
+
+V_VDDA VDD  0 3.3
+V_VDDD VDDD 0 3.3
+V_VSS  VSS  0 0
+V_EXT  VEXT 0 3.3
+I_BIAS VEXT IBIAS 240u
+X1 IBIAS VGP VGN IB_DIV2 VDD 0 ibias_gen_v1
+XM_BREF_rep IB_DIV2 IB_DIV2 ibd_s 0 nfet_03v3 L=1u W=4u nf=1
+V_IBD ibd_s 0 0
+XPFD REF_IN FB UP DOWN VDDD VSS PFD_lib
+V_REF REF_IN 0 PULSE(0 3.3 50n 100p 100p 1 2)
+V_FB  FB 0 0
+V_OUT CP_OUT 0 1.65
+
+.control
+set num_threads=2
+tran 10p 200n
+meas tran i_before AVG i(v_out) from=20n to=45n
+meas tran i_after  AVG i(v_out) from=150n to=200n
+meas tran up_before FIND v(up) AT=45n
+meas tran dn_before FIND v(down) AT=45n
+meas tran up_after  FIND v(up) AT=200n
+meas tran dn_after  FIND v(down) AT=200n
+.endc
+.end
