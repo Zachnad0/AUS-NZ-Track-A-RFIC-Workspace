@@ -789,6 +789,52 @@ So the whole pre-7/30 evidence base (PFD dead-zone, CP steering, etc.) is safe. 
 fingerprint (record for future drift detection): ngspice-46 (KLU), open_pdks `7b70722e33c…`,
 Ubuntu 24.04.4.**
 
+### 3.2.3 Varactor COMP fix (2026-11-02), and an OPEN item: GDS-vs-`.mag` tank C
+
+**The fix.** Every `vco_varactors.gds` before 2026-11-02 lacked COMP under the 42 varactor gates:
+magic's stock tech does not write COMP for 3.3 V `nvaractor`. Fixed and gated; see
+`layout-review-sep01.md` §2.5 and `signoff/lvs/tech_patches/README.md`. All VCO numbers in
+§3.2–§3.2.2 came from the `.mag`, which has the varactors as devices, so they described the
+intended circuit, not the GDS as it then was.
+
+**VCO on the fixed GDS.** `vco_v1` re-extracted from the fixed GDS with the same R+C recipe as
+`signoff/pex/vco_v1/`, keeping the coil as the magic abstract as that PEX does: 75 devices
+(42 `cap_nmos_03v3_b`, 5u × 5u), 804 C / 1259 R, coil elements identical. Decks from
+`signoff/sim/vco/mkdeck2.py` (which reproduces the committed `pex200.spice` byte for byte from
+the committed PEX), `I0` 2 mA, 200 ns, ±10 mV kick, 2 threads:
+
+| VTUNE | record (§3.2.1, ISS 2.0×) | fixed-GDS PEX | startup to 90 % |
+|---|---|---|---|
+| 0.0 V | 5.728 GHz, 3.038 Vpp | **5.7278 GHz, 3.0356 Vpp** | 13.0 ns |
+| 2.0 V | 4.402 GHz, 2.207 Vpp | **4.4020 GHz, 2.2052 Vpp** | 20.3 ns |
+| 3.3 V | 3.807 GHz, 1.026 Vpp | **3.8069 GHz, 1.0248 Vpp** | 22.7 ns |
+
+All three settled (drift < 1 %). No band edge moves; `docs/test_plan.md` is unchanged.
+
+**OPEN modeling item: tank C depends on how the varactor cell is extracted.** Same magic tech,
+same R+C recipe, TT; parasitic C summed per net:
+
+| extraction | OUT_p | OUT_n | cap_bias | note |
+|---|---|---|---|---|
+| `vco_varactors` alone, from `.mag` | 188.77 fF | 188.07 fF | 233.53 fF | well node `a_n36_n36#` |
+| `vco_varactors` alone, from fixed GDS | 196.41 fF (+4.0 %) | 195.60 fF (+4.0 %) | 242.45 fF (+3.8 %) | well node `w_n60_n482#`, 467.5 → 478.9 fF (+2.4 %); same 272 C / 428 R topology, same 42 devices |
+| `vco_v1`, `.mag` (the committed VCO PEX) | 216.03 fF | 211.22 fF | — | |
+| `vco_v1`, fixed GDS, coil as abstract | 215.42 fF (−0.28 %) | 210.62 fF (−0.29 %) | — | the extraction the transients above used |
+| `vco_v1`, fixed GDS, coil as raw geometry | 222.23 fF (+2.9 %) | 221.93 fF (+5.1 %) | — | stock reader: coil reads as an open (no `rm5`), its metal lands on the tank nets |
+
+**Control:** `vco_core`, which the fix does not touch, extracts identically from `.mag` and GDS
+(OUT_p 51.449 vs 51.446 fF, every net within 0.01 %, 238 C / 297 R both). So the extraction path
+is exact when the geometry matches. The ±4 % is specific to the varactor cell **as an isolated
+top cell**, and disappears in the `vco_v1` context the VCO PEX uses.
+
+**Hypothesis, UNPROVEN:** the differently named and sized well node suggests the standalone GDS
+carries a larger NWELL than the standalone `.mag` represents. Magic's gdsii cifoutput grows
+wells around devices, and the GDS NWELL is identical before and after the COMP fix, so this would
+predate it. Not tested: compare NWELL area from `gds read` vs `load` of the `.mag`, and the per-net
+C with the well node merged. Until resolved, treat varactor-cell parasitic C as ±4 % depending on
+extraction context. At ≈ 869 fF of tank C (VTUNE 2.0 V) that bounds the frequency effect at about
+0.5 %.
+
 ### 4.0 Inductor `.mag` DRC — CLEAN in both tools (2026-08-14, file-read)
 The spiral `vco_inductor_v2.mag` had never been shown DRC-clean (it gates 5.4). Checked
 headless: **Magic DRC 0** (`drc euclidean on`, full check) and **KLayout DRC 0** — GDS
@@ -1067,6 +1113,10 @@ Proven three ways, not assumed:
 > exist.**
 
 ### 8.2 The committed baseline
+
+> **RE-CAPTURED 2026-11-02: TOTAL 0, 0 boxes** (GDSBLOB `579dd24`, SRCCOMMIT `057251a`). The
+> 252 boxes below were all PL.5a markers of the missing varactor COMP (§3.2.3 here; `layout-review-sep01.md` §2.5),
+> not gencell artifacts. The history below describes the pre-fix baseline.
 
 `team_src/magic/chip_top.drcbase` — the seated `chip_top` box set. Re-captured 2026-08-25
 (see §8.5); the 252 `B` lines are **byte-identical** to the 2026-08-22 capture.

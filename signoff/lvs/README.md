@@ -58,39 +58,44 @@ resistor, and the two ESD diode groups (`diode_nd2ps_03v3 (8->2)`,
    applies via `LVS_IGNORE`. The devices inside those cells are real and **are** counted in
    `../devices.md`.
 
-There is **one DRC waiver**, unrelated to LVS: 168 KLayout `PL.5a_LV`/`PL.5b_LV` items
-internal to the PDK's `nmoscap_3p3` gencell. See `../../docs/layout-review-sep01.md` §2.5.
+There are **no DRC waivers** (since 2026-11-02). The former W4 waiver, 168 KLayout
+`PL.5a_LV`/`PL.5b_LV` items once taken to be internal to the `nmoscap_3p3` gencell, was the
+missing COMP under the 42 varactor gates and is revoked; see `tech_patches/README.md` and
+`../../docs/layout-review-sep01.md` §2.5.
 
-## The organizer flow — `extra_be_checks`: currently FAILS with the stock techfile
+## The organizer flow — `extra_be_checks`: matches with Bailey's pending `rm5` fix
 
-> **Current status (2026-11-02, stock `extra_be_checks@7d1f5ef`): it does not pass, and that is
-> expected under the organizer's ruling.** `run_full_lvs lvs/lvs_config.json` reports **14 vs 18
-> devices, 21 vs 22 nets, "Top level cell failed pin matching"** (exit 4, ~10 s; same on a fresh
-> clone of `c3acfe0` and on `ca2ff76`). The whole gap is inside `vco_v1`: the layout side has
-> **no `cap_nmos_03v3_b`** (source: 42 → 2) and **no `tm11k`** (source: 2). That is 4 devices
-> missing; the extra source net is the inductor's internal `MID` node.
+> **Current status (2026-11-02, after the varactor COMP fix).** The committed GDS was rewritten
+> with COMP under the 42 varactor gates (`tech_patches/README.md`). `run_full_lvs
+> lvs/lvs_config.json` on it:
 >
-> **Why:** on 2026-09-25 Bailey ruled in issue #143 that `cap_nmos_03v3_b` and `vco_inductor_v2`
-> come out of `LVS_IGNORE`, and that he would fix the tech file. That change is `f7be3d5`
-> ("drop cap_nmos_03v3_b and vco_inductor_v2 from LVS_IGNORE per Bailey #143"). The failure is
-> the two gaps in the stock `gf180mcuD.tech` that the ruling exposes, both described below:
+> | runner | result |
+> |---|---|
+> | stock `extra_be_checks@7d1f5ef` | **16 vs 18 devices**, failed pin matching (exit 4). The varactors now match (`cap_nmos_03v3_b (42→2)` both sides); only the 2 `tm11k` of the inductor are missing |
+> | the same + `tech_patches/rm5.diff` | **Circuits match uniquely**: `chip_top` 10/10 devices, 20/20 nets; `vco_v1` 8/8 (exit 5: matched, with `tm11k`/`cap_nmos_03v3_b` black-boxed and 10 fill cells ignored). Counted with `vco_v1` flattened, 17 vs 17 |
 >
-> 1. **No varactor `cifinput` rule.** The techfile writes GDS `166/5` (`MOS_CAP_MK`) for both
->    cap families, but no `cifinput` rule reconstructs `nvaractor`, so `cap_nmos_03v3_b` cannot
->    come back from GDS ("The one waiver this needs" below).
+> Before the fix the stock runner gave 14 vs 18: both the varactors and the `tm11k` were missing.
+>
+> **Why the remaining stock failure is expected:** on 2026-09-25 Bailey ruled in issue #143 that
+> `cap_nmos_03v3_b` and `vco_inductor_v2` come out of `LVS_IGNORE`, and that he would fix the tech
+> file. That change is `f7be3d5` ("drop cap_nmos_03v3_b and vco_inductor_v2 from LVS_IGNORE per
+> Bailey #143"). Two tech-file gaps were on record:
+>
+> 1. **Varactors.** The record said there was *no varactor `cifinput` rule*; that was wrong. The
+>    rule exists (`layer nvar POLY and DIFF and NPLUS and nwelldef and-not DUALGATE`). The real
+>    gap was on the **writer** side: magic's stock tech never wrote COMP under 3.3 V varactor
+>    gates, so the GDS itself lacked them. Fixed in our GDS on 2026-11-02; nothing is needed in
+>    Bailey's reader for it.
 > 2. **The `RESDEF` mapping `calma RESDEF 110 *` does not match on input.** The wildcard datatype
 >    never matches when GDS is read, so `rm5 = MET5 and RESDEF and MET5RES` is always empty and
 >    the inductor's `Metal5_Res` markers produce an open instead of two `tm11k` ("The inductor,
->    measured" and the `rm5` fix below).
+>    measured" and the `rm5` fix below; `tech_patches/rm5.diff`). **Still open upstream**; this is
+>    the whole of the remaining stock failure.
 >
-> Both are in the organizer's techfile and neither is fixed upstream yet. The **"Result,
-> 2026-09-19"** pass and the waiver sections after it describe the config before `f7be3d5` and
-> are kept as history.
->
-> The team's own gates do pass on the same fresh clone: `verify_cp.sh` on all six cells (DRC 0,
-> match uniquely), the `drc_boxset.tcl` box set (252 boxes, identical to
-> `team_src/magic/chip_top.drcbase`), and `klayout_signoff.py chip_top` (168 violations, all
-> waived).
+> The **"Result, 2026-09-19"** pass and the waiver sections after it describe the config before
+> `f7be3d5` and are kept as history. The team's own gates on the fixed GDS: `verify_cp.sh` × 6
+> PASS (unchanged counts), `drc_boxset.tcl` 0 boxes (new baseline), `klayout_signoff.py`
+> 0 violations with no waivers, `team_src/magic/analysis/varactor_comp_gate.py` PASS.
 
 **Superseding the `mpw_precheck` section below.** Per Bailey (issue #143, 2026-09-18) the check
 to run is his `extra_be_checks`, not `mpw_precheck`. It ships the **set_lvs_env.py** helper that

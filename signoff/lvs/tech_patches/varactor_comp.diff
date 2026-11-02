@@ -1,0 +1,11 @@
+--- a/gf180mcuD.tech
++++ b/gf180mcuD.tech
+@@ -644,7 +644,7 @@
+ 
+  layer DIFF 	schottky
+ 	and-not	scsep
+-	or	alldiff
++	or	alldiff,nvaractor,pvaractor
+ 	and-not	ldbreak
+  	labels 	alldiff,schottky
+  	calma 	22 0

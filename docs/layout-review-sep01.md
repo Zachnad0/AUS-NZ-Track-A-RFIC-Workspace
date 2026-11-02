@@ -310,7 +310,7 @@ effect now present: 0.3 V → 6.35 GHz (568 mV), 1.5 V → 5.53 GHz (544 mV), 3.
 (472 mV) — **band 4.13–6.35 GHz**, against the previously recorded 4.11–6.37 GHz. Startup margin
 is not thin.
 
-**Waiver W4 — the only DRC waiver in the design.** See §2.5.
+**Waiver W4 — revoked 2026-11-02; it was the varactor COMP defect, now fixed, 0 items.** See §2.5.
 
 ---
 
@@ -437,7 +437,30 @@ because the reference geometry is ~564 fF per pin, an **88–118 Ω shunt across
 thin-strip diode holds 25 µm of perimeter in 5.4 µm² and would cut that ~40×, but whether
 perimeter alone carries the CDM spec is unanswered. This is listed in §6.
 
-### 2.5 The one DRC waiver — W4, and why it is gencell-internal
+### 2.5 The former DRC waiver W4: it was a layout defect, now fixed (2026-11-02)
+
+> **RESOLVED 2026-11-02: the 168 items were NOT gencell-internal. They were a real defect, and
+> the count is now 0.** Magic's stock `gf180mcuD` tech does not write COMP (22/0) under a 3.3 V
+> `nvaractor`: its `gdsii` cifoutput `DIFF` layer takes `alldiff`, and `alldifflv` leaves the LV
+> varactors out (the 6 V aliases include `mvnvaractor`). Every `vco_varactors.gds` before
+> 2026-11-02 therefore had POLY, NPLUS, NWELL and `MOS_CAP_MK` over all 42 gates but **no COMP:
+> poly over field oxide, not MOS varactors.** The PDK's own KLayout LVS derivation
+> (`moscap_derivations.lvs:55`) found 0 `cap_nmos_03v3_b` in that GDS. PL.5a_LV/PL.5b_LV were
+> flagging exactly that: gate poly abutting the COMP strips with no COMP under it. The "bare
+> single `nmoscap_3p3` unit shows 4" test below reproduced the defect rather than clearing it,
+> because the unit was also written through magic's stock tech.
+>
+> **Fix:** one cifoutput line (`or alldiff` → `or alldiff,nvaractor,pvaractor`), applied to a
+> scratch tech when writing the GDS (`team_src/magic/phase5/write_vco_gds.sh`). The GDS change is
+> **+1050.000 µm² of COMP (22/0) under the 42 gates and nothing else**; bbox and every label are
+> unchanged. After it: KLayout variant-D **0** items (was 168), magic DRC **0** (was TOTAL 84 /
+> 252 boxes), the PDK derivation finds **42** varactors, and the organizer LVS matches with
+> Bailey's pending `rm5` tech fix alone. The VCO transients reproduce the band to within
+> 0.003 GHz. The W4 waiver is **revoked**: `chip_top.waivers` and `vco_v1.waivers` now accept
+> nothing. Full evidence: `signoff/lvs/tech_patches/README.md`. Regression gate:
+> `team_src/magic/analysis/varactor_comp_gate.py`.
+>
+> The original text below is kept as the record of how this was misread.
 
 **Magic DRC on `chip_top` is 0.** KLayout variant-D reports **168 items, all waived, all one
 device.** The waiver file `team_src/magic/chip_top.waivers` accepts exactly two rules and no
@@ -474,8 +497,9 @@ Six gates, all currently green, ~45 s total (`docs/verification.md` §8.12, meas
 
 | Gate | Tool | Runtime | What it asserts |
 |---|---|---|---|
-| `drc_boxset.tcl` + `drc_delta.py` | Magic | 1.8 s | **the DRC error-box *set*, not the total** — 252 boxes, 0 added / 0 removed |
-| `klayout_signoff.py chip_top` | KLayout var-D | 16.9 s | 168 items, all matching the two waived rules |
+| `drc_boxset.tcl` + `drc_delta.py` | Magic | 1.8 s | **the DRC error-box *set*, not the total** — 0 boxes since 2026-11-02 (was 252, the varactor COMP defect, §2.5) |
+| `klayout_signoff.py chip_top` | KLayout var-D | 16.9 s | 0 items since 2026-11-02, no waivers (was 168 under the revoked W4, §2.5) |
+| `varactor_comp_gate.py` | KLayout | ~5 s | COMP over `MOS_CAP_MK` = 1050 µm² and 42 PDK-derived `cap_nmos_03v3_b` in `vco_varactors`, `vco_v1` and `chip_top` (added 2026-11-02) |
 | `verify_cp.sh chip_top` | Magic + netgen | 14.6 s | extraction → 11 ports, LVS match uniquely, 0 property errors |
 | `landing_check.py` | KLayout | 4.4 s | every haul physically **reaches** its DEF pin finger, with margin |
 | `lane_conflicts.py` | — | 4.0 s | 0 same-layer lane conflicts |
@@ -1405,11 +1429,16 @@ Recorded beside the invariants because both produce a WRONG gate result, not an 
 `verify_cp.sh` prefers `gds/<CELL>.gds` over the `.mag`, and on
 `chip_top` the GDS path reports DRC 84 / `DO NOT MATCH` **on the committed deliverable itself** —
 the gencells only extract correctly through the `.mag`, so the GDS path is diagnostic, not a
-gate. And a `gds write` of `DIV2_QUAD_v1` from inside `team_src/magic` silently drops
+gate. *(2026-11-02: that DRC 84 / no-varactor result was the real signal. The GDS lacked COMP
+under the 42 varactor gates; §2.5. Read GDS-path disagreements as possible defects, not as
+tool noise.)* And a `gds write` of `DIV2_QUAD_v1` from inside `team_src/magic` silently drops
 `ib_conv_v1` (magic resolves it to an abstract), producing a 145-device GDS that fails LVS; the
 export has to run from a directory holding `ib_conv_v1.mag` with no abstract in scope.
 
-The working export recipe, for both `DIV2_QUAD_v1` and anything else with a child master:
+The working export recipe, for both `DIV2_QUAD_v1` and anything else with a child master.
+**Not for `vco_varactors` / `vco_v1` / `chip_top`:** with the stock tech below, a `gds write`
+of anything containing `vco_varactors` drops COMP under the 42 varactor gates (§2.5). Use
+`team_src/magic/phase5/write_vco_gds.sh`, which applies the tech patch and refuses a stock tech.
 
 ```
 cd <a scratch dir holding the child .mag, and NO <cell>.abstract>
@@ -2029,10 +2058,10 @@ filter for **KVCO = −1.1 GHz/V**; and **apply the UP/DOWN sense inversion** re
 | `CP_v1` | ✅ | 0 | 0 | ✅ | ✅ DC + transient + PFD pair | ✅ **R+C PEX, UP/DOWN match (§4.2.1)** |
 | `ibias_gen_v1` | ✅ | 0 | 0 | ✅ | ✅ S1–S7 + PSRR + corners | ❌ none |
 | `DIV2_QUAD_v1` | ✅ | 0 | 0 | ✅ | ✅ full band + PVT + I/Q | ❌ none |
-| `vco_v1` | ✅ | 0 | 168 (W4 waiver) | ✅ | ✅ f–VTUNE + PVT + startup | ❌ none; re-sim as *drawn schematic* only |
+| `vco_v1` | ✅ | 0 | 0 (was 168, W4 revoked 2026-11-02) | ✅ | ✅ f–VTUNE + PVT + startup | ❌ none; re-sim as *drawn schematic* only |
 | `vco_inductor_v2` | ✅ | 0 | 0 | waiver W3 (black box) | analytical (Mohan) | ❌ EM solve deferred |
 | ESD clamps (2 of 7) | ✅ | 0 | 0 | ✅ (in `chip_top`) | ❌ none | ❌ none |
-| **`chip_top`** | ✅ | 0 | 168 (W4) | ✅ 11 ports | ❌ **no closed-loop sim** | ❌ none |
+| **`chip_top`** | ✅ | 0 | 0 (was 168, W4 revoked 2026-11-02) | ✅ 11 ports | ❌ **no closed-loop sim** | ❌ none |
 
 ---
 
@@ -2189,10 +2218,11 @@ Everything in this list is a real absence. None of it is mitigated by anything i
     those are coverage over each block's own bbox, these are over the whole die. The die is mostly
     empty — five blocks in a 1110 × 550 µm slot — which is why every full-die number is far below
     its floor. Metal5 is the highest at 7.8 % because the power ring and buses live there.
-14. **The W4 waiver (168 KLayout PL.5a_LV/PL.5b_LV items) is an accepted risk, not a resolved
-    issue.** The evidence that it is `nmoscap_3p3`-gencell-internal is strong and reproducible
-    (§2.5), but it is still a nonzero KLayout count on a flow where failing-DRC designs may be
-    dropped.
+14. **RESOLVED 2026-11-02 — the W4 waiver is revoked.** The 168 KLayout PL.5a_LV/PL.5b_LV items
+    were not gencell-internal: they marked missing COMP under all 42 varactor gates, a real
+    fabrication defect in every GDS before that date (§2.5). With the COMP fix the count is 0 and
+    no waiver remains. The original entry read: "an accepted risk, not a resolved issue … still a
+    nonzero KLayout count on a flow where failing-DRC designs may be dropped."
 15. **CP_v1's full dummy set and complete guard rings were deferred** and are not drawn. What is
     drawn is common-centroid with one dummy finger per array end and both guard rings.
 

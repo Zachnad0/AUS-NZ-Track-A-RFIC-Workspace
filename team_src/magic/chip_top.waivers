@@ -1,6 +1,6 @@
 # Accepted DRC-rule waivers for chip_top (KLayout variant D signoff).
-# W4 varactor waiver: nmoscap_3p3 gencell field-poly-to-guardring, device-internal, 2/unit x
-# 42 units x 2 rules = 168 items. magic-on-.mag (gencell-aware) DRC is 0; the foundry/Bailey
-# LVS handles the nmoscap from GDS. Only these two exact rules are accepted, only for this cell.
-PL.5a_LV
-PL.5b_LV
+# NONE. The former W4 waiver (PL.5a_LV / PL.5b_LV, 168 items) was REVOKED 2026-11-02: those
+# markers were not intrinsic to the nmoscap_3p3 gencell -- they were the missing COMP under
+# the 42 varactor gates (magic's stock tech does not write COMP for 3.3 V nvaractor). With
+# the COMP fix the count is 0, so any PL.5a/5b reappearing now FAILS this gate.
+# See signoff/lvs/tech_patches/README.md.

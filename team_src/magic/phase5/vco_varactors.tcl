@@ -1,4 +1,9 @@
 # vco_varactors.tcl -- rung 3b: differential varactor pair (XC1 cap_bias<->OUT_n m=21,
+# !!! GDS EXPORT: never `gds write` this cell (or anything containing vco_varactors) with the
+# !!! stock gf180mcuD tech -- it drops COMP (22/0) under all 42 varactor gates (poly over field
+# !!! oxide; 0 cap_nmos_03v3_b in the PDK LVS). Use team_src/magic/phase5/write_vco_gds.sh,
+# !!! which applies signoff/lvs/tech_patches/varactor_comp.diff and refuses a stock tech, then
+# !!! team_src/magic/analysis/varactor_comp_gate.py. See signoff/lvs/tech_patches/README.md.
 #   XC4 cap_bias<->OUT_p m=21), 42x cap_nmos_03v3_b (nmoscap_3p3 w5 l5).
 # Contact map (proven): a unit placed at box(X,Y) lands its child CENTER at (X+714,Y+676).
 #   gate poly contacts -> M1 at (X+714, Y+676 +-556) ; well (nsubdiff) -> M1 at (X+162, Y+676)
