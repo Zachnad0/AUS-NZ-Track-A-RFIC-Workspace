@@ -70,7 +70,7 @@ IBIAS generator's outputs `VGP`/`VGN`/`IB_DIV2` (`docs/pins.md` §1;
 | `ISS` tail current, nominal (sim "1.0×") | 1.35 mA tail, from a 1 mA reference into a 1:1 NMOS mirror on the bench | `docs/verification.md` §3.2, §3.2.1 |
 | `ISS` tail current, bring-up (sim "2.0×") | ≈ 2.3–2.38 mA tail (reference 1 mA → 2 mA); needed for the top of the tuning range to start | `docs/verification.md` §3.2.1 |
 | `ISS` off-chip circuit (mirror or current sink) | TODO | — |
-| `ISS` node voltage / required sink compliance | TODO; needs a run on the landed extraction (§8). The only recorded ISS-node voltage, 0.698 V at 4.0× falling to 0.475 V at 6.0×, is from the **pre-landing** extraction that did not oscillate, so it does not apply | `docs/verification.md` §3.2 |
+| `ISS` node voltage / required sink compliance | v(ISS) 1.0–1.42 V across all simulated points; the sink must regulate at **≤ 1.0 V** (minimum observed 1.009 V). Full table in §5.1. (The 0.698–0.475 V figures in `docs/verification.md` §3.2 come from the pre-landing extraction and do not apply.) | `signoff/sim/iss/`, run 2026-11-02 |
 | `VTUNE` range | 0–3.3 V (simulated sweep range) | `docs/verification.md` §3.1, §3.2.1 |
 | `REF_IN` amplitude / levels | TODO | — |
 | `REF_IN` frequency | TODO (PFD simulated at 1 MHz and 2 MHz) | `docs/layout-review-sep01.md` §4.6.1 |
@@ -129,6 +129,49 @@ spectrum analyzer. Repeat at nominal and at 2× ISS.
   A local KVCO at the operating point needs a finer extracted sweep (§8).
 - Schematic reference band, for comparison only: 4.05–6.38 GHz (`docs/scope.md` §3). The
   extraction runs 6–11 % lower (`docs/verification.md` §3.2.1).
+
+**ISS sink requirement.** `ISS` is the tail node of the cross-coupled pair. The tail current
+flows *out* of the pin into an off-chip sink, which pulls it toward ground. Simulated on the landed
+extraction (`signoff/sim/iss/`, `run_iss.sh`, run 2026-11-02, TT, 200 ns, measured 150–200 ns):
+
+*With the bench's 1:1 NMOS tail mirror* (`run_iss.sh node`). The six runs reproduce the band
+table above to within 0.003 GHz, including no start at 1.0× / 3.3 V.
+
+| Reference | VTUNE | Sink current | v(ISS) avg | v(ISS) min | Oscillates |
+|---|---|---|---|---|---|
+| 1 mA (1.0×) | 0.0 V | 1.391 mA | 1.389 V | 1.361 V | yes, 1.968 Vpp |
+| 1 mA (1.0×) | 2.0 V | 1.302 mA | 1.237 V | 1.225 V | yes, 0.974 Vpp |
+| 1 mA (1.0×) | 3.3 V | 1.274 mA | 1.188 V | 1.187 V | **no** |
+| 2 mA (2.0×) | 0.0 V | 2.379 mA | 1.185 V | 1.157 V | yes, 3.037 Vpp |
+| 2 mA (2.0×) | 2.0 V | 2.337 mA | 1.137 V | 1.100 V | yes, 2.206 Vpp |
+| 2 mA (2.0×) | 3.3 V | 2.235 mA | 1.018 V | **1.009 V** | yes, 1.025 Vpp |
+
+*With an ideal current sink, VTUNE 2.0 V* (`run_iss.sh sweep`). There is no compliance limit,
+so v(ISS) is the voltage the die itself sets:
+
+| Sink current | v(ISS) avg | v(ISS) min | Core diff. swing |
+|---|---|---|---|
+| 1.00 mA | 1.257 V | 1.257 V | 0.065 Vpp, not a sustained oscillation at 200 ns |
+| 1.15 mA | 1.248 V | 1.230 V | 0.685 Vpp |
+| 1.30 mA | 1.230 V | 1.200 V | 0.898 Vpp |
+| 1.60 mA | 1.191 V | 1.143 V | 1.221 Vpp |
+| 2.00 mA | 1.148 V | 1.074 V | 1.636 Vpp |
+| 2.35 mA | 1.108 V | 1.016 V | 1.974 Vpp |
+
+What this means for the off-chip sink:
+- **Current.** 1.0× is about 1.27–1.39 mA (1.30 mA at VTUNE 2.0 V); it does not start at the top
+  of the tuning range. 2.0× is about 2.24–2.38 mA (2.34 mA at VTUNE 2.0 V) and covers the whole
+  band. At VTUNE 2.0 V an ideal sink needs about 1.15 mA to oscillate; 1.00 mA does not
+  sustain one within 200 ns.
+- **Compliance.** The ISS node never went below **1.009 V** in any oscillating case (2.0×,
+  VTUNE 3.3 V), and sits at 1.0–1.42 V across all runs. **The sink must therefore regulate
+  with its terminal at 1.0 V or lower.** Margin beyond that is TODO; the bench mirror used in
+  simulation met it.
+- **Settable range.** v(ISS) falls as current rises, by ~0.15 V from 1.0 to 2.35 mA, so a sink
+  that regulates at 1.0 V covers every point simulated. Corners and temperature were not run.
+- An ideal sink gives somewhat less swing than the mirror at the same current (0.898 Vpp at
+  1.30 mA vs 0.974 Vpp at 1.302 mA). This is likely the mirror's finite output impedance
+  letting the tail current move with the oscillation; it is not investigated further here.
 
 **Output power.** The pads are reached through the divider's output converters, so output power
 is a DIV2 measurement (§5.2). No VCO-core output power is observable.
@@ -245,16 +288,18 @@ From `docs/layout-review-sep01.md` §6 and the files cited above:
 
 ## 8. Values that need a new simulation run
 
-None of these has been run. The runtimes are estimates. (The IBIAS pin-voltage and compliance
-runs listed here earlier were done on 2026-11-02 and are now in §3 and §5.4: 9 runs, under 1 s
-each, and the TT / 3.3 V control reproduces the recorded 50.00 / 49.91 / 239.56 µA. The
-`VDDA` current run was also done on 2026-11-02 and is in §3. Its VCO runs took 109 s and 139 s
-and reproduce the recorded 0.974 Vpp / 4.372 GHz and 2.207 Vpp / 4.402 GHz.) The only recorded extracted-VCO runtime
-is 21 s for 40 ns on the pre-landing netlist (`signoff/sim/vco/README.md`); no 200 ns runtime
-is recorded.
+This run has not been done; the runtime is an estimate. A 200 ns run on the landed extraction
+takes 52–147 s with 2 threads (measured 2026-11-02).
+
+Done on 2026-11-02 and moved out of this list:
+- IBIAS pin voltage and compliance: §3 and §5.4. 9 runs, under 1 s each; the TT / 3.3 V control
+  reproduces the recorded 50.00 / 49.91 / 239.56 µA.
+- `VDDA` current: §3. Its VCO runs reproduce the recorded 0.974 Vpp / 4.372 GHz and
+  2.207 Vpp / 4.402 GHz.
+- `ISS` node voltage and sink compliance: §5.1. 12 runs, ~21 min total. The compliance sweep used
+  an ideal current sink stepped over 1.0–2.35 mA rather than a swept voltage source: a voltage
+  source on `ISS` sets the tail current itself and so does not measure a sink's compliance.
 
 | Value | Run needed | Estimated runtime |
 |---|---|---|
-| `ISS` node voltage, landed extraction | `signoff/sim/vco/pex200.spice` with the ISS node added to `wrdata`, at ISS 1.0×/2.0× and VTUNE 0/2.0/3.3 V (6 runs of 200 ns) | ~2 min per run, ~10–15 min total |
-| `ISS` minimum compliance for oscillation | Same deck with the ISS node held by a swept voltage source (≈ 6–8 points) | ~2 min per point, ~15 min |
 | Local extracted KVCO | `pex200.spice` swept over VTUNE 0–3.3 V in 0.25 V steps at ISS 1.0× and 2.0× (≈ 28 runs) | ~1 h |
