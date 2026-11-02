@@ -6,6 +6,8 @@ RF-block characterization chip containing the blocks of an integer-N PLL (LC-VCO
 
 Team A01 is committed to testing the fabricated chip and publishing the measurement results in this repository.
 
+Test plan (draft): [docs/test_plan.md](docs/test_plan.md)
+
 Team members
 
 | Discord | Github | Affiliation (experience) | Role |
