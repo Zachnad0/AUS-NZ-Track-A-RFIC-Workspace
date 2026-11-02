@@ -56,13 +56,13 @@ IBIAS generator's outputs `VGP`/`VGN`/`IB_DIV2` (`docs/pins.md` §1;
 
 | Quantity | Value | Source |
 |---|---|---|
-| `VDDA` | 3.3 V | `docs/scope.md` §4.1 (single 3.3 V rail); all sims TT / 3.3 V / 27 °C (`docs/verification.md` §2.6, §3.1) |
+| `VDDA` | 3.3 V | `docs/scope.md` section 4.1 (single 3.3 V rail); all sims TT / 3.3 V / 27 °C (`docs/verification.md` sections 2.6, 3.1) |
 | `VDDD` | 3.3 V | `docs/scope.md` §4.1 |
 | `VDDA`/`VDDD` current limit | **VDDA 6 mA, VDDD 50 mA** (team decision 11/2) | — |
 | Expected supply current, chip | ≈ 25 mA core-only, against a ~50 mA budget | `docs/layout-review-sep01.md` §4 "Power budget" |
 | Expected supply current, `VDDD` | 22.9 mA = DIV2 22.4 mA (simulated, `i(v_vdd)` of `div2_sb_TT`) + PFD ≈ 0.5 mA (inferred, not simulated). Later DIV2 runs: 22.118 mA with modelled passives, 22.791 mA with one converter extracted | `docs/layout-review-sep01.md` "Phase C — the chip-level VDDD path"; `docs/phase7-routing-plan.md`; `signoff/pex/ib_conv_v1/resim.md` |
 | Expected supply current, `VDDA` | **1.90 mA at ISS 1.0×, 2.93 mA at ISS 2.0×** (TT, 3.3 V, VTUNE 2.0 V, CP idle or sinking). Simulated, and covers all three blocks on `VDDA` (`team_src/magic/chip_top_golden.spice`): VCO 1.300 / 2.332 mA (extracted `vco_v1`, bench buffer on its own supply) + CP 0.050 mA + IBIAS generator 0.549 mA. CP sourcing (UP on) adds 0.050 mA. CP + IBIAS over corners: 0.595 (SS) to 0.600 (FF) mA idle; the VCO was run at TT only. Not included: the 240 µA `IBIAS` reference (add it if the source is powered from `VDDA`) and ESD-diode leakage. The VCO's share leaves the die through the `ISS` pin, not `VSSA`. Replaces the 3.5 mA estimate in `docs/phase7-routing-plan.md` | `signoff/sim/vdda/` (`run_vdda.sh`), run 2026-11-02 |
-| `IBIAS` reference current | 240 µA, forced current | `docs/pins.md` §1; `docs/verification.md` §2.6 |
+| `IBIAS` reference current | 240 µA, forced current | `docs/verification.md` §2.6; `docs/pins.md` section 1 |
 | `IBIAS` current direction | Sourced **into** the pin from the supply (`I_BIAS VDD IBIAS 240u`); the pin lands on a diode-connected nfet | `team_src/sim/ibias/ibias_op.spice`; `docs/esd-which-pins.md` |
 | `IBIAS` pin voltage at 240 µA | **2.066 V TT**, 1.787 V FF, 2.349 V SS; the same at VDD 3.0, 3.3 and 3.6 V (schematic, 27 °C; the generator has no PEX) | `team_src/sim/ibias/ibias_pin.spice.in`, run 2026-11-02 |
 | `IBIAS` pin voltage over 120–360 µA | TT 1.892–2.196 V; FF 1.619–1.911 V; SS 2.167–2.484 V | same |
@@ -76,7 +76,7 @@ IBIAS generator's outputs `VGP`/`VGN`/`IB_DIV2` (`docs/pins.md` §1;
 | `REF_IN` amplitude / levels | **0 V / 3.3 V** square wave, 100 ps edges in simulation, as the PFD sims used (team decision 11/2) | `team_src/xschem/PFD_tb.sch`, `PFD_CP_tb.sch` (`PULSE(0 3.3 … 100p 100p 500n 1u)`); `docs/verification.md` §2 |
 | `REF_IN` frequency | **1 MHz, 50 % duty** (500 ns high, 1 µs period), as the PFD sims used (team decision 11/2). The library-cell PFD was also re-simulated at 2 MHz | same; `docs/verification.md` §2, §2.1, §2.2 |
 | Power-up sequencing | **(1) grounds (`VSSA`, `VSSD`); (2) `VDDA` and `VDDD`, current-limited per above; (3) `IBIAS`; (4) `ISS`; (5) `VTUNE`; (6) `REF_IN`** (team decision 11/2). Power down in reverse | — |
-| Settling before reading outputs | ≥ 30 ns for the divider; ≥ 200 ns (startup 83 ns) for the VCO | `docs/scope.md` §7; `docs/verification.md` §3.2.1 |
+| Settling before reading outputs | ≥ 30 ns for the divider; ≥ 200 ns (startup 83 ns) for the VCO | `docs/verification.md` §3.2.1; `docs/scope.md` section 7 |
 
 ## 4. Required equipment
 
@@ -128,8 +128,8 @@ spectrum analyzer. Repeat at nominal and at 2× ISS.
 | 2.0 V | 4.372 GHz, 0.974 Vpp | 4.402 GHz, 2.207 Vpp |
 | 3.3 V | **does not start** | 3.807 GHz, 1.026 Vpp |
 
-- Startup threshold at VTUNE 2.0 V: starts at 0.85× ISS, dead at 0.70× (`docs/verification.md`
-  §3.2.1).
+- Startup threshold at VTUNE 2.0 V: starts at 0.85× ISS, dead at 0.70×
+  (`docs/verification.md` §3.2.1).
 - Startup to 90 % at 1.0× ISS: 83 ns (`signoff/sim/vco/README.md`).
 - KVCO: negative (frequency falls as VTUNE rises); ≈ −1.1 GHz/V near the ISM point on the
   **schematic** (`docs/scope.md` §3). Extracted KVCO, as chord slopes between the three VTUNE
