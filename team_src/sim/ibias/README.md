@@ -24,6 +24,7 @@ xschem -n -q -o <out> CP_v1.sch          # then wrap the 8 devices as CP_core (7
 | `ac_test.spice` | S4b | IB_DIV2→VGN AC coupling; swap `ibias_sub_active.spice` between `ibias_sub` (separate) and `ibias_sub_shared` (shared) |
 | `s5_gen.spice` | S5 | CP UP/DOWN source & sink vs CP_OUT, generator-driven (ideal baseline = run `CP_dc_tb.sch`) |
 | `ibias_psrr.spice` | PSRR | VGP/VGN/DIV2 vs VDD 3.0–3.6 V |
+| `ibias_pin.spice.in` | pin | `v(IBIAS)` at 240 µA and over a 0–360 µA sweep; template, run all corners × VDD with `bash run_ibias_pin.sh` (generated decks/logs go to `/tmp/ibias_pin`) |
 
 Run: `ngspice -b <deck>.spice`. Input-current gain sweep (S4) uses `ibias_gen_tb.sch`
 netlisted + a `dc I_BIAS 120u 360u` control.

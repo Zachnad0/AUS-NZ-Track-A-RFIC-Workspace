@@ -64,7 +64,9 @@ IBIAS generator's outputs `VGP`/`VGN`/`IB_DIV2` (`docs/pins.md` §1;
 | Expected supply current, `VDDA` | 3.5 mA, **an estimate from bias structure, not a simulation**; needs a run (§8) | `docs/phase7-routing-plan.md` ("vco/CP/ibias/PFD estimated from bias structure") |
 | `IBIAS` reference current | 240 µA, forced current | `docs/pins.md` §1; `docs/verification.md` §2.6 |
 | `IBIAS` current direction | Sourced **into** the pin from the supply (`I_BIAS VDD IBIAS 240u`); the pin lands on a diode-connected nfet | `team_src/sim/ibias/ibias_op.spice`; `docs/esd-which-pins.md` |
-| `IBIAS` pin voltage / compliance | TODO; needs a run (§8). No `v(IBIAS)` output is committed | — |
+| `IBIAS` pin voltage at 240 µA | **2.066 V TT**, 1.787 V FF, 2.349 V SS; the same at VDD 3.0, 3.3 and 3.6 V (schematic, 27 °C; the generator has no PEX) | `team_src/sim/ibias/ibias_pin.spice.in`, run 2026-11-02 |
+| `IBIAS` pin voltage over 120–360 µA | TT 1.892–2.196 V; FF 1.619–1.911 V; SS 2.167–2.484 V | same |
+| Required compliance of the external `IBIAS` source | Must hold the pin at ≥ 2.35 V at 240 µA (SS) and ≥ 2.48 V at 360 µA (SS). A source tied to the 3.3 V rail therefore has ≈ 0.95 V of headroom at SS, 240 µA | derived from the two rows above |
 | `ISS` tail current, nominal (sim "1.0×") | 1.35 mA tail, from a 1 mA reference into a 1:1 NMOS mirror on the bench | `docs/verification.md` §3.2, §3.2.1 |
 | `ISS` tail current, bring-up (sim "2.0×") | ≈ 2.3–2.38 mA tail (reference 1 mA → 2 mA); needed for the top of the tuning range to start | `docs/verification.md` §3.2.1 |
 | `ISS` off-chip circuit (mirror or current sink) | TODO | — |
@@ -212,7 +214,8 @@ IBIAS share of the supply current from the other blocks on the same rail is TODO
 | Generator total supply current | 839 µA |
 | Gain, VGP | 5/24, linearity < 0.01 % over 120–360 µA |
 | PSRR, VDD 3.0–3.6 V | VGP 0.003 %/V; VGN and IB_DIV2 1.16 %/V |
-| `IBIAS` pin voltage at 240 µA | TODO; needs a run (§8) |
+| `IBIAS` pin voltage at 240 µA | 2.066 V TT (1.787 FF, 2.349 SS), independent of VDD; `team_src/sim/ibias/ibias_pin.spice.in` |
+| VGN branch at SS, VDD 3.0 V | 48.30 µA at 240 µA and 59.72 µA at 360 µA (VGP stays 50.00 / 75.00), so the PMOS-mirror path runs out of headroom at low supply in the slow corner; same deck |
 
 **Pass/fail limits:** TODO.
 
@@ -235,14 +238,14 @@ From `docs/layout-review-sep01.md` §6 and the files cited above:
 
 ## 8. Values that need a new simulation run
 
-None of these has been run. The runtimes are estimates. The only recorded extracted-VCO runtime
+None of these has been run. The runtimes are estimates. (The IBIAS pin-voltage and compliance
+runs listed here earlier were done on 2026-11-02 and are now in §3 and §5.4: 9 runs, under 1 s
+each, and the TT / 3.3 V control reproduces the recorded 50.00 / 49.91 / 239.56 µA.) The only recorded extracted-VCO runtime
 is 21 s for 40 ns on the pre-landing netlist (`signoff/sim/vco/README.md`); no 200 ns runtime
 is recorded.
 
 | Value | Run needed | Estimated runtime |
 |---|---|---|
-| `IBIAS` pin voltage at 240 µA | `team_src/sim/ibias/ibias_op.spice` with `v(IBIAS)` printed (schematic; the generator has no PEX) | seconds |
-| `IBIAS` compliance | DC sweep of `I_BIAS` over 120–360 µA, recording `v(IBIAS)` (the README's S4 sweep) | seconds |
 | `ISS` node voltage, landed extraction | `signoff/sim/vco/pex200.spice` with the ISS node added to `wrdata`, at ISS 1.0×/2.0× and VTUNE 0/2.0/3.3 V (6 runs of 200 ns) | ~2 min per run, ~10–15 min total |
 | `ISS` minimum compliance for oscillation | Same deck with the ISS node held by a swept voltage source (≈ 6–8 points) | ~2 min per point, ~15 min |
 | Local extracted KVCO | `pex200.spice` swept over VTUNE 0–3.3 V in 0.25 V steps at ISS 1.0× and 2.0× (≈ 28 runs) | ~1 h |
