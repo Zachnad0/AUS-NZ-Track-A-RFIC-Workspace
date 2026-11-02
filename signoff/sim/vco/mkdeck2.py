@@ -12,8 +12,10 @@ import os
 import re
 import sys
 
-REPO = "/foss/designs/AUS-NZ-integration"
-SRC = "/foss/designs/_lvs_check/vco/sim/vco_tb.spice"
+HERE = os.path.dirname(os.path.abspath(__file__))  # signoff/sim/vco
+REPO = os.environ.get("UPRJ_ROOT") or os.path.dirname(os.path.dirname(os.path.dirname(HERE)))
+# the committed bench, netlisted from team_src/xschem/vco_tb.sch
+SRC = os.path.join(HERE, "vco_tb.spice")
 GOLDEN = REPO + "/team_src/magic/vco_v1_golden.spice"
 PEX = REPO + "/signoff/pex/vco_v1/vco_v1.pex.spice"
 

@@ -6,10 +6,12 @@ Keeps the bench as netlisted; replaces only the .control block (the committed on
 subckt is swapped for the extracted one.
 """
 import io
+import os
 import re
 import sys
 
-SRC = "/foss/designs/_lvs_check/vco/sim/vco_tb.spice"
+# the committed bench, netlisted from team_src/xschem/vco_tb.sch
+SRC = os.path.join(os.path.dirname(os.path.abspath(__file__)), "vco_tb.spice")
 out, vtune, tstop, dat = sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4]
 pex = sys.argv[5] if len(sys.argv) > 5 else None
 

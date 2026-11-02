@@ -18,7 +18,7 @@ Rterm_Q_N Q_N 0 50
 
 
 .include /foss/pdks/gf180mcuD/libs.tech/ngspice/design.ngspice
-.include /foss/designs/_div2_work/resim/ib_conv_v1_pex.spice
+.include ib_conv_v1_pex.spice
 .include /foss/designs/AUS-NZ-integration/team_src/magic/ib_conv_v1_golden.spice
 .lib /foss/pdks/gf180mcuD/libs.tech/ngspice/sm141064.ngspice typical
 .lib /foss/pdks/gf180mcuD/libs.tech/ngspice/sm141064.ngspice mimcap_typical
@@ -91,12 +91,12 @@ V_VSS_QN VSS_QN VSS 0
 .control
 set num_threads=2
 tran 0.2p 20n uic
-wrdata /foss/designs/_div2_work/resim/all_quad.dat v(I_P) v(I_N) v(Q_P) v(Q_N) v(x1.x_conv_ip.a_8030_n1600.t1) v(x1.x_conv_qp.a_8030_n1600.t1)
+wrdata all_quad.dat v(I_P) v(I_N) v(Q_P) v(Q_N) v(x1.x_conv_ip.a_8030_n1600.t1) v(x1.x_conv_qp.a_8030_n1600.t1)
 meas tran i_vdd_avg AVG i(v_vdd) from=16n to=20n
 meas tran i_ip_avg AVG i(v.x1.v_vss_ip) from=16n to=20n
 meas tran i_in_avg AVG i(v.x1.v_vss_in) from=16n to=20n
 meas tran i_qp_avg AVG i(v.x1.v_vss_qp) from=16n to=20n
 meas tran i_qn_avg AVG i(v.x1.v_vss_qn) from=16n to=20n
-wrdata /foss/designs/_div2_work/resim/allvss.dat v(x1.vss_ip) v(x1.x_conv_ip.vss.t0) v(x1.x_conv_ip.vss.t1) v(x1.x_conv_ip.vss.t2) v(x1.x_conv_ip.vss.t3) v(x1.x_conv_ip.vss.t4) v(x1.x_conv_ip.vss.t5) v(x1.x_conv_ip.vss.t6) v(x1.x_conv_ip.vss.t7) v(x1.x_conv_ip.vss.t8) v(x1.x_conv_ip.vss.t9) v(x1.x_conv_ip.vss.t10) v(x1.x_conv_ip.vss.t11)
+wrdata allvss.dat v(x1.vss_ip) v(x1.x_conv_ip.vss.t0) v(x1.x_conv_ip.vss.t1) v(x1.x_conv_ip.vss.t2) v(x1.x_conv_ip.vss.t3) v(x1.x_conv_ip.vss.t4) v(x1.x_conv_ip.vss.t5) v(x1.x_conv_ip.vss.t6) v(x1.x_conv_ip.vss.t7) v(x1.x_conv_ip.vss.t8) v(x1.x_conv_ip.vss.t9) v(x1.x_conv_ip.vss.t10) v(x1.x_conv_ip.vss.t11)
 .endc
 .end

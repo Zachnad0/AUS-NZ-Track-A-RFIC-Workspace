@@ -153,6 +153,6 @@ R_SER_QN INVO3_QN Q_N 1k
 .save all
 .control
 tran 0.2p 20n uic
-wrdata /foss/designs/_div2_work/sb_quad.dat v(I_P) v(I_N) v(Q_P) v(Q_N) v(x1.INVO3_IP) v(x1.INVO3_QP)
+wrdata sb_quad.dat v(I_P) v(I_N) v(Q_P) v(Q_N) v(x1.INVO3_IP) v(x1.INVO3_QP)
 .endc
 .end

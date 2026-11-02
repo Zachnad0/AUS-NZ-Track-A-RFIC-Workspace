@@ -9,7 +9,8 @@
 import sys, os, subprocess, xml.etree.ElementTree as ET
 from collections import Counter
 
-REPO = "/foss/designs/AUS-NZ-integration"
+# repo root: $UPRJ_ROOT if set, else two levels up from this file (team_src/magic/)
+REPO = os.environ.get("UPRJ_ROOT") or os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 RUN_DRC = REPO + "/gf180mcu/gf180mcuD/libs.tech/klayout/tech/drc/run_drc.py"
 
 def main():

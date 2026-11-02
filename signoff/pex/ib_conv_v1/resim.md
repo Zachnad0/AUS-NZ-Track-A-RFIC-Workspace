@@ -19,8 +19,17 @@ adding a 0 V ammeter in each converter's VSS return.
 | `div2_mix.spice` | I_P PEX, other three golden | one-converter PEX |
 | `div2_all.spice` | 4 × `ib_conv_v1_pex` | all-four PEX |
 
-Decks are committed at `signoff/pex/ib_conv_v1/decks/`. Run in-container from a scratch
-copy of that directory (they write .dat files beside themselves):
+Decks are committed at `signoff/pex/ib_conv_v1/decks/`. Each includes its converter netlist by
+bare filename from that same directory, and writes its `.dat` files to the current directory.
+Run in-container from a scratch copy of that directory:
+
+> **Which netlist the committed decks use (noted 2026-11-02).** The converter netlists in
+> `decks/` are the **2026-09-11** extraction (`ib_conv_v1_pex.spice`: 526 R / 70 C), so the decks
+> reproduce the 2026-09-11 rows below (25 mVpp). The **2026-09-17 re-extraction at `9614947`**
+> (625 R / 136 C) behind the "Re-run 2026-09-17" rows (29 mVpp), and its `_noc` / `_norvss`
+> variants, were never committed. They exist only in the author's local scratch directory, so
+> the 29 mVpp result cannot be reproduced from this repository alone. Until 2026-11-02 the decks
+> pointed at that scratch directory by absolute path.
 
 ```
 ngspice -b div2_sch.spice      # set num_threads=2 is in-deck
