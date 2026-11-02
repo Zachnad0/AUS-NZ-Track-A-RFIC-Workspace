@@ -69,7 +69,7 @@ IBIAS generator's outputs `VGP`/`VGN`/`IB_DIV2` (`docs/pins.md` §1;
 | Required compliance of the external `IBIAS` source | Must hold the pin at ≥ 2.35 V at 240 µA (SS) and ≥ 2.48 V at 360 µA (SS). A source tied to the 3.3 V rail therefore has ≈ 0.95 V of headroom at SS, 240 µA | derived from the two rows above |
 | `ISS` tail current, nominal (sim "1.0×") | 1.35 mA tail, from a 1 mA reference into a 1:1 NMOS mirror on the bench | `docs/verification.md` §3.2, §3.2.1 |
 | `ISS` tail current, bring-up (sim "2.0×") | ≈ 2.3–2.38 mA tail (reference 1 mA → 2 mA); needed for the top of the tuning range to start | `docs/verification.md` §3.2.1 |
-| `ISS` off-chip circuit (mirror or current sink) | TODO | — |
+| `ISS` off-chip circuit | **SMU in current-sink mode**, set to the 1.0× / 2.0× currents: 1.30 / 2.34 mA (the VTUNE 2.0 V values in §5.1; 1.27–1.39 / 2.24–2.38 mA across VTUNE), compliance down to 0.8 V (team decision 11/2) | `signoff/sim/iss/` |
 | `ISS` node voltage / required sink compliance | v(ISS) 1.0–1.42 V across all simulated points (minimum observed 1.009 V). **The sink must regulate down to 0.8 V** (team decision 11/2). Full table in §5.1. (The 0.698–0.475 V figures in `docs/verification.md` §3.2 come from the pre-landing extraction and do not apply.) | `signoff/sim/iss/`, run 2026-11-02 |
 | `VTUNE` range | 0–3.3 V (simulated sweep range) | `docs/verification.md` §3.1, §3.2.1 |
 | `VTUNE` step | **0.1 V** (34 points over 0–3.3 V) (team decision 11/2) | — |
@@ -80,15 +80,17 @@ IBIAS generator's outputs `VGP`/`VGN`/`IB_DIV2` (`docs/pins.md` §1;
 
 ## 4. Required equipment
 
-Generic only; models and settings are `TODO`.
+Listed generically here. **The make, model and settings actually used are recorded per test in
+`results/`** (team decision 11/2; see §6).
 
-- Spectrum analyzer, covering at least the ÷2 output band (`TODO`: frequency range).
+- Spectrum analyzer, **≥ 7 GHz, span 1–7 GHz** (team decision 11/2).
 - Signal generator for `REF_IN`.
 - DC power supplies for `VDDA` and `VDDD`, with current readback.
 - Precision DC voltage source for `VTUNE`.
-- DC current sources (or SMU) for `IBIAS` and `ISS`, and for forcing/measuring `CP_OUT`.
-- Oscilloscope, with enough bandwidth for the ÷2 outputs (`TODO`: required bandwidth), for I/Q
-  phase and duty cycle.
+- SMUs: `IBIAS` (current source, ≥ 2.5 V compliance, §5.4); `ISS` (current sink, down to 0.8 V,
+  §3); `CP_OUT` (voltage-force, current-measure, §5.3).
+- Oscilloscope, **2 channels, ≥ 6 GHz bandwidth, with matched and deskewed cables** (team
+  decision 11/2), for I/Q phase and duty cycle.
 - 50 Ω cabling and terminations for `I_N`, `Q_P`, `Q_N`; the outputs are designed into a 50 Ω
   instrument (`docs/scope.md` §4).
 - Test PCB / socket: TBD pending organizer packaging decision.
@@ -137,7 +139,8 @@ spectrum analyzer. Repeat at nominal and at 2× ISS.
   - ISS 2.0×, 0 → 2.0 V: (4.402 − 5.728) GHz / 2.0 V = **−0.663 GHz/V**
   - ISS 2.0×, 2.0 → 3.3 V: (3.807 − 4.402) GHz / 1.3 V = **−0.458 GHz/V**
 
-  A local KVCO at the operating point needs a finer extracted sweep (§8).
+  These chord slopes are the KVCO reference for this plan; no finer extracted sweep will be run
+  (team decision 11/2).
 - Schematic reference band, for comparison only: 4.05–6.38 GHz (`docs/scope.md` §3). The
   extraction runs 6–11 % lower (`docs/verification.md` §3.2.1).
 
@@ -218,8 +221,25 @@ after VCO power-up.
 | Static I-to-Q offset from layout | ~1.0° (Q input hauls ~53 µm longer) | — | `docs/layout-review-aug14.md` |
 | Divider + converters supply current | 22.791 mA (one converter extracted) | 22.118 mA | `signoff/pex/ib_conv_v1/resim.md` |
 
-- 270.0° is the bench's reading of the quadrature relationship (90° target, `docs/scope.md` §7).
-  How the bench sign convention maps onto the pads is TODO.
+- **How the simulated 270.0° maps onto the pads.**
+  - *What the bench measures.* `team_src/sim/div2/analyze.awk` takes the time from a rising
+    mid-swing crossing of the I_P chain's driver output (`INVO3_IP`) to the next rising crossing
+    of the Q_P chain's (`INVO3_QP`), as a fraction of the period × 360. So **270.0° means Q_P
+    rises 270° after I_P, i.e. Q_P leads I_P by 90°.**
+  - *Which phase each pad carries.* In `team_src/magic/chip_top_golden.spice` (the
+    `DIV2_QUAD_v1` subckt, lines 103–179), each output chain is a diff pair on one divider phase
+    pair. I_P's pair is driven OIB/OI and I_N's OI/OIB; Q_P's is OQB/OQ and Q_N's OQ/OQB. Each
+    chain reaches its pad through `XR_SER_*`. So I_N = I_P + 180° and Q_N = Q_P + 180°. The
+    same mapping is in the sim deck (`signoff/pex/ib_conv_v1/resim.md`, "Decks and invocation").
+  - *Pads.* The pads are `I_N`, `Q_P` and `Q_N` (`info.yaml` `pins:`; slots N03, N04, N02 in
+    `docs/pins.md` §1); `I_P` is internal (it drives `PFD.FB`).
+  - *Expected on the scope, taking `I_N` as the reference and measuring rising-edge delay as a
+    fraction of the period:* **`Q_P` at +90°** (Q_P = I_P + 270° = I_N + 90°) and **`Q_N` at
+    +270°, i.e. −90°** (Q_N = I_P + 90° = I_N − 90°). The §5.2 pass limit 90° ± 10° applies to
+    the `I_N` → `Q_P` delay.
+  - The simulated phase is taken at the driver outputs, before the 1 kΩ `XR_SER_*` and the pad
+    route. Route-length mismatch adds the ~1.0° static offset in the table above; the scope
+    cables must be matched/deskewed (§4).
 - The ideal-passive schematic numbers (142 mVpp, ~157 mVpp / −12 dBm) are superseded for
   comparison purposes by the modelled-passive 131 mVpp (`team_src/sim/div2/README.md`).
 - The all-four-extracted case has not been re-run on the `9614947` converter netlist.
@@ -245,12 +265,30 @@ a sensitivity indicator rather than an expected result.
 **Scope: a `CP_OUT`-only partial test** (team decision 11/2). The PFD's three-region response
 and the UP/DOWN pulses are not tested; only what `CP_OUT` shows is.
 
-**Procedure.** Hold `CP_OUT` with an SMU (voltage-force, current-measure) inside the simulated
-0.32–3.00 V compliance window. Drive `REF_IN` per §3 (0/3.3 V, 1 MHz), and also hold it low
-(its weak pull-down does this when undriven). With the VCO running and with it stopped (ISS sink
-off), record the `CP_OUT` current in each combination. The repo contains no simulation of this
-open-loop arrangement, with `FB` the ~2 GHz divider output, so the expected currents for these
-states are TODO. The block-level values below are context, not targets.
+**Procedure.** Hold `CP_OUT` with an SMU (voltage-force, current-measure) at **0.32, 1.65 and
+3.00 V**, the ends and middle of the simulated compliance window. Drive `REF_IN` per §3
+(0/3.3 V, 1 MHz), and also hold it low (its weak pull-down does this when undriven). With the VCO
+running and with it stopped (ISS sink off), record the `CP_OUT` current in each combination.
+
+**Expected `CP_OUT` current** (`signoff/sim/cp_out/cp_out_op.spice`, run 2026-11-02: extracted
+`CP_v1` biased by `ibias_gen_v1` at 240 µA, TT, 3.3 V, DC operating point). Positive means the CP
+sources current out of `CP_OUT`; negative means it sinks.
+
+| `CP_OUT` | UP/DN idle | UP only (context) | DOWN only (context) |
+|---|---|---|---|
+| 0.32 V | +29.8 pA | +50.34 µA | −48.08 µA |
+| 1.65 V | +12.2 pA | +50.21 µA | −50.24 µA |
+| 3.00 V | −5.6 pA | +48.12 µA | −50.54 µA |
+
+**Pass/fail** (team decision 11/2): **within ±30 % of these simulated `CP_OUT` currents.** For the
+idle case that is ±30 % of tens of picoamps, and the value changes sign across the window. That
+is below the leakage of the pad, ESD diodes and package, and below a typical SMU noise floor, so
+the idle limit cannot be checked as written; see the TODO below. For a state that holds UP or
+DOWN on, ±30 % gives 35–65 µA in magnitude.
+
+Which pump state the die is in for each `REF_IN` / VCO combination has not been simulated. The
+PFD's flip-flops have no external reset, so the idle state is not guaranteed at power-up. That
+mapping is TODO. The block-level values below are context.
 
 **Expected (block-level, not reproducible as-is at the pads):**
 
@@ -265,7 +303,8 @@ states are TODO. The block-level values below are context, not targets.
 | PFD reset pulse | 0.50 ns typ, 0.39 ns ff (internal, not observable) | `docs/layout-review-sep01.md` §4.6.1 |
 | Loop sign | REF-lead → UP → CP sources → CP_OUT rises | `docs/verification.md` §2.1 |
 
-**Pass/fail limits:** TODO (none decided; partial test).
+**Pass/fail limits:** `CP_OUT` current within ±30 % of the table above (team decision 11/2).
+TODO: an absolute limit for the idle case, which is at picoamp level.
 
 ### 5.4 IBIAS
 
@@ -281,8 +320,10 @@ above `VDDA`: the pin has an ESD diode to `VDDA` (`D_ESD_IBIAS_P` in
 `team_src/magic/chip_top_golden.spice`).
 
 **Procedure.** Force 240 µA into `IBIAS` and record the pin voltage. Sweep 120–360 µA (the
-simulated input range) and record the change in supply current. The procedure to separate the
-IBIAS share of the supply current from the other blocks on the same rail is TODO.
+simulated input range) and record the change in supply current. **The IBIAS share of a rail's
+current is that rail's current at `IBIAS` = 240 µA minus its current at `IBIAS` = 0** (team
+decision 11/2), with everything else unchanged. The simulated generator draw on `VDDA` is
+0.549 mA (§3).
 
 **Expected** (`docs/verification.md` §2.6, schematic TT; the generator has no extracted sim,
 `docs/layout-review-sep01.md` §5):
@@ -323,10 +364,11 @@ From `docs/layout-review-sep01.md` §6 and the files cited above:
 
 ## 8. Values that need a new simulation run
 
-This run has not been done; the runtime is an estimate. A 200 ns run on the landed extraction
-takes 52–147 s with 2 threads (measured 2026-11-02).
+None. The local-KVCO sweep that was listed here was dropped: the §5.1 chord slopes stand (team
+decision 11/2). For reference, a 200 ns run on the landed extraction takes 52–147 s with 2
+threads (measured 2026-11-02).
 
-Done on 2026-11-02 and moved out of this list:
+Done on 2026-11-02:
 - IBIAS pin voltage and compliance: §3 and §5.4. 9 runs, under 1 s each; the TT / 3.3 V control
   reproduces the recorded 50.00 / 49.91 / 239.56 µA.
 - `VDDA` current: §3. Its VCO runs reproduce the recorded 0.974 Vpp / 4.372 GHz and
@@ -334,7 +376,4 @@ Done on 2026-11-02 and moved out of this list:
 - `ISS` node voltage and sink compliance: §5.1. 12 runs, ~21 min total. The compliance sweep used
   an ideal current sink stepped over 1.0–2.35 mA rather than a swept voltage source: a voltage
   source on `ISS` sets the tail current itself and so does not measure a sink's compliance.
-
-| Value | Run needed | Estimated runtime |
-|---|---|---|
-| Local extracted KVCO | `pex200.spice` swept over VTUNE 0–3.3 V in 0.25 V steps at ISS 1.0× and 2.0× (≈ 28 runs) | ~1 h |
+- `CP_OUT` DC currents: §5.3. One ngspice job, 0.3 s.

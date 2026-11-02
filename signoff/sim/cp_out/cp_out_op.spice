@@ -1,0 +1,49 @@
+* CP_OUT DC current of CP_v1 (R+C extracted), biased by ibias_gen_v1 (schematic) at
+* IBIAS = 240 uA, as on the die. CP_OUT forced to 0.32 / 1.65 / 3.00 V.
+* States: idle (UP = DOWN = 0) -- the requested case -- plus UP-only and DOWN-only for context.
+* ngspice i(v_out) > 0: current leaves the CP through CP_OUT into the forcing source (CP
+* sourcing, UP); i(v_out) < 0: the CP sinks current from the forcing source (DOWN). TT, 27 C, 3.3 V. Run: ngspice -b cp_out_op.spice
+.param fnoicor=0
+.param sw_stat_global=0
+.param sw_stat_mismatch=0
+.param sw_mc_global=0
+.param sw_mc_mismatch=0
+.include /foss/pdks/gf180mcuD/libs.tech/ngspice/design.ngspice
+.lib /foss/pdks/gf180mcuD/libs.tech/ngspice/sm141064.ngspice typical
+.include /foss/designs/AUS-NZ-integration/signoff/pex/CP_v1.pex.spice
+.include /foss/designs/AUS-NZ-integration/team_src/sim/ibias/ibias_sub.spice
+
+V_VDD  VDD 0 3.3
+V_VSS  VSS 0 0
+V_EXT  VEXT 0 3.3
+I_BIAS VEXT IBIAS 240u
+X1 IBIAS VGP VGN IB_DIV2 VDD 0 ibias_gen_v1
+XM_BREF_rep IB_DIV2 IB_DIV2 ibd_s 0 nfet_03v3 L=1u W=4u nf=1
+V_IBD ibd_s 0 0
+V_UP   UP   0 0
+V_DOWN DOWN 0 0
+V_OUT  CP_OUT 0 1.65
+
+.control
+set num_threads=2
+foreach vo 0.32 1.65 3.0
+  alter v_out = $vo
+  op
+  echo "RESULT idle $vo $&i(v_out)"
+end
+alter v_up = 3.3
+alter v_down = 0
+foreach vo 0.32 1.65 3.0
+  alter v_out = $vo
+  op
+  echo "RESULT up $vo $&i(v_out)"
+end
+alter v_up = 0
+alter v_down = 3.3
+foreach vo 0.32 1.65 3.0
+  alter v_out = $vo
+  op
+  echo "RESULT down $vo $&i(v_out)"
+end
+.endc
+.end
