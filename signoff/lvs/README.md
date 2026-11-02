@@ -61,7 +61,21 @@ resistor, and the two ESD diode groups (`diode_nd2ps_03v3 (8->2)`,
 There is **one DRC waiver**, unrelated to LVS: 168 KLayout `PL.5a_LV`/`PL.5b_LV` items
 internal to the PDK's `nmoscap_3p3` gencell. See `../../docs/layout-review-sep01.md` §2.5.
 
-## The organizer flow — `extra_be_checks`, and it PASSES
+## The organizer flow — `extra_be_checks`: currently FAILS with the stock techfile
+
+> **Current status (2026-11-02, fresh clone of `c3acfe0`, stock `extra_be_checks@7d1f5ef`):
+> it does not pass.** `run_full_lvs lvs/lvs_config.json` reports **14 vs 18 devices, 21 vs 22
+> nets, "Top level cell failed pin matching"** (exit 4, 8.9 s). This has been the state since
+> `f7be3d5` (2026-09-25), when `lvs/lvs_config.json` stopped ignoring `vco_inductor_v2` and
+> `cap_nmos_03v3_b`. The two causes are the stock techfile's `rm5` gap (the inductor extracts
+> as an open) and its missing varactor `cifinput`; see
+> "2026-10-27: 2-pin `vco_inductor_v2` golden" below. The **"Result, 2026-09-19"** pass and the
+> waiver sections after it describe the earlier config and are kept as history.
+>
+> The team's own gates do pass on the same fresh clone: `verify_cp.sh` on all six cells (DRC 0,
+> match uniquely), the `drc_boxset.tcl` box set (252 boxes, identical to
+> `team_src/magic/chip_top.drcbase`), and `klayout_signoff.py chip_top` (168 violations, all
+> waived).
 
 **Superseding the `mpw_precheck` section below.** Per Bailey (issue #143, 2026-09-18) the check
 to run is his `extra_be_checks`, not `mpw_precheck`. It ships the **set_lvs_env.py** helper that
@@ -80,7 +94,7 @@ $LVS_ROOT/run_full_lvs $UPRJ_ROOT/lvs/lvs_config.json
 `d-m-bailey/extra_be_checks` branch `chipathon2025` at commit
 `7d1f5efb270003208956e764765f403b755281d7` (2025-11-28). Runs in ~10 s.
 
-### Result, 2026-09-19 at `da08e9e`
+### Result, 2026-09-19 at `da08e9e` (historical: earlier `LVS_IGNORE` config)
 
 **`Circuits match uniquely.`** `chip_top` 10 devices / 20 nets on both sides, every cell's pin
 lists equivalent, every sub-block matched — `vco_v1` 5 devices / 7 nets, `CP_v1` 8 / 10,
@@ -97,9 +111,9 @@ Two things this runner fixes that `mpw_precheck` could not:
   avoided, not equated.
 - **Net counts match everywhere**, where `mpw_precheck` never resolved the device gap.
 
-### The one waiver this needs: `cap_nmos_03v3_b`
+### The one waiver this needs: `cap_nmos_03v3_b` (historical, dropped in `f7be3d5`)
 
-`LVS_IGNORE` carries `cap_nmos_03v3_b` in addition to `vco_inductor_v2` and the standard-cell
+`LVS_IGNORE` carried `cap_nmos_03v3_b` in addition to `vco_inductor_v2` and the standard-cell
 fill/decap/antenna globs. Without it the run is otherwise clean but reports
 **`cap_nmos_03v3_b` 0 in the layout against 2 in the source** — the 42 varactors.
 
@@ -137,7 +151,7 @@ Two alternatives were tried and both are worse than ignoring the cell:
 
 | config | result |
 |---|---|
-| `LVS_IGNORE vco_inductor_v2` (**landed**) | `Circuits match uniquely` |
+| `LVS_IGNORE vco_inductor_v2` (landed then; removed in `f7be3d5`) | `Circuits match uniquely` |
 | `+ EXTRACT_ABSTRACT vco_inductor_v2` | identical — no effect, see the gate below |
 | `LVS_IGNORE` removed, golden subckt vs extracted metal | 14 vs 17 devices, **`Top level cell failed pin matching`** |
 
