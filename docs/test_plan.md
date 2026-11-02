@@ -28,22 +28,22 @@ PFD and charge pump"* (the scope of issue #143).
 
 Exact names and types from `info.yaml` `pins:` (12 pads, in file order). Pad slots are from
 `docs/pins.md` §1; the slot variant there (BH) predates the final padframe assignment, so the
-**package pin / bond map is `TODO`**.
+**package pin / bond map is TBD pending organizer packaging decision**.
 
 | # | Pin (`info.yaml`) | `io_type` | Function (`docs/pins.md` §1; supply domains from `docs/layout-review-sep01.md`) | Package pin |
 |---|---|---|---|---|
-| 1 | `VSSA` | ground | Quiet analog ground; same on-chip node as VSSD | TODO |
-| 2 | `VDDA` | power | Analog supply (CP, VCO, IBIAS) | TODO |
-| 3 | `IBIAS` | analog | Chip-level bias reference, external current | TODO |
-| 4 | `ISS` | analog | LC-VCO tail node, driven off-chip | TODO |
-| 5 | `VTUNE` | analog | VCO control voltage | TODO |
-| 6 | `CP_OUT` | analog | Charge-pump output | TODO |
-| 7 | `Q_N` | analog | Divider quadrature output − | TODO |
-| 8 | `I_N` | analog | Divider in-phase output − | TODO |
-| 9 | `Q_P` | analog | Divider quadrature output + | TODO |
-| 10 | `VSSD` | ground | Digital-island ground; same on-chip node as VSSA | TODO |
-| 11 | `VDDD` | power | Digital supply (PFD, DIV2) | TODO |
-| 12 | `REF_IN` | input_cmos | PFD reference input; weak pull-down (PD=1, PU=0) | TODO |
+| 1 | `VSSA` | ground | Quiet analog ground; same on-chip node as VSSD | TBD pending organizer packaging decision |
+| 2 | `VDDA` | power | Analog supply (CP, VCO, IBIAS) | TBD pending organizer packaging decision |
+| 3 | `IBIAS` | analog | Chip-level bias reference, external current | TBD pending organizer packaging decision |
+| 4 | `ISS` | analog | LC-VCO tail node, driven off-chip | TBD pending organizer packaging decision |
+| 5 | `VTUNE` | analog | VCO control voltage | TBD pending organizer packaging decision |
+| 6 | `CP_OUT` | analog | Charge-pump output | TBD pending organizer packaging decision |
+| 7 | `Q_N` | analog | Divider quadrature output − | TBD pending organizer packaging decision |
+| 8 | `I_N` | analog | Divider in-phase output − | TBD pending organizer packaging decision |
+| 9 | `Q_P` | analog | Divider quadrature output + | TBD pending organizer packaging decision |
+| 10 | `VSSD` | ground | Digital-island ground; same on-chip node as VSSA | TBD pending organizer packaging decision |
+| 11 | `VDDD` | power | Digital supply (PFD, DIV2) | TBD pending organizer packaging decision |
+| 12 | `REF_IN` | input_cmos | PFD reference input; weak pull-down (PD=1, PU=0) | TBD pending organizer packaging decision |
 
 Not available at any pad: `I_P` (internal, feeds `PFD.FB`), the PFD's `UP`/`DOWN`, and the
 IBIAS generator's outputs `VGP`/`VGN`/`IB_DIV2` (`docs/pins.md` §1;
@@ -60,13 +60,15 @@ IBIAS generator's outputs `VGP`/`VGN`/`IB_DIV2` (`docs/pins.md` §1;
 | `VDDD` | 3.3 V | `docs/scope.md` §4.1 |
 | `VDDA`/`VDDD` current limit | TODO | — |
 | Expected supply current, chip | ≈ 25 mA core-only, against a ~50 mA budget | `docs/layout-review-sep01.md` §4 "Power budget" |
-| Expected supply current, per domain | TODO (the repo gives a chip total, not a VDDA/VDDD split) | — |
+| Expected supply current, `VDDD` | 22.9 mA = DIV2 22.4 mA (simulated, `i(v_vdd)` of `div2_sb_TT`) + PFD ≈ 0.5 mA (inferred, not simulated). Later DIV2 runs: 22.118 mA with modelled passives, 22.791 mA with one converter extracted | `docs/layout-review-sep01.md` "Phase C — the chip-level VDDD path"; `docs/phase7-routing-plan.md`; `signoff/pex/ib_conv_v1/resim.md` |
+| Expected supply current, `VDDA` | 3.5 mA, **an estimate from bias structure, not a simulation**; needs a run (§8) | `docs/phase7-routing-plan.md` ("vco/CP/ibias/PFD estimated from bias structure") |
 | `IBIAS` reference current | 240 µA, forced current | `docs/pins.md` §1; `docs/verification.md` §2.6 |
-| `IBIAS` current direction (source into / sink from the pin) | TODO | — |
-| `IBIAS` pin voltage / compliance | TODO | — |
+| `IBIAS` current direction | Sourced **into** the pin from the supply (`I_BIAS VDD IBIAS 240u`); the pin lands on a diode-connected nfet | `team_src/sim/ibias/ibias_op.spice`; `docs/esd-which-pins.md` |
+| `IBIAS` pin voltage / compliance | TODO; needs a run (§8). No `v(IBIAS)` output is committed | — |
 | `ISS` tail current, nominal (sim "1.0×") | 1.35 mA tail, from a 1 mA reference into a 1:1 NMOS mirror on the bench | `docs/verification.md` §3.2, §3.2.1 |
 | `ISS` tail current, bring-up (sim "2.0×") | ≈ 2.3–2.38 mA tail (reference 1 mA → 2 mA); needed for the top of the tuning range to start | `docs/verification.md` §3.2.1 |
-| `ISS` off-chip circuit (mirror or current sink) and its compliance | TODO | — |
+| `ISS` off-chip circuit (mirror or current sink) | TODO | — |
+| `ISS` node voltage / required sink compliance | TODO; needs a run on the landed extraction (§8). The only recorded ISS-node voltage, 0.698 V at 4.0× falling to 0.475 V at 6.0×, is from the **pre-landing** extraction that did not oscillate, so it does not apply | `docs/verification.md` §3.2 |
 | `VTUNE` range | 0–3.3 V (simulated sweep range) | `docs/verification.md` §3.1, §3.2.1 |
 | `REF_IN` amplitude / levels | TODO | — |
 | `REF_IN` frequency | TODO (PFD simulated at 1 MHz and 2 MHz) | `docs/layout-review-sep01.md` §4.6.1 |
@@ -86,7 +88,7 @@ Generic only; models and settings are `TODO`.
   phase and duty cycle.
 - 50 Ω cabling and terminations for `I_N`, `Q_P`, `Q_N`; the outputs are designed into a 50 Ω
   instrument (`docs/scope.md` §4).
-- Test PCB / socket: `TODO` (no board exists in the repo).
+- Test PCB / socket: TBD pending organizer packaging decision.
 
 ## 5. Per-block tests
 
@@ -115,8 +117,14 @@ spectrum analyzer. Repeat at nominal and at 2× ISS.
   §3.2.1).
 - Startup to 90 % at 1.0× ISS: 83 ns (`signoff/sim/vco/README.md`).
 - KVCO: negative (frequency falls as VTUNE rises); ≈ −1.1 GHz/V near the ISM point on the
-  **schematic** (`docs/scope.md` §3). Extracted KVCO: TODO (only three VTUNE points were run on
-  the extraction).
+  **schematic** (`docs/scope.md` §3). Extracted KVCO, as chord slopes between the three VTUNE
+  points run on the landed extraction (`docs/verification.md` §3.2.1; arithmetic on that table,
+  not a separate simulation):
+  - ISS 1.0×, 0 → 2.0 V: (4.372 − 5.762) GHz / 2.0 V = **−0.695 GHz/V**
+  - ISS 2.0×, 0 → 2.0 V: (4.402 − 5.728) GHz / 2.0 V = **−0.663 GHz/V**
+  - ISS 2.0×, 2.0 → 3.3 V: (3.807 − 4.402) GHz / 1.3 V = **−0.458 GHz/V**
+
+  A local KVCO at the operating point needs a finer extracted sweep (§8).
 - Schematic reference band, for comparison only: 4.05–6.38 GHz (`docs/scope.md` §3). The
   extraction runs 6–11 % lower (`docs/verification.md` §3.2.1).
 
@@ -204,7 +212,7 @@ IBIAS share of the supply current from the other blocks on the same rail is TODO
 | Generator total supply current | 839 µA |
 | Gain, VGP | 5/24, linearity < 0.01 % over 120–360 µA |
 | PSRR, VDD 3.0–3.6 V | VGP 0.003 %/V; VGN and IB_DIV2 1.16 %/V |
-| `IBIAS` pin voltage at 240 µA | TODO |
+| `IBIAS` pin voltage at 240 µA | TODO; needs a run (§8) |
 
 **Pass/fail limits:** TODO.
 
@@ -224,3 +232,18 @@ From `docs/layout-review-sep01.md` §6 and the files cited above:
   capacitance-only PEX; IBIAS and the DIV2 core have none.
 - The VCO was not re-simulated against the extracted chip-level output load.
 - No ESD simulation.
+
+## 8. Values that need a new simulation run
+
+None of these has been run. The runtimes are estimates. The only recorded extracted-VCO runtime
+is 21 s for 40 ns on the pre-landing netlist (`signoff/sim/vco/README.md`); no 200 ns runtime
+is recorded.
+
+| Value | Run needed | Estimated runtime |
+|---|---|---|
+| `IBIAS` pin voltage at 240 µA | `team_src/sim/ibias/ibias_op.spice` with `v(IBIAS)` printed (schematic; the generator has no PEX) | seconds |
+| `IBIAS` compliance | DC sweep of `I_BIAS` over 120–360 µA, recording `v(IBIAS)` (the README's S4 sweep) | seconds |
+| `ISS` node voltage, landed extraction | `signoff/sim/vco/pex200.spice` with the ISS node added to `wrdata`, at ISS 1.0×/2.0× and VTUNE 0/2.0/3.3 V (6 runs of 200 ns) | ~2 min per run, ~10–15 min total |
+| `ISS` minimum compliance for oscillation | Same deck with the ISS node held by a swept voltage source (≈ 6–8 points) | ~2 min per point, ~15 min |
+| Local extracted KVCO | `pex200.spice` swept over VTUNE 0–3.3 V in 0.25 V steps at ISS 1.0× and 2.0× (≈ 28 runs) | ~1 h |
+| `VDDA` current | `vco_v1` supply current without the bench's output buffer (extracted, 200 ns), plus CP and IBIAS operating points. The VCO bench's `i(v1)` includes its buffer, so it cannot be used directly | ~2–5 min |
