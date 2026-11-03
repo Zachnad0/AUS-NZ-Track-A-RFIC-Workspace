@@ -77,9 +77,32 @@ committed GDS, so the path reproduces the old file exactly and the 1050 µm² is
 - `vco_varactors.tcl` and `vco_v1.tcl` carry a GDS-export warning in their headers.
 
 The organizer's reader needs only `rm5.diff`, which is Bailey's pending tech fix (issue #143,
-2026-09-25). `varactor_comp.diff` is a writer fix and belongs upstream in open_pdks: add
-`nvaractor,pvaractor` to the gdsii COMP output, or to `allndifflv`/`allpdifflv`. Neither has been
-reported upstream yet.
+2026-09-25).
+
+## Upstream status (checked 2026-11-03)
+
+**The varactor COMP defect is already fixed upstream; none of the toolchains in use has the fix.**
+`fossi-foundation/open-pdks` (formerly `RTimothyEdwards/open_pdks`) PR #526,
+"magic/gf180mcu: Add {n,p}varactor to all{n,p}difflv" (Sylvain Munaut), adds `nvaractor` and
+`pvaractor` to the `allndifflv`/`allpdifflv` aliases in open_pdks' magic template for gf180mcu
+(gf180mcu.tech under gf180mcu/magic). It is
+commit `c0d31fc556`, 2026-06-14; Tim Edwards merged it the same day via opencircuitdesign.com,
+so GitHub shows the PR as closed, not merged. `516b142d35` (same day) then corrected the
+moscap/varactor drawing routines in the device generator. Both are in today's `main`/`master`.
+Upstream fixed it at the alias, which also feeds DRC and extract rules that use `alldifflv`.
+`varactor_comp.diff` changes only the gdsii COMP output, the narrowest change that fixes the GDS.
+
+| Toolchain | open_pdks | Has the fix? |
+|---|---|---|
+| container `$PDK_ROOT` (used to write our GDS) | 1.0.575, `7b70722`, 2026-03-01 | **no**, 68 commits behind `c0d31fc556` |
+| organizer runner `extra_be_checks@7d1f5ef` tech | 1.0.558, `486fb86`, 2025-11-22 | **no**, 99 commits behind |
+| local `gf180mcu/` (wafer-space PDK, tag 1.8.0) | 1.0.562, `8fa792c` | **no** |
+
+So any 3.3 V varactor written by magic with these PDKs, on any team's die, lacks COMP unless the
+writer is patched or the PDK is updated past `c0d31fc556`.
+
+**`rm5.diff` is NOT fixed upstream.** `main` still has `layer rm5 MET5 / and RESDEF / and MET5RES`
+and `calma RESDEF 110 *`, so the inductor `tm11k` gap remains in every version.
 
 ## Reproducing
 
