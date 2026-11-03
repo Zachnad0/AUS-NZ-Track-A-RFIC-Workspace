@@ -1,0 +1,12 @@
+diff --git a/gf180mcu/magic/gf180mcu.tech b/gf180mcu/magic/gf180mcu.tech
+index bde256a..8301515 100644
+--- a/gf180mcu/magic/gf180mcu.tech
++++ b/gf180mcu/magic/gf180mcu.tech
+@@ -2769,7 +2769,6 @@ style  import
+ 
+ #ifdef METALS5 || METALS6
+  layer rm5 MET5
+- and RESDEF
+  and MET5RES
+ 
+ #ifdef METALS5 && MIM

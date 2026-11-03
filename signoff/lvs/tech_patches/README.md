@@ -102,7 +102,11 @@ So any 3.3 V varactor written by magic with these PDKs, on any team's die, lacks
 writer is patched or the PDK is updated past `c0d31fc556`.
 
 **`rm5.diff` is NOT fixed upstream.** `main` still has `layer rm5 MET5 / and RESDEF / and MET5RES`
-and `calma RESDEF 110 *`, so the inductor `tm11k` gap remains in every version.
+and `calma RESDEF 110 *`, so the inductor `tm11k` gap remains in every version. A one-line fix
+against upstream `main` (`55f1ea3`) is in `open_pdks_rm5_pr.diff`, with draft issue and PR text in
+`open_pdks_rm5_draft.md`. **Not posted.** On the cause: magic's writer never emits `RESDEF` for
+metal resistors (`layer RESDEF allres` excludes `rm1`–`rm5`), so the input rule could not match
+even its own output. The PDK's KLayout deck derives the top-metal resistor without `RES_MK`.
 
 ## Reproducing
 

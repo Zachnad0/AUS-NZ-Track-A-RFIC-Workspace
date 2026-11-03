@@ -30,6 +30,9 @@ import io, os, re, sys, glob
 # path -> why it cannot resolve in this repo. Keep each reason specific enough that a future
 # reader can tell genuine rot from an intentional outside reference.
 ALLOWLIST = {
+    "gf180mcu/magic/gf180mcu.tech":
+        "upstream open_pdks source template (fossi-foundation/open-pdks), cited by the "
+        "signoff/lvs/tech_patches/ upstream drafts; not vendored here",
     "Workshop_CASS/padring/workshop_padring.cfg":
         "organizers' Workshop_CASS repo, not vendored here",
     "workshop_padring.cfg":
