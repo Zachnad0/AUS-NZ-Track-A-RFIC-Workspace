@@ -2,7 +2,9 @@
 
 **Status: DRAFT, not posted.** Target: `fossi-foundation/open-pdks`, branch `main` (checked at
 `55f1ea3`, 2026-11-02). The patch is `open_pdks_rm5_pr.diff` in this directory, a one-line
-deletion that applies cleanly to that commit. Nothing has been forked, pushed or posted.
+deletion that applies cleanly to that commit. Requested by Bailey in #143 (2026-11-03). The
+"1.2 nH" is the lumped-model value: `L0` + `L1` = 0.60 nH each,
+`team_src/xschem/vco_inductor_v2.subckt` lines 11 and 16.
 
 ---
 
@@ -54,7 +56,7 @@ Also noticed while reading, **not tested**:
 
 ## PR
 
-**Title:** gf180mcu magic tech: drop `RESDEF` from the `rm5` cifinput rule
+**Title:** magic/gf180mcu: Drop RESDEF from the rm5 cifinput rule
 
 **Body:**
 
