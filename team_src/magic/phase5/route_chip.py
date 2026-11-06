@@ -552,29 +552,34 @@ if WEST_ROWS_BUILT:
 # 3.0 um -> 0.523 mA/um: 4.0x margin at 85 C, 1.91x at 110 C, 1.28x at 125 C.
 R.box(chip, ly, (36, 0), 387.04, 59.9, 412.83, 62.9)           # die x587.04-612.83, 3.0 um
 R.hwire(chip, ly, 2, 290.0, 387.04, 61.8, w=5.0)               # M2 escape west out of the vco
-R.via_stack(chip, ly, 2, 4, 290.0, 61.8)
+d_arrays("ISS.esc", (2, 3), 287.5, 59.3, 292.5, 64.3)         # M2 -> M4, was 1 cut per level
 R.hwire(chip, ly, 4, 255.0, 290.0, 61.8, w=10.0)               # into the DIV2<->vco gap
 R.vwire(chip, ly, 4, -60.0, 61.8, 255.0, w=10.0)               # descent -- M4 THROUGH the ring
-R.via_stack(chip, ly, 4, 5, 255.0, -60.0)
+d_arrays("ISS.gap", (4,), 250.0, -65.0, 260.0, -55.0)         # M4 descent -> M5 lane, was 1 cut
 # R.hwire EXTENDS HALF ITS WIDTH past each endpoint. At w=10 that is 5 um, so an M5 lane
-# nominally ending at die x130 actually reaches x125 -- inside VSSA's M5 descent at die
-# x112.5-127.5 -- and merges ISS into the whole ground ring. DRC-clean (a merge leaves no gap
-# to space against); caught by the LVS port/net count, 21 nets -> 20. The M5 ends are pulled
-# back so the EXTENDED ends clear VSSA's descent by >=0.3 um on both sides: east M5 stops at
-# die x135 (reaches 130), west M5 starts at die x105 (reaches 110), M4 spans 135 -> 105.
-if WEST_ROWS_BUILT:
-    R.hwire(chip, ly, 5, -65.0, 255.0, -60.0, w=10.0)              # south lane, die y135-145
-    R.via_stack(chip, ly, 4, 5, -65.0, -60.0)
-    R.hwire(chip, ly, 4, -95.0, -65.0, -60.0, w=10.0)              # hop over VSSA's M5 descent
-    R.via_stack(chip, ly, 4, 5, -95.0, -60.0)
-    R.hwire(chip, ly, 5, -110.0, -95.0, -60.0, w=10.0)
-    R.vwire(chip, ly, 5, -60.0, 182.5, -110.0, w=10.0)             # riser, die x85-95
-    R.hwire(chip, ly, 5, -186.0, -110.0, 182.5, w=10.0)
-    R.via_stack(chip, ly, 2, 5, -186.0, 182.5)
-    R.box(chip, ly, (36, 0), -200.0, 160.34, -182.0, 204.66)       # W21 finger-column plate
-    chip.shapes(ly.layer(36, 10)).insert(pya.DText("ISS", pya.DTrans(pya.DVector(-199.5, 182.5))))
-    print("(e) ISS: %.2f um bus (M2 8um / M4 10um / M5 10um), one M4 hop over VSSA's descent"
-          % (97.04 + 35.0 + 120.33 + 325.0 + 20.0 + 20.0 + 242.5 + 76.0))
+# nominally ending at VSSA's descent would reach into it and merge ISS into the whole ground
+# ring: DRC-clean (a merge leaves no gap to space against), and in BH caught only by the LVS
+# net count. The M5 ends are pulled back so the EXTENDED ends clear VSSA's descent (die
+# x92.5-107.5) by 2.5 um on both sides, and M4 carries the 10 um bus across it. MT.2b wants
+# 0.6 um to wide metal here (the descent is > 10 um in both axes); 0.5 um failed it.
+# D BLOCK: the riser is die x9.7-19.7, WEST of the IBIAS clamp (die x20-88.6, y213-237.22).
+# A 10 um M5 column cannot pass that band anywhere else: east of the clamp only 3.3 um remain
+# before VSSA's descent. It clears the clamp by 0.30 um and stays inboard of the pin column.
+ISS_XR = -85.3           # core x of the M5 riser (die 14.7)
+ISS_YP = 82.5            # core y of the pad row and bus (die 337.5)
+R.hwire(chip, ly, 5, 15.0, 255.0, -60.0, w=10.0)               # south lane, die y190-200
+R.hwire(chip, ly, 4, -15.0, 15.0, -60.0, w=10.0)               # hop over VSSA's M5 descent
+d_arrays("ISS.hopE", (4,), 10.0, -65.0, 20.0, -55.0)
+d_arrays("ISS.hopW", (4,), -20.0, -65.0, -10.0, -55.0)
+R.hwire(chip, ly, 5, ISS_XR, -15.0, -60.0, w=10.0)
+R.vwire(chip, ly, 5, -60.0, ISS_YP, ISS_XR, w=10.0)            # riser, die x9.7-19.7
+R.hwire(chip, ly, 5, ISS_XR, -34.0, ISS_YP, w=10.0)            # bus over both clamp nodes
+R.box(chip, ly, (36, 0), -D_DX, 60.34, -82.0, 104.66)          # W20 finger-column plate
+d_arrays("ISS.pad", (2, 3, 4), -90.3, ISS_YP - 5.0, -82.0, ISS_YP + 5.0)
+chip.shapes(ly.layer(36, 10)).insert(pya.DText("ISS", pya.DTrans(pya.DVector(-D_DX + 0.5, ISS_YP))))
+print("(e) ISS: bus M2 5 / M4 10 / M5 10 um, cuts esc %s gap %s hop %s %s pad %s"
+      % ([D_CUTS["ISS.esc.v%d" % m] for m in (2, 3)], D_CUTS["ISS.gap.v4"], D_CUTS["ISS.hopE.v4"],
+         D_CUTS["ISS.hopW.v4"], [D_CUTS["ISS.pad.v%d" % m] for m in (2, 3, 4)]))
 
 # --- PHASE 8 (f): VSSD, VDDD, REF_IN and the PU/PD ties -------------------------------------
 # Built against the 13-PIN DEF (padframe/A01/project_defs_13pin/), whose slot map was verified
@@ -1313,9 +1318,9 @@ print("   IBIAS VSSA strap: M2 10 um (%.2f,%.2f) -> GND ring die y%.2f  [extends
 # clamp node are ONE low-impedance M5/M4 bus and the clamp taps it directly. Nothing splits
 # the ISS net, so unlike IBIAS there is no duplicate-port-label to resolve and landing_check
 # keeps its BLOCK-side seed: the flood has no series device to cross.
-# RELOCATED into the W21 pin band (DEF pin y360.340-404.660). The clamp node routing is
-# GONE: the ISS M5 bus (die y377.5-387.5, x14-90) passes directly OVER both plate bridges, so
-# the node is two via stacks straight down instead of an M5 tap plus ~45 um of 0.4 um M3.
+# RELOCATED into the W20 pin band (DEF pin y315.340-359.660). The clamp node routing is
+# GONE: the ISS M5 bus (die y332.5-342.5, x9.7-71) passes directly OVER both plate bridges, so
+# the node is two via arrays straight down instead of an M5 tap plus ~45 um of 0.4 um M3.
 # Verified M5 is present at both via points before this was written.
 ESD_CUTS["ISS.pd2nw.plates"] = esd_plate_bridge(
     IS_D1[0], IS_D1[1], "esd_pd2nw", "ISS.pd2nw", "ISS" in ESD_VIA_ARRAY)[1]
@@ -1330,10 +1335,15 @@ for _c in (IS_D1, IS_D2):
     assert abs(IS_VY - _c[1]) <= 6.5 - 0.5, "ISS via y is outside the plate bridge of %r" % (_c,)
 assert IS_BUS_Y - 5.0 < IS_VY < IS_BUS_Y + 5.0, "ISS clamp via is not under the ISS M5 bus"
 assert (IS_VY - 0.25) - (381.61 - 45.0) >= M4_SPACE, "ISS clamp via M4 pad violates M4.2a to the VDDA feed"
-for _c in (IS_D1, IS_D2):
-    evia("ISS", _c[0], IS_VY, 2, 5)
-print("   ISS clamp node:   2 via stacks M2->M5 at (%.2f,%.1f) and (%.2f,%.1f) under the ISS bus"
-      % (IS_D1[0], IS_VY, IS_D2[0], IS_VY))
+# Windows sit inside each plate bridge (+/-6.5 about the clamp centre) and under the bus. The
+# D1 window starts 0.89 um above the VDDA feed's M4 (top edge y336.61).
+for _tag, _x, _y0 in (("ISS.nodeD1", IS_D1[0], 337.5), ("ISS.nodeD2", IS_D2[0], 336.8)):
+    d_arrays(_tag, (2, 3, 4), _x - 2.1, _y0, _x + 2.1, _y0 + 4.0)
+    for _m in (3, 4):
+        ESD_SEGS.append(("ISS", _m, pya.DBox(_x - 2.1 - M4_SPACE, _y0 - M4_SPACE,
+                                             _x + 2.1 + M4_SPACE, _y0 + 4.0 + M4_SPACE)))
+print("   ISS clamp node:   via arrays M2->M5 D1 %s D2 %s under the ISS bus"
+      % ([D_CUTS["ISS.nodeD1.v%d" % m] for m in (2, 3, 4)], [D_CUTS["ISS.nodeD2.v%d" % m] for m in (2, 3, 4)]))
 
 # VDDA feed onto the ISS pd2nw RING A W tab, held 5.5 um clear of the ISS M4 tap above it --
 # a first draft put both on M4 at the same y, which would have shorted ISS to VDDA.
