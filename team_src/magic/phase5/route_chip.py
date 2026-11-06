@@ -402,32 +402,42 @@ assert err < 1e-3, "I/Q length matching broke: spread %.4f um" % err
 # with the core. They are switched off here and rebuilt against the D pins one rung at a time.
 # The north rows keep their core coordinates: the D seat equals the north pins' own move.
 WEST_ROWS_BUILT = False
+D_DX, D_DY = 100.0, 255.0        # seat A: die = core + (D_DX, D_DY)
+D_CUTS = {}                      # via-array cut counts per D row, per level
+
+
+def d_arrays(tag, levels, x1, y1, x2, y2):
+    """Via arrays through the listed levels (m -> m+1) over one window, with a solid plate on
+    every metal touched. A single via_stack is one cut per level; at the 0.28 mA/cut limit
+    used for the PHASE C rail that is not enough for a power row."""
+    for m in levels:
+        D_CUTS["%s.v%d" % (tag, m)] = c_array(m, m + 1, x1, y1, x2, y2, plates=(m, m + 1))
+
 
 # --- PHASE 8 (b): VSSA -- extend the GND ring west to the W18 pad ----------------------------
-# CORE coords (die = core + 200). The ring's own bottom segment already reaches core x-25, so
-# the spur starts there and is the SAME net -- the one intended same-layer touch in the
-# allocation. M5 the whole way (40 mohm/sq, the chip's entire ~26 mA ground returns here),
-# dropping to M2 only for the pad itself, because the pin rectangles are Metal2.
+# CORE coords (die = core + D_DX, D_DY). D BLOCK: the ring's bottom strap is the start of the
+# spur, and it is the SAME net -- the one intended same-layer touch in the allocation. M5 the
+# whole way, 15 um (40 mohm/sq, the chip's entire ~26 mA ground returns here), dropping to M2
+# only for the pad itself, because the pin rectangles are Metal2.
+# The descent is at core x0 (die x92.5-107.5), NOT the ring leg's column: that column would
+# pass over the IBIAS clamp, whose east edge is die x88.6. This keeps it 3.9 um clear.
 # The pad landing is a BAR across the whole finger column, not a drop at the slot centre:
-# W18 is 6 dvss fingers x 9.5 um spanning die y46.36-118.64, and the centre y82.500 sits in a
+# W17 is 6 dvss fingers x 9.5 um spanning die y1.36-73.64, and the centre y37.500 sits in a
 # 3.28 um GAP between fingers 3 and 4 (plan doc 3s). A centre drop touches nothing, DRC-clean
 # and LVS-clean.
-VSSA_Y   = -10.0        # core y of the ring bottom centreline (die 190)
-VSSA_XW  = -80.0        # core x where the spur turns south (die 120)
-VSSA_YP  = -117.5       # core y of the pad approach (die 82.5)
-VSSA_XV  = -184.0       # core x of the M5->M2 via (die 16)
-if WEST_ROWS_BUILT:
-    R.hwire(chip, ly, 5, -25.0, VSSA_XW, VSSA_Y,  w=15.0)          # ring bottom -> west
-    R.vwire(chip, ly, 5, VSSA_YP, VSSA_Y, VSSA_XW, w=15.0)         # south to the pad row
-    R.hwire(chip, ly, 5, VSSA_XV, VSSA_XW, VSSA_YP, w=9.5)         # west to the via column
-    # One M2 PLATE from the via column out to the die edge, covering the whole finger column.
-    # NOT an hwire + a separate bar: R.hwire extends half its width past each endpoint, so an
-    # hwire ending at core x-199.5 (die 0.5) reached die -4.25 -- outside the DIEAREA.
-    R.via_stack(chip, ly, 2, 5, VSSA_XV - 2.0, VSSA_YP)            # via INSIDE the plate (x<XV)
-    R.box(chip, ly, (36, 0), -200.0, -153.64, VSSA_XV, -81.36)     # die x0-16, y46.36-118.64
-    chip.shapes(ly.layer(36, 10)).insert(pya.DText("VSSA", pya.DTrans(pya.DVector(-199.5, VSSA_YP))))
-    print("(b) VSSA: ring spur %.1f um M5 + %.1f um M2 to the W18 finger bar (die y46.36-118.64)"
-          % (abs(-25.0 - VSSA_XW) + abs(VSSA_Y - VSSA_YP) + abs(VSSA_XW - VSSA_XV), abs(VSSA_XV + 199.5)))
+VSSA_Y   = -10.0        # core y of the ring bottom centreline (die 245)
+VSSA_XC  = 0.0          # core x of the M5 descent (die 100)
+VSSA_YP  = -217.5       # core y of the pad approach (die 37.5)
+VSSA_XV  = -84.0        # core x of the plate's east edge (die 16)
+R.vwire(chip, ly, 5, VSSA_YP, VSSA_Y, VSSA_XC, w=15.0)         # south from the ring strap
+# One M2 PLATE from the array out to the die edge, covering the whole finger column; R.box,
+# not R.hwire, because an hwire overruns half its width past each end, off the DIEAREA.
+R.box(chip, ly, (36, 0), -D_DX, -253.64, VSSA_XV, -181.36)     # die x0-16, y1.36-73.64
+R.box(chip, ly, R.METAL[5], -98.0, VSSA_YP - 7.5, VSSA_XC, VSSA_YP + 7.5)  # 15 um M5, west
+d_arrays("VSSA", (2, 3, 4), -98.0, VSSA_YP - 7.5, VSSA_XV, VSSA_YP + 7.5)
+chip.shapes(ly.layer(36, 10)).insert(pya.DText("VSSA", pya.DTrans(pya.DVector(-D_DX + 0.5, VSSA_YP))))
+print("(b) VSSA: %.1f um M5 15 um wide, array %s, W17 plate die y1.36-73.64"
+      % (abs(VSSA_Y - VSSA_YP) + abs(VSSA_XC + 98.0), [D_CUTS["VSSA.v%d" % m] for m in (2, 3, 4)]))
 
 # --- PHASE 8 (c): VTUNE -- route (a), out of the core SOUTH and round through free die -------
 # CORE coords. Plan doc 3n: 3m called this "boxed", which was true only while chip_top was
@@ -451,24 +461,27 @@ if WEST_ROWS_BUILT:
 
 # --- PHASE 8 (d): VDDA on M4, IBIAS on M3 with an M4 hop -------------------------------------
 # VDDA leaves its own M5 bus and goes west on M4, NOT M5: the GND ring's left segment is M5 at
-# die x182.50-197.50 spanning the full height, so an M5 run west at die y399 would short VDDA to
+# die x82.50-97.50 spanning the full height, so an M5 run west at die y454 would short VDDA to
 # GND. Measured, not assumed (plan doc 3o).
-# The VDDA M5 bus spans die x258.5-606.5 (core 58.5-406.5). 3o said to tap it at die x256 --
-# which is 2.5 um WEST of the bus end, so the via landed on nothing and the whole VDDA haul
-# extracted as a disconnected node (VDDA_uq0). Tap at core x60 (die 260), inside the bus.
-if WEST_ROWS_BUILT:
-    R.via_stack(chip, ly, 4, 5, 60.0, 199.0)                       # onto the VDDA M5 bus, die (260,399)
-    R.hwire(chip, ly, 4, -154.0, 60.0, 199.0, w=3.0)               # west across the ring on M4
-    R.vwire(chip, ly, 4, 5.0, 199.0, -154.0, w=3.0)                # south to the pad row
-    # MSLOT.1 caps metal at 30 um wide without slotting, and it is measured in BOTH axes. A plate
-    # spanning the 72.28 um finger column AND reaching the via at core x-154 would be 48 x 72.28
-    # and violates. KLayout signoff caught it; magic did not. Plate stays 18 um wide and a 3 um
-    # feeder reaches the via.
-    R.via_stack(chip, ly, 2, 4, -154.0, 5.0)
-    R.hwire(chip, ly, 2, -184.0, -154.0, 5.0, w=3.0)               # feeder, plate -> via
-    R.box(chip, ly, (36, 0), -200.0, -53.64, -182.0, 18.64)        # W19 finger-column plate, 18 um
-    chip.shapes(ly.layer(36, 10)).insert(pya.DText("VDDA", pya.DTrans(pya.DVector(-199.5, 5.0))))
-    print("(d) VDDA: %.2f um M4 west+down, crosses the GND ring left segment on M4" % (210.0 + 194.0))
+# The VDDA M5 bus spans core x58.5-406.5. 3o said to tap it at core x56 -- which is 2.5 um WEST
+# of the bus end, so the via landed on nothing and the whole VDDA haul extracted as a
+# disconnected node (VDDA_uq0). The tap array stays inside the bus.
+# D BLOCK: the riser is core x-54 (die x44.5-47.5), inboard of the pin column. It crosses the
+# pd2nw footprints on M4 by design: those are VDDA's own clamp ties, the same as BH.
+VDDA_XR = -54.0          # core x of the M4 riser (die 46)
+VDDA_YP = -117.5         # core y of the pad row (die 137.5)
+R.hwire(chip, ly, 4, VDDA_XR, 60.0, 199.0, w=3.0)              # west across the ring on M4
+D_CUTS["VDDA.v4"] = c_array(4, 5, 58.7, 197.5, 61.5, 200.5)    # onto the M5 bus, was 1 cut
+R.vwire(chip, ly, 4, VDDA_YP, 199.0, VDDA_XR, w=3.0)           # south to the pad row
+# MSLOT.1 caps metal at 30 um wide without slotting, and it is measured in BOTH axes. A plate
+# spanning the 72.28 um finger column AND reaching the riser would be 54 x 72.28 and violate.
+# Plate stays 18 um wide and a 3 um feeder reaches the riser.
+d_arrays("VDDA", (2, 3), VDDA_XR - 1.5, VDDA_YP - 1.5, VDDA_XR + 1.5, VDDA_YP + 1.5)
+R.hwire(chip, ly, 2, -84.0, VDDA_XR, VDDA_YP, w=3.0)           # feeder, plate -> riser
+R.box(chip, ly, (36, 0), -D_DX, -153.64, -82.0, -81.36)        # W18 finger-column plate, 18 um
+chip.shapes(ly.layer(36, 10)).insert(pya.DText("VDDA", pya.DTrans(pya.DVector(-D_DX + 0.5, VDDA_YP))))
+print("(d) VDDA: %.2f um M4 3 um wide, bus tap %d cuts, riser foot %s"
+      % (60.0 - VDDA_XR + 199.0 - VDDA_YP, D_CUTS["VDDA.v4"], [D_CUTS["VDDA.v%d" % m] for m in (2, 3)]))
 
 # IBIAS escapes on M3 at its OWN tap y (die 423.90): that line carries M2 x11, M1 x2, M4 x1,
 # M5 x3 westward but NO M3, so an M3 escape crosses only other layers. The cleaner-looking
