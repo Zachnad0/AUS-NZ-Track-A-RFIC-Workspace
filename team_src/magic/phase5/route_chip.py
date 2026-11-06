@@ -446,18 +446,21 @@ print("(b) VSSA: %.1f um M5 15 um wide, array %s, W17 plate die y1.36-73.64"
 # on M5, and M3-vs-M5 has no spacing rule.
 # The tap sits INSIDE the varactor comp ring, so it escapes by via UP at the gate pad, never
 # laterally on M1 -- a lateral M1 escape shorts the ring to VSSA.
-# The riser is held at core x-190 (die 10), NOT at the pad column: the west pin rectangles all
-# sit at die x[0,1], so a riser run up the pad column would short VTUNE to IBIAS, ISS, VDDA and
-# VSSA on the way past (plan doc 3o).
+# The riser is held at die x2.25, NOT at the pad column: the west pin rectangles all sit at die
+# x[0,1], so a riser run up the pad column would short VTUNE to IBIAS, ISS, VDDA and VSSA on
+# the way past (plan doc 3o).
+# D BLOCK: both long runs keep away from the ISS bus. The riser is 7.25 um from the ISS M5
+# column, as far as x>=2 allows, and the lane is die y150, 40 um south of the ISS M5 lane: the
+# planned y205 would have been 5 um from it for 345 um (1.19 fF extracted, against 0 at y150).
 VT_TAP  = (358.68, 66.70)      # die (558.68, 266.70), M1
-VT_PTS  = [VT_TAP, (265.0, 66.70), (265.0, -35.0), (-190.0, -35.0), (-190.0, 282.5)]
-if WEST_ROWS_BUILT:
-    R.via_stack(chip, ly, 1, 3, VT_TAP[0], VT_TAP[1])              # M1 -> M3 AT the gate pad
-    R.route_path(chip, ly, 3, VT_PTS, w=0.4)
-    R.via_stack(chip, ly, 2, 3, -190.0, 282.5)
-    R.box(chip, ly, (36, 0), -200.0, 260.34, -186.0, 304.66)       # W22 finger-column plate
-    chip.shapes(ly.layer(36, 10)).insert(pya.DText("VTUNE", pya.DTrans(pya.DVector(-199.5, 282.5))))
-    print("(c) VTUNE: %.2f um M3, crossings = GND ring M5 only" % R.path_length(VT_PTS))
+VT_YL, VT_XR, VT_YP = -105.0, -97.75, 182.5      # core: lane (die y150), riser (die x2.25), pad row
+VT_PTS  = [VT_TAP, (265.0, 66.70), (265.0, VT_YL), (VT_XR, VT_YL), (VT_XR, VT_YP)]
+R.via_stack(chip, ly, 1, 3, VT_TAP[0], VT_TAP[1])              # M1 -> M3 AT the gate pad
+R.route_path(chip, ly, 3, VT_PTS, w=0.4)
+R.via_stack(chip, ly, 2, 3, VT_XR, VT_YP)
+R.box(chip, ly, (36, 0), -D_DX, 160.34, -82.0, 204.66)         # W21 finger-column plate
+chip.shapes(ly.layer(36, 10)).insert(pya.DText("VTUNE", pya.DTrans(pya.DVector(-D_DX + 0.5, VT_YP))))
+print("(c) VTUNE: %.2f um M3 0.4 um wide, riser die x2.05-2.45" % R.path_length(VT_PTS))
 
 # --- PHASE 8 (d): VDDA on M4, IBIAS on M3 with an M4 hop -------------------------------------
 # VDDA leaves its own M5 bus and goes west on M4, NOT M5: the GND ring's left segment is M5 at
