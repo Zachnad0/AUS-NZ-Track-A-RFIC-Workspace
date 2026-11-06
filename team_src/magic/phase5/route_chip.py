@@ -397,11 +397,9 @@ print("IQ matched: all four %.3f um, spread %.4f um" % (IQ_TARGET, err))
 assert err < 1e-3, "I/Q length matching broke: spread %.4f um" % err
 
 # --- D BLOCK, RUNG 1 (docs/d-block-plan.md) -------------------------------------------------
-# The six west rows below (VSSA, VTUNE, VDDA, IBIAS, ISS west of the gap, CP_OUT) are the BH
-# routes: they reach core x-200, which is die x-100 in the D seat, so they cannot simply move
-# with the core. They are switched off here and rebuilt against the D pins one rung at a time.
-# The north rows keep their core coordinates: the D seat equals the north pins' own move.
-WEST_ROWS_BUILT = False
+# The six west rows below (VSSA, VTUNE, VDDA, IBIAS, ISS west of the gap, CP_OUT) were rebuilt
+# against the D pins: their BH routes reached die x-100 in this seat. The north rows keep their
+# core coordinates, because the D seat equals the north pins' own move.
 D_DX, D_DY = 100.0, 255.0        # seat A: die = core + (D_DX, D_DY)
 D_CUTS = {}                      # via-array cut counts per D row, per level
 
@@ -725,7 +723,7 @@ for _k in sorted(C_CUTS):
 print("      %-14s %5d cut(s)  TOTAL (was 4 single cuts + a 40-finger comb)"
       % ("all PHASE C", sum(C_CUTS.values())))
 
-# --- PHASE 8 (g): CP_OUT to N01 ---------------------------------------------------------------
+# --- PHASE 8 (g): CP_OUT to W22 (it was N01 in BH) --------------------------------------------
 # The last declared pin. Found MISSING by analysis/landing_check.py: CP_OUT was declared in
 # info.yaml as pin 6 / slot N01 and had NO metal, which a port count can never catch because an
 # unrouted net has no label to be missing from a list.
@@ -734,22 +732,24 @@ print("      %-14s %5d cut(s)  TOTAL (was 4 single cuts + a 40-finger comb)"
 # (x408-667) -- so the haul goes WEST of x405 before it rises. It leaves M4 at die y460 because
 # the M4 horizontals at y470.7-472.3, x445-485 are gnd_tap's escape to the ring, and it crosses
 # y495 on M2 because Q_P's riser (x400) and REF_IN's riser (x405) both sit on M3 there.
+# (Those die coordinates are the BH seat.) D BLOCK: the same route as far as the y330 lane; the
+# lane then runs on past the old N01 column to die x10 and drops onto the new W22 plate.
 CPO_X = 272.25          # die 472.25 -- the tap's own 0.6 um M4 stub, die y406.20-424.62
-if WEST_ROWS_BUILT:
-    R.vwire(chip, ly, 4, 215.41, 260.0, CPO_X, w=0.6)              # up the stub to die y460
-    R.via_stack(chip, ly, 3, 4, CPO_X, 260.0)
-    R.vwire(chip, ly, 3, 260.0, 295.0, CPO_X, w=0.4)               # above the M3 horizontal at y440
-    R.via_stack(chip, ly, 2, 3, CPO_X, 295.0)
-    R.hwire(chip, ly, 2, 192.0, CPO_X, 295.0, w=0.4)               # M2 west across x405 and x400
-    R.via_stack(chip, ly, 2, 3, 192.0, 295.0)
-    R.vwire(chip, ly, 3, 295.0, 330.0, 192.0, w=0.4)               # between I_P's lane and Q_P's
-    R.hwire(chip, ly, 3, -132.5, 192.0, 330.0, w=0.4)              # die y530, above every quad lane
-    R.via_stack(chip, ly, 2, 3, -132.5, 330.0)
-    R.vwire(chip, ly, 2, 330.0, 349.5, -132.5, w=0.4)              # drops INTO the bar, not up to it
-    R.box(chip, ly, (36, 0), -154.66, 349.0, -110.34, 350.0)       # N01 finger-row bar
-    chip.shapes(ly.layer(36, 10)).insert(pya.DText("CP_OUT", pya.DTrans(pya.DVector(-132.5, 349.5))))
-    print("(g) CP_OUT: %.2f um to N01 (die x45.34-89.66)"
-          % (44.59 + 35.0 + 80.25 + 35.0 + 324.5 + 19.5))
+CPO_XR, CPO_YP = -90.0, 282.5     # core: west riser (die x10), pad row (die y537.5)
+R.vwire(chip, ly, 4, 215.41, 260.0, CPO_X, w=0.6)              # up the block's own stub
+R.via_stack(chip, ly, 3, 4, CPO_X, 260.0)
+R.vwire(chip, ly, 3, 260.0, 295.0, CPO_X, w=0.4)               # above the M3 horizontal
+R.via_stack(chip, ly, 2, 3, CPO_X, 295.0)
+R.hwire(chip, ly, 2, 192.0, CPO_X, 295.0, w=0.4)               # M2 west across the two risers
+R.via_stack(chip, ly, 2, 3, 192.0, 295.0)
+R.vwire(chip, ly, 3, 295.0, 330.0, 192.0, w=0.4)               # between the quad lanes
+R.hwire(chip, ly, 3, CPO_XR, 192.0, 330.0, w=0.4)              # die y585, above every quad lane
+R.vwire(chip, ly, 3, CPO_YP, 330.0, CPO_XR, w=0.4)             # south to the pad row
+R.via_stack(chip, ly, 2, 3, CPO_XR, CPO_YP)
+R.box(chip, ly, (36, 0), -D_DX, 260.34, -82.0, 304.66)         # W22 finger-column plate
+chip.shapes(ly.layer(36, 10)).insert(pya.DText("CP_OUT", pya.DTrans(pya.DVector(-D_DX + 0.5, CPO_YP))))
+print("(g) CP_OUT: %.2f um to W22 (die y515.34-559.66), M3 0.4 um wide"
+      % (44.59 + 35.0 + 80.25 + 35.0 + (192.0 - CPO_XR) + (330.0 - CPO_YP)))
 
 # --- PHASE 8 FRAME: seat the core in the padframe DIEAREA and draw the 0/0 boundary AT it ---
 # Bailey, 2026-08-21: "the width and the height should be the exact size of the block size
