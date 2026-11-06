@@ -33,9 +33,8 @@ project:
 # COMMENTS CHANGED IN THIS EDIT; not one pin entry was touched, and the list below is byte-for-
 # byte what the 12-pin DEF was generated against.
 #
-# SLOT VARIANT: BH -- 1110 x 550 um landscape (Greg 2026-08-22). Slots W18-W22 (west) +
-# N01-N07 (north; N01-N08 until I_P came off at N04 and Q_P/VSSD/VDDD/REF_IN each shifted
-# one slot west, exactly -100.000 um). Order = CLOCKWISE from bottom-left. VSSA first so all the analog pads
+# SLOT VARIANT: D -- 605 x 605 um (Bailey, issue #143, 2026-11-06; BH, 1110 x 550 um, before
+# that). Slots W17-W22 (west) + N01-N06 (north). Order = CLOCKWISE from bottom-left. VSSA first so all the analog pads
 # sit on the analog rail (one padring island, VSSA+VDDA); VSSD/VDDD/REF_IN sit in the
 # north digital island behind the padring BREAK.
 #

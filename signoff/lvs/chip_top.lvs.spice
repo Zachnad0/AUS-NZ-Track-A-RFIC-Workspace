@@ -321,7 +321,7 @@ X26 a_1000_472# a_36_151# a_796_472# VPW nfet_05v0 ad=93.59999f pd=0.88u as=93.5
 X27 a_796_472# D VDD VNW pfet_05v0 ad=0.2028p pd=1.3u as=0.3432p ps=2.44u w=0.78u l=0.5u
 .ends
 
-.subckt PFD_lib DOWN FB UP REF VDD VSS
+.subckt PFD_lib REF DOWN FB UP VDD VSS
 XFILLER_3_36 VDD VSS VDD VSS gf180mcu_fd_sc_mcu7t5v0__fillcap_8
 XFILLER_3_2 VDD VSS VDD VSS gf180mcu_fd_sc_mcu7t5v0__fillcap_32
 XFILLER_0_36 VDD VSS VDD VSS gf180mcu_fd_sc_mcu7t5v0__fillcap_32
@@ -403,7 +403,7 @@ X0 PORT2 m4_n14800_800# tm11k r_width=8u r_length=76u
 X1 m4_n14800_800# PORT1 tm11k r_width=8u r_length=76u
 .ends
 
-.subckt vco_core ISS VDD GND OUT_p OUT_n
+.subckt vco_core OUT_p ISS VDD GND OUT_n
 X0 OUT_n OUT_p ISS GND nfet_03v3 ad=1.04p pd=4.52u as=1.76p ps=8.88u w=4u l=0.28u
 X1 ISS OUT_p OUT_n GND nfet_03v3 ad=1.04p pd=4.52u as=1.04p ps=4.52u w=4u l=0.28u
 X2 OUT_p OUT_n VDD VDD pfet_03v3 ad=3.64p pd=14.52u as=6.16p ps=28.88u w=14u l=0.28u
@@ -436,11 +436,11 @@ X28 OUT_n OUT_p VDD VDD pfet_03v3 ad=3.64p pd=14.52u as=6.16p ps=28.88u w=14u l=
 X29 OUT_p OUT_n ISS GND nfet_03v3 ad=1.04p pd=4.52u as=1.04p ps=4.52u w=4u l=0.28u
 .ends
 
-.subckt vco_v1 TUNE GND VDD ISS OUT_p OUT_n
+.subckt vco_v1 TUNE GND VDD ISS OUT_n OUT_p
 Xvco_tune_r_0 TUNE vco_tune_r_0/cap_bias GND vco_tune_r
 Xvco_varactors_0 vco_tune_r_0/cap_bias OUT_n OUT_p vco_varactors
-Xvco_inductor_v2_0 OUT_n OUT_p vco_inductor_v2
-Xvco_core_0 ISS VDD GND OUT_p OUT_n vco_core
+Xvco_inductor_v2_0 OUT_p OUT_n vco_inductor_v2
+Xvco_core_0 OUT_p ISS VDD GND OUT_n vco_core
 .ends
 
 .subckt esd_rpoly a_n1600_400# a_n1600_n502# VSUBS
@@ -461,7 +461,7 @@ D2 a_n2100_100# w_n2260_n2260# diode_pd2nw_03v3 pj=40u area=99.99999p
 D3 a_n2100_n2100# w_n2260_n2260# diode_pd2nw_03v3 pj=40u area=99.99999p
 .ends
 
-.subckt CP_v1 VGP VGN DOWN CP_OUT UP VDD VSS
+.subckt CP_v1 UP VDD VSS VGP VGN DOWN CP_OUT
 X0 CP_OUT UPB PMID VDD pfet_03v3 ad=1.3p pd=5.52u as=2.2p ps=10.88u w=5u l=0.3u
 X1 UPB UP VSS VSS nfet_03v3 ad=0.44p pd=2.88u as=0.44p ps=2.88u w=1u l=0.3u
 X2 PMID UPB CP_OUT VDD pfet_03v3 ad=2.2p pd=10.88u as=1.3p ps=5.52u w=5u l=0.3u
@@ -671,17 +671,17 @@ X143 a_4344_n7400# OQ OQB VSS nfet_03v3 ad=1.04p pd=4.52u as=1.04p ps=4.52u w=4u
 X144 OIB OQ a_n708_n400# VSS nfet_03v3 ad=1.04p pd=4.52u as=1.04p ps=4.52u w=4u l=0.3u
 .ends
 
-.subckt chip_top VTUNE I_N Q_P Q_N ISS VSSA VDDA IBIAS VDDD REF_IN CP_OUT
+.subckt chip_top VTUNE I_N Q_P Q_N REF_IN VDDA VDDD VSSA ISS IBIAS CP_OUT
 Xibias_gen_v1_0 IBIAS_uq0 CP_v1_0/VGP CP_v1_0/VGN DIV2_QUAD_v1_0/IBIAS VDDA VSSA ibias_gen_v1
-XPFD_lib_0 CP_v1_0/DOWN I_P CP_v1_0/UP REF_IN VDDD VSSA PFD_lib
-Xvco_v1_0 VTUNE VSSA VDDA ISS vco_v1_0/OUT_p vco_v1_0/OUT_n vco_v1
+XPFD_lib_0 REF_IN CP_v1_0/DOWN PFD_lib_0/FB CP_v1_0/UP VDDD VSSA PFD_lib
+Xvco_v1_0 VTUNE VSSA VDDA ISS vco_v1_0/OUT_n vco_v1_0/OUT_p vco_v1
 Xesd_rpoly_0 IBIAS_uq0 IBIAS VSSA esd_rpoly
 Xesd_nd2ps_0 ISS ISS ISS ISS VSSA esd_nd2ps
 Xesd_nd2ps_1 IBIAS_uq0 IBIAS_uq0 IBIAS_uq0 IBIAS_uq0 VSSA esd_nd2ps
 Xesd_pd2nw_0 ISS ISS ISS VDDA ISS esd_pd2nw
 Xesd_pd2nw_1 IBIAS_uq0 IBIAS_uq0 IBIAS_uq0 VDDA IBIAS_uq0 esd_pd2nw
-XCP_v1_0 CP_v1_0/VGP CP_v1_0/VGN CP_v1_0/DOWN CP_OUT CP_v1_0/UP VDDA VSSA CP_v1
-XDIV2_QUAD_v1_0 Q_P vco_v1_0/OUT_p vco_v1_0/OUT_n DIV2_QUAD_v1_0/IBIAS VSSA VDDD I_P
+XCP_v1_0 CP_v1_0/UP VDDA VSSA CP_v1_0/VGP CP_v1_0/VGN CP_v1_0/DOWN CP_OUT CP_v1
+XDIV2_QUAD_v1_0 Q_P vco_v1_0/OUT_p vco_v1_0/OUT_n DIV2_QUAD_v1_0/IBIAS VSSA VDDD PFD_lib_0/FB
 + I_N Q_N DIV2_QUAD_v1
 .ends
 

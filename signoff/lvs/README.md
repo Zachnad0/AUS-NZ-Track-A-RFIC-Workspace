@@ -1,10 +1,13 @@
 # `signoff/lvs/` — LVS artifacts, tracked and readable without running anything
 
 **Team A01 · AUS/NZ Track A RFIC · GF180MCU (gf180mcuD)**
-Generated 2026-09-01 from commit `52a783a`, layout `gds/chip_top.gds`.
+`lvs.report`, `chip_top.lvs.spice` and `chip_top.drc.log` regenerated 2026-11-06 for the D block
+(tree at `c312fd7`, `gds/chip_top.gds` sha256 `e14b48cae71eeb60…`). `blocks/` generated 2026-09-01
+from commit `52a783a`.
 
-> **D block (2026-11-06).** The captured files here predate the 605 × 605 µm D block and were
-> not regenerated. For the D result, see the 2026-11-06 section below.
+> **D block (2026-11-06).** The three chip-level files are current for the 605 × 605 µm D block.
+> `blocks/` was not regenerated and still holds the 2026-09-01 captures. For the organizer-flow
+> D result, see the 2026-11-06 section below.
 
 These files exist because the flow's own working directory,
 `team_src/magic/verify_work/`, is **gitignored** (see `.gitignore`) — it is regenerable
