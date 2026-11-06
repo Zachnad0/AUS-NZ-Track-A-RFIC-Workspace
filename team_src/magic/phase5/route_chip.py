@@ -491,12 +491,11 @@ print("(d) VDDA: %.2f um M4 3 um wide, bus tap %d cuts, riser foot %s"
 # so it hops M3 -> M4 -> M3 across that span. Found by analysis/lane_conflicts.py BEFORE this
 # metal existed, as two 0.40 x 0.40 um M3-on-M3 overlaps.
 IB_TAP = (71.30, 223.90)       # die (271.30, 423.90), M2
-if WEST_ROWS_BUILT:
-    R.via_stack(chip, ly, 2, 3, IB_TAP[0], IB_TAP[1])              # M2 pin -> M3 at the tap
-    R.hwire(chip, ly, 3, 4.0, IB_TAP[0], IB_TAP[1], w=0.4)         # M3 west to die x204
-    R.via_stack(chip, ly, 3, 4, 4.0, IB_TAP[1])
-    R.hwire(chip, ly, 4, -7.0, 4.0, IB_TAP[1], w=0.4)              # M4 hop over the two quad risers
-    R.via_stack(chip, ly, 3, 4, -7.0, IB_TAP[1])
+R.via_stack(chip, ly, 2, 3, IB_TAP[0], IB_TAP[1])              # M2 pin -> M3 at the tap
+R.hwire(chip, ly, 3, 4.0, IB_TAP[0], IB_TAP[1], w=0.4)         # M3 west to die x104
+R.via_stack(chip, ly, 3, 4, 4.0, IB_TAP[1])
+R.hwire(chip, ly, 4, -7.0, 4.0, IB_TAP[1], w=0.4)              # M4 hop over the two quad risers
+R.via_stack(chip, ly, 3, 4, -7.0, IB_TAP[1])
 # RUNG 3 CUT: this M3 used to run unbroken from the block tap to the pad riser. The secondary
 # ESD ballast resistor goes IN SERIES in it, so the run is split into a TAP-side piece and a
 # PAD-side piece and the gap (die x40.0-58.5, under esd_rpoly) is bridged through the resistor.
@@ -517,12 +516,18 @@ if WEST_ROWS_BUILT:
 # seat. Re-adding a feeder here would short the ballast out -- and gate 4 DOES catch that
 # (tested 2026-08-25: resistor extracts with both terminals on IBIAS, net count 20 -> 19,
 # "Top level cell failed pin matching").
-if WEST_ROWS_BUILT:
-    R.route_path(chip, ly, 3, [(-7.0, IB_TAP[1]), (-166.0, IB_TAP[1]), (-166.0, 82.5)], w=0.4)
-    R.box(chip, ly, (36, 0), -200.0, 60.34, -182.0, 104.66)        # W20 finger-column plate, 18 um
-    chip.shapes(ly.layer(36, 10)).insert(pya.DText("IBIAS", pya.DTrans(pya.DVector(-199.5, 82.5))))
-    print("(d) IBIAS: %.2f um, M4 hop x193-204 over the Q_N/I_N risers"
-          % (IB_TAP[0] - 4.0 + 11.0 + (4.0 + 166.0 - 7.0) + (IB_TAP[1] - 82.5)))
+# D BLOCK: the riser is core x-64 (die 36), not the plan's die 34: that column would run through
+# the ISS D1 clamp-node array's M3 plate (die x30-34.2) and short IBIAS to ISS. Die 36 clears
+# it by 1.6 um and still lands on the clamp-node stub. The plate runs down to die y212.75: the
+# clamp's extra -10 um puts the resistor terminal below the pin band, and this plate is the
+# only path from the pad into the ballast. It stays at die x<=18, 2 um clear of the clamp.
+IB_XR = -64.0            # core x of the M3 riser (die 36)
+IB_YP = -17.5            # core y of the pad row (die 237.5)
+R.route_path(chip, ly, 3, [(-7.0, IB_TAP[1]), (IB_XR, IB_TAP[1]), (IB_XR, IB_YP)], w=0.4)
+R.box(chip, ly, (36, 0), -D_DX, -42.25, -82.0, 4.66)           # W19 plate, die y212.75-259.66
+chip.shapes(ly.layer(36, 10)).insert(pya.DText("IBIAS", pya.DTrans(pya.DVector(-D_DX + 0.5, IB_YP))))
+print("(d) IBIAS: %.2f um M3 0.4 um wide, M4 hop x93-104 over the Q_N/I_N risers"
+      % (IB_TAP[0] - 4.0 + 11.0 + (IB_XR * -1.0 - 7.0) + (IB_TAP[1] - IB_YP)))
 
 # --- PHASE 8 (e): ISS -- the VCO TAIL RETURN, so a bus, not a signal thread ------------------
 # ISS is the common source of the cross-coupled nfet pair (golden: XM1/XM4 "OUT_p OUT_n ISS
@@ -1259,7 +1264,7 @@ def esd_check_segments(devboxes):
     print("   ESD segment check: %d segments, 0 cross-net overruns" % len(ESD_SEGS))
 
 _rb, _rt = esd_res_tabs("esd_rpoly", IB_R[0], IB_R[1], "IBIAS.rpoly")
-IB_RISER = (34.0, 237.5)      # die: bottom end of the M3 riser that carries on to the block tap (D pin centre y)
+IB_RISER = (36.0, 237.5)      # die: bottom end of the M3 riser that carries on to the block tap (D pin centre y)
 # PAD PLATE -> resistor BOTTOM terminal. This M2 run is now the ONLY thing the pad touches.
 eseg("IBIAS", 2, 18.0, _rb[1], _rb[0], _rb[1], 1.0)
 # CORE side: resistor TOP -> clamp node -> both diodes -> up onto the riser bottom
