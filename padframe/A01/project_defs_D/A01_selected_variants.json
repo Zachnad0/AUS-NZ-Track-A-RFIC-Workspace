@@ -1,0 +1,165 @@
+{
+  "project_size": {
+    "source_gds": "/Users/kanobailey/chipathon/2026/data/A01/gds/chip_top.gds",
+    "top_cell": "chip_top",
+    "block_type": "mixed_signal",
+    "layout_dbu_microns": 0.005,
+    "physical_bbox_dbu": [
+      4024,
+      40110,
+      124650,
+      94028
+    ],
+    "physical_bbox_microns": [
+      "20.12",
+      "200.55",
+      "623.25",
+      "470.14"
+    ],
+    "prboundary_dbu": [
+      0,
+      0,
+      222000,
+      110000
+    ],
+    "prboundary_microns": [
+      "0",
+      "0",
+      "1110",
+      "550"
+    ],
+    "width_microns": "603.13",
+    "height_microns": "269.59",
+    "top_cell_text": [
+      {
+        "text": "VTUNE",
+        "layer": 34,
+        "datatype": 10
+      },
+      {
+        "text": "I_N",
+        "layer": 34,
+        "datatype": 10
+      },
+      {
+        "text": "Q_P",
+        "layer": 34,
+        "datatype": 10
+      },
+      {
+        "text": "Q_N",
+        "layer": 34,
+        "datatype": 10
+      },
+      {
+        "text": "VSSD",
+        "layer": 36,
+        "datatype": 0
+      },
+      {
+        "text": "REF_IN_PD",
+        "layer": 36,
+        "datatype": 0
+      },
+      {
+        "text": "REF_IN_PU",
+        "layer": 36,
+        "datatype": 0
+      },
+      {
+        "text": "IBIAS",
+        "layer": 36,
+        "datatype": 0
+      },
+      {
+        "text": "ISS",
+        "layer": 36,
+        "datatype": 10
+      },
+      {
+        "text": "Q_N",
+        "layer": 36,
+        "datatype": 10
+      },
+      {
+        "text": "I_N",
+        "layer": 36,
+        "datatype": 10
+      },
+      {
+        "text": "Q_P",
+        "layer": 36,
+        "datatype": 10
+      },
+      {
+        "text": "VSSA",
+        "layer": 36,
+        "datatype": 10
+      },
+      {
+        "text": "VTUNE",
+        "layer": 36,
+        "datatype": 10
+      },
+      {
+        "text": "VDDA",
+        "layer": 36,
+        "datatype": 10
+      },
+      {
+        "text": "IBIAS",
+        "layer": 36,
+        "datatype": 10
+      },
+      {
+        "text": "ISS",
+        "layer": 36,
+        "datatype": 10
+      },
+      {
+        "text": "VDDD",
+        "layer": 36,
+        "datatype": 10
+      },
+      {
+        "text": "REF_IN",
+        "layer": 36,
+        "datatype": 10
+      },
+      {
+        "text": "CP_OUT",
+        "layer": 36,
+        "datatype": 10
+      },
+      {
+        "text": "REF_IN",
+        "layer": 42,
+        "datatype": 10
+      },
+      {
+        "text": "CP_OUT",
+        "layer": 46,
+        "datatype": 10
+      },
+      {
+        "text": "VDDA",
+        "layer": 81,
+        "datatype": 10
+      },
+      {
+        "text": "VDDD",
+        "layer": 81,
+        "datatype": 10
+      },
+      {
+        "text": "VSSA",
+        "layer": 81,
+        "datatype": 10
+      }
+    ]
+  },
+  "participant_pin_count": 12,
+  "selected_variants": [
+    "D"
+  ]
+}

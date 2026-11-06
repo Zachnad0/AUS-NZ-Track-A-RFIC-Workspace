@@ -396,6 +396,13 @@ err = max(iq_final.values()) - min(iq_final.values())
 print("IQ matched: all four %.3f um, spread %.4f um" % (IQ_TARGET, err))
 assert err < 1e-3, "I/Q length matching broke: spread %.4f um" % err
 
+# --- D BLOCK, RUNG 1 (docs/d-block-plan.md) -------------------------------------------------
+# The six west rows below (VSSA, VTUNE, VDDA, IBIAS, ISS west of the gap, CP_OUT) are the BH
+# routes: they reach core x-200, which is die x-100 in the D seat, so they cannot simply move
+# with the core. They are switched off here and rebuilt against the D pins one rung at a time.
+# The north rows keep their core coordinates: the D seat equals the north pins' own move.
+WEST_ROWS_BUILT = False
+
 # --- PHASE 8 (b): VSSA -- extend the GND ring west to the W18 pad ----------------------------
 # CORE coords (die = core + 200). The ring's own bottom segment already reaches core x-25, so
 # the spur starts there and is the SAME net -- the one intended same-layer touch in the
@@ -409,17 +416,18 @@ VSSA_Y   = -10.0        # core y of the ring bottom centreline (die 190)
 VSSA_XW  = -80.0        # core x where the spur turns south (die 120)
 VSSA_YP  = -117.5       # core y of the pad approach (die 82.5)
 VSSA_XV  = -184.0       # core x of the M5->M2 via (die 16)
-R.hwire(chip, ly, 5, -25.0, VSSA_XW, VSSA_Y,  w=15.0)          # ring bottom -> west
-R.vwire(chip, ly, 5, VSSA_YP, VSSA_Y, VSSA_XW, w=15.0)         # south to the pad row
-R.hwire(chip, ly, 5, VSSA_XV, VSSA_XW, VSSA_YP, w=9.5)         # west to the via column
-# One M2 PLATE from the via column out to the die edge, covering the whole finger column.
-# NOT an hwire + a separate bar: R.hwire extends half its width past each endpoint, so an
-# hwire ending at core x-199.5 (die 0.5) reached die -4.25 -- outside the DIEAREA.
-R.via_stack(chip, ly, 2, 5, VSSA_XV - 2.0, VSSA_YP)            # via INSIDE the plate (x<XV)
-R.box(chip, ly, (36, 0), -200.0, -153.64, VSSA_XV, -81.36)     # die x0-16, y46.36-118.64
-chip.shapes(ly.layer(36, 10)).insert(pya.DText("VSSA", pya.DTrans(pya.DVector(-199.5, VSSA_YP))))
-print("(b) VSSA: ring spur %.1f um M5 + %.1f um M2 to the W18 finger bar (die y46.36-118.64)"
-      % (abs(-25.0 - VSSA_XW) + abs(VSSA_Y - VSSA_YP) + abs(VSSA_XW - VSSA_XV), abs(VSSA_XV + 199.5)))
+if WEST_ROWS_BUILT:
+    R.hwire(chip, ly, 5, -25.0, VSSA_XW, VSSA_Y,  w=15.0)          # ring bottom -> west
+    R.vwire(chip, ly, 5, VSSA_YP, VSSA_Y, VSSA_XW, w=15.0)         # south to the pad row
+    R.hwire(chip, ly, 5, VSSA_XV, VSSA_XW, VSSA_YP, w=9.5)         # west to the via column
+    # One M2 PLATE from the via column out to the die edge, covering the whole finger column.
+    # NOT an hwire + a separate bar: R.hwire extends half its width past each endpoint, so an
+    # hwire ending at core x-199.5 (die 0.5) reached die -4.25 -- outside the DIEAREA.
+    R.via_stack(chip, ly, 2, 5, VSSA_XV - 2.0, VSSA_YP)            # via INSIDE the plate (x<XV)
+    R.box(chip, ly, (36, 0), -200.0, -153.64, VSSA_XV, -81.36)     # die x0-16, y46.36-118.64
+    chip.shapes(ly.layer(36, 10)).insert(pya.DText("VSSA", pya.DTrans(pya.DVector(-199.5, VSSA_YP))))
+    print("(b) VSSA: ring spur %.1f um M5 + %.1f um M2 to the W18 finger bar (die y46.36-118.64)"
+          % (abs(-25.0 - VSSA_XW) + abs(VSSA_Y - VSSA_YP) + abs(VSSA_XW - VSSA_XV), abs(VSSA_XV + 199.5)))
 
 # --- PHASE 8 (c): VTUNE -- route (a), out of the core SOUTH and round through free die -------
 # CORE coords. Plan doc 3n: 3m called this "boxed", which was true only while chip_top was
@@ -433,12 +441,13 @@ print("(b) VSSA: ring spur %.1f um M5 + %.1f um M2 to the W18 finger bar (die y4
 # VSSA on the way past (plan doc 3o).
 VT_TAP  = (358.68, 66.70)      # die (558.68, 266.70), M1
 VT_PTS  = [VT_TAP, (265.0, 66.70), (265.0, -35.0), (-190.0, -35.0), (-190.0, 282.5)]
-R.via_stack(chip, ly, 1, 3, VT_TAP[0], VT_TAP[1])              # M1 -> M3 AT the gate pad
-R.route_path(chip, ly, 3, VT_PTS, w=0.4)
-R.via_stack(chip, ly, 2, 3, -190.0, 282.5)
-R.box(chip, ly, (36, 0), -200.0, 260.34, -186.0, 304.66)       # W22 finger-column plate
-chip.shapes(ly.layer(36, 10)).insert(pya.DText("VTUNE", pya.DTrans(pya.DVector(-199.5, 282.5))))
-print("(c) VTUNE: %.2f um M3, crossings = GND ring M5 only" % R.path_length(VT_PTS))
+if WEST_ROWS_BUILT:
+    R.via_stack(chip, ly, 1, 3, VT_TAP[0], VT_TAP[1])              # M1 -> M3 AT the gate pad
+    R.route_path(chip, ly, 3, VT_PTS, w=0.4)
+    R.via_stack(chip, ly, 2, 3, -190.0, 282.5)
+    R.box(chip, ly, (36, 0), -200.0, 260.34, -186.0, 304.66)       # W22 finger-column plate
+    chip.shapes(ly.layer(36, 10)).insert(pya.DText("VTUNE", pya.DTrans(pya.DVector(-199.5, 282.5))))
+    print("(c) VTUNE: %.2f um M3, crossings = GND ring M5 only" % R.path_length(VT_PTS))
 
 # --- PHASE 8 (d): VDDA on M4, IBIAS on M3 with an M4 hop -------------------------------------
 # VDDA leaves its own M5 bus and goes west on M4, NOT M5: the GND ring's left segment is M5 at
@@ -447,18 +456,19 @@ print("(c) VTUNE: %.2f um M3, crossings = GND ring M5 only" % R.path_length(VT_P
 # The VDDA M5 bus spans die x258.5-606.5 (core 58.5-406.5). 3o said to tap it at die x256 --
 # which is 2.5 um WEST of the bus end, so the via landed on nothing and the whole VDDA haul
 # extracted as a disconnected node (VDDA_uq0). Tap at core x60 (die 260), inside the bus.
-R.via_stack(chip, ly, 4, 5, 60.0, 199.0)                       # onto the VDDA M5 bus, die (260,399)
-R.hwire(chip, ly, 4, -154.0, 60.0, 199.0, w=3.0)               # west across the ring on M4
-R.vwire(chip, ly, 4, 5.0, 199.0, -154.0, w=3.0)                # south to the pad row
-# MSLOT.1 caps metal at 30 um wide without slotting, and it is measured in BOTH axes. A plate
-# spanning the 72.28 um finger column AND reaching the via at core x-154 would be 48 x 72.28
-# and violates. KLayout signoff caught it; magic did not. Plate stays 18 um wide and a 3 um
-# feeder reaches the via.
-R.via_stack(chip, ly, 2, 4, -154.0, 5.0)
-R.hwire(chip, ly, 2, -184.0, -154.0, 5.0, w=3.0)               # feeder, plate -> via
-R.box(chip, ly, (36, 0), -200.0, -53.64, -182.0, 18.64)        # W19 finger-column plate, 18 um
-chip.shapes(ly.layer(36, 10)).insert(pya.DText("VDDA", pya.DTrans(pya.DVector(-199.5, 5.0))))
-print("(d) VDDA: %.2f um M4 west+down, crosses the GND ring left segment on M4" % (210.0 + 194.0))
+if WEST_ROWS_BUILT:
+    R.via_stack(chip, ly, 4, 5, 60.0, 199.0)                       # onto the VDDA M5 bus, die (260,399)
+    R.hwire(chip, ly, 4, -154.0, 60.0, 199.0, w=3.0)               # west across the ring on M4
+    R.vwire(chip, ly, 4, 5.0, 199.0, -154.0, w=3.0)                # south to the pad row
+    # MSLOT.1 caps metal at 30 um wide without slotting, and it is measured in BOTH axes. A plate
+    # spanning the 72.28 um finger column AND reaching the via at core x-154 would be 48 x 72.28
+    # and violates. KLayout signoff caught it; magic did not. Plate stays 18 um wide and a 3 um
+    # feeder reaches the via.
+    R.via_stack(chip, ly, 2, 4, -154.0, 5.0)
+    R.hwire(chip, ly, 2, -184.0, -154.0, 5.0, w=3.0)               # feeder, plate -> via
+    R.box(chip, ly, (36, 0), -200.0, -53.64, -182.0, 18.64)        # W19 finger-column plate, 18 um
+    chip.shapes(ly.layer(36, 10)).insert(pya.DText("VDDA", pya.DTrans(pya.DVector(-199.5, 5.0))))
+    print("(d) VDDA: %.2f um M4 west+down, crosses the GND ring left segment on M4" % (210.0 + 194.0))
 
 # IBIAS escapes on M3 at its OWN tap y (die 423.90): that line carries M2 x11, M1 x2, M4 x1,
 # M5 x3 westward but NO M3, so an M3 escape crosses only other layers. The cleaner-looking
@@ -468,11 +478,12 @@ print("(d) VDDA: %.2f um M4 west+down, crosses the GND ring left segment on M4" 
 # so it hops M3 -> M4 -> M3 across that span. Found by analysis/lane_conflicts.py BEFORE this
 # metal existed, as two 0.40 x 0.40 um M3-on-M3 overlaps.
 IB_TAP = (71.30, 223.90)       # die (271.30, 423.90), M2
-R.via_stack(chip, ly, 2, 3, IB_TAP[0], IB_TAP[1])              # M2 pin -> M3 at the tap
-R.hwire(chip, ly, 3, 4.0, IB_TAP[0], IB_TAP[1], w=0.4)         # M3 west to die x204
-R.via_stack(chip, ly, 3, 4, 4.0, IB_TAP[1])
-R.hwire(chip, ly, 4, -7.0, 4.0, IB_TAP[1], w=0.4)              # M4 hop over the two quad risers
-R.via_stack(chip, ly, 3, 4, -7.0, IB_TAP[1])
+if WEST_ROWS_BUILT:
+    R.via_stack(chip, ly, 2, 3, IB_TAP[0], IB_TAP[1])              # M2 pin -> M3 at the tap
+    R.hwire(chip, ly, 3, 4.0, IB_TAP[0], IB_TAP[1], w=0.4)         # M3 west to die x204
+    R.via_stack(chip, ly, 3, 4, 4.0, IB_TAP[1])
+    R.hwire(chip, ly, 4, -7.0, 4.0, IB_TAP[1], w=0.4)              # M4 hop over the two quad risers
+    R.via_stack(chip, ly, 3, 4, -7.0, IB_TAP[1])
 # RUNG 3 CUT: this M3 used to run unbroken from the block tap to the pad riser. The secondary
 # ESD ballast resistor goes IN SERIES in it, so the run is split into a TAP-side piece and a
 # PAD-side piece and the gap (die x40.0-58.5, under esd_rpoly) is bridged through the resistor.
@@ -493,11 +504,12 @@ R.via_stack(chip, ly, 3, 4, -7.0, IB_TAP[1])
 # seat. Re-adding a feeder here would short the ballast out -- and gate 4 DOES catch that
 # (tested 2026-08-25: resistor extracts with both terminals on IBIAS, net count 20 -> 19,
 # "Top level cell failed pin matching").
-R.route_path(chip, ly, 3, [(-7.0, IB_TAP[1]), (-166.0, IB_TAP[1]), (-166.0, 82.5)], w=0.4)
-R.box(chip, ly, (36, 0), -200.0, 60.34, -182.0, 104.66)        # W20 finger-column plate, 18 um
-chip.shapes(ly.layer(36, 10)).insert(pya.DText("IBIAS", pya.DTrans(pya.DVector(-199.5, 82.5))))
-print("(d) IBIAS: %.2f um, M4 hop x193-204 over the Q_N/I_N risers"
-      % (IB_TAP[0] - 4.0 + 11.0 + (4.0 + 166.0 - 7.0) + (IB_TAP[1] - 82.5)))
+if WEST_ROWS_BUILT:
+    R.route_path(chip, ly, 3, [(-7.0, IB_TAP[1]), (-166.0, IB_TAP[1]), (-166.0, 82.5)], w=0.4)
+    R.box(chip, ly, (36, 0), -200.0, 60.34, -182.0, 104.66)        # W20 finger-column plate, 18 um
+    chip.shapes(ly.layer(36, 10)).insert(pya.DText("IBIAS", pya.DTrans(pya.DVector(-199.5, 82.5))))
+    print("(d) IBIAS: %.2f um, M4 hop x193-204 over the Q_N/I_N risers"
+          % (IB_TAP[0] - 4.0 + 11.0 + (4.0 + 166.0 - 7.0) + (IB_TAP[1] - 82.5)))
 
 # --- PHASE 8 (e): ISS -- the VCO TAIL RETURN, so a bus, not a signal thread ------------------
 # ISS is the common source of the cross-coupled nfet pair (golden: XM1/XM4 "OUT_p OUT_n ISS
@@ -537,18 +549,19 @@ R.via_stack(chip, ly, 4, 5, 255.0, -60.0)
 # to space against); caught by the LVS port/net count, 21 nets -> 20. The M5 ends are pulled
 # back so the EXTENDED ends clear VSSA's descent by >=0.3 um on both sides: east M5 stops at
 # die x135 (reaches 130), west M5 starts at die x105 (reaches 110), M4 spans 135 -> 105.
-R.hwire(chip, ly, 5, -65.0, 255.0, -60.0, w=10.0)              # south lane, die y135-145
-R.via_stack(chip, ly, 4, 5, -65.0, -60.0)
-R.hwire(chip, ly, 4, -95.0, -65.0, -60.0, w=10.0)              # hop over VSSA's M5 descent
-R.via_stack(chip, ly, 4, 5, -95.0, -60.0)
-R.hwire(chip, ly, 5, -110.0, -95.0, -60.0, w=10.0)
-R.vwire(chip, ly, 5, -60.0, 182.5, -110.0, w=10.0)             # riser, die x85-95
-R.hwire(chip, ly, 5, -186.0, -110.0, 182.5, w=10.0)
-R.via_stack(chip, ly, 2, 5, -186.0, 182.5)
-R.box(chip, ly, (36, 0), -200.0, 160.34, -182.0, 204.66)       # W21 finger-column plate
-chip.shapes(ly.layer(36, 10)).insert(pya.DText("ISS", pya.DTrans(pya.DVector(-199.5, 182.5))))
-print("(e) ISS: %.2f um bus (M2 8um / M4 10um / M5 10um), one M4 hop over VSSA's descent"
-      % (97.04 + 35.0 + 120.33 + 325.0 + 20.0 + 20.0 + 242.5 + 76.0))
+if WEST_ROWS_BUILT:
+    R.hwire(chip, ly, 5, -65.0, 255.0, -60.0, w=10.0)              # south lane, die y135-145
+    R.via_stack(chip, ly, 4, 5, -65.0, -60.0)
+    R.hwire(chip, ly, 4, -95.0, -65.0, -60.0, w=10.0)              # hop over VSSA's M5 descent
+    R.via_stack(chip, ly, 4, 5, -95.0, -60.0)
+    R.hwire(chip, ly, 5, -110.0, -95.0, -60.0, w=10.0)
+    R.vwire(chip, ly, 5, -60.0, 182.5, -110.0, w=10.0)             # riser, die x85-95
+    R.hwire(chip, ly, 5, -186.0, -110.0, 182.5, w=10.0)
+    R.via_stack(chip, ly, 2, 5, -186.0, 182.5)
+    R.box(chip, ly, (36, 0), -200.0, 160.34, -182.0, 204.66)       # W21 finger-column plate
+    chip.shapes(ly.layer(36, 10)).insert(pya.DText("ISS", pya.DTrans(pya.DVector(-199.5, 182.5))))
+    print("(e) ISS: %.2f um bus (M2 8um / M4 10um / M5 10um), one M4 hop over VSSA's descent"
+          % (97.04 + 35.0 + 120.33 + 325.0 + 20.0 + 20.0 + 242.5 + 76.0))
 
 # --- PHASE 8 (f): VSSD, VDDD, REF_IN and the PU/PD ties -------------------------------------
 # Built against the 13-PIN DEF (padframe/A01/project_defs_13pin/), whose slot map was verified
@@ -696,20 +709,21 @@ print("      %-14s %5d cut(s)  TOTAL (was 4 single cuts + a 40-finger comb)"
 # the M4 horizontals at y470.7-472.3, x445-485 are gnd_tap's escape to the ring, and it crosses
 # y495 on M2 because Q_P's riser (x400) and REF_IN's riser (x405) both sit on M3 there.
 CPO_X = 272.25          # die 472.25 -- the tap's own 0.6 um M4 stub, die y406.20-424.62
-R.vwire(chip, ly, 4, 215.41, 260.0, CPO_X, w=0.6)              # up the stub to die y460
-R.via_stack(chip, ly, 3, 4, CPO_X, 260.0)
-R.vwire(chip, ly, 3, 260.0, 295.0, CPO_X, w=0.4)               # above the M3 horizontal at y440
-R.via_stack(chip, ly, 2, 3, CPO_X, 295.0)
-R.hwire(chip, ly, 2, 192.0, CPO_X, 295.0, w=0.4)               # M2 west across x405 and x400
-R.via_stack(chip, ly, 2, 3, 192.0, 295.0)
-R.vwire(chip, ly, 3, 295.0, 330.0, 192.0, w=0.4)               # between I_P's lane and Q_P's
-R.hwire(chip, ly, 3, -132.5, 192.0, 330.0, w=0.4)              # die y530, above every quad lane
-R.via_stack(chip, ly, 2, 3, -132.5, 330.0)
-R.vwire(chip, ly, 2, 330.0, 349.5, -132.5, w=0.4)              # drops INTO the bar, not up to it
-R.box(chip, ly, (36, 0), -154.66, 349.0, -110.34, 350.0)       # N01 finger-row bar
-chip.shapes(ly.layer(36, 10)).insert(pya.DText("CP_OUT", pya.DTrans(pya.DVector(-132.5, 349.5))))
-print("(g) CP_OUT: %.2f um to N01 (die x45.34-89.66)"
-      % (44.59 + 35.0 + 80.25 + 35.0 + 324.5 + 19.5))
+if WEST_ROWS_BUILT:
+    R.vwire(chip, ly, 4, 215.41, 260.0, CPO_X, w=0.6)              # up the stub to die y460
+    R.via_stack(chip, ly, 3, 4, CPO_X, 260.0)
+    R.vwire(chip, ly, 3, 260.0, 295.0, CPO_X, w=0.4)               # above the M3 horizontal at y440
+    R.via_stack(chip, ly, 2, 3, CPO_X, 295.0)
+    R.hwire(chip, ly, 2, 192.0, CPO_X, 295.0, w=0.4)               # M2 west across x405 and x400
+    R.via_stack(chip, ly, 2, 3, 192.0, 295.0)
+    R.vwire(chip, ly, 3, 295.0, 330.0, 192.0, w=0.4)               # between I_P's lane and Q_P's
+    R.hwire(chip, ly, 3, -132.5, 192.0, 330.0, w=0.4)              # die y530, above every quad lane
+    R.via_stack(chip, ly, 2, 3, -132.5, 330.0)
+    R.vwire(chip, ly, 2, 330.0, 349.5, -132.5, w=0.4)              # drops INTO the bar, not up to it
+    R.box(chip, ly, (36, 0), -154.66, 349.0, -110.34, 350.0)       # N01 finger-row bar
+    chip.shapes(ly.layer(36, 10)).insert(pya.DText("CP_OUT", pya.DTrans(pya.DVector(-132.5, 349.5))))
+    print("(g) CP_OUT: %.2f um to N01 (die x45.34-89.66)"
+          % (44.59 + 35.0 + 80.25 + 35.0 + 324.5 + 19.5))
 
 # --- PHASE 8 FRAME: seat the core in the padframe DIEAREA and draw the 0/0 boundary AT it ---
 # Bailey, 2026-08-21: "the width and the height should be the exact size of the block size
@@ -728,8 +742,9 @@ print("(g) CP_OUT: %.2f um to N01 (die x45.34-89.66)"
 # routing coordinate above unchanged, and keeps check_placement.py's core-frame comparison
 # (chip_merge BLOCKS vs chip_top.tcl getcell boxes) valid without a re-baseline -- the
 # block-relative placement does not move, only the whole core does.
-DX, DY = 200.0, 200.0            # core offset inside the die (docs/phase8-padframe-plan.md 3f)
-DIE_W, DIE_H = 1110.0, 550.0     # A01_BH DIEAREA, exact
+# D BLOCK: the padframe moved. A01_D.def says DIEAREA ( 0 0 ) ( 121000 121000 ) at 200 dbu/um.
+DX, DY = 100.0, 255.0            # seat A, docs/d-block-plan.md (BH was 200, 200)
+DIE_W, DIE_H = 605.0, 605.0      # A01_D DIEAREA, exact
 
 core = chip.dbbox()
 # The core frame reaches negative x (the GND ring sits at -17.5); the die frame never does.
@@ -748,7 +763,7 @@ print("core frame  : (%.2f,%.2f)-(%.2f,%.2f)  %.1f x %.1f um"
       % (core.left, core.bottom, core.right, core.top, core.width(), core.height()))
 print("seated at dx=%.1f dy=%.1f -> core occupies (%.2f,%.2f)-(%.2f,%.2f)"
       % (DX, DY, core.left + DX, core.bottom + DY, core.right + DX, core.top + DY))
-print("die boundary (0/0): (0.00,0.00)-(%.2f,%.2f)  %.1f x %.1f um  [= A01_BH DIEAREA]"
+print("die boundary (0/0): (0.00,0.00)-(%.2f,%.2f)  %.1f x %.1f um  [= A01_D DIEAREA]"
       % (DIE_W, DIE_H, DIE_W, DIE_H))
 print("DIEAREA_dbu=(0,0)-(%d,%d)" % (round(DIE_W / ly.dbu), round(DIE_H / ly.dbu)))
 assert abs(seated.left) < 1e-9 and abs(seated.bottom) < 1e-9, seated
@@ -784,8 +799,9 @@ assert abs(seated.width() - DIE_W) < 1e-9 and abs(seated.height() - DIE_H) < 1e-
 # have UNDER-covered the coil by 0.020 um at its bottom edge.
 NDMY, PMNDMY, IND_MK = (111, 5), (152, 5), (151, 5)
 
-SPIRAL = pya.DBox(490.000, 295.480, 672.000, 379.480)   # vco_v1/vco_inductor_v2, 182.000 x 84.000
-VARACT = pya.DBox(576.630, 200.010, 623.370, 254.480)   # vco_v1/vco_varactors,    46.740 x 54.470
+# Measured at the BH seat (200, 200); both are core-owned, so they move with the seat.
+SPIRAL = pya.DBox(490.000, 295.480, 672.000, 379.480).moved(DX - 200.0, DY - 200.0)   # vco_v1/vco_inductor_v2, 182.000 x 84.000
+VARACT = pya.DBox(576.630, 200.010, 623.370, 254.480).moved(DX - 200.0, DY - 200.0)   # vco_v1/vco_varactors,    46.740 x 54.470
 
 for _name, _box, _layers in [
     ("spiral",    SPIRAL, [PMNDMY, IND_MK]),   # metal fill; comp/poly2 fill (eddy loss -> Q)
@@ -1106,15 +1122,18 @@ print("phase 8 rung 3: secondary ESD, IBIAS + ISS")
 # silently drift the moment a gencell parameter changed -- and they already did once this
 # rung: magic's `box values` reported the resistor as 18.16 x 7.18 while the written GDS is
 # 18.24 x 7.26. Deriving means the 0.08 um can never become a landing defect.
+# D BLOCK: the clamps stay at their BH x and follow their pins in y (-45). IBIAS goes 10 um further
+# south so its top edge clears the ring bottom strap at y237.5 (docs/d-block-plan.md).
 ESD_PLACE = {                       # tag: (cell, lower-left x, lower-left y)
-    "IB_D1": ("esd_pd2nw",  38.00, 268.00),
-    "IB_D2": ("esd_nd2ps",  66.00, 268.00),
-    "IB_R":  ("esd_rpoly",  20.00, 268.00),
-    "IS_D1": ("esd_pd2nw",  20.00, 368.00),
-    "IS_D2": ("esd_nd2ps",  50.00, 368.00),
+    "IB_D1": ("esd_pd2nw",  38.00, 213.00),
+    "IB_D2": ("esd_nd2ps",  66.00, 213.00),
+    "IB_R":  ("esd_rpoly",  20.00, 213.00),
+    "IS_D1": ("esd_pd2nw",  20.00, 323.00),
+    "IS_D2": ("esd_nd2ps",  50.00, 323.00),
 }
-# the measured free blocks these must stay inside (docs: rung-3 stage B1 occupancy scans)
-ESD_BLOCK = {"IB": (18.0, 255.0, 100.0, 312.0), "IS": (18.0, 355.0, 100.0, 412.0)}
+RING_LEG_X, RING_BOT_Y = GX_L + DX, GY_BOT + DY     # ring left-leg / bottom-strap centrelines, die
+# the free blocks these must stay inside: clear of the ring in y (IB) and in x (IS)
+ESD_BLOCK = {"IB": (18.0, 200.0, 100.0, 237.5), "IS": (18.0, 310.0, 75.0, 367.0)}
 ESD_POS, ESD_BOX = {}, {}
 for _tag, (_cell, _llx, _lly) in ESD_PLACE.items():
     _bb = ly.cell(_cell).dbbox()
@@ -1222,7 +1241,7 @@ def esd_check_segments(devboxes):
     print("   ESD segment check: %d segments, 0 cross-net overruns" % len(ESD_SEGS))
 
 _rb, _rt = esd_res_tabs("esd_rpoly", IB_R[0], IB_R[1], "IBIAS.rpoly")
-IB_RISER = (34.0, 282.5)      # die: bottom end of the M3 riser that carries on to the block tap
+IB_RISER = (34.0, 237.5)      # die: bottom end of the M3 riser that carries on to the block tap (D pin centre y)
 # PAD PLATE -> resistor BOTTOM terminal. This M2 run is now the ONLY thing the pad touches.
 eseg("IBIAS", 2, 18.0, _rb[1], _rb[0], _rb[1], 1.0)
 # CORE side: resistor TOP -> clamp node -> both diodes -> up onto the riser bottom
@@ -1250,17 +1269,19 @@ eseg("VDDA", 4, 47.5, _ibv[1], _ibv[0], _ibv[1], 3.0)
 evia("VDDA", _ibv[0], _ibv[1], 2, 4)
 
 # ---- VSSA strap: nd2ps M2 frame -> GND ring, 10 um, via stack INTO the ring --------------
+# D BLOCK: the IBIAS clamp now sits BELOW the ring, so this strap runs NORTH into the bottom
+# strap instead of east into the left leg. The overrun arithmetic below is the same, in y.
 # R.hwire EXTENDS HALF ITS WIDTH past each endpoint. At w=10 that is 5 um, so a strap
 # nominally starting at the M2 frame's inner edge (cx+11.00 = 82.30) actually reaches 77.30 --
 # INSIDE the plate bridge, which ends at cx+6.5 = 77.80. That shorted the clamp node to VSSA
 # and every ESD node extracted as VSSA. Start at cx+13.0 so the EXTENDED end lands at 79.30,
 # still covering the frame (82.30-84.00) with 1.5 um clear of the bridge. Third time this
 # overrun has cost a net in this file; the strap start is now derived from it, not eyeballed.
-assert (IB_D2[0] + 13.0) - 5.0 > IB_D2[0] + 6.5 + 1.0, "VSSA strap would reach the plate bridge"
-eseg("VSSA", 2, IB_D2[0] + 13.0, IB_D2[1], 190.0, IB_D2[1], 10.0)
-R.via_stack(chip, ly, 2, 5, 190.0, IB_D2[1])
-print("   IBIAS VSSA strap: M2 10 um (%.2f,%.2f) -> GND ring die x190.00  [extends to %.2f]"
-      % (IB_D2[0] + 13.0, IB_D2[1], IB_D2[0] + 13.0 - 5.0))
+assert (IB_D2[1] + 13.0) - 5.0 > IB_D2[1] + 6.5 + 1.0, "VSSA strap would reach the plate bridge"
+eseg("VSSA", 2, IB_D2[0], IB_D2[1] + 13.0, IB_D2[0], RING_BOT_Y, 10.0, horiz=False)
+R.via_stack(chip, ly, 2, 5, IB_D2[0], RING_BOT_Y)
+print("   IBIAS VSSA strap: M2 10 um (%.2f,%.2f) -> GND ring die y%.2f  [extends to %.2f]"
+      % (IB_D2[0], IB_D2[1] + 13.0, RING_BOT_Y, IB_D2[1] + 13.0 - 5.0))
 
 # ---- DEMOTE the block's own IBIAS port label -------------------------------------------
 # ibias_gen_v1's GDS carries an `IBIAS` text on 36/10 at its tap (die 271.30,423.90), streamed
@@ -1290,11 +1311,12 @@ ESD_CUTS["ISS.nd2ps.plates"] = esd_plate_bridge(
 # IS_VY was 382.0 first: that put the via stack's M4 pad 0.14 um from the VDDA M4 feed
 # (y378.61-381.61) and fired M4.2a x4. Raised clear of it, still inside both plate bridges
 # and still under the ISS M5 bus (y377.5-387.5).
-IS_VY = 384.0
+IS_BUS_Y = 337.5     # D BLOCK: centre of the ISS pin band, where the rebuilt M5 bus will run
+IS_VY = IS_BUS_Y + 1.5
 for _c in (IS_D1, IS_D2):
     assert abs(IS_VY - _c[1]) <= 6.5 - 0.5, "ISS via y is outside the plate bridge of %r" % (_c,)
-assert 377.5 < IS_VY < 387.5, "ISS clamp via is not under the ISS M5 bus"
-assert (IS_VY - 0.25) - 381.61 >= M4_SPACE, "ISS clamp via M4 pad violates M4.2a to the VDDA feed"
+assert IS_BUS_Y - 5.0 < IS_VY < IS_BUS_Y + 5.0, "ISS clamp via is not under the ISS M5 bus"
+assert (IS_VY - 0.25) - (381.61 - 45.0) >= M4_SPACE, "ISS clamp via M4 pad violates M4.2a to the VDDA feed"
 for _c in (IS_D1, IS_D2):
     evia("ISS", _c[0], IS_VY, 2, 5)
 print("   ISS clamp node:   2 via stacks M2->M5 at (%.2f,%.1f) and (%.2f,%.1f) under the ISS bus"
@@ -1308,10 +1330,10 @@ R.via_stack(chip, ly, 2, 4, _isv[0], _isv[1])
 
 # VSSA strap, same overrun-aware start as IBIAS
 assert (IS_D2[0] + 13.0) - 5.0 > IS_D2[0] + 6.5 + 1.0, "ISS VSSA strap would reach the plate bridge"
-eseg("VSSA", 2, IS_D2[0] + 13.0, IS_D2[1], 190.0, IS_D2[1], 10.0)
-R.via_stack(chip, ly, 2, 5, 190.0, IS_D2[1])
-print("   ISS   VSSA strap: M2 10 um (%.2f,%.2f) -> GND ring die x190.00  [extends to %.2f]"
-      % (IS_D2[0] + 13.0, IS_D2[1], IS_D2[0] + 13.0 - 5.0))
+eseg("VSSA", 2, IS_D2[0] + 13.0, IS_D2[1], RING_LEG_X, IS_D2[1], 10.0)
+R.via_stack(chip, ly, 2, 5, RING_LEG_X, IS_D2[1])
+print("   ISS   VSSA strap: M2 10 um (%.2f,%.2f) -> GND ring die x%.2f  [extends to %.2f]"
+      % (IS_D2[0] + 13.0, IS_D2[1], RING_LEG_X, IS_D2[0] + 13.0 - 5.0))
 
 # DELETING WHILE ITERATING shapes(...).each() CORRUPTS THE TRAVERSAL. A first version of this
 # deleted inside the loop; with one shape it happened to work, with several it removed EVERY
@@ -1341,9 +1363,9 @@ def demote_labels(name, keep_at=None, lay=36):
 # ibias_gen_v1's GDS carries its own IBIAS text on 36/10 at its tap; our pad plate carries one
 # at (0.50,282.50). The ballast splits that net in two, so magic would emit IBIAS + IBIAS_uq0 --
 # a 13th port. Keep the pad one, demote the block's.
-_n = demote_labels("IBIAS", keep_at=(0.5, 282.5))
+_n = demote_labels("IBIAS", keep_at=(0.5, 237.5))     # D pad-label position, rebuilt with the IBIAS row
 assert _n == 1, "expected exactly 1 non-pad IBIAS 36/10 label to demote, found %d" % _n
-print("   IBIAS: demoted %d block-tap label 36/10 -> 36/0 (pad label at 0.50,282.50 kept)" % _n)
+print("   IBIAS: demoted %d block-tap label 36/10 -> 36/0" % _n)
 
 def delete_labels(name, lay):
     """Remove <lay>/10 AND <lay>/0 texts for `name` entirely."""
@@ -1379,7 +1401,7 @@ for _k in sorted(ESD_CUTS):
     print("      %-24s %4d cut(s)" % (_k, ESD_CUTS[_k]))
 print("      %-24s %4d cut(s)  TOTAL (was 30 across both clamps)"
       % ("all ESD via1", sum(ESD_CUTS.values())))
-print("   IBIAS: demoted %d block-tap label 36/10 -> 36/0 (pad label at 0.50,282.50 kept)" % _n)
+print("   IBIAS: demoted %d block-tap label 36/10 -> 36/0" % _n)
 
 ly.write(GDS)
 print("routed power + GND ring + labels + DIEAREA boundary; wrote %s" % GDS)

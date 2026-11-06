@@ -31,7 +31,10 @@ import pya
 import os
 
 REPO = "/foss/designs/AUS-NZ-integration"
-DEF_ROOT = os.environ.get("PADFRAME_ROOT", REPO + "/padframe/A01/project_defs_12pin")
+# The package in force. VARIANT names both its subdirectory and its files. BH (the September
+# padframe, project_defs_12pin) was replaced by D on 2026-11-05; docs/d-block-plan.md.
+VARIANT = os.environ.get("PADFRAME_VARIANT", "D")
+DEF_ROOT = os.environ.get("PADFRAME_ROOT", REPO + "/padframe/A01/project_defs_D")
 MIN_MARGIN = 0.28          # um -- one minimum feature; anything less is not a connection
 
 MET = {"M1": 34, "M2": 36, "M3": 42, "M4": 46, "M5": 81}
@@ -76,13 +79,20 @@ SEED = {
     # on the net, so the pad-side island is just the plate plus the short M2 run to the
     # resistor. Seed at the resistor's bottom terminal -- the far end of that island -- so the
     # flood still has to traverse the whole run and the plate to reach all eight fingers.
-    "IBIAS":     (28.30, 268.25, "M2", "IBIAS pad side of the series ballast"),
+    # D BLOCK: this seed is pad-side, so it follows the clamp (-55), not the core.
+    "IBIAS":     (28.30 + 100.0, 213.25, "M2", "IBIAS pad side of the series ballast"),
     "VDDA":      (400.00, 399.00, "M5", "VDDA M5 bus"),
     "VDDD":      (380.00, 388.00, "M5", "VDDD M5 bus"),
     "VSSA":      (400.00, 190.00, "M5", "GND ring, bottom segment"),
     "REF_IN":    (410.28, 457.60, "M3", "PFD REF pin"),
     "CP_OUT":    (472.25, 415.41, "M4", "CP_v1 CP_OUT M4 stub"),
 }
+# D BLOCK: the values above are in the BH seat (die = core + 200). The core moved by the seat
+# below, so every core-owned seed moves with it. IBIAS's +100.0 cancels that shift in x, and
+# its y is already the clamp's: it is pad-side and does not move with the core.
+SEAT_SHIFT = (-100.0, 55.0)         # route_chip.py DX, DY minus the BH 200, 200
+SEED = {_n: (_v[0] + SEAT_SHIFT[0], _v[1] + (0.0 if _n == "IBIAS" else SEAT_SHIFT[1]), _v[2], _v[3])
+        for _n, _v in SEED.items()}
 # Nets that share another net's flood (same electrical node) -- checked against that flood.
 ALIAS = {"VSSD": "VSSA", "REF_IN_PU": "VSSA", "REF_IN_PD": "VDDD"}
 # NO "unrouted, excused" set. The pin list comes from the DEF -- the CONTRACT -- and every pin
@@ -94,7 +104,7 @@ ALIAS = {"VSSD": "VSSA", "REF_IN_PU": "VSSA", "REF_IN_PD": "VDDD"}
 def load_targets():
     """pin -> list of Metal2 target rects (um), straight from the committed DEF."""
     import yaml
-    with open(os.path.join(DEF_ROOT, "BH", "A01_BH_interface.yaml")) as f:
+    with open(os.path.join(DEF_ROOT, VARIANT, "A01_%s_interface.yaml" % VARIANT)) as f:
         d = yaml.safe_load(f)
     out = {}
     for p in d["pins"]:
