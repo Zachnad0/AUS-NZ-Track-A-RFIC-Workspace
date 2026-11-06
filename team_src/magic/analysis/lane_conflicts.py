@@ -10,6 +10,11 @@
 # two shapes merge -- which is how the I_N/Q_N short in 3i and the I_P/Q_P tap-to-block short
 # in 3l both passed a clean DRC. This runs before metal is cut, not after.
 #
+# BH ONLY (2026-11-06). SEG below is the BH allocation in BH die coordinates (die = core + 200).
+# It was not rebuilt for the D block, so on a D-seated chip_top.gds its output means nothing:
+# "0 overlaps" checks the old routes against each other, and the touch count compares old
+# coordinates with new metal. For the D block, use the flattened net diff instead.
+#
 # Run: klayout -b -r team_src/magic/analysis/lane_conflicts.py
 # Exit is advisory (printed); NOT the flow -- an analysis harness. Writes nothing.
 import pya

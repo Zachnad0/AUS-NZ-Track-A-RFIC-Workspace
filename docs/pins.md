@@ -1,7 +1,14 @@
 # Pin / Pad Plan — AUS/NZ Track A RFIC
 
 **Team A01 · IEEE SSCS Chipathon 2026 · GF180MCU**
-Last updated: **2026-09-11**. Slot variant **BH**; pin list frozen for the Aug 28 DEF gate.
+Last updated: **2026-11-06**. Block **D**, 605 × 605 µm; the 12-pin list itself is unchanged from BH.
+
+> **D BLOCK (2026-11-06).** Bailey moved A01 to block **D** on issue #143. The die is now
+> **605 × 605 µm** (`padframe/A01/project_defs_D/D/`), seat A: die = core + (100, 255). The GND
+> ring is **522 × 305 µm** at (75, 237.5)–(597, 542.5). Pad slots are **W17–W22** (VSSA, VDDA,
+> IBIAS, ISS, VTUNE, CP_OUT) and **N01–N06** (Q_N, I_N, Q_P, VSSD, VDDD, REF_IN). 
+> The pin order and `io_type`s did not change. BH notes below are kept as dated history, and
+> their slot numbers are BH slots unless a note says D.
 
 > **SCOPE (2026-09-11, reviewer reframe).** RF-block characterization chip containing the blocks of an integer-N PLL (LC-VCO with varactor tuning, CML divide-by-2 quadrature divider, PFD, charge pump), brought out to pads for open-loop characterization. Closed-loop lock is not demonstrable on this die: the feedback divides by 2 only and the PFD has no usable phase-detection window at the ~2.5 GHz reference that would require. Not a functioning integer-N PLL.
 
@@ -40,22 +47,22 @@ The divider produces four quadrature phases and **4 monitor-grade RF output buff
 (~2.4–3.2 GHz) drive them; **three of the four reach pads** (`I_N`, `Q_P`, `Q_N`). The
 fourth, `I_P`, stays on-chip — see the `I_P` note below. Pin order is the `info.yaml`
 order (clockwise from bottom-left, upper-left quadrant); slot letters are read from
-`padframe/A01/project_defs_12pin/BH/A01_BH_interface.yaml`.
+`padframe/A01/project_defs_D/D/A01_D_pad_map.yaml`.
 
 | # | Signal | Dir | Pad type | Notes |
 |---|--------|-----|----------|-------|
-| 1 | **VSSA** | — | ground | quiet down-bonded quadrant ground (Bailey: first quadrant pin). One ground net (all VSS ties the shared p-substrate; no deep-nwell) → one ground pin. The die still bonds ground at more ring points (package detail). |
-| 2 | **VDDA** | — | power | analog supply |
-| 3 | **IBIAS** | in | analog (DC) | chip-level bias reference (external 240 µA); on-chip bias generator fans out to CP (~50 µA) and DIV2 tails (2.4 mA/tail). Was `IBIAS_CP`; renamed 2026-08-04 — **one pad** |
-| 4 | **ISS** | in | analog (DC) | LC-VCO tail node. Kept OFF-CHIP-drivable (not tied to GND) so the tail current stays controllable — the 4.13–6.35 GHz band was characterized with a 1 mA tail mirror on ISS; grounding it on-chip would move the operating point. |
-| 5 | **VTUNE** | in | analog | control voltage from off-chip loop filter |
-| 6 | **CP_OUT** | out | analog | charge-pump output to off-chip loop filter |
-| 7 | **Q_N** | out | analog | quadrature output − (north slot N02) |
-| 8 | **I_N** | out | analog | in-phase output − (N03) |
-| 9 | **Q_P** | out | analog | quadrature output + (N04) |
-| 10 | **VSSD** | — | ground | digital-island ground (N05). Same on-chip node as VSSA; see the VSSD note below. |
-| 11 | **VDDD** | — | power | digital supply (N06) |
-| 12 | **REF_IN** | in | digital | reference clock (N07). Expands on the pad to REF_IN/PU/PD — PU=0, PD=1 (weak pull-down). |
+| 1 | **VSSA** | — | ground | (W17) quiet down-bonded quadrant ground (Bailey: first quadrant pin). One ground net (all VSS ties the shared p-substrate; no deep-nwell) → one ground pin. The die still bonds ground at more ring points (package detail). |
+| 2 | **VDDA** | — | power | analog supply (W18) |
+| 3 | **IBIAS** | in | analog (DC) | (W19) chip-level bias reference (external 240 µA); on-chip bias generator fans out to CP (~50 µA) and DIV2 tails (2.4 mA/tail). Was `IBIAS_CP`; renamed 2026-08-04 — **one pad** |
+| 4 | **ISS** | in | analog (DC) | (W20) LC-VCO tail node. Kept OFF-CHIP-drivable (not tied to GND) so the tail current stays controllable — the 4.13–6.35 GHz band was characterized with a 1 mA tail mirror on ISS; grounding it on-chip would move the operating point. |
+| 5 | **VTUNE** | in | analog | control voltage from off-chip loop filter (W21) |
+| 6 | **CP_OUT** | out | analog | charge-pump output to off-chip loop filter (W22) |
+| 7 | **Q_N** | out | analog | quadrature output − (north slot N01) |
+| 8 | **I_N** | out | analog | in-phase output − (N02) |
+| 9 | **Q_P** | out | analog | quadrature output + (N03) |
+| 10 | **VSSD** | — | ground | digital-island ground (N04). Same on-chip node as VSSA; see the VSSD note below. |
+| 11 | **VDDD** | — | power | digital supply (N05) |
+| 12 | **REF_IN** | in | digital | reference clock (N06). Expands on the pad to REF_IN/PU/PD — PU=0, PD=1 (weak pull-down). |
 
 **Tally:** analog **7** · digital **1** · power **2** · **ground 2** (VSSA, VSSD).
 **Block pin total = 12.** chip_top carries **11 LVS ports**: VSSD is the 12th *pad* but is the
@@ -86,7 +93,9 @@ lists `text: VSSD / layer: 36 / datatype: 0`.
 > only two analog pins that reached a gate and therefore needed a secondary clamp. It is no
 > longer a pad, so that requirement disappeared with it.
 
-> **Slot variant BH — 1110 × 550 µm landscape (Greg, 2026-08-22).** Slots **W18–W22**
+> **History: slot variant BH — 1110 × 550 µm landscape (Greg, 2026-08-22), superseded by
+> block D on 2026-11-06.** D has no `vss_fixed` entry either, so the VSSA bond-inductance cost
+> below still applies. Slots **W18–W22**
 > (VSSA, VDDA, IBIAS, ISS, VTUNE) + **N01–N07** (CP_OUT, Q_N, I_N, Q_P, VSSD, VDDD,
 > REF_IN) — N01–N08 with `I_P` at N04 until it came off the list; everything from Q_P onward
 > shifted one slot west (−100.000 µm exactly, the north slot pitch). Chosen over BV for aspect match to the 522 × 309 core and a ~241 µm I/Q haul to
@@ -104,7 +113,7 @@ lists `text: VSSD / layer: 36 / datatype: 0`.
 > isolation only. REF_IN's pull-down (PD=1) therefore ties to VSSD, the digital island's
 > ground, not to VSSA.
 
-> **I/Q pad order — now Q_N, I_N, Q_P at N02–N04** (was Q_N, I_N, I_P, Q_P at N02–N05 on
+> **I/Q pad order — Q_N, I_N, Q_P, at N01–N03 in block D** (N02–N04 in BH; was Q_N, I_N, I_P, Q_P at N02–N05 on
 > 2026-08-22; `I_P` removed 2026-08-27 and Q_P took its N04 slot). The ordering rationale
 > below is unchanged and still governs the three surviving outputs. Left taps → left pads, per
 > `phase8-padframe-plan.md` §3d: matched wire 2000 → ~1077 µm, I/Q spread 288 → 58 µm, and
@@ -180,8 +189,10 @@ analog-pad budget (each project picks its own pad types within its total).
   dropped 2026-08-20, ISS + VSSA ground added 2026-08-20, VSSD added 2026-08-22, `I_P`
   removed 2026-08-27, see §1). Confirmed by the organizer-issued package:
   `padframe/A01/project_defs_12pin/BH/A01_BH_interface.yaml` → `participant_pin_count: 12`.
-- **Slot BH allocates 1110 × 550 µm = 610,500 µm² (`usable_area: 610500`), and that is the
-  declared die.** `gds/chip_top.gds` is drawn to it: KLayout gives top cell `chip_top`,
+- **Block D allocates 605 × 605 µm = 366,025 µm² (`usable_area: 366025`), and that is the
+  declared die (2026-11-06).** `gds/chip_top.gds` is drawn to it: top bbox `(0,0;605,605)`.
+- **History: slot BH allocated 1110 × 550 µm = 610,500 µm² (`usable_area: 610500`), the
+  declared die until 2026-11-06.** `gds/chip_top.gds` was drawn to it: KLayout gives top cell `chip_top`,
   dbu 0.005, top bbox and layer 0/0 boundary both `(0,0;1110,550)`. **The 522 × 309 µm figure
   is the ROUTED CORE, not the die** — it is what the block cluster plus its routing occupies
   inside the slot, and it is the number still quoted in issue #143. Do not use it as the die.

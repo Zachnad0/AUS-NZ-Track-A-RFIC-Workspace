@@ -1,5 +1,8 @@
 # Phase 8 — padframe DEF integration: analysis & plan
 
+> **D block (2026-11-06).** This plan is the BH record. The current die is 605 × 605 µm: see
+> `docs/d-block-plan.md`.
+
 Analysis of the organizer's issued padframe DEF (`A01.def.tgz`, extracted from a
 working dir — not committed; analysis/docs only this session). **Two things are
 blocked and out of scope:** (1) whether a second ground pin **VSSD** is required

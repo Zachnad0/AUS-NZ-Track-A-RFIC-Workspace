@@ -7,6 +7,10 @@ Bailey issued a new package on issue #143 (comment dated 2026-11-06 05:07 UTC): 
 `8991a3ebe8c5e9f0ceb7af7fb5a39783548a4e324c81010a13156250d7024d5a`. Die 605 × 605 µm, usable
 366,025 µm², no blockages. This supersedes the 1110 × 550 µm BH die.
 
+> **Status (2026-11-06).** Rungs 1–6 are built, through `402b1d9`. As-built routes differ from this
+> plan in places: VSSA descends at x100, the ISS riser is at x14.7, IBIAS at x36, VTUNE's lane at
+> y150 and riser at x2.25. The as-built numbers are in `docs/verification.md` §8.13.
+
 All coordinates are **die-frame µm in seat A** unless marked otherwise. Lengths are pre-layout
 estimates until the rung that builds them.
 

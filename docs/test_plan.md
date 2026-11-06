@@ -26,24 +26,24 @@ PFD and charge pump"* (the scope of issue #143).
 
 ## 2. Pin map
 
-Exact names and types from `info.yaml` `pins:` (12 pads, in file order). Pad slots are from
-`docs/pins.md` §1; the slot variant there (BH) predates the final padframe assignment, so the
+Exact names and types from `info.yaml` `pins:` (12 pads, in file order). Pad slots are block D
+(605 × 605 µm die, `padframe/A01/project_defs_D/D/A01_D_pad_map.yaml`, 2026-11-06). The
 **package pin / bond map is TBD pending organizer packaging decision**.
 
-| # | Pin (`info.yaml`) | `io_type` | Function (`docs/pins.md` §1; supply domains from `docs/layout-review-sep01.md`) | Package pin |
-|---|---|---|---|---|
-| 1 | `VSSA` | ground | Quiet analog ground; same on-chip node as VSSD | TBD pending organizer packaging decision |
-| 2 | `VDDA` | power | Analog supply (CP, VCO, IBIAS) | TBD pending organizer packaging decision |
-| 3 | `IBIAS` | analog | Chip-level bias reference, external current | TBD pending organizer packaging decision |
-| 4 | `ISS` | analog | LC-VCO tail node, driven off-chip | TBD pending organizer packaging decision |
-| 5 | `VTUNE` | analog | VCO control voltage | TBD pending organizer packaging decision |
-| 6 | `CP_OUT` | analog | Charge-pump output | TBD pending organizer packaging decision |
-| 7 | `Q_N` | analog | Divider quadrature output − | TBD pending organizer packaging decision |
-| 8 | `I_N` | analog | Divider in-phase output − | TBD pending organizer packaging decision |
-| 9 | `Q_P` | analog | Divider quadrature output + | TBD pending organizer packaging decision |
-| 10 | `VSSD` | ground | Digital-island ground; same on-chip node as VSSA | TBD pending organizer packaging decision |
-| 11 | `VDDD` | power | Digital supply (PFD, DIV2) | TBD pending organizer packaging decision |
-| 12 | `REF_IN` | input_cmos | PFD reference input; weak pull-down (PD=1, PU=0) | TBD pending organizer packaging decision |
+| # | Pin (`info.yaml`) | `io_type` | Function (`docs/pins.md` §1; supply domains from `docs/layout-review-sep01.md`) | Pad slot | Package pin |
+|---|---|---|---|---|---|
+| 1 | `VSSA` | ground | Quiet analog ground; same on-chip node as VSSD | W17 | TBD pending organizer packaging decision |
+| 2 | `VDDA` | power | Analog supply (CP, VCO, IBIAS) | W18 | TBD pending organizer packaging decision |
+| 3 | `IBIAS` | analog | Chip-level bias reference, external current | W19 | TBD pending organizer packaging decision |
+| 4 | `ISS` | analog | LC-VCO tail node, driven off-chip | W20 | TBD pending organizer packaging decision |
+| 5 | `VTUNE` | analog | VCO control voltage | W21 | TBD pending organizer packaging decision |
+| 6 | `CP_OUT` | analog | Charge-pump output | W22 | TBD pending organizer packaging decision |
+| 7 | `Q_N` | analog | Divider quadrature output − | N01 | TBD pending organizer packaging decision |
+| 8 | `I_N` | analog | Divider in-phase output − | N02 | TBD pending organizer packaging decision |
+| 9 | `Q_P` | analog | Divider quadrature output + | N03 | TBD pending organizer packaging decision |
+| 10 | `VSSD` | ground | Digital-island ground; same on-chip node as VSSA | N04 | TBD pending organizer packaging decision |
+| 11 | `VDDD` | power | Digital supply (PFD, DIV2) | N05 | TBD pending organizer packaging decision |
+| 12 | `REF_IN` | input_cmos | PFD reference input; weak pull-down (PD=1, PU=0) | N06 | TBD pending organizer packaging decision |
 
 Not available at any pad: `I_P` (internal, feeds `PFD.FB`), the PFD's `UP`/`DOWN`, and the
 IBIAS generator's outputs `VGP`/`VGN`/`IB_DIV2` (`docs/pins.md` §1;
@@ -148,6 +148,13 @@ spectrum analyzer. Repeat at nominal and at 2× ISS.
 flows *out* of the pin into an off-chip sink, which pulls it toward ground. Simulated on the landed
 extraction (`signoff/sim/iss/`, `run_iss.sh`, run 2026-11-02, TT, 200 ns, measured 150–200 ns):
 
+**On-chip bus drop (block D, 2026-11-06).** The ISS route from the pad to the VCO strap is about
+6.3 Ω, or **9.9 mV at 1.57 mA** (8.2 mV at the 1.0× sink of 1.30 mA, 14.7 mV at the 2.0× sink of
+2.34 mA). This is hand-calculated from the layout at typical sheet resistance, counting the
+whole strap; the pad reads this much below the tail node. At 2.34 mA the 3 µm M2 strap carries
+0.78 mA/µm: inside the DRM limits at 85 °C and 110 °C (2.09 and 1.00 mA/µm), over the 125 °C
+limit (0.67 mA/µm). Bench temperature keeps this in range; do not run 2.0× hot.
+
 *With the bench's 1:1 NMOS tail mirror* (`run_iss.sh node`). The six runs reproduce the band
 table above to within 0.003 GHz, including no start at 1.0× / 3.3 V.
 
@@ -231,7 +238,7 @@ after VCO power-up.
     pair. I_P's pair is driven OIB/OI and I_N's OI/OIB; Q_P's is OQB/OQ and Q_N's OQ/OQB. Each
     chain reaches its pad through `XR_SER_*`. So I_N = I_P + 180° and Q_N = Q_P + 180°. The
     same mapping is in the sim deck (`signoff/pex/ib_conv_v1/resim.md`, "Decks and invocation").
-  - *Pads.* The pads are `I_N`, `Q_P` and `Q_N` (`info.yaml` `pins:`; slots N03, N04, N02 in
+  - *Pads.* The pads are `I_N`, `Q_P` and `Q_N` (`info.yaml` `pins:`; slots N02, N03, N01 in
     `docs/pins.md` §1); `I_P` is internal (it drives `PFD.FB`).
   - *Expected on the scope, taking `I_N` as the reference and measuring rising-edge delay as a
     fraction of the period:* **`Q_P` at +90°** (Q_P = I_P + 270° = I_N + 90°) and **`Q_N` at

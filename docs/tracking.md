@@ -1,7 +1,7 @@
 # Tracking & Milestones — AUS/NZ Track A RFIC
 
 **Team A01 · IEEE SSCS Chipathon 2026 · GF180MCU**
-Last updated: 2026-07-30.
+Last updated: 2026-11-06.
 
 Companion to the team **Progress Tracker** spreadsheet:
 <https://docs.google.com/spreadsheets/d/1ioGDfle-Np0gdS-PER5QJmRa5nnGZcALtzJDiHwNKBI/edit>
@@ -164,6 +164,13 @@ Block bbox-LL (µm): **DIV2(0,0) · vco(290,0) · ibias(0,205) · CP(210,205) ·
 > **magic chip-level DRC total of 84 is PRE-SEAT ONLY** — the seated baseline is **106
 > total / 252 boxes**, and a zero delta means the same 252 boxes, not the same total.
 > See `docs/verification.md` §8 and `team_src/magic/chip_top.drcbase`.
+
+> **D BLOCK (2026-11-06).** Bailey moved A01 to block **D** on issue #143. The die is now
+> **605 × 605 µm** (`padframe/A01/project_defs_D/D/`), seat A: die = core + (100, 255). The GND
+> ring is **522 × 305 µm** at (75, 237.5)–(597, 542.5). Pad slots are **W17–W22** (VSSA, VDDA,
+> IBIAS, ISS, VTUNE, CP_OUT) and **N01–N06** (Q_N, I_N, Q_P, VSSD, VDDD, REF_IN). 
+> Rungs 1–6 of `docs/d-block-plan.md` rebuilt the six west rows and supersede the 1110 × 550
+> figures above. The magic DRC baseline is now 0 boxes. See `docs/verification.md` §8.13.
 
 **KEY BUILD FACTS (locked in):**
 - **The deliverable `gds/chip_top.gds` is built by `team_src/magic/phase5/chip_merge.py`

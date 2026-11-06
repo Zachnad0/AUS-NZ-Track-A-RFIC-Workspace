@@ -1,7 +1,7 @@
 # Verification Log — AUS/NZ Track A RFIC
 
 **Team A01 · IEEE SSCS Chipathon 2026 · GF180MCU (gf180mcuD)**
-Every simulated number lands here. Last updated: 2026-07-30.
+Every simulated number lands here. Last updated: 2026-11-06.
 
 ---
 
@@ -1153,7 +1153,7 @@ it changes with the cell you view from. **The box set is the gate.**
 | `TOTAL` | 108 — *reporting only, not a gate* |
 | per-cell attribution | `vco_v1` 84, `vco_varactors` 84, `chip_top` 108 |
 | `SELFCHECK` | `OK rules=1/1 boxes=252/252` |
-| frame | seated (die frame, boundary 0,0–1110,550) |
+| frame | seated (die frame, boundary 0,0–1110,550; BH die, see §8.13 for the D block) |
 
 Historical: the pre-seat core-frame run reported `TOTAL` **84** with the same 252 boxes. Never
 compare a pre-seat total against a seated one.
@@ -1481,6 +1481,35 @@ Re-measured because the via array was the first change to add geometry in bulk (
 reads via1. Every KLayout-hosted gate here has a **~3.5 s process-startup floor**, and the
 0.7 s figure evidently excluded it. Quote the wall-clock numbers above; they are what a future
 run will actually see.
+
+### 8.13 D block reseat (2026-11-06)
+
+Bailey moved A01 to block D: **605 × 605 µm** die, 366,025 µm² usable, no blockages
+(`padframe/A01/project_defs_D/`). Seat A puts the die at core + (100, 255), so the GND ring is
+522 × 305 µm at (75, 237.5)–(597, 542.5). Pad slots are W17–W22 and N01–N06. Everything earlier
+in §8 is the BH die. The plan and route details are in `docs/d-block-plan.md`.
+
+| Rung | Row | Commit | Landing | Magic added | KLayout | Routes nets | Full nets | New merges |
+|---|---|---|---|---:|---:|---|---|---|
+| 1 | seat, west rows off | `4cd44b0` | n/a | 0 | 0 | n/a | n/a | none |
+| 2 | VSSA + VDDA | `9a5f7eb` | 10/14 | 0 | 0 | 25→23 | 327→325 | none |
+| 3 | ISS | `39f6bdf` | 11/14 | 0 | 0 | 23→21 | 325→323 | none |
+| 4 | IBIAS | `a680553` | 12/14 | 0 | 0 | 21→20 | 323→322 | none |
+| 5 | VTUNE | `5ee98f8` | 13/14 | 0 | 0 | 20→20 | 322→322 | none |
+| 6 | CP_OUT | `402b1d9` | 14/14 | 0 | 0 | 20→20 | 322→322 | none |
+
+Rungs 5 and 6 show no net-count drop because rung 1 had removed those rows entirely, so no open
+stub remained. Baseline at `402b1d9`: 0 magic DRC boxes, KLayout variant D 0 violations with no
+waivers. `lane_conflicts.py` is BH-only and is not a D gate.
+
+**ISS, as built.** About 6.3 Ω, 9.9 mV at 1.57 mA, hand-calculated from the geometry at typical
+sheet resistance and counting the whole strap. M2 strap 0.523 mA/µm (1.28× margin at 125 °C), M2
+escape 0.314 mA/µm (2.1×), M4/M5 0.157 mA/µm (4.3×), escape cuts 24.5 µA/cut (11.4×).
+
+**VTUNE coupling to ISS.** 3.45 fF extracted, 7.44 fF analytic bound. Worst 2f0 sideband at
+VTUNE: −125.4 dBc extracted, −119.3 dBc at the bound, for 192 mVpp ripple at 7.61 GHz.
+
+**Lengths.** OUT_p and OUT_n 453.5 µm each; I/Q 398.760 µm, spread 0.0000 µm.
 
 ## 9. Resistor models — two sheet resistances for one device, and which tool uses which
 

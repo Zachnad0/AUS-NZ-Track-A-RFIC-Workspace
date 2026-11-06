@@ -533,9 +533,20 @@ print("(d) IBIAS: %.2f um M3 0.4 um wide, M4 hop x93-104 over the Q_N/I_N risers
 # --- PHASE 8 (e): ISS -- the VCO TAIL RETURN, so a bus, not a signal thread ------------------
 # ISS is the common source of the cross-coupled nfet pair (golden: XM1/XM4 "OUT_p OUT_n ISS
 # GND"), i.e. the tail node, carrying 1.24-1.57 mA DC plus the 2f0 component -- NOT a bias
-# reference. At 0.4 um the ~876 um haul would be 191 ohm and drop 300 mV. Built per Greg's
-# option A: >=10 um M5, ~3.4 ohm, ~5 mV. The ~876 pH of added tail inductance is recorded as a
-# characterized limitation whose SIGN IS UNESTABLISHED -- there is no PSS/HB in the open flow.
+# reference. At 0.4 um the ~876 um BH haul would be 191 ohm and drop 300 mV. Built per Greg's
+# option A: >=10 um M5. AS BUILT IN THE D BLOCK (2026-11-06): ~6.3 ohm, 9.9 mV at 1.57 mA, hand-
+# calculated from the geometry at typical sheet resistance, counting the whole strap. M2 is
+# 2.5 ohm of that. The BH plan's ~3.4 ohm, ~5 mV counted the 10 um M5 only.
+#
+#   section              at 1.57 mA        margin at 125 C (limit 0.67 mA/um, 0.28 mA/cut)
+#   M2 strap, 3 um       0.523 mA/um       1.28x
+#   M2 escape, 5 um      0.314 mA/um       2.1x
+#   M4 / M5, 10 um       0.157 mA/um       4.3x
+#   escape cuts, 64      24.5 uA/cut       11.4x
+#   vco via1, 12 cuts    131 uA/cut        2.1x
+#
+# The ~876 pH of added tail inductance (a BH estimate) is recorded as a characterized
+# limitation whose SIGN IS UNESTABLISHED -- there is no PSS/HB in the open flow.
 # M4 wherever it must cross M5: the gap descent crosses the GND ring band, and the west run
 # crosses VSSA's own M5 descent. VSSA goes left-and-down while ISS goes left-and-up, so on one
 # layer they must cross exactly once; no spatial separation avoids it (plan doc 3q).
@@ -859,7 +870,7 @@ assert VARACT.width() * VARACT.height() < 15000.0, "DE.3: NDMY area cap"
 # the CORE-side node against VDDA/VSSA, which the primary structurally cannot do.
 #
 # ORDER ALONG THE NET: pad -> existing haul -> R (IBIAS only) -> clamp node -> block tap.
-# ISS gets NO series R by design: 50 ohm there costs 78.5 mV, ~15x the engineered strap budget.
+# ISS gets NO series R by design: 50 ohm there costs 78.5 mV, ~8x the as-built 9.9 mV drop.
 #
 # WHY THE VSSA STRAP EXISTS. The gencell guard ring is metallised but has NO PORT -- the cell
 # extracts with ZERO ports and its anode is emitted as `substrate`, because magic globalises

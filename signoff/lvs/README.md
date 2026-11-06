@@ -3,6 +3,9 @@
 **Team A01 · AUS/NZ Track A RFIC · GF180MCU (gf180mcuD)**
 Generated 2026-09-01 from commit `52a783a`, layout `gds/chip_top.gds`.
 
+> **D block (2026-11-06).** The captured files here predate the 605 × 605 µm D block and were
+> not regenerated. For the D result, see the 2026-11-06 section below.
+
 These files exist because the flow's own working directory,
 `team_src/magic/verify_work/`, is **gitignored** (see `.gitignore`) — it is regenerable
 build output, so nothing in it was ever visible in the repository. This directory is a
@@ -232,6 +235,22 @@ manual does not document it.
   techfile gap described above. It leaves VTUNE, `cap_bias`, VCO_OUTP and VCO_OUTN unpaired.
 - **`tm11k` is a black box on both sides.** Neither netlist has a model for it, so netgen
   compares the inductor's topology but not its `r_width` / `r_length`.
+
+### 2026-11-06: D block, `402b1d9`
+
+`chip_top` reseated in the 605 × 605 µm die, seat A. `verify_cp.sh chip_top`: match uniquely, 10
+devices, 20 nets, 11 ports. Golden has 11 ports for the 12 pads; VSSD's text sits on 36/0 at die
+(367.5, 604.5), on its landing, on the VSSA net.
+
+Organizer flow, `extra_be_checks@7d1f5ef`:
+
+| techfile | devices (layout / source) | nets | ports | verdict |
+|---|---|---|---|---|
+| stock | 16 / 18 | 21 / 22 | n/a | do not match: the two `tm11k` only |
+| `rm5` fix | 10 / 10 | 20 / 20 | 11 / 11, all paired | **match uniquely** (exit 5, black-box warning) |
+
+The varactor mismatch listed as open above is gone: the COMP fix `8ca968f` closed it. `tm11k` is
+still a black box on both sides.
 
 ## The older `mpw_precheck` attempt — recipe and result
 

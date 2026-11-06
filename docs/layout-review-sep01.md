@@ -7,6 +7,14 @@ Repo state: branch `integration`, commit `25a50c0`.
 
 > **SCOPE (2026-09-11, reviewer reframe).** RF-block characterization chip containing the blocks of an integer-N PLL (LC-VCO with varactor tuning, CML divide-by-2 quadrature divider, PFD, charge pump), brought out to pads for open-loop characterization. Closed-loop lock is not demonstrable on this die: the feedback divides by 2 only and the PFD has no usable phase-detection window at the ~2.5 GHz reference that would require. Not a functioning integer-N PLL.
 
+> **D BLOCK (2026-11-06).** Bailey moved A01 to block **D** on issue #143. The die is now
+> **605 × 605 µm** (`padframe/A01/project_defs_D/D/`), seat A: die = core + (100, 255). The GND
+> ring is **522 × 305 µm** at (75, 237.5)–(597, 542.5). Pad slots are **W17–W22** (VSSA, VDDA,
+> IBIAS, ISS, VTUNE, CP_OUT) and **N01–N06** (Q_N, I_N, Q_P, VSSD, VDDD, REF_IN). 
+> This review was written against the BH die and is kept as that record. §1's table and the
+> §2.2 slot column are updated to D. Dated results, density percentages and the ISS and EM
+> studies are BH figures. Current numbers are in `docs/verification.md` §8.13.
+
 This document supersedes the 2026-08-10 review deck. **`docs/layout-review-aug14.md` is kept
 unchanged as the historical record** and is not superseded — it holds the per-block working
 notes this document summarises.
@@ -117,7 +125,7 @@ Areas are from `docs/tracking.md` §5.1, measured on the GDS/`.mag` bounding box
 | `ibias_gen_v1` | Full-custom bias generator, Magic | 181.8 × 65.3 = 11,868 µm² | **0** | **match uniquely** — 17 dev / 15 nets / 6 ports |
 | `DIV2_QUAD_v1` | Full-custom CML ÷2 + 4 slicer converters | 237.4 × 174.2 = 41,340 µm² | **0** | **match uniquely** — 75 dev / 47 nets / 9 ports |
 | `vco_v1` | LC-VCO: cross-coupled core + varactor array + spiral + tune R | 182.0 × 179.5 ≈ 32,700 µm² | **0** | **match uniquely** — 7 dev / 7 nets / 6 ports |
-| **`chip_top`** | All five integrated, routed, seated in the BH slot | **1110 × 550** (die) | **0** | **match uniquely** — 10 dev / 20 nets / **11 ports** |
+| **`chip_top`** | All five integrated, routed, seated in block D | **605 × 605** (die) | **0** | **match uniquely** — 10 dev / 20 nets / **11 ports** |
 
 `verify_cp.sh` hard-fails on any netgen **property error** (W/L mismatch beyond 1 %) as well as
 on a topology mismatch — netgen otherwise prints *"Circuits match uniquely"* while listing size
@@ -318,7 +326,10 @@ is not thin.
 
 ### 2.1 Die and frame
 
-**The declared die is 1110 × 550 µm — slot variant BH.** Verified this session by KLayout on
+**The declared die is 605 × 605 µm — block D (2026-11-06).** The rest of this section is the
+BH record.
+
+**History: the declared die was 1110 × 550 µm — slot variant BH.** Verified this session by KLayout on
 `gds/chip_top.gds` (mtime 2026-08-29 02:58): top cell `chip_top`, dbu 0.005, top-cell bbox
 **`(0,0; 1110,550)`**, and the layer 0/0 boundary rectangle **identical** — nothing overhangs.
 The organizer package agrees: `padframe/A01/project_defs_12pin/BH/A01_BH_interface.yaml` gives
@@ -346,24 +357,24 @@ round-trip of PFD_lib's foundry dualgate perturbs sub-grid geometry and produces
 ### 2.2 Pin list and connectivity
 
 **12 pads, 11 LVS ports.** Pads from `info.yaml`; slots from the organizer-issued
-`A01_BH_interface.yaml` (`participant_pin_count: 12`); connectivity traced through
+`A01_D_pad_map.yaml` (updated 2026-11-06, BH slots were one later); connectivity traced through
 `team_src/magic/chip_top_golden.spice`, whose top line is
 `.subckt chip_top VSSA VDDA IBIAS ISS VTUNE CP_OUT I_N Q_P Q_N VDDD REF_IN`.
 
 | # | Pad | Type | Slot | Connects to |
 |---|---|---|---|---|
-| 1 | **VSSA** | ground | W18 | Chip-wide common ground: `PFD_lib.VSS`, `CP_v1.VSS`, `ibias_gen_v1.VSS`, `DIV2_QUAD_v1.VSS`, `vco_v1.GND`, the perimeter GND ring, both ESD `*_N` diode anodes, and the `REF_IN_PU` tie |
-| 2 | **VDDA** | power | W19 | `vco_v1.VDD`, `CP_v1.VDD`, `ibias_gen_v1.VDD`, both ESD `*_P` diode cathodes |
-| 3 | **IBIAS** | analog | W20 | → `XR_ESD_IBIAS` (`ppolyf_u`, 16 × 4 µm ballast) → `IBIAS_C` → `ibias_gen_v1.IBIAS`. Secondary-ESD diode pair sits on `IBIAS_C`, core-side of the ballast |
-| 4 | **ISS** | analog | W21 | `vco_v1.ISS` — the LC-VCO tail/source node, deliberately **not** grounded on-chip. Secondary-ESD diode pair directly on `ISS`, no ballast |
-| 5 | **VTUNE** | analog | W22 | `vco_v1.TUNE` → `XR2` (`ppolyf_u_1k` w1 l15, 15 kΩ) → `cap_bias` → varactor bulk of `XC1`/`XC4` |
-| 6 | **CP_OUT** | analog | N01 | `CP_v1.CP_OUT` = `M_PSW` drain = `M_NSW` drain; high-impedance out to the **off-chip** loop filter |
-| 7 | **Q_N** | analog | N02 | `DIV2_QUAD_v1.Q_N` ← `XR_SER_QN` (1 kΩ) ← `INVO3_QN` |
-| 8 | **I_N** | analog | N03 | `DIV2_QUAD_v1.I_N` ← `XR_SER_IN` (1 kΩ) ← `INVO3_IN` |
-| 9 | **Q_P** | analog | N04 | `DIV2_QUAD_v1.Q_P` ← `XR_SER_QP` (1 kΩ) ← `INVO3_QP` |
-| 10 | **VSSD** | ground | N05 | Digital-island ground pad; **same on-chip node as VSSA** (one p-substrate, no deep-nwell) → no separate golden port |
-| 11 | **VDDD** | power | N06 | `PFD_lib.VDD`, `DIV2_QUAD_v1.VDD`, and the `REF_IN_PD` tie |
-| 12 | **REF_IN** | `input_cmos` | N07 | `PFD_lib.REF` |
+| 1 | **VSSA** | ground | W17 | Chip-wide common ground: `PFD_lib.VSS`, `CP_v1.VSS`, `ibias_gen_v1.VSS`, `DIV2_QUAD_v1.VSS`, `vco_v1.GND`, the perimeter GND ring, both ESD `*_N` diode anodes, and the `REF_IN_PU` tie |
+| 2 | **VDDA** | power | W18 | `vco_v1.VDD`, `CP_v1.VDD`, `ibias_gen_v1.VDD`, both ESD `*_P` diode cathodes |
+| 3 | **IBIAS** | analog | W19 | → `XR_ESD_IBIAS` (`ppolyf_u`, 16 × 4 µm ballast) → `IBIAS_C` → `ibias_gen_v1.IBIAS`. Secondary-ESD diode pair sits on `IBIAS_C`, core-side of the ballast |
+| 4 | **ISS** | analog | W20 | `vco_v1.ISS` — the LC-VCO tail/source node, deliberately **not** grounded on-chip. Secondary-ESD diode pair directly on `ISS`, no ballast |
+| 5 | **VTUNE** | analog | W21 | `vco_v1.TUNE` → `XR2` (`ppolyf_u_1k` w1 l15, 15 kΩ) → `cap_bias` → varactor bulk of `XC1`/`XC4` |
+| 6 | **CP_OUT** | analog | W22 | `CP_v1.CP_OUT` = `M_PSW` drain = `M_NSW` drain; high-impedance out to the **off-chip** loop filter |
+| 7 | **Q_N** | analog | N01 | `DIV2_QUAD_v1.Q_N` ← `XR_SER_QN` (1 kΩ) ← `INVO3_QN` |
+| 8 | **I_N** | analog | N02 | `DIV2_QUAD_v1.I_N` ← `XR_SER_IN` (1 kΩ) ← `INVO3_IN` |
+| 9 | **Q_P** | analog | N03 | `DIV2_QUAD_v1.Q_P` ← `XR_SER_QP` (1 kΩ) ← `INVO3_QP` |
+| 10 | **VSSD** | ground | N04 | Digital-island ground pad; **same on-chip node as VSSA** (one p-substrate, no deep-nwell) → no separate golden port |
+| 11 | **VDDD** | power | N05 | `PFD_lib.VDD`, `DIV2_QUAD_v1.VDD`, and the `REF_IN_PD` tie |
+| 12 | **REF_IN** | `input_cmos` | N06 | `PFD_lib.REF` |
 
 Internal nets: `UP`/`DOWN` (PFD→CP) · `VGP`/`VGN` (bias→CP mirrors) · `IB_DIV2` (bias→divider
 tails) · `VCO_OUTP`/`VCO_OUTN` (VCO→divider CK/CKB) · `IBIAS_C` · **`I_P`**.
@@ -382,7 +393,8 @@ separate substrate return if measured spurs ever demand one.
 `Ports "VSSA" and "REF_IN_PU" are electrically shorted` — i.e. PD = 1, PU = 0, the weak
 pull-down configuration declared in `docs/pins.md` §1.
 
-**Slot BH costs one thing worth stating:** BH has no `vss_fixed` pad, so **VSSA carries the full
+**History: slot BH cost one thing worth stating, and block D has no `vss_fixed` entry either:**
+with no `vss_fixed` pad, **VSSA carries the full
 ~1 nH bond inductance (~31 Ω at 5 GHz)**. BH was chosen over BV for aspect match and a ~241 µm
 I/Q haul to the north edge (BV would need 550–900 µm up the portrait west edge).
 

@@ -5,6 +5,10 @@ Chipathon 2026 organizers (D. Mitch Bailey), generated from the `info.yaml` we p
 `main`. They are committed here as *inputs*, verbatim. When the organizers regenerate,
 replace the tree wholesale and record the delta below — do not hand-patch.
 
+> **D block (2026-11-06).** The current package is `A01/project_defs_D/` (605 × 605 µm, tarball
+> sha256 `8991a3ebe8c5e9f0ceb7af7fb5a39783548a4e324c81010a13156250d7024d5a`). Everything below
+> describes the BH packages and is kept as their record.
+
 They live in the repo because they were lost once already: they had only ever been
 extracted to a scratch/`/tmp` working dir, nothing in the tree referenced them, and phase-8
 depends on them for the DIEAREA and every pin rectangle.

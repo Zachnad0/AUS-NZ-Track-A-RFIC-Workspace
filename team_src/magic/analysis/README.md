@@ -6,6 +6,11 @@
 imported or run by that flow; these are evidence/measurement scripts kept so the
 conclusions in `docs/` are reproducible. Do not wire them into the flow.
 
+> **`lane_conflicts.py` is BH-only (2026-11-06).** Its allocation is the BH routes in BH die
+> coordinates and was not rebuilt for the D block, so its output on the current `chip_top.gds`
+> means nothing. The other BH-specific scripts here (`parse_def.py`, `core_placement.py` and
+> friends) are likewise records of the BH work unless their own header says otherwise.
+
 ## Bailey LVS-flow reproduction (evidence for the flat-GDS gencell finding)
 Faithful local reproduction of `d-m-bailey/extra_be_checks`'s two-pass
 LEF-abstract extraction (we cannot install the tool — standing rule 1). This is
