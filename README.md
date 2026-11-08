@@ -1,5 +1,7 @@
 ## Track: A <br>Team: AUS/NZ Track A RFIC <br>Project: Open-loop integer-N PLL characterization chip: LC-VCO, quadrature divider, PFD and charge pump
 
+**Reviewers: [docs/REPRODUCE.md](docs/REPRODUCE.md)** rebuilds `gds/chip_top.gds` from a fresh clone, XORs it to zero against the committed file, and runs every signoff gate and test-plan simulation with expected results.
+
 RF-block characterization chip containing the blocks of an integer-N PLL (LC-VCO with varactor tuning, CML divide-by-2 quadrature divider, PFD, charge pump), brought out to pads for open-loop characterization. Closed-loop lock is not demonstrable on this die: the feedback divides by 2 only and the PFD has no usable phase-detection window at the ~2.5 GHz reference that would require. Not a functioning integer-N PLL.
 
 ## Testing commitment
