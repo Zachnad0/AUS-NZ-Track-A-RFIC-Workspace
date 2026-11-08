@@ -22,12 +22,16 @@ time.
 LibreLane template (`final/`, `make clone-pdk`). They do **not** build this chip; use this file
 instead.
 
-## 0. Read first: the repo path is fixed
+## 0. Any clone path works
 
-The build, sim and abstract files hard-code **`/foss/designs/AUS-NZ-integration`**. That path
-appears in `chip_merge.py`, `route_chip.py`, `landing_check.py`, `chip_top.abstract`, every
-`signoff/sim/*/run_*.sh` and most `.spice` decks. Inside the container, the clone **must** sit at
-exactly that path. A clone anywhere else reads, and can overwrite, whatever is at that path.
+Clone anywhere and mount it anywhere in the container. Every build script, gate, sim runner and
+`.abstract` used below finds the repo from its own location. Sim decks use relative
+`.include`s, or have the root written in by their runner. Set `UPRJ_ROOT` only to point a
+script at a different checkout than the one it lives in; it is unset by default and overrides
+the self-derived root when set.
+
+Checked on 2026-11-08 with a fresh clone at **`/foss/designs/_relo/repo`**, in a container that
+mounted nothing else under `/foss/designs`, so any leftover fixed path would have failed.
 
 ## 1. Environment
 
@@ -43,23 +47,28 @@ exactly that path. A clone anywhere else reads, and can overwrite, whatever is a
 On the host:
 
 ```bash
-git clone https://github.com/Zachnad0/AUS-NZ-Track-A-RFIC-Workspace AUS-NZ-integration
-git -C AUS-NZ-integration checkout main
+git clone https://github.com/Zachnad0/AUS-NZ-Track-A-RFIC-Workspace a01
+git -C a01 checkout main
 docker pull hpretl/iic-osic-tools@sha256:8d846d760c47d35f961871b7e958bb03fe7a0bef4cef0d9177721d0a3535eba1
-docker run -it --rm -v "$PWD/AUS-NZ-integration:/foss/designs/AUS-NZ-integration" --entrypoint bash hpretl/iic-osic-tools@sha256:8d846d760c47d35f961871b7e958bb03fe7a0bef4cef0d9177721d0a3535eba1
+docker run -it --rm -v "$PWD/a01:/foss/designs/a01" --entrypoint bash hpretl/iic-osic-tools@sha256:8d846d760c47d35f961871b7e958bb03fe7a0bef4cef0d9177721d0a3535eba1
 ```
+
+The names `a01` and `/foss/designs/a01` are examples. Any host directory and mount point work.
 
 `.gitattributes` pins `*.sh`, `*.tcl` and `*.spice` to LF and `*.gds` to binary, so a Windows
 checkout with `core.autocrlf=true` is safe.
 
 ### 1.2 Shell setup, in every container shell [checked 11-08]
 
+`cd` to the clone's root first (for example `cd /foss/designs/a01`). Every later step runs from
+there and uses `$R` for that root.
+
 ```bash
 source /foss/tools/sak/sak-pdk-script.sh gf180mcuD
 export PDK=gf180mcuD PDK_ROOT=/foss/pdks OMP_NUM_THREADS=2
 export PATH=/foss/tools/bin:/foss/tools/sak:/foss/tools/klayout:$PATH
 export PYTHONPATH=/foss/tools/klayout/pymod:$PYTHONPATH
-R=/foss/designs/AUS-NZ-integration; cd $R
+R=$(pwd)
 echo $PDK        # must print gf180mcuD
 ```
 
@@ -148,7 +157,7 @@ EOF
 differs from the committed file even when the geometry is identical
 (`docs/verification.md` §8.11). The identity test is this XOR plus the DRC box set in step 3.2.
 
-### 2.1 Varactors from layout source [checked 11-08]
+### 2.1 Varactors from layout source [checked 11-08, also at the relocated path]
 
 ```bash
 bash team_src/magic/phase5/write_vco_gds.sh /tmp/vgds
@@ -182,7 +191,8 @@ The XOR reports `bbox ... same`, **`TOTAL XOR 0.000 um2`** with no per-layer lin
 
 Measured on 11-08: bbox (0,0;605,605) same, `TOTAL XOR 0.000 um2`, 529 labels identical, 8 s
 for both passes plus the XOR. Two rebuilds gave two different hashes (`f9407673…`, `6ce75eca…`),
-neither equal to the committed one, which is the timestamp effect described above.
+neither equal to the committed one, which is the timestamp effect described above. Repeated
+at the relocated path `/foss/designs/_relo/repo`: the same XOR result, 7 s.
 
 ## 3. Signoff gates
 
@@ -201,7 +211,7 @@ Each cell is magic extraction plus netgen against `team_src/magic/<cell>_golden.
 script exits 0 only on DRC 0, a unique match and zero property errors. Output goes to
 `team_src/magic/verify_work/` (git-ignored).
 
-Measured on 11-08, 33 s for all six:
+Measured on 11-08, 33 s for all six (30 s at the relocated path, identical output):
 
 | Cell | `devices (LVS)` line | `ports` | `LVS verdict` | `RESULT` |
 |---|---|---:|---|---|
@@ -269,7 +279,7 @@ With no `-rd gds=`, it checks the three committed files. Expected: three `PASS` 
 `COMP&MOS_CAP_MK 1050.000 um2 (want 1050) | cap_nmos_03v3_b 42 (want 42)`, then
 `VARACTOR_COMP_GATE PASS`. About 5 s.
 
-### 3.6 Pad landings [recorded, 2026-11-06]
+### 3.6 Pad landings [checked 11-08, relocated clone]
 
 ```bash
 klayout -b -r team_src/magic/analysis/landing_check.py </dev/null | grep -E "^[A-Z_]+ +(OK|FAIL)|net\(s\)"
@@ -277,20 +287,31 @@ klayout -b -r team_src/magic/analysis/landing_check.py </dev/null | grep -E "^[A
 
 Expected: 14 `OK` rows (CP_OUT, IBIAS, ISS, I_N, Q_N, Q_P, REF_IN, REF_IN_PD, REF_IN_PU, VDDA,
 VDDD, VSSA, VSSD, VTUNE), then `0 net(s) failed to reach every target finger.` The script
-defaults to the D block. About 5 s.
+defaults to the D block. Measured on 11-08: `0 net(s) failed`, 6 s.
 
-### 3.7 Optional: placement table and doc cross-references [recorded]
+### 3.7 Optional: placement table and doc cross-references
 
 ```bash
 (cd team_src/magic/phase5 && python3 check_placement.py | tail -1)    # consistent, ~4 s
-python3 team_src/magic/analysis/ref_audit.py . | tail -2              # RESULT: PASS, 0 unresolved
+python3 team_src/magic/analysis/ref_audit.py . | tail -2              # see the note below
 ```
+
+`check_placement.py` [checked 11-08, relocated clone] prints `PLACEMENT CONSISTENT`.
+
+`ref_audit.py` passes only in a working checkout. **On a fresh clone it reports
+`RESULT: FAIL` with 34 unresolved path refs** [checked 11-08, both on `3b74fd5` and with the
+path-independence change]. The docs cite git-ignored or never-committed local files:
+`final/metrics.json`, `gf180mcu/…`, `gds/reh_*.gds` and a few others. Section refs are
+0 dangling either way. This is a gap in the audit's allowlist, not a broken link in the
+deliverable.
 
 `lane_conflicts.py` is **not** a D-block gate. It holds the old BH allocation.
 
-## 4. Test-plan simulations [recorded, all from runs on 2026-11-02]
+## 4. Test-plan simulations [recorded, runs on 2026-11-02; `CP_OUT` checked 11-08]
 
-These were **not** re-run on 11-08. Each script writes its decks and logs to `/tmp/<name>`.
+Only `CP_OUT` (`run_cp_out.sh`) was re-run on 11-08, at the relocated path. It reproduced every
+value in its row to the digit in 0.4 s. The rest were **not** re-run. Each script writes its
+decks and logs to `/tmp/<name>`.
 Expected numbers are as recorded in `docs/test_plan.md`. Jobs marked **> 2 min** exceed a
 2-minute-per-job budget, so run them in the background.
 

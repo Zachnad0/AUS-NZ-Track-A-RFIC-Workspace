@@ -2,7 +2,7 @@
 * measure the branch current. Flat region = compliance window (cf CP 0.32-3.00V).
 .include /foss/pdks/gf180mcuD/libs.tech/ngspice/design.ngspice
 .lib /foss/pdks/gf180mcuD/libs.tech/ngspice/sm141064.ngspice typical
-.include /foss/designs/AUS-NZ-integration/team_src/sim/ibias/ibias_sub.spice
+.include ibias_sub.spice
 
 V_VDD VDD 0 3.3
 I_BIAS VDD IBIAS 240u
@@ -15,12 +15,12 @@ Vf_ibd IB_DIV2 0 0.9
 
 .control
 dc Vf_vgp 0 3.3 0.0165
-wrdata /foss/designs/AUS-NZ-integration/team_src/sim/ibias/comp_vgp.dat i(vf_vgp)
+wrdata comp_vgp.dat i(vf_vgp)
 reset
 dc Vf_vgn 0 3.3 0.0165
-wrdata /foss/designs/AUS-NZ-integration/team_src/sim/ibias/comp_vgn.dat i(vf_vgn)
+wrdata comp_vgn.dat i(vf_vgn)
 reset
 dc Vf_ibd 0 3.3 0.0165
-wrdata /foss/designs/AUS-NZ-integration/team_src/sim/ibias/comp_ibd.dat i(vf_ibd)
+wrdata comp_ibd.dat i(vf_ibd)
 .endc
 .end

@@ -8,8 +8,8 @@
 .param sw_mc_mismatch=0
 .include /foss/pdks/gf180mcuD/libs.tech/ngspice/design.ngspice
 .lib /foss/pdks/gf180mcuD/libs.tech/ngspice/sm141064.ngspice CORNER
-.include /foss/designs/AUS-NZ-integration/signoff/pex/CP_v1.pex.spice
-.include /foss/designs/AUS-NZ-integration/team_src/sim/ibias/ibias_sub.spice
+.include @REPO@/signoff/pex/CP_v1.pex.spice
+.include @REPO@/team_src/sim/ibias/ibias_sub.spice
 
 V_VDDA VDDA 0 3.3
 V_CPM  VDDA VDD 0

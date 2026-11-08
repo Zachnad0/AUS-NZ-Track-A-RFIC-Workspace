@@ -30,7 +30,9 @@
 import pya
 import os
 
-REPO = "/foss/designs/AUS-NZ-integration"
+# Repo root: $UPRJ_ROOT if set, else three levels up from this file (team_src/magic/analysis).
+REPO = os.environ.get("UPRJ_ROOT") or os.path.dirname(os.path.dirname(os.path.dirname(
+    os.path.dirname(os.path.abspath(__file__)))))
 # The package in force. VARIANT names both its subdirectory and its files. BH (the September
 # padframe, project_defs_12pin) was replaced by D on 2026-11-05; docs/d-block-plan.md.
 VARIANT = os.environ.get("PADFRAME_VARIANT", "D")

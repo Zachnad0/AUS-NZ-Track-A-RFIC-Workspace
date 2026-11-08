@@ -3,7 +3,7 @@
 * gate) via ibias_sub_active.spice. Iinj=1A AC so i(v_vgn) IS the transfer (A/A).
 .include /foss/pdks/gf180mcuD/libs.tech/ngspice/design.ngspice
 .lib /foss/pdks/gf180mcuD/libs.tech/ngspice/sm141064.ngspice typical
-.include /foss/designs/AUS-NZ-integration/team_src/sim/ibias/ibias_sub_active.spice
+.include ibias_sub_active.spice
 
 V_VDD VDD 0 3.3
 I_BIAS VDD IBIAS 240u

@@ -2,11 +2,12 @@
 # VDDA current: CP_v1 (PEX) + ibias_gen_v1 op points at TT/FF/SS, then vco_v1 (PEX) 200 ns
 # transients at ISS 1.0x and 2.0x. One job at a time, ngspice capped at 2 threads.
 # Generated decks, logs and .dat go to /tmp/vdda. VCO runs take ~2 min each.
-export PATH=/foss/tools/bin:$PATH OMP_NUM_THREADS=2 UPRJ_ROOT=/foss/designs/AUS-NZ-integration
-HERE=/foss/designs/AUS-NZ-integration/signoff/sim/vdda
+HERE=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
+# repo root: $UPRJ_ROOT if set, else three levels up; pex200.spice includes $UPRJ_ROOT/...
+export PATH=/foss/tools/bin:$PATH OMP_NUM_THREADS=2 UPRJ_ROOT=${UPRJ_ROOT:-$(cd "$HERE/../../.." && pwd)}
 T=/tmp/vdda; mkdir -p $T
 for c in typical ff ss; do
-  sed "s/CORNER/$c/g" $HERE/cp_ib_vdda.spice.in > $T/cp_ib_$c.spice
+  sed -e "s/CORNER/$c/g" -e "s|@REPO@|$UPRJ_ROOT|g" $HERE/cp_ib_vdda.spice.in > $T/cp_ib_$c.spice
   echo "### CP+IBIAS $c"
   ngspice -b $T/cp_ib_$c.spice > $T/cp_ib_$c.log 2>&1
   grep -E "^i\(|rror" $T/cp_ib_$c.log

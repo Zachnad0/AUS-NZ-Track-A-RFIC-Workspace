@@ -16,9 +16,10 @@
 # unaffected and needs NO re-baseline: it compares chip_merge.py's BLOCKS table against
 # chip_top.tcl's getcell boxes -- both core-frame, and the seat is applied after both. Do not
 # "fix" it by adding 200 to either side; that would break the comparison it exists to make.
-import re, sys
+import re, sys, os
 
-HERE = "/foss/designs/AUS-NZ-integration/team_src/magic/phase5"
+# This file's own directory, team_src/magic/phase5 (holds chip_merge.py and chip_top.tcl).
+HERE = os.path.dirname(os.path.abspath(__file__))
 TOL = 0.01  # um
 
 # Known mag-abstract -> real-footprint LL offset (um), applied to the chip_top.tcl box position.

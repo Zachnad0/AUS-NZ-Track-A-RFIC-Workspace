@@ -7,8 +7,8 @@
 .param sw_mc_global=0
 .param sw_mc_mismatch=0
 .lib /foss/pdks/gf180mcuD/libs.tech/ngspice/sm141064.ngspice typical
-.include /foss/designs/AUS-NZ-integration/team_src/sim/ibias/ibias_sub.spice
-.include /foss/designs/AUS-NZ-integration/team_src/sim/ibias/CP_core.spice
+.include ibias_sub.spice
+.include CP_core.spice
 
 V_VDD VDD 0 3.3
 V_VSS VSS 0 0
@@ -27,11 +27,11 @@ V_OUT  CP_OUT 0 1.65
 alter V_UP = 3.3
 alter V_DOWN = 0
 dc V_OUT 0 3.3 0.02
-wrdata /foss/designs/AUS-NZ-integration/team_src/sim/ibias/s5_source.dat i(v_out)
+wrdata s5_source.dat i(v_out)
 reset
 alter V_UP = 0
 alter V_DOWN = 3.3
 dc V_OUT 0 3.3 0.02
-wrdata /foss/designs/AUS-NZ-integration/team_src/sim/ibias/s5_sink.dat i(v_out)
+wrdata s5_sink.dat i(v_out)
 .endc
 .end

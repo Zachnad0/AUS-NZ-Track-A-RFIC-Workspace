@@ -19,7 +19,7 @@ Rterm_Q_N Q_N 0 50
 
 .include /foss/pdks/gf180mcuD/libs.tech/ngspice/design.ngspice
 .include ib_conv_v1_pex_norvdd.spice
-.include /foss/designs/AUS-NZ-integration/team_src/magic/ib_conv_v1_golden.spice
+.include ../../../../team_src/magic/ib_conv_v1_golden.spice
 .lib /foss/pdks/gf180mcuD/libs.tech/ngspice/sm141064.ngspice typical
 .lib /foss/pdks/gf180mcuD/libs.tech/ngspice/sm141064.ngspice mimcap_typical
 .lib /foss/pdks/gf180mcuD/libs.tech/ngspice/sm141064.ngspice res_typical

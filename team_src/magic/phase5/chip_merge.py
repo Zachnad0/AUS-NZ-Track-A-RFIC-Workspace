@@ -7,9 +7,12 @@
 #
 # Placement: getcell/floorplan targets are block BBOX-LL in um. KLayout inserts a cell at
 # its ORIGIN, so origin = target_LL - block_bbox_LL.  (block_bbox_LL from gds/<blk>.gds)
-import pya, sys
+import pya, sys, os
 
-GDS = "/foss/designs/AUS-NZ-integration/gds"
+# Repo root: $UPRJ_ROOT if set, else three levels up from this file (team_src/magic/phase5).
+REPO = os.environ.get("UPRJ_ROOT") or os.path.dirname(os.path.dirname(os.path.dirname(
+    os.path.dirname(os.path.abspath(__file__)))))
+GDS = os.path.join(REPO, "gds")
 # --out PATH: where chip_top.gds is written. Defaults to the committed repo path so the
 # recorded invocation (`python3 chip_merge.py`) is unchanged. Pass --out to build into a
 # scratch path instead of overwriting the committed deliverable.

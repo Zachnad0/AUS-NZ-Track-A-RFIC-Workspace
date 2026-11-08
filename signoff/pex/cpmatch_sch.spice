@@ -1,7 +1,7 @@
 * CP_v1 UP/DOWN current match -- sch
 * Bias per CP_v1_golden.spice header: external IBIAS SINKS I_CP from VGP and SOURCES I_CP
 * into VGN. I_CP = 50 uA (verification.md 2.1, confirmed 10.19 uA at phi=200ns vs 10.00 ideal).
-.include /foss/designs/AUS-NZ-integration/team_src/magic/CP_v1_golden.spice
+.include ../../team_src/magic/CP_v1_golden.spice
 X1 UP DOWN CP_OUT VDD VSS VGP VGN CP_v1
 V_VDD  VDD 0 3.3
 V_VSS  VSS 0 0

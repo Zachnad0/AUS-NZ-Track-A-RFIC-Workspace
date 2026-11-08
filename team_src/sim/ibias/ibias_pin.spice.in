@@ -7,7 +7,7 @@
 .param sw_mc_global=0
 .param sw_mc_mismatch=0
 .lib /foss/pdks/gf180mcuD/libs.tech/ngspice/sm141064.ngspice CORNER
-.include /foss/designs/AUS-NZ-integration/team_src/sim/ibias/ibias_sub.spice
+.include @REPO@/team_src/sim/ibias/ibias_sub.spice
 
 V_VDD VDD 0 VDDV
 I_BIAS VDD IBIAS 240u
@@ -26,6 +26,6 @@ let i_vgn = abs(i(v_vgn))
 let i_ibd = abs(i(v_ibd))
 print v(ibias) v(x1.nb) i_vgp i_vgn i_ibd
 dc I_BIAS 0 360u 5u
-wrdata /foss/designs/AUS-NZ-integration/team_src/sim/ibias/pin_sweep_CORNER_VDDV.dat v(ibias) i(v_vgp) i(v_vgn) i(v_ibd)
+wrdata @REPO@/team_src/sim/ibias/pin_sweep_CORNER_VDDV.dat v(ibias) i(v_vgp) i(v_vgn) i(v_ibd)
 .endc
 .end

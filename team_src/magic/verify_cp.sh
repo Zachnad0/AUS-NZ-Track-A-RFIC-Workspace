@@ -76,6 +76,11 @@ VPRELOAD=""; VPRELOAD_PATH=""; VIGNORE=""
 if [ -f "$ABS_CFG" ]; then
     VPRELOAD="$(sed -n 's/^PRELOAD=//p' "$ABS_CFG" | tr '\n' ' ')"
     VPRELOAD_PATH="$(sed -n 's/^PRELOAD_PATH=//p' "$ABS_CFG" | head -1)"
+    # PRELOAD_PATH entries are relative to team_src/magic (this script's dir) unless absolute,
+    # so the abstract carries no clone path. magic runs from $WORK, hence the rewrite.
+    _abs=""; for _d in $VPRELOAD_PATH; do
+        case "$_d" in /*) _abs="$_abs $_d" ;; *) _abs="$_abs $MAGIC_DIR/$_d" ;; esac
+    done; VPRELOAD_PATH="${_abs# }"
     VIGNORE="$(sed -n 's/^IGNORE=//p' "$ABS_CFG" | tr '\n' ' ')"
     echo "   abstract: preload [$VPRELOAD] ignore [$VIGNORE]"
 fi

@@ -2,8 +2,9 @@
 # ISS node voltage and sink compliance on the landed vco_v1 extraction.
 # usage: run_iss.sh node|sweep. One job at a time, ngspice capped at 2 threads; ~2 min per run.
 # Generated decks, logs and .dat go to /tmp/iss.
-export PATH=/foss/tools/bin:$PATH OMP_NUM_THREADS=2 UPRJ_ROOT=/foss/designs/AUS-NZ-integration
-HERE=/foss/designs/AUS-NZ-integration/signoff/sim/iss
+HERE=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
+# repo root: $UPRJ_ROOT if set, else three levels up; pex200.spice includes $UPRJ_ROOT/...
+export PATH=/foss/tools/bin:$PATH OMP_NUM_THREADS=2 UPRJ_ROOT=${UPRJ_ROOT:-$(cd "$HERE/../../.." && pwd)}
 T=/tmp/iss; mkdir -p $T
 run() {  # name mode amps vtune
   python3 $HERE/mk_vco_iss.py $T "$@" || exit 1

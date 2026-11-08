@@ -14,7 +14,10 @@ import route_lib as R
 
 # --out PATH: the chip_top.gds this pass reads and writes back (it is an in-place pass).
 # Defaults to the committed repo path so the recorded invocation is unchanged.
-GDS = "/foss/designs/AUS-NZ-integration/gds/chip_top.gds"
+# Repo root: $UPRJ_ROOT if set, else three levels up from this file (team_src/magic/phase5).
+REPO = os.environ.get("UPRJ_ROOT") or os.path.dirname(os.path.dirname(os.path.dirname(
+    os.path.dirname(os.path.abspath(__file__)))))
+GDS = os.path.join(REPO, "gds", "chip_top.gds")
 if "--out" in sys.argv:
     GDS = sys.argv[sys.argv.index("--out") + 1]
 ly = pya.Layout(); ly.read(GDS)
@@ -879,7 +882,7 @@ assert VARACT.width() * VARACT.height() < 15000.0, "DE.3: NDMY area cap"
 # 96.47 um (IBIAS) / 49.85 um (ISS) of bare bulk silicon at 3250 ohm/sq -- of order 12.5 kohm
 # and 6.5 kohm. The 10 um straps replace that with ~2-4 ohm.
 for _n in ("esd_pd2nw", "esd_nd2ps", "esd_rpoly"):
-    _src = pya.Layout(); _src.read("/foss/designs/AUS-NZ-integration/gds/%s.gds" % _n)
+    _src = pya.Layout(); _src.read(os.path.join(REPO, "gds", "%s.gds" % _n))
     ly.create_cell(_n).copy_tree(_src.cell(_n))
 
 EM1, EVIA1, EM2 = (34, 0), (35, 0), (36, 0)

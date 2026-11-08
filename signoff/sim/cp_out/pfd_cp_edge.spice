@@ -10,8 +10,8 @@
 .include /foss/pdks/gf180mcuD/libs.tech/ngspice/design.ngspice
 .lib /foss/pdks/gf180mcuD/libs.tech/ngspice/sm141064.ngspice typical
 .include /foss/pdks/gf180mcuD/libs.ref/gf180mcu_fd_sc_mcu7t5v0/spice/gf180mcu_fd_sc_mcu7t5v0.spice
-.include /foss/designs/AUS-NZ-integration/signoff/pex/CP_v1.pex.spice
-.include /foss/designs/AUS-NZ-integration/team_src/sim/ibias/ibias_sub.spice
+.include ../../pex/CP_v1.pex.spice
+.include ../../../team_src/sim/ibias/ibias_sub.spice
 
 * PFD_lib, verbatim from team_src/magic/chip_top_golden.spice (the LVS golden of the layout)
 .subckt PFD_lib REF FB UP DOWN VDD VSS
