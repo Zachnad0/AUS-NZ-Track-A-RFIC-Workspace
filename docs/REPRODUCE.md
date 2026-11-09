@@ -293,17 +293,16 @@ defaults to the D block. Measured on 11-08: `0 net(s) failed`, 6 s.
 
 ```bash
 (cd team_src/magic/phase5 && python3 check_placement.py | tail -1)    # consistent, ~4 s
-python3 team_src/magic/analysis/ref_audit.py . | tail -2              # see the note below
+python3 team_src/magic/analysis/ref_audit.py . | tail -2              # RESULT: PASS, ~1 s
 ```
 
 `check_placement.py` [checked 11-08, relocated clone] prints `PLACEMENT CONSISTENT`.
 
-`ref_audit.py` passes only in a working checkout. **On a fresh clone it reports
-`RESULT: FAIL` with 34 unresolved path refs** [checked 11-08, both on `3b74fd5` and with the
-path-independence change]. The docs cite git-ignored or never-committed local files:
-`final/metrics.json`, `gf180mcu/…`, `gds/reh_*.gds` and a few others. Section refs are
-0 dangling either way. This is a gap in the audit's allowlist, not a broken link in the
-deliverable.
+`ref_audit.py` [checked 11-08, fresh clone at a non-canonical path and the working checkout]
+prints `0 dangling`, `0 unresolved` and `RESULT: PASS` on a fresh clone too. Docs name LibreLane
+run outputs and local scratch files in plain text, not as backticked repo paths. PDK and
+organizer-runner paths sit in the script's `EXTERNAL` list, each with a reason. Those count as
+referenced whether or not a local copy of the PDK happens to make them resolve.
 
 `lane_conflicts.py` is **not** a D-block gate. It holds the old BH allocation.
 

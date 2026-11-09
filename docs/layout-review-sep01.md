@@ -148,7 +148,7 @@ off the single 3.3 V rail. The flavour split is deliberate and is discussed in `
 not feasible on the schedule.
 
 Signoff run: `librelane_pfd/runs/RUN_2026-08-05_23-52-38/`. First-hand from
-`final/metrics.json`:
+the LibreLane metrics output (final/metrics.json, not committed):
 
 | Metric | Value |
 |---|---|
@@ -172,7 +172,7 @@ inserted three `dlyb_1` delay buffers, one of them on **FB→CLK but not on REF*
 asymmetry the locked PLL would have read as real static phase error. The config keys that
 suppress it, and a standing reject-the-run rule, are recorded in `docs/verification.md` §2.3.3.
 
-**Power grid** (`resolved.json`, `…/55-openroad-irdropreport/irdrop.rpt`): Metal1 rails
+**Power grid** (the run's resolved config, `…/55-openroad-irdropreport/irdrop.rpt`): Metal1 rails
 0.6 µm, Metal4 vertical / Metal5 horizontal straps 1.6 µm, Metal4/5 core ring. IR drop at
 corner `nom_tt_025C_5v00`: **VDD 9.60 µV worst / VSS 18.2 µV worst, 0.00 %**, all shapes
 connected.
@@ -2120,7 +2120,7 @@ Everything in this list is a real absence. None of it is mitigated by anything i
    schematic-level** — see §4.2.1: R+C parasitics move it by at most **0.076 pp**. Two things
    remain schematic-level and are additive to it: the real `ibias_gen_v1`'s **uniform +0.18 %**
    contribution (`verification.md` §2.6 S5), and the mirror ratio. **Correction to the earlier
-   record:** the `PFD_lib` PEX is **capacitance-only** — `pex_pfd.tcl` uses `ext2spice rthresh 0`
+   record:** the `PFD_lib` PEX is **capacitance-only** — its script (pex_pfd.tcl, in the git-ignored pex_work/) uses `ext2spice rthresh 0`
    without a resistance-extraction pass, which emits zero resistors. Adequate for the REF/FB
    coupling question it was asked; not a full PEX, and it should not be described as one.
 9. **Antenna checking exists only for `PFD_lib`** (LibreLane, 0 violations / 0 diodes). It has

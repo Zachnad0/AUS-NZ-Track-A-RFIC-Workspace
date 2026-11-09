@@ -15,7 +15,7 @@ the container + the running KLayout DRC down with it). State captured to resume 
 Run tag `RUN_2026-08-04_20-23-53` (workshop-slot `chip_top`).
 - **GDS confirmed by file:** `…/57-klayout-streamout/chip_top.gds` = **27,212,418 bytes**.
 - **Magic DRC (stage 67) COMPLETED = 0 errors** — read from
-  `67-magic-drc/state_out.json` (`"magic__drc_error__count": 0`) and
+  67-magic-drc/state_out.json in the run directory (`"magic__drc_error__count": 0`) and
   `67-magic-drc/reports/drc.magic.rpt` (chip_top, no violations). This is a real,
   read-from-file result, not inferred.
 - Routing DRC 0, KLayout antenna 0, KLayout density 0, XOR clean (all earlier).
@@ -37,7 +37,7 @@ docker exec iic-osic-tools_xvnc bash -lc 'export PATH=/foss/tools/bin:/foss/tool
 ```
 Verified: this logs "Using existing run at 'RUN_2026-08-04_20-23-53'" and reuses the
 run dir (no new RUN_, no rebuild). When it finishes, read the count from
-`68-klayout-drc/state_out.json` (`klayout__drc_error__count`) and
+68-klayout-drc/state_out.json in the run directory (`klayout__drc_error__count`) and
 `68-klayout-drc/reports/drc.klayout.*`. KLayout DRC on the 85 MB padframe GDS takes
 10+ min (deep run_mode).
 

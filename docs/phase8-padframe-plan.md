@@ -701,7 +701,7 @@ With the map-derived escapes, `reh_phase8` = 87 (84 baseline **+3**), all route-
 
 ### The extraction earned its keep — a DRC-clean silent short (Item 2c)
 "M3.2a is a spacing rule, so no merge" was **sound reasoning and still wrong** — so we ran
-the diff. Extracting the **routes-only** cell (`reh_routes.gds` = the top-cell shapes = the
+the diff. Extracting the **routes-only** cell (the local rehearsal GDS reh_routes.gds, not committed, = the top-cell shapes = the
 4 hauls, no instance; `analysis/reh_extract.tcl`) first gave **3 nodes**, ports
 `Q_N I_P Q_P` — **I_N had merged into Q_N.** The two left escapes *overlapped* (0 gap →
 no M3.2a spacing violation, same layer → no width violation) where I_N's higher-y escape
@@ -792,7 +792,7 @@ to below live in §3i's closing subsections and are unchanged.
 Wrong, and wrong about a mechanism the repo already owned. `chip_top.abstract` +
 `verify_extract.tcl` preload the `vco_varactors` and `vco_inductor_v2` abstracts with
 `gds noduplicates true`, so `gds read` keeps the geometry-free abstract instead of traversing
-the spiral. `reh_phase8.gds` instances that same `chip_top` cell with its subhierarchy intact
+the spiral. The local rehearsal GDS reh_phase8.gds (not committed) instances that same `chip_top` cell with its subhierarchy intact
 (verified with `cell_list.py`), so the identical preload extracts the rehearsal **in full
 context**. The harness is `analysis/reh_ctx_extract.tcl`, and it is the real distinct-net gate.
 
@@ -866,7 +866,7 @@ routing style (which is now fixed).
 **That was wrong** — the repo already had the mechanism: `chip_top.abstract` +
 `verify_extract.tcl` preload the `vco_varactors` + `vco_inductor_v2` abstracts with
 `gds noduplicates true`, so `gds read` keeps the geometry-free abstract instead of traversing
-the spiral. `reh_phase8.gds` instances that same `chip_top` cell (subhierarchy intact —
+the spiral. The local rehearsal GDS reh_phase8.gds (not committed) instances that same `chip_top` cell (subhierarchy intact —
 verified with `cell_list.py`), so the identical preload extracts the rehearsal **in full
 context** without the inductor merging OUT_p/OUT_n. Harness: `analysis/reh_ctx_extract.tcl`.
 

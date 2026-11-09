@@ -90,7 +90,7 @@ identically with ideal sources.
 `ext2spice rthresh 0` **on its own emits zero resistors** — it only sets a reporting threshold.
 Getting parasitic R needs a real extraction pass: `extract do resistance` → `ext2sim` →
 `extresist all` → `ext2spice extresist on`. Measured on this cell, the difference is **27 caps /
-0 R** versus **265 caps / 269 R**. The earlier `PFD_lib` PEX (`pex_work/pex_pfd.tcl`,
+0 R** versus **265 caps / 269 R**. The earlier `PFD_lib` PEX (pex_work/pex_pfd.tcl, git-ignored and not committed,
 `verification.md` §2.3.3) used the short form and is therefore **capacitance-only** — which is
 adequate for the REF/FB coupling question it was asked, but is not a full PEX.
 

@@ -227,7 +227,7 @@ justified"):
 
 #### 2.3.2 Tapcell spacing corrected 20 → 15 µm (2026-08-10)
 `librelane_pfd/config.json` carried no explicit `FP_TAPCELL_DIST`, so it inherited the
-LibreLane default **20 µm** (confirmed in `resolved.json`). PFD_lib is 5 V/MV std cells;
+LibreLane default **20 µm** (confirmed in the run's resolved config, resolved.json). PFD_lib is 5 V/MV std cells;
 GF180 **DF.13_MV/DF.14_MV cap tap-to-device at 15 µm** on `.overlapping(dualgate)` (20 µm
 is the LV/3.3 V limit, which passed only incidentally on a small block). Set to an explicit
 **15 µm** (commit `e3b6cae`). **No LibreLane re-run** — config-only correction for the next build.

@@ -66,6 +66,30 @@ ALLOWLIST = {
         "lives in sscs-chipathon-2026, not vendored here",
 }
 
+# Paths into the external gf180mcuD PDK or the organizer LVS runner. They resolve only where
+# that tree is present: $PDK_ROOT, $LVS_ROOT, or the git-ignored vendored gf180mcu/ copy some
+# working checkouts carry. So unlike ALLOWLIST, an entry here is counted whenever it is
+# referenced, resolvable or not, and is reported STALE only when nothing references it. Without
+# this split a fresh clone fails on them, and a checkout with gf180mcu/ fails on ALLOWLIST rot.
+EXTERNAL = {
+    "gf180mcu/gf180mcuD/libs.tech/klayout/tech/drc/rule_decks/dummy_exclude.drc":
+        "PDK KLayout DRC deck, cited by docs/gf180-de3-deck-defect.md; $PDK_ROOT/gf180mcuD/...",
+    "gf180mcu/gf180mcuD/libs.tech/magic/gf180mcuD.tech":
+        "PDK magic techfile, $PDK_ROOT/gf180mcuD/libs.tech/magic/; never committed (standing rule)",
+    "gf180mcuD.tech":
+        "the magic techfile by basename: the PDK copy and the extra_be_checks copy; never committed",
+    "libs.tech/klayout/tech/lvs/rule_decks/res_extraction.lvs":
+        "PDK KLayout LVS deck, written $PDK_ROOT/gf180mcuD-relative",
+    "libs.tech/magic/gf180mcuD.tcl":
+        "PDK magic device generators, written $PDK_ROOT/gf180mcuD-relative",
+    "diode_nd2ps_06v0_dn.gds":
+        "PDK LVS unit-test layout, libs.tech/klayout/tech/lvs/testing/testcases/unit/diode_devices/",
+    "tech/gf180mcuD/gf180mcuD_setup.tcl":
+        "organizer runner extra_be_checks@7d1f5ef netgen setup, resolves under $LVS_ROOT",
+    "tech/gf180mcuD/gf180mcuD.tech":
+        "organizer runner extra_be_checks@7d1f5ef magic techfile, resolves under $LVS_ROOT",
+}
+
 ROOT = sys.argv[1] if len(sys.argv) > 1 else "."
 HEAD = re.compile(r"^#{1,6}\s+(\d+(?:\.\d+)*[a-z]?)\.?\s")
 SEC  = re.compile(r"[§]\s?(\d+(?:\.\d+)*[a-z]?)(?:\s*[–—-]\s*(\d+(?:\.\d+)*[a-z]?))?")
@@ -141,7 +165,7 @@ for k, hs in heads.items():
     base_owners.setdefault(b, []).append(k)
 ambiguous = sorted(b for b, owners in base_owners.items() if len(owners) > 1)
 
-bad_sec, bad_path, nsec, npath, used = [], [], 0, 0, set()
+bad_sec, bad_path, nsec, npath, used, used_ext = [], [], 0, 0, set(), set()
 for f in files:
     key = relkey(f)
     for i, line in enumerate(io.open(f, encoding="utf-8", errors="replace"), 1):
@@ -163,6 +187,9 @@ for f in files:
                 bad_sec.append((key, i, n, key if not alt else key + " or " + alt))
         for m in PATH.finditer(line):
             rel = m.group(1); npath += 1
+            if rel in EXTERNAL:                   # before the existence checks: see EXTERNAL
+                used_ext.add(rel)
+                continue
             if os.path.exists(os.path.join(ROOT, rel)):
                 continue
             if os.path.basename(rel) in ALLNAMES:
@@ -176,7 +203,7 @@ for f in files:
                 continue
             bad_path.append((key, i, rel))
 
-stale = sorted(set(ALLOWLIST) - used)
+stale = sorted((set(ALLOWLIST) - used) | (set(EXTERNAL) - used_ext))
 print("scanned %d markdown files" % len(files))
 for b in ambiguous:
     print("   NOTE ambiguous basename %-16s -> %s  (a bare `%s` ref resolves against the union)"
@@ -184,8 +211,8 @@ for b in ambiguous:
 print("section refs : %d checked, %d dangling" % (nsec, len(bad_sec)))
 for b in bad_sec:
     print("   DANGLING %s:%d  section %s does not exist in %s" % b)
-print("path refs    : %d checked, %d allowlisted, %d unresolved"
-      % (npath, len(used), len(bad_path)))
+print("path refs    : %d checked, %d allowlisted, %d external, %d unresolved"
+      % (npath, len(used), len(used_ext), len(bad_path)))
 for b in bad_path:
     print("   UNRESOLVED %s:%d  %s   <- not on the allowlist" % b)
 for r in stale:
